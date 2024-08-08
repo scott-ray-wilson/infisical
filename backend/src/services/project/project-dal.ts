@@ -247,7 +247,7 @@ export const projectDALFactory = (db: TDbClient) => {
   const findProjectByName = async (name: string, orgId: string | undefined) => {
     try {
       if (!orgId) {
-        throw new BadRequestError({ message: "Organization ID is required when querying with slugs" });
+        throw new BadRequestError({ message: "Organization ID is required when querying with names" });
       }
 
       const projects = await db
@@ -289,7 +289,7 @@ export const projectDALFactory = (db: TDbClient) => {
 
       return project;
     } catch (error) {
-      throw new DatabaseError({ error, name: "Find project by slug" });
+      throw new DatabaseError({ error, name: "Find project by name" });
     }
   };
 

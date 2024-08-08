@@ -244,6 +244,55 @@ export const projectDALFactory = (db: TDbClient) => {
     }
   };
 
+  const findProjectByName = async (name: string, orgId: string | undefined) => {
+    try {
+      if (!orgId) {
+        throw new BadRequestError({ message: "Organization ID is required when querying with slugs" });
+      }
+
+      const projects = await db
+        .replicaNode()(TableName.Project)
+        .where(`${TableName.Project}.name`, name)
+        .where(`${TableName.Project}.orgId`, orgId)
+        .leftJoin(TableName.Environment, `${TableName.Environment}.projectId`, `${TableName.Project}.id`)
+        .select(
+          selectAllTableCols(TableName.Project),
+          db.ref("id").withSchema(TableName.Environment).as("envId"),
+          db.ref("slug").withSchema(TableName.Environment).as("envSlug"),
+          db.ref("name").withSchema(TableName.Environment).as("envName")
+        )
+        .orderBy([
+          { column: `${TableName.Project}.name`, order: "asc" },
+          { column: `${TableName.Environment}.position`, order: "asc" }
+        ]);
+
+      const project = sqlNestRelationships({
+        data: projects,
+        key: "id",
+        parentMapper: ({ ...el }) => ({ _id: el.id, ...ProjectsSchema.parse(el) }),
+        childrenMapper: [
+          {
+            key: "envId",
+            label: "environments" as const,
+            mapper: ({ envId, envSlug, envName }) => ({
+              id: envId,
+              slug: envSlug,
+              name: envName
+            })
+          }
+        ]
+      })?.[0];
+
+      if (!project) {
+        throw new BadRequestError({ message: "Project not found" });
+      }
+
+      return project;
+    } catch (error) {
+      throw new DatabaseError({ error, name: "Find project by slug" });
+    }
+  };
+
   const findProjectByFilter = async (filter: Filter) => {
     try {
       if (filter.type === ProjectFilterType.ID) {
@@ -258,6 +307,17 @@ export const projectDALFactory = (db: TDbClient) => {
 
         return await findProjectBySlug(filter.slug, filter.orgId);
       }
+
+      if (filter.type === ProjectFilterType.NAME) {
+        if (!filter.orgId) {
+          throw new BadRequestError({
+            message: "Organization ID is required when querying with names"
+          });
+        }
+
+        return await findProjectByName(filter.name, filter.orgId);
+      }
+
       throw new BadRequestError({ message: "Invalid filter type" });
     } catch (error) {
       if (error instanceof BadRequestError) {

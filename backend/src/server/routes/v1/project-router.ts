@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { IntegrationsSchema, ProjectMembershipsSchema, UserEncryptionKeysSchema, UsersSchema } from "@app/db/schemas";
 import { PROJECTS } from "@app/lib/api-docs";
+import { BadRequestError } from "@app/lib/errors";
 import { readLimit, writeLimit } from "@app/server/config/rateLimiter";
 import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
 import { AuthMode } from "@app/services/auth/auth-type";
@@ -509,6 +510,54 @@ export const registerProjectRouter = async (server: FastifyZodProvider) => {
         projectId: req.params.workspaceId
       });
       return { serviceTokenData };
+    }
+  });
+
+  server.route({
+    method: "GET",
+    url: "/id",
+    config: {
+      rateLimit: readLimit
+    },
+    schema: {
+      querystring: z.object({
+        slug: z.string().trim().optional().describe(PROJECTS.GET_ID.slug),
+        name: z.string().trim().optional().describe(PROJECTS.GET_ID.name)
+      }),
+      response: {
+        200: z.object({
+          id: z.string()
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
+    handler: async (req) => {
+      if (!req.query.slug && !req.query.name) {
+        throw new BadRequestError({
+          name: "Project name or slug is required."
+        });
+      }
+
+      const workspace = await server.services.project.getAProject({
+        filter: {
+          ...(req.query.slug
+            ? {
+                type: ProjectFilterType.SLUG,
+                slug: req.query.slug
+              }
+            : {
+                type: ProjectFilterType.NAME,
+                name: req.query.name as string
+              }),
+          orgId: req.permission.orgId
+        },
+        actorAuthMethod: req.permission.authMethod,
+        actorId: req.permission.id,
+        actor: req.permission.type,
+        actorOrgId: req.permission.orgId
+      });
+
+      return { id: workspace.id };
     }
   });
 };

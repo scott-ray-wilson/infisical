@@ -7,7 +7,8 @@ import { KmsType } from "../kms/kms-types";
 
 export enum ProjectFilterType {
   ID = "id",
-  SLUG = "slug"
+  SLUG = "slug",
+  NAME = "name"
 }
 
 export type Filter =
@@ -18,6 +19,11 @@ export type Filter =
   | {
       type: ProjectFilterType.SLUG;
       slug: string;
+      orgId: string | undefined;
+    }
+  | {
+      type: ProjectFilterType.NAME;
+      name: string;
       orgId: string | undefined;
     };
 

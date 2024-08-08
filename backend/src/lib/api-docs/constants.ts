@@ -385,6 +385,10 @@ export const PROJECTS = {
   GET: {
     workspaceId: "The ID of the project."
   },
+  GET_ID: {
+    slug: "The slug of the project to get",
+    name: "The name of the project to get"
+  },
   UPDATE: {
     workspaceId: "The ID of the project to update.",
     name: "The new name of the project.",

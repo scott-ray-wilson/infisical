@@ -1,8 +1,11 @@
+import { registerConsumerKeyRouter } from "@app/server/routes/v1/consumer-key-router";
+
 import { registerAdminRouter } from "./admin-router";
 import { registerAuthRoutes } from "./auth-router";
 import { registerProjectBotRouter } from "./bot-router";
 import { registerCaRouter } from "./certificate-authority-router";
 import { registerCertRouter } from "./certificate-router";
+import { registerConsumerSecretRouter } from "./consumer-secret-router";
 import { registerIdentityAccessTokenRouter } from "./identity-access-token-router";
 import { registerIdentityAwsAuthRouter } from "./identity-aws-iam-auth-router";
 import { registerIdentityAzureAuthRouter } from "./identity-azure-auth-router";
@@ -55,6 +58,8 @@ export const registerV1Routes = async (server: FastifyZodProvider) => {
   await server.register(registerUserActionRouter, { prefix: "/user-action" });
   await server.register(registerSecretImportRouter, { prefix: "/secret-imports" });
   await server.register(registerSecretFolderRouter, { prefix: "/folders" });
+  await server.register(registerConsumerSecretRouter, { prefix: "/consumer-secrets" });
+  await server.register(registerConsumerKeyRouter, { prefix: "/consumer-keys" });
 
   await server.register(
     async (projectRouter) => {

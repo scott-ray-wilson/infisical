@@ -88,6 +88,10 @@ import { certificateAuthorityDALFactory } from "@app/services/certificate-author
 import { certificateAuthorityQueueFactory } from "@app/services/certificate-authority/certificate-authority-queue";
 import { certificateAuthoritySecretDALFactory } from "@app/services/certificate-authority/certificate-authority-secret-dal";
 import { certificateAuthorityServiceFactory } from "@app/services/certificate-authority/certificate-authority-service";
+import { consumerKeyDALFactory } from "@app/services/consumer-key/consumer-key-dal";
+import { consumerKeyServiceFactory } from "@app/services/consumer-key/consumer-key-service";
+import { consumerSecretDALFactory } from "@app/services/consumer-secret/consumer-secret-dal";
+import { consumerSecretServiceFactory } from "@app/services/consumer-secret/consumer-secret-service";
 import { groupProjectDALFactory } from "@app/services/group-project/group-project-dal";
 import { groupProjectMembershipRoleDALFactory } from "@app/services/group-project/group-project-membership-role-dal";
 import { groupProjectServiceFactory } from "@app/services/group-project/group-project-service";
@@ -296,6 +300,9 @@ export const registerRoutes = async (
   const externalKmsDAL = externalKmsDALFactory(db);
   const kmsRootConfigDAL = kmsRootConfigDALFactory(db);
 
+  const consumerKeyDAL = consumerKeyDALFactory(db);
+  const consumerSecretDAL = consumerSecretDALFactory(db);
+
   const permissionService = permissionServiceFactory({
     permissionDAL,
     orgRoleDAL,
@@ -464,6 +471,12 @@ export const registerRoutes = async (
     groupDAL,
     orgBotDAL
   });
+  const consumerKeyService = consumerKeyServiceFactory({
+    userDAL,
+    orgService,
+    consumerKeyDAL,
+    permissionService
+  });
   const signupService = authSignupServiceFactory({
     tokenService,
     smtpService,
@@ -485,7 +498,8 @@ export const registerRoutes = async (
     serverCfgDAL: superAdminDAL,
     orgService,
     keyStore,
-    licenseService
+    licenseService,
+    consumerKeyService
   });
   const rateLimitService = rateLimitServiceFactory({
     rateLimitDAL,
@@ -973,6 +987,11 @@ export const registerRoutes = async (
     userDAL
   });
 
+  const consumerSecretService = consumerSecretServiceFactory({
+    consumerSecretDAL,
+    permissionService
+  });
+
   await superAdminService.initServerCfg();
   //
   // setup the communication with license key server
@@ -1048,7 +1067,9 @@ export const registerRoutes = async (
     identityProjectAdditionalPrivilege: identityProjectAdditionalPrivilegeService,
     secretSharing: secretSharingService,
     userEngagement: userEngagementService,
-    externalKms: externalKmsService
+    externalKms: externalKmsService,
+    consumerKey: consumerKeyService,
+    consumerSecret: consumerSecretService
   });
 
   const cronJobs: CronJob[] = [];

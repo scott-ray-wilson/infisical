@@ -1,3 +1,4 @@
+import { ConsumerSecretType } from "@app/db/schemas";
 import { TProjectPermission } from "@app/lib/types";
 import { ActorType } from "@app/services/auth/auth-type";
 import { CaStatus } from "@app/services/certificate-authority/certificate-authority-types";
@@ -138,7 +139,12 @@ export enum EventType {
   GET_CERT = "get-cert",
   DELETE_CERT = "delete-cert",
   REVOKE_CERT = "revoke-cert",
-  GET_CERT_BODY = "get-cert-body"
+  GET_CERT_BODY = "get-cert-body",
+  GET_CONSUMER_KEY = "get-consumer-key",
+  CREATE_CONSUMER_SECRET = "create-consumer-secret",
+  UPDATE_CONSUMER_SECRET = "update-consumer-secret",
+  DELETE_CONSUMER_SECRET = "delete-consumer-secret",
+  GET_CONSUMER_SECRETS = "get-consumer-secrets"
 }
 
 interface UserActorMetadata {
@@ -1164,6 +1170,50 @@ interface GetCertBody {
   };
 }
 
+interface GetConsumerKeyEvent {
+  type: EventType.GET_CONSUMER_KEY;
+  metadata: {
+    userId: string;
+    keyId: string;
+  };
+}
+
+interface CreateConsumerSecretEvent {
+  type: EventType.CREATE_CONSUMER_SECRET;
+  metadata: {
+    userId: string;
+    secretType: ConsumerSecretType;
+    secretId: string;
+    secretName: string;
+  };
+}
+
+interface UpdateConsumerSecretEvent {
+  type: EventType.UPDATE_CONSUMER_SECRET;
+  metadata: {
+    userId: string;
+    secretId: string;
+    // secretName: string;
+  };
+}
+
+interface DeleteConsumerSecretEvent {
+  type: EventType.DELETE_CONSUMER_SECRET;
+  metadata: {
+    userId: string;
+    secretId: string;
+    // secretName: string;
+  };
+}
+
+interface GetConsumerSecretsEvent {
+  type: EventType.GET_CONSUMER_SECRETS;
+  metadata: {
+    userId: string;
+    numberOfSecrets: number;
+  };
+}
+
 export type Event =
   | GetSecretsEvent
   | GetSecretEvent
@@ -1264,4 +1314,9 @@ export type Event =
   | GetCert
   | DeleteCert
   | RevokeCert
-  | GetCertBody;
+  | GetCertBody
+  | GetConsumerKeyEvent
+  | CreateConsumerSecretEvent
+  | UpdateConsumerSecretEvent
+  | DeleteConsumerSecretEvent
+  | GetConsumerSecretsEvent;

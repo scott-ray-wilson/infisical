@@ -100,7 +100,9 @@ export enum TableName {
   InternalKms = "internal_kms",
   InternalKmsKeyVersion = "internal_kms_key_version",
   // @depreciated
-  KmsKeyVersion = "kms_key_versions"
+  KmsKeyVersion = "kms_key_versions",
+  ConsumerKey = "consumer_keys",
+  ConsumerSecret = "consumer_secrets"
 }
 
 export type TImmutableDBKeys = "id" | "createdAt" | "updatedAt";
@@ -153,6 +155,12 @@ export enum SecretKeyEncoding {
 export enum SecretType {
   Shared = "shared",
   Personal = "personal"
+}
+
+export enum ConsumerSecretType {
+  Login = "login",
+  CreditCard = "credit-card",
+  Note = "note"
 }
 
 export enum ProjectVersion {

@@ -53,6 +53,12 @@ import {
   TCertificateSecretsUpdate,
   TCertificatesInsert,
   TCertificatesUpdate,
+  TConsumerKeys,
+  TConsumerKeysInsert,
+  TConsumerKeysUpdate,
+  TConsumerSecrets,
+  TConsumerSecretsInsert,
+  TConsumerSecretsUpdate,
   TDynamicSecretLeases,
   TDynamicSecretLeasesInsert,
   TDynamicSecretLeasesUpdate,
@@ -669,6 +675,13 @@ declare module "knex/types/tables" {
       TKmsKeyVersions,
       TKmsKeyVersionsInsert,
       TKmsKeyVersionsUpdate
+    >;
+    // consumer secrets
+    [TableName.ConsumerKey]: KnexOriginal.CompositeTableType<TConsumerKeys, TConsumerKeysInsert, TConsumerKeysUpdate>;
+    [TableName.ConsumerSecret]: KnexOriginal.CompositeTableType<
+      TConsumerSecrets,
+      TConsumerSecretsInsert,
+      TConsumerSecretsUpdate
     >;
   }
 }

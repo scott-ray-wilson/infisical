@@ -7,6 +7,7 @@ import { getConfig } from "@app/lib/config/env";
 import { infisicalSymmetricEncypt } from "@app/lib/crypto/encryption";
 import { getUserPrivateKey } from "@app/lib/crypto/srp";
 import { BadRequestError } from "@app/lib/errors";
+import { TConsumerKeyServiceFactory } from "@app/services/consumer-key/consumer-key-service";
 
 import { TAuthLoginFactory } from "../auth/auth-login-service";
 import { AuthMethod } from "../auth/auth-type";
@@ -22,6 +23,7 @@ type TSuperAdminServiceFactoryDep = {
   orgService: Pick<TOrgServiceFactory, "createOrganization">;
   keyStore: Pick<TKeyStoreFactory, "getItem" | "setItemWithExpiry" | "deleteItem">;
   licenseService: Pick<TLicenseServiceFactory, "onPremFeatures">;
+  consumerKeyService: Pick<TConsumerKeyServiceFactory, "createRootConsumerKey">;
 };
 
 export type TSuperAdminServiceFactory = ReturnType<typeof superAdminServiceFactory>;
@@ -39,7 +41,8 @@ export const superAdminServiceFactory = ({
   authService,
   orgService,
   keyStore,
-  licenseService
+  licenseService,
+  consumerKeyService
 }: TSuperAdminServiceFactoryDep) => {
   const initServerCfg = async () => {
     // TODO(akhilmhdh): bad  pattern time less change this later to me itself
@@ -199,6 +202,9 @@ export const superAdminServiceFactory = ({
       userEmail: userInfo.user.email,
       orgName: initialOrganizationName
     });
+
+    // create root consumer key
+    await consumerKeyService.createRootConsumerKey({ userId: userInfo.user.id, orgId: organization.id });
 
     await updateServerCfg({ initialized: true }, userInfo.user.id);
     const token = await authService.generateUserTokens({

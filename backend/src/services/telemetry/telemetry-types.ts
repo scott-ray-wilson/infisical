@@ -1,3 +1,5 @@
+import { ConsumerSecretType } from "@app/db/schemas";
+
 export enum PostHogEventTypes {
   SecretPush = "secrets pushed",
   SecretPulled = "secrets pulled",
@@ -13,7 +15,11 @@ export enum PostHogEventTypes {
   IntegrationCreated = "Integration Created",
   MachineIdentityCreated = "Machine Identity Created",
   UserOrgInvitation = "User Org Invitation",
-  TelemetryInstanceStats = "Self Hosted Instance Stats"
+  TelemetryInstanceStats = "Self Hosted Instance Stats",
+  ConsumerSecretCreated = "consumer secrets added",
+  ConsumerSecretPulled = "consumer secrets pulled",
+  ConsumerSecretUpdated = "consumer secrets updated",
+  ConsumerSecretDeleted = "consumer secrets deleted"
 }
 
 export type TSecretModifiedEvent = {
@@ -29,6 +35,22 @@ export type TSecretModifiedEvent = {
     environment: string;
     workspaceId: string;
     secretPath: string;
+    channel?: string;
+    userAgent?: string;
+  };
+};
+
+export type TConsumerSecretModifiedEvent = {
+  event:
+    | PostHogEventTypes.ConsumerSecretCreated
+    | PostHogEventTypes.ConsumerSecretPulled
+    | PostHogEventTypes.ConsumerSecretUpdated
+    | PostHogEventTypes.ConsumerSecretDeleted;
+  properties: {
+    numberOfSecrets: number;
+    secretType?: ConsumerSecretType;
+    userId: string;
+    orgId: string;
     channel?: string;
     userAgent?: string;
   };
@@ -128,4 +150,5 @@ export type TPostHogEvent = { distinctId: string } & (
   | TIntegrationCreatedEvent
   | TProjectCreateEvent
   | TTelemetryInstanceStatsEvent
+  | TConsumerSecretModifiedEvent
 );

@@ -1,13 +1,20 @@
-import { forwardRef, useEffect } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
+import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
 import { PlainTextPlugin } from "@lexical/react/LexicalPlainTextPlugin";
 import { cva } from "cva";
-import { COMMAND_PRIORITY_CRITICAL, INSERT_LINE_BREAK_COMMAND } from "lexical";
+import {
+  $getRoot,
+  $nodesOfType,
+  COMMAND_PRIORITY_CRITICAL,
+  EditorState,
+  INSERT_LINE_BREAK_COMMAND
+} from "lexical";
 import {
   BeautifulMentionNode,
   BeautifulMentionsMenuItemProps,
@@ -16,9 +23,13 @@ import {
   BeautifulMentionsTheme
 } from "lexical-beautiful-mentions";
 
-import { CaStatus } from "@app/hooks/api";
+import { useDebounce } from "@app/hooks";
+import { CaStatus, CaType } from "@app/hooks/api";
+import { TCertificateAuthority } from "@app/hooks/api/ca/types";
 
 type Props = {
+  cas: TCertificateAuthority[];
+  onSearch: (cas: TCertificateAuthority[]) => void;
   className?: string;
 };
 
@@ -72,21 +83,18 @@ const inputParentContainerVariants = cva("inline-flex font-inter items-center bo
   }
 });
 
-function SingleLinePlugin({ onEnter }: { onEnter?: () => void }) {
+function SingleLinePlugin() {
   const [editor] = useLexicalComposerContext();
   useEffect(() => {
     return editor.registerCommand(
       INSERT_LINE_BREAK_COMMAND,
       () => {
-        // handle submit
-        if (onEnter) onEnter();
-
         // prevent new line from being inserted
         return true;
       },
       COMMAND_PRIORITY_CRITICAL
     );
-  }, [editor, onEnter]);
+  }, [editor]);
 
   return null;
 }
@@ -95,23 +103,31 @@ const mentionItems = {
   "status:": Object.values(CaStatus).map((status) => ({
     value: status.replace("-", " "),
     id: status
+  })),
+  "type:": Object.values(CaType).map((type) => ({
+    value: type.replace("-", " "),
+    id: type
   }))
 };
 
+const baseStatusContainerStyle =
+  "rounded-md px-1.5 pb-[0.03rem] pt-[0.04rem] opacity-80 data-[beautiful-mention='status:disabled']:bg-red/20 data-[beautiful-mention='status:disabled']:text-red data-[beautiful-mention='status:active']:bg-green/20 data-[beautiful-mention='status:active']:text-green data-[beautiful-mention='status:pending_certificate']:bg-yellow/20 data-[beautiful-mention='status:pending_certificate']:text-yellow";
+
+const baseTypeContainerStyle =
+  "rounded-md px-1.5 pb-[0.03rem] pt-[0.04rem] opacity-80 bg-primary-400/20 text-primary-400";
+
 const beautifulMentionsTheme: BeautifulMentionsTheme = {
-  // 👇 use the trigger name as the key
-  "@": "px-1 mx-px ...",
-  // 👇 add the "Focused" suffix to style the focused mention
-  "@Focused": "outline-none shadow-md ...",
-  // 👇 use a class configuration object for advanced styling
-  "status:": {
-    trigger: "text-gray-100/75",
-    // value: "",
+  "type:": {
+    trigger: "text-mineshaft-300",
     value: "capitalize",
-    container:
-      "rounded-md px-1.5 pb-[0.03rem] opacity-80 text-opacity-80 hover:opacity-100 pt-[0.04rem] data-[beautiful-mention='status:disabled']:bg-red/20 data-[beautiful-mention='status:disabled']:text-red data-[beautiful-mention='status:active']:bg-green/20 data-[beautiful-mention='status:active']:text-green data-[beautiful-mention='status:pending_certificate']:bg-yellow/20 data-[beautiful-mention='status:pending_certificate']:text-yellow",
-    containerFocused:
-      "rounded-md px-1.5 pb-[0.03rem] opacity-100 pt-[0.04rem] data-[beautiful-mention='status:disabled']:bg-red/20 data-[beautiful-mention='status:disabled']:text-red data-[beautiful-mention='status:active']:bg-green/20 data-[beautiful-mention='status:active']:text-green data-[beautiful-mention='status:pending_certificate']:bg-yellow/20 data-[beautiful-mention='status:pending_certificate']:text-yellow"
+    container: baseTypeContainerStyle,
+    containerFocused: `${baseTypeContainerStyle} ring-primary-400/50 ring-1`
+  },
+  "status:": {
+    trigger: "text-mineshaft-300",
+    value: "capitalize",
+    container: baseStatusContainerStyle,
+    containerFocused: `${baseStatusContainerStyle} ring-primary-400/50 ring-1`
   }
 };
 
@@ -121,6 +137,16 @@ function CustomMenu({ loading, ...props }: BeautifulMentionsMenuProps) {
       className="min-w-[220px] rounded-md border border-mineshaft-600 bg-mineshaft-900 p-1 text-bunker-300 shadow will-change-auto"
       {...props}
     />
+  );
+}
+
+function Empty() {
+  return (
+    <div className="min-w-[220px] rounded-md border border-mineshaft-600 bg-mineshaft-900 p-1 text-bunker-300 shadow will-change-auto">
+      <span className="block cursor-pointer rounded-sm px-4 py-2 font-inter text-xs text-mineshaft-400 outline-none">
+        No results match
+      </span>
+    </div>
   );
 }
 
@@ -138,7 +164,45 @@ const CustomMenuItem = forwardRef<HTMLLIElement, BeautifulMentionsMenuItemProps>
 
 CustomMenuItem.displayName = "CustomMenuItem";
 
-export const CaSearchBar = ({ className }: Props) => {
+export const CaSearchBar = ({ className, cas, onSearch }: Props) => {
+  const [editorState, setEditorState] = useState<EditorState | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const debouncedEditorState = useDebounce(editorState, 300);
+
+  useEffect(() => {
+    if (!debouncedEditorState || isMenuOpen) return;
+
+    debouncedEditorState.read(() => {
+      const keywordNodes = $nodesOfType(BeautifulMentionNode);
+      const textNodes = $getRoot().getAllTextNodes();
+
+      const filteredCas = cas.filter((ca) => {
+        // TODO: fuzzy search
+        return (
+          textNodes.every((node) =>
+            ca.friendlyName
+              .toLowerCase()
+              .trim()
+              .includes(node.getTextContent().toLowerCase().trim())
+          ) &&
+          keywordNodes.every((keywordNode) => {
+            switch (keywordNode.getTrigger()) {
+              case "status:":
+                return ca.status === keywordNode.getData()!.id;
+              case "type:":
+                return ca.type === keywordNode.getData()!.id;
+              default:
+                return false;
+            }
+          })
+        );
+      });
+
+      onSearch(filteredCas);
+    });
+  }, [debouncedEditorState]);
+
   return (
     <div
       className={inputParentContainerVariants({
@@ -183,10 +247,14 @@ export const CaSearchBar = ({ className }: Props) => {
         />
         <BeautifulMentionsPlugin
           items={mentionItems}
+          emptyComponent={Empty}
           menuItemComponent={CustomMenuItem}
           menuComponent={CustomMenu}
+          onMenuOpen={() => setIsMenuOpen(true)}
+          onMenuClose={() => setIsMenuOpen(false)}
         />
         <SingleLinePlugin />
+        <OnChangePlugin onChange={setEditorState} />
       </LexicalComposer>
     </div>
   );

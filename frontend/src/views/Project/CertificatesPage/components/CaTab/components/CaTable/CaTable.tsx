@@ -1,3 +1,4 @@
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 import {
@@ -36,6 +37,7 @@ import {
   caTypeToNameMap,
   getCaStatusBadgeVariant
 } from "@app/hooks/api/ca/constants";
+import { TCertificateAuthority } from "@app/hooks/api/ca/types";
 import { UsePopUpState } from "@app/hooks/usePopUp";
 
 const DynamicSearchBar = dynamic(
@@ -63,18 +65,17 @@ type Props = {
 export const CaTable = ({ handlePopUpOpen }: Props) => {
   const router = useRouter();
   const { currentWorkspace } = useWorkspace();
-  const { data, isLoading } = useListWorkspaceCas({
+  const { data = [], isLoading } = useListWorkspaceCas({
     projectSlug: currentWorkspace?.slug ?? ""
   });
 
-  // const [filteredCas, setFilteredCas] = useState<null | TCertificateAuthority[]>();
+  const [filteredCas, setFilteredCas] = useState<null | TCertificateAuthority[]>();
+
+  const cas = filteredCas ?? data;
 
   return (
     <div>
-      <DynamicSearchBar
-        className="my-4"
-        // cas={data} setFilteredCas={setFilteredCas}
-      />
+      <DynamicSearchBar className="my-4" cas={data} onSearch={setFilteredCas} />
       <TableContainer>
         <Table>
           <THead>
@@ -89,9 +90,9 @@ export const CaTable = ({ handlePopUpOpen }: Props) => {
           <TBody>
             {isLoading && <TableSkeleton columns={3} innerKey="project-cas" />}
             {!isLoading &&
-              data &&
-              data.length > 0 &&
-              data.map((ca) => {
+              cas &&
+              cas.length > 0 &&
+              cas.map((ca) => {
                 return (
                   <Tr
                     className="h-10 cursor-pointer transition-colors duration-100 hover:bg-mineshaft-700"
@@ -252,8 +253,15 @@ export const CaTable = ({ handlePopUpOpen }: Props) => {
               })}
           </TBody>
         </Table>
-        {!isLoading && data?.length === 0 && (
-          <EmptyState title="No certificate authorities have been created" icon={faCertificate} />
+        {!isLoading && cas?.length === 0 && (
+          <EmptyState
+            title={
+              data?.length === 0
+                ? "No certificate authorities have been created"
+                : "No certificate authorities match search criteria"
+            }
+            icon={faCertificate}
+          />
         )}
       </TableContainer>
     </div>

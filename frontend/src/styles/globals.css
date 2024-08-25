@@ -159,6 +159,10 @@ html {
   opacity: 0;
 }
 
+.react-flow__edge.animated path {
+  animation-direction: reverse !important;
+}
+
 @import "@fontsource/inter/400.css";
 @import "@fontsource/inter/500.css";
 @import "@fontsource/inter/700.css";

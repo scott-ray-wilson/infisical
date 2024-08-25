@@ -26,6 +26,7 @@ import {
   CaCertificatesSection,
   CaCrlsSection,
   CaDetailsSection,
+  CaHierarchySection,
   CaRenewalModal
 } from "./components";
 
@@ -126,6 +127,7 @@ export const CaPage = withProjectPermission(
               <div className="w-full">
                 <CaCertificatesSection caId={caId} />
                 <CaCrlsSection caId={caId} />
+                <CaHierarchySection caId={caId} />
               </div>
             </div>
           </div>

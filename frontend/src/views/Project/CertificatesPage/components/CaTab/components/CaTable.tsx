@@ -1,5 +1,4 @@
 import { useState } from "react";
-import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 import {
   faBan,
@@ -40,13 +39,7 @@ import {
 import { TCertificateAuthority } from "@app/hooks/api/ca/types";
 import { UsePopUpState } from "@app/hooks/usePopUp";
 
-const DynamicSearchBar = dynamic(
-  async () => import("./CaSearchBar").then(({ CaSearchBar }) => CaSearchBar),
-  {
-    ssr: false,
-    loading: () => <p>Loading...</p> // TODO
-  }
-);
+import { CaSearchInput } from "./CaSearchInput";
 
 type Props = {
   handlePopUpOpen: (
@@ -75,7 +68,7 @@ export const CaTable = ({ handlePopUpOpen }: Props) => {
 
   return (
     <div>
-      <DynamicSearchBar className="my-4" cas={data} onSearch={setFilteredCas} />
+      <CaSearchInput className="my-4" cas={data} onSearch={setFilteredCas} />
       <TableContainer>
         <Table>
           <THead>

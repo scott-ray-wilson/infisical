@@ -21,6 +21,7 @@ export * from "./Modal";
 export * from "./NoticeBanner";
 export * from "./Pagination";
 export * from "./Popoverv2";
+export * from "./RichTextSearchInput";
 export * from "./SecretInput";
 export * from "./Select";
 export * from "./Skeleton";

@@ -1,1 +1,0 @@
-export { CaTable } from "./CaTable"

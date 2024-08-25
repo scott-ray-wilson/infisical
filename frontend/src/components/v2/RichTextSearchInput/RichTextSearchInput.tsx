@@ -39,7 +39,7 @@ type Props<T extends KeywordItems> = {
 };
 
 const searchInputVariants = cva(
-  "input w-full pl-10 min-w-[20rem] py-[0.375rem] text-gray-400 outline-none focus:ring-2 hover:ring-bunker-400/60 duration-100",
+  "input w-full px-10 min-w-[20rem] py-[0.375rem] text-gray-400 outline-none focus:ring-2 hover:ring-bunker-400/60 duration-100",
   {
     variants: {
       size: {
@@ -183,9 +183,7 @@ export function RichTextSearchInput<T extends KeywordItems>({
           variant
         })}
       >
-        <span className="absolute left-0 ml-3 text-sm">
-          <FontAwesomeIcon icon={faMagnifyingGlass} />
-        </span>
+        <FontAwesomeIcon className="absolute left-3 top-2.5 text-sm" icon={faMagnifyingGlass} />
         <PlainTextPlugin
           contentEditable={
             <ContentEditable

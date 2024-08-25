@@ -1,4 +1,4 @@
-import { faXmarkCircle } from "@fortawesome/free-regular-svg-icons";
+import { faFilterCircleXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ClearEditorPlugin } from "@lexical/react/LexicalClearEditorPlugin";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
@@ -19,7 +19,7 @@ export const ClearFiltersButton = () => {
   return (
     <>
       <IconButton
-        className={`absolute right-0 mr-2 text-sm ${
+        className={`absolute right-2 top-1.5 text-sm ${
           isEmpty ? "pointer-events-none opacity-0" : ""
         } transition-opacity duration-200`}
         onClick={handleClear}
@@ -27,7 +27,7 @@ export const ClearFiltersButton = () => {
         colorSchema="secondary"
         variant="plain"
       >
-        <FontAwesomeIcon icon={faXmarkCircle} />
+        <FontAwesomeIcon icon={faFilterCircleXmark} />
       </IconButton>
 
       <ClearEditorPlugin />

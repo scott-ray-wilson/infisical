@@ -7,7 +7,7 @@ import { TCertificateAuthority } from "@app/hooks/api/ca/types";
 
 type Props = {
   cas: TCertificateAuthority[];
-  onSearch: (cas: TCertificateAuthority[]) => void;
+  onFilter: (cas: TCertificateAuthority[]) => void;
   className?: string;
 };
 
@@ -46,7 +46,7 @@ const caKeywordsTheme: BeautifulMentionsTheme = {
   }
 };
 
-export const CaSearchInput = ({ className, cas, onSearch }: Props) => {
+export const CaSearchInput = ({ className, cas, onFilter }: Props) => {
   const handleFilter: RichTextSearchInputProps<typeof caKeywordItems>["onChange"] = (
     textFilter,
     keywordFilters
@@ -66,7 +66,7 @@ export const CaSearchInput = ({ className, cas, onSearch }: Props) => {
       );
     });
 
-    onSearch(filteredCas);
+    onFilter(filteredCas);
   };
 
   return (

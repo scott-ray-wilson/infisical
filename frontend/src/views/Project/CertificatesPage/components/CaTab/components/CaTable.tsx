@@ -68,7 +68,7 @@ export const CaTable = ({ handlePopUpOpen }: Props) => {
 
   return (
     <div>
-      <CaSearchInput className="my-4" cas={data} onSearch={setFilteredCas} />
+      <CaSearchInput className="my-4" cas={data} onFilter={setFilteredCas} />
       <TableContainer>
         <Table>
           <THead>

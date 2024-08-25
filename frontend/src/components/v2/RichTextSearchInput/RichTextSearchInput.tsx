@@ -18,7 +18,12 @@ import {
 import { createNotification } from "@app/components/notifications";
 import { useDebounce } from "@app/hooks";
 
-import { KeywordEmptyResults, KeywordMenu, KeywordMenuItem } from "./components";
+import {
+  ClearFiltersButton,
+  KeywordEmptyResults,
+  KeywordMenu,
+  KeywordMenuItem
+} from "./components";
 import { SingleLinePlugin } from "./plugins";
 
 type KeywordItems = Record<string, BeautifulMentionsItem[]>;
@@ -159,28 +164,28 @@ export function RichTextSearchInput<T extends KeywordItems>({
   }, [debouncedEditorState]);
 
   return (
-    <div
-      className={searchInputParentContainerVariants({
-        className,
-        isRounded,
-        isError,
-        isFullWidth,
-        variant
-      })}
+    <LexicalComposer
+      initialConfig={{
+        namespace,
+        nodes: [BeautifulMentionNode],
+        theme: {
+          beautifulMentions: keywordsTheme
+        },
+        onError: handleError
+      }}
     >
-      <span className="absolute left-0 ml-3 text-sm">
-        <FontAwesomeIcon icon={faMagnifyingGlass} />
-      </span>
-      <LexicalComposer
-        initialConfig={{
-          namespace,
-          nodes: [BeautifulMentionNode],
-          theme: {
-            beautifulMentions: keywordsTheme
-          },
-          onError: handleError
-        }}
+      <div
+        className={searchInputParentContainerVariants({
+          className,
+          isRounded,
+          isError,
+          isFullWidth,
+          variant
+        })}
       >
+        <span className="absolute left-0 ml-3 text-sm">
+          <FontAwesomeIcon icon={faMagnifyingGlass} />
+        </span>
         <PlainTextPlugin
           contentEditable={
             <ContentEditable
@@ -205,7 +210,8 @@ export function RichTextSearchInput<T extends KeywordItems>({
         />
         <SingleLinePlugin />
         <OnChangePlugin onChange={setEditorState} />
-      </LexicalComposer>
-    </div>
+        <ClearFiltersButton />
+      </div>
+    </LexicalComposer>
   );
 }

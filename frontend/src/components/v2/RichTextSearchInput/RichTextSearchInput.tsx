@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
@@ -19,6 +17,7 @@ import { createNotification } from "@app/components/notifications";
 import { useDebounce } from "@app/hooks";
 
 import {
+  AddFiltersButton,
   ClearFiltersButton,
   KeywordEmptyResults,
   KeywordMenu,
@@ -39,7 +38,7 @@ type Props<T extends KeywordItems> = {
 };
 
 const searchInputVariants = cva(
-  "input w-full px-10 min-w-[20rem] py-[0.375rem] text-gray-400 outline-none focus:ring-2 hover:ring-bunker-400/60 duration-100",
+  "input w-full pr-10 pl-3 mr-[0.075rem] min-w-[20rem] ml-0.5 py-[0.5rem] text-gray-400 outline-none focus:ring-2 hover:ring-bunker-400/60 duration-100",
   {
     variants: {
       size: {
@@ -49,7 +48,7 @@ const searchInputVariants = cva(
         lg: ["text-lg"]
       },
       isRounded: {
-        true: ["rounded-md"],
+        true: ["rounded-md rounded-l-none"],
         false: ""
       },
       variant: {
@@ -66,7 +65,7 @@ const searchInputVariants = cva(
   }
 );
 
-const placeholderVariants = cva("text-gray-400 absolute left-10 pointer-events-none", {
+const placeholderVariants = cva("text-gray-400 absolute left-[3.375rem] pointer-events-none", {
   variants: {
     size: {
       xs: ["text-xs"],
@@ -94,7 +93,7 @@ const searchInputParentContainerVariants = cva(
         false: ""
       },
       variant: {
-        filled: ["bg-bunker-800", "text-gray-400"],
+        filled: ["bg-mineshaft-600", "text-gray-400"],
         outline: ["bg-transparent"],
         plain: "border-none"
       }
@@ -183,7 +182,7 @@ export function RichTextSearchInput<T extends KeywordItems>({
           variant
         })}
       >
-        <FontAwesomeIcon className="absolute left-3 top-2.5 text-sm" icon={faMagnifyingGlass} />
+        <AddFiltersButton keywordItems={keywordItems} />
         <PlainTextPlugin
           contentEditable={
             <ContentEditable

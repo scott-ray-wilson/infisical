@@ -19,7 +19,7 @@ export const ClearFiltersButton = () => {
   return (
     <>
       <IconButton
-        className={`absolute right-2 top-1.5 text-sm ${
+        className={`absolute right-2 top-[0.6rem] text-sm ${
           isEmpty ? "pointer-events-none opacity-0" : ""
         } transition-opacity duration-200`}
         onClick={handleClear}

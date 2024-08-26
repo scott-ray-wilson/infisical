@@ -124,12 +124,12 @@ export const CaPage = withProjectPermission(
               <div className="mr-4 w-96">
                 <CaDetailsSection caId={caId} handlePopUpOpen={handlePopUpOpen} />
               </div>
-              <div className="w-full">
+              <div className="flex w-full flex-col">
                 <CaCertificatesSection caId={caId} />
                 <CaCrlsSection caId={caId} />
-                <CaHierarchySection caId={caId} />
               </div>
             </div>
+            <CaHierarchySection caId={caId} />
           </div>
         )}
         <CaModal popUp={popUp} handlePopUpToggle={handlePopUpToggle} />

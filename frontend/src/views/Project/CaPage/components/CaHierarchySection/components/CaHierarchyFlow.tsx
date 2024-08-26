@@ -12,7 +12,9 @@ import {
 } from "@xyflow/react";
 
 import { CaNode } from "./CaNode";
+import { CertificateNode } from "./CertificateNode";
 import { HierarchyEdge } from "./HierarchyEdge";
+import { IssueCertNode } from "./IssueCertNode";
 
 import "@xyflow/react/dist/style.css";
 
@@ -25,7 +27,7 @@ const markerStart = {
 
 const props = {
   height: 7.2 * multiplier,
-  width: 11.5 * multiplier
+  width: 13 * multiplier
 };
 
 const initialNodes: Node[] = [
@@ -55,8 +57,60 @@ const initialNodes: Node[] = [
     type: "caNode",
     ...props,
     position: { x: 0, y: 0 },
-    data: { type: "intermediate", friendlyName: "FR-01 (EU)", status: "active" }
+    data: { type: "intermediate", friendlyName: "LDN-01 (EU)", status: "active" }
+  },
+  {
+    id: "5",
+    type: "certificateNode",
+    ...props,
+    position: { x: 0, y: 0 },
+    data: { friendlyName: "ENG-01" }
+  },
+  {
+    id: "6",
+    type: "certificateNode",
+    ...props,
+    position: { x: 0, y: 0 },
+    data: { friendlyName: "LAB-04" }
+  },
+  {
+    id: "7",
+    type: "certificateNode",
+    ...props,
+    position: { x: 0, y: 0 },
+    data: { friendlyName: "ENG-03" }
+  },
+  {
+    id: "8",
+    type: "certificateNode",
+    ...props,
+    position: { x: 0, y: 0 },
+    data: { friendlyName: "LAB-01" }
+  },
+  {
+    id: "9",
+    type: "issueCertNode",
+    height: 40,
+    width: 40,
+    position: { x: 0, y: 0 },
+    data: {}
   }
+  // {
+  //   id: "10",
+  //   type: "issueCertNode",
+  //   height: 40,
+  //   width: 40,
+  //   position: { x: 0, y: 0 },
+  //   data: {}
+  // },
+  // {
+  //   id: "11",
+  //   type: "issueCertNode",
+  //   height: 40,
+  //   width: 40,
+  //   position: { x: 0, y: 0 },
+  //   data: {}
+  // }
 ];
 const initialEdges = [
   {
@@ -64,7 +118,7 @@ const initialEdges = [
     id: "e1-2",
     source: "1",
     target: "2",
-    // animated: true,
+    animated: true,
     markerStart
   },
   {
@@ -90,7 +144,63 @@ const initialEdges = [
     target: "4",
     animated: true,
     markerStart
+  },
+  {
+    type: "hierarchyEdge",
+    id: "e2-5",
+    source: "2",
+    target: "5",
+    animated: true,
+    markerStart
+  },
+  {
+    type: "hierarchyEdge",
+    id: "e2-6",
+    source: "2",
+    target: "6",
+    animated: true,
+    markerStart
+  },
+  {
+    type: "hierarchyEdge",
+    id: "e3-7",
+    source: "3",
+    target: "7",
+    animated: true,
+    markerStart
+  },
+  {
+    type: "hierarchyEdge",
+    id: "e3-8",
+    source: "3",
+    target: "8",
+    animated: true,
+    markerStart
+  },
+  {
+    type: "hierarchyEdge",
+    id: "e4-9",
+    source: "4",
+    target: "9",
+    animated: true,
+    markerStart
   }
+  // {
+  //   type: "hierarchyEdge",
+  //   id: "e2-10",
+  //   source: "2",
+  //   target: "10",
+  //   animated: true,
+  //   markerStart
+  // },
+  // {
+  //   type: "hierarchyEdge",
+  //   id: "e3-11",
+  //   source: "3",
+  //   target: "11",
+  //   animated: true,
+  //   markerStart
+  // }
 ];
 
 type Props = {
@@ -125,7 +235,10 @@ const positionElements = (nodes: Node[], edges: Edge[]) => {
 
 export const CaHierarchyFlow = ({ caId }: Props) => {
   const edgeTypes = useMemo(() => ({ hierarchyEdge: HierarchyEdge }), []);
-  const nodeTypes = useMemo(() => ({ caNode: CaNode }), []);
+  const nodeTypes = useMemo(
+    () => ({ caNode: CaNode, certificateNode: CertificateNode, issueCertNode: IssueCertNode }),
+    []
+  );
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
 
@@ -162,7 +275,7 @@ export const CaHierarchyFlow = ({ caId }: Props) => {
   return (
     <ReactFlow
       key={caId}
-      className="rounded-md border border-mineshaft text-gray-400"
+      className="rounded-md border  border-mineshaft"
       nodes={nodes}
       edges={edges}
       edgeTypes={edgeTypes}
@@ -173,17 +286,23 @@ export const CaHierarchyFlow = ({ caId }: Props) => {
       // onConnect={onConnect}
       fitView
       colorMode="dark"
-      fitViewOptions={{ padding: 0.25 }}
+      fitViewOptions={{ padding: 0.1 }}
       nodesDraggable={false}
       edgesReconnectable={false}
       nodesConnectable={false}
       connectionLineType={ConnectionLineType.SmoothStep}
+      // panOnDrag={false}
+      // zoomOnPinch={false}
+      // zoomOnScroll={false}
+      // zoomOnDoubleClick={false}
+      // preventScrolling={false}
+      // draggable={false}
       proOptions={{
         hideAttribution: true // TODO: add back if not using Pro
       }}
     >
-      <Background color="#707174" bgColor="#1e1f22" variant={BackgroundVariant.Dots} />
-      <Controls className="text-mineshaft-800" position="bottom-left" />
+      <Background color="#5d5f64" bgColor="#111419" variant={BackgroundVariant.Dots} />
+      <Controls position="bottom-left" />
     </ReactFlow>
   );
 };

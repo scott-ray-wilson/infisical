@@ -697,6 +697,19 @@ export const SECRET_IMPORTS = {
   }
 } as const;
 
+export const DASHBOARD = {
+  SECRET_DETAILS_LIST: {
+    workspaceId: "The ID of the project to list secrets/folders from.",
+    environment: "The slug of the environment to list secrets/folders from.",
+    secretPath: "The secret path to list secrets/folders from.",
+    offset: "The offset to start from. If you enter 10, it will start from the 10th secret/folder.",
+    limit: "The number of secrets/folders to return.",
+    orderBy: "The column to order secrets/folders by.",
+    orderDirection: "The direction secrets/folders will be sorted in.",
+    search: "The text string that secrets/folders names will be filtered by."
+  }
+} as const;
+
 export const AUDIT_LOGS = {
   EXPORT: {
     workspaceId: "The ID of the project to export audit logs from.",

@@ -442,7 +442,8 @@ export const secretV2BridgeServiceFactory = ({
     includeImports,
     recursive,
     tagSlugs = [],
-    expandSecretReferences: shouldExpandSecretReferences
+    expandSecretReferences: shouldExpandSecretReferences,
+    ...params
   }: TGetSecretsDTO) => {
     const { permission } = await permissionService.getProjectPermission(
       actor,
@@ -490,7 +491,9 @@ export const secretV2BridgeServiceFactory = ({
 
     const secrets = await secretDAL.findByFolderIds(
       paths.map((p) => p.folderId),
-      actorId
+      actorId,
+      undefined,
+      params
     );
 
     const { decryptor: secretManagerDecryptor } = await kmsService.createCipherPairWithDataKey({

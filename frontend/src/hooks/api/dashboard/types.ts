@@ -1,4 +1,5 @@
 import { OrderByDirection } from "@app/hooks/api/generic/types";
+import { TSecretFolder } from "@app/hooks/api/secretFolders/types";
 import { SecretV3Raw, SecretV3RawSanitized } from "@app/hooks/api/secrets/types";
 
 export type DashboardProjectSecretOverviewResponse = {
@@ -7,6 +8,9 @@ export type DashboardProjectSecretOverviewResponse = {
 
 export type DashboardProjectSecretsDetailsResponse = {
   secrets: SecretV3Raw[];
+  folders: TSecretFolder[];
+  totalSecretCount: number;
+  totalFolderCount: number;
   totalCount: number;
 };
 
@@ -14,9 +18,11 @@ export type DashboardProjectSecretsDetailsResponse = {
 //   secrets: Record<string, SecretV3RawSanitized>;
 // };
 
-export type DashboardProjectSecretsDetails = {
+export type DashboardProjectSecretsDetails = Omit<
+  DashboardProjectSecretsDetailsResponse,
+  "secrets"
+> & {
   secrets: SecretV3RawSanitized[];
-  totalCount: number;
 };
 
 export enum DashboardSecretsOrderBy {

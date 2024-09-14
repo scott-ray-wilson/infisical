@@ -431,6 +431,72 @@ export const secretV2BridgeServiceFactory = ({
     });
   };
 
+  const getSecretsCount = async ({
+    actorId,
+    path,
+    environment,
+    projectId,
+    actor,
+    actorOrgId,
+    actorAuthMethod,
+    includeImports,
+    recursive,
+    // tagSlugs = [],
+    expandSecretReferences: shouldExpandSecretReferences,
+    ...params
+  }: TGetSecretsDTO) => {
+    const { permission } = await permissionService.getProjectPermission(
+      actor,
+      actorId,
+      projectId,
+      actorAuthMethod,
+      actorOrgId
+    );
+
+    let paths: { folderId: string; path: string }[] = [];
+
+    if (recursive) {
+      const deepPaths = await recursivelyGetSecretPaths({
+        folderDAL,
+        projectEnvDAL,
+        projectId,
+        environment,
+        currentPath: path,
+        hasAccess: (permissionEnvironment, permissionSecretPath) =>
+          permission.can(
+            ProjectPermissionActions.Read,
+            subject(ProjectPermissionSub.Secrets, {
+              environment: permissionEnvironment,
+              secretPath: permissionSecretPath
+            })
+          )
+      });
+
+      if (!deepPaths) return 0;
+
+      paths = deepPaths.map(({ folderId, path: p }) => ({ folderId, path: p }));
+    } else {
+      ForbiddenError.from(permission).throwUnlessCan(
+        ProjectPermissionActions.Read,
+        subject(ProjectPermissionSub.Secrets, { environment, secretPath: path })
+      );
+
+      const folder = await folderDAL.findBySecretPath(projectId, environment, path);
+      if (!folder) return 0;
+
+      paths = [{ folderId: folder.id, path }];
+    }
+
+    const count = await secretDAL.countByFolderIds(
+      paths.map((p) => p.folderId),
+      actorId,
+      undefined,
+      params
+    );
+
+    return count;
+  };
+
   const getSecrets = async ({
     actorId,
     path,
@@ -512,6 +578,7 @@ export const secretV2BridgeServiceFactory = ({
           : ""
       })
     );
+    // TODO: need to move to query
     const filteredSecrets = tagSlugs.length
       ? decryptedSecrets.filter((secret) => Boolean(secret.tags?.find((el) => tagSlugs.includes(el.slug))))
       : decryptedSecrets;
@@ -1419,6 +1486,7 @@ export const secretV2BridgeServiceFactory = ({
     getSecrets,
     getSecretVersions,
     backfillSecretReferences,
-    moveSecrets
+    moveSecrets,
+    getSecretsCount
   };
 };

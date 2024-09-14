@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/router";
 import { subject } from "@casl/ability";
@@ -18,28 +18,25 @@ import {
 import { useDebounce, usePopUp } from "@app/hooks";
 import {
   useGetDynamicSecrets,
-  useGetImportedSecretsSingleEnv,
   useGetProjectFolders,
-  useGetProjectSecrets,
   useGetSecretApprovalPolicyOfABoard,
   useGetSecretImports,
   useGetWorkspaceSnapshotList,
   useGetWsSnapshotCount,
   useGetWsTags
 } from "@app/hooks/api";
+import { useGetProjectSecretsDetails } from "@app/hooks/api/dashboard";
+import { OrderByDirection } from "@app/hooks/api/generic/types";
 
 import { SecretV2MigrationSection } from "../SecretOverviewPage/components/SecretV2MigrationSection";
 import { ActionBar } from "./components/ActionBar";
 import { CreateSecretForm } from "./components/CreateSecretForm";
-import { DynamicSecretListView } from "./components/DynamicSecretListView";
-import { FolderListView } from "./components/FolderListView";
 import { PitDrawer } from "./components/PitDrawer";
 import { SecretDropzone } from "./components/SecretDropzone";
-import { SecretImportListView } from "./components/SecretImportListView";
 import { SecretListView } from "./components/SecretListView";
 import { SnapshotView } from "./components/SnapshotView";
 import { StoreProvider } from "./SecretMainPage.store";
-import { Filter, SortDir } from "./SecretMainPage.types";
+import { Filter } from "./SecretMainPage.types";
 
 const LOADER_TEXT = [
   "Retrieving your encrypted secrets...",
@@ -55,7 +52,7 @@ export const SecretMainPage = () => {
   const { permission } = useProjectPermission();
 
   const [isVisible, setIsVisible] = useState(false);
-  const [sortDir, setSortDir] = useState<SortDir>(SortDir.ASC);
+  const [orderDirection, setOrderDirection] = useState<OrderByDirection>(OrderByDirection.ASC);
   const [filter, setFilter] = useState<Filter>({
     tags: {},
     searchFilter: (router.query.searchFilter as string) || ""
@@ -98,14 +95,31 @@ export const SecretMainPage = () => {
   }, [isWorkspaceLoading, currentWorkspace, environment, router.isReady]);
 
   // fetch secrets
-  const { data: secrets, isLoading: isSecretsLoading } = useGetProjectSecrets({
-    environment,
-    workspaceId,
-    secretPath,
-    options: {
+  // const { data: secrets, isLoading: isSecretsLoading } = useGetProjectSecrets({
+  //   environment,
+  //   workspaceId,
+  //   secretPath,
+  //   options: {
+  //     enabled: canReadSecret
+  //   }
+  // });
+
+  const { data, isLoading: isDetailsLoading } = useGetProjectSecretsDetails(
+    {
+      environment,
+      workspaceId,
+      secretPath,
+      offset: paginationOffset,
+      limit: perPage,
+      search: debouncedSearchFilter,
+      orderDirection
+    },
+    {
       enabled: canReadSecret
     }
-  });
+  );
+
+  const { secrets, totalCount } = data ?? { secrets: [], totalCount: 0 };
 
   // fetch folders
   const { data: folders, isLoading: isFoldersLoading } = useGetProjectFolders({
@@ -117,8 +131,8 @@ export const SecretMainPage = () => {
   // fetch secret imports
   const {
     data: secretImports,
-    isLoading: isSecretImportsLoading,
-    isFetching: isSecretImportsFetching
+    isLoading: isSecretImportsLoading
+    // isFetching: isSecretImportsFetching
   } = useGetSecretImports({
     projectId: workspaceId,
     environment,
@@ -129,14 +143,14 @@ export const SecretMainPage = () => {
   });
 
   // fetch imported secrets to show user the overriden ones
-  const { data: importedSecrets } = useGetImportedSecretsSingleEnv({
-    projectId: workspaceId,
-    environment,
-    path: secretPath,
-    options: {
-      enabled: canReadSecret
-    }
-  });
+  // const { data: importedSecrets } = useGetImportedSecretsSingleEnv({
+  //   projectId: workspaceId,
+  //   environment,
+  //   path: secretPath,
+  //   options: {
+  //     enabled: canReadSecret
+  //   }
+  // });
 
   const { data: dynamicSecrets, isLoading: isDynamicSecretLoading } = useGetDynamicSecrets({
     projectSlug,
@@ -179,7 +193,9 @@ export const SecretMainPage = () => {
   );
 
   const handleSortToggle = () =>
-    setSortDir((state) => (state === SortDir.ASC ? SortDir.DESC : SortDir.ASC));
+    setOrderDirection((state) =>
+      state === OrderByDirection.ASC ? OrderByDirection.DESC : OrderByDirection.ASC
+    );
 
   const handleEnvChange = (slug: string) => {
     const query: Record<string, string> = { ...router.query, env: slug };
@@ -222,113 +238,115 @@ export const SecretMainPage = () => {
   // loading screen when u have permission
   const loadingOnAccess =
     canReadSecret &&
-    (isSecretsLoading || isSecretImportsLoading || isFoldersLoading || isDynamicSecretLoading);
+    (isDetailsLoading || isSecretImportsLoading || isFoldersLoading || isDynamicSecretLoading);
 
-  const rows = useMemo(() => {
-    const filteredSecrets =
-      secrets
-        ?.filter(({ key, tags: secretTags, value }) => {
-          const isTagFilterActive = Boolean(Object.keys(filter.tags).length);
-          return (
-            (!isTagFilterActive || secretTags?.some(({ id }) => filter.tags?.[id])) &&
-            (key.toUpperCase().includes(debouncedSearchFilter.toUpperCase()) ||
-              value?.toLowerCase().includes(debouncedSearchFilter.toLowerCase()))
-          );
-        })
-        .sort((a, b) =>
-          sortDir === SortDir.ASC ? a.key.localeCompare(b.key) : b.key.localeCompare(a.key)
-        ) ?? [];
-    const filteredFolders =
-      folders
-        ?.filter(({ name }) => name.toLowerCase().includes(debouncedSearchFilter.toLowerCase()))
-        .sort((a, b) =>
-          sortDir === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
-        ) ?? [];
-    const filteredDynamicSecrets =
-      dynamicSecrets
-        ?.filter(({ name }) => name.toLowerCase().includes(debouncedSearchFilter.toLowerCase()))
-        .sort((a, b) =>
-          sortDir === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
-        ) ?? [];
-    const filteredSecretImports =
-      secretImports
-        ?.filter(({ importPath }) =>
-          importPath.toLowerCase().includes(debouncedSearchFilter.toLowerCase())
-        )
-        .sort((a, b) =>
-          sortDir === "asc"
-            ? a.importPath.localeCompare(b.importPath)
-            : b.importPath.localeCompare(a.importPath)
-        ) ?? [];
-
-    const totalRows =
-      filteredSecretImports.length +
-      filteredFolders.length +
-      filteredDynamicSecrets.length +
-      filteredSecrets.length;
-
-    const paginatedImports = filteredSecretImports.slice(
-      paginationOffset,
-      paginationOffset + perPage
-    );
-
-    let remainingRows = perPage - paginatedImports.length;
-    const foldersStartIndex = Math.max(0, paginationOffset - filteredSecretImports.length);
-    const paginatedFolders =
-      remainingRows > 0
-        ? filteredFolders.slice(foldersStartIndex, foldersStartIndex + remainingRows)
-        : [];
-
-    remainingRows -= paginatedFolders.length;
-    const dynamicSecretStartIndex = Math.max(
-      0,
-      paginationOffset - filteredSecretImports.length - filteredFolders.length
-    );
-    const paginatiedDynamicSecrets =
-      remainingRows > 0
-        ? filteredDynamicSecrets.slice(
-            dynamicSecretStartIndex,
-            dynamicSecretStartIndex + remainingRows
-          )
-        : [];
-
-    remainingRows -= paginatiedDynamicSecrets.length;
-    const secretStartIndex = Math.max(
-      0,
-      paginationOffset -
-        filteredSecretImports.length -
-        filteredFolders.length -
-        filteredDynamicSecrets.length
-    );
-
-    const paginatiedSecrets =
-      remainingRows > 0
-        ? filteredSecrets.slice(secretStartIndex, secretStartIndex + remainingRows)
-        : [];
-
-    return {
-      imports: paginatedImports,
-      folders: paginatedFolders,
-      secrets: paginatiedSecrets,
-      dynamicSecrets: paginatiedDynamicSecrets,
-      totalRows
-    };
-  }, [
-    sortDir,
-    debouncedSearchFilter,
-    folders,
-    secrets,
-    dynamicSecrets,
-    paginationOffset,
-    perPage,
-    filter.tags,
-    importedSecrets
-  ]);
+  // const rows = useMemo(() => {
+  //   const filteredSecrets =
+  //     secrets
+  //       ?.filter(({ key, tags: secretTags, value }) => {
+  //         const isTagFilterActive = Boolean(Object.keys(filter.tags).length);
+  //         return (
+  //           (!isTagFilterActive || secretTags?.some(({ id }) => filter.tags?.[id])) &&
+  //           (key.toUpperCase().includes(debouncedSearchFilter.toUpperCase()) ||
+  //             value?.toLowerCase().includes(debouncedSearchFilter.toLowerCase()))
+  //         );
+  //       })
+  //       .sort((a, b) =>
+  //         orderDirection === OrderByDirection.ASC
+  //           ? a.key.localeCompare(b.key)
+  //           : b.key.localeCompare(a.key)
+  //       ) ?? [];
+  //   const filteredFolders =
+  //     folders
+  //       ?.filter(({ name }) => name.toLowerCase().includes(debouncedSearchFilter.toLowerCase()))
+  //       .sort((a, b) =>
+  //         orderDirection === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+  //       ) ?? [];
+  //   const filteredDynamicSecrets =
+  //     dynamicSecrets
+  //       ?.filter(({ name }) => name.toLowerCase().includes(debouncedSearchFilter.toLowerCase()))
+  //       .sort((a, b) =>
+  //         orderDirection === "asc" ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
+  //       ) ?? [];
+  //   const filteredSecretImports =
+  //     secretImports
+  //       ?.filter(({ importPath }) =>
+  //         importPath.toLowerCase().includes(debouncedSearchFilter.toLowerCase())
+  //       )
+  //       .sort((a, b) =>
+  //         orderDirection === "asc"
+  //           ? a.importPath.localeCompare(b.importPath)
+  //           : b.importPath.localeCompare(a.importPath)
+  //       ) ?? [];
+  //
+  //   const totalRows =
+  //     filteredSecretImports.length +
+  //     filteredFolders.length +
+  //     filteredDynamicSecrets.length +
+  //     filteredSecrets.length;
+  //
+  //   const paginatedImports = filteredSecretImports.slice(
+  //     paginationOffset,
+  //     paginationOffset + perPage
+  //   );
+  //
+  //   let remainingRows = perPage - paginatedImports.length;
+  //   const foldersStartIndex = Math.max(0, paginationOffset - filteredSecretImports.length);
+  //   const paginatedFolders =
+  //     remainingRows > 0
+  //       ? filteredFolders.slice(foldersStartIndex, foldersStartIndex + remainingRows)
+  //       : [];
+  //
+  //   remainingRows -= paginatedFolders.length;
+  //   const dynamicSecretStartIndex = Math.max(
+  //     0,
+  //     paginationOffset - filteredSecretImports.length - filteredFolders.length
+  //   );
+  //   const paginatiedDynamicSecrets =
+  //     remainingRows > 0
+  //       ? filteredDynamicSecrets.slice(
+  //           dynamicSecretStartIndex,
+  //           dynamicSecretStartIndex + remainingRows
+  //         )
+  //       : [];
+  //
+  //   remainingRows -= paginatiedDynamicSecrets.length;
+  //   const secretStartIndex = Math.max(
+  //     0,
+  //     paginationOffset -
+  //       filteredSecretImports.length -
+  //       filteredFolders.length -
+  //       filteredDynamicSecrets.length
+  //   );
+  //
+  //   const paginatiedSecrets =
+  //     remainingRows > 0
+  //       ? filteredSecrets.slice(secretStartIndex, secretStartIndex + remainingRows)
+  //       : [];
+  //
+  //   return {
+  //     imports: paginatedImports,
+  //     folders: paginatedFolders,
+  //     secrets: paginatiedSecrets,
+  //     dynamicSecrets: paginatiedDynamicSecrets,
+  //     totalRows
+  //   };
+  // }, [
+  //   orderDirection,
+  //   debouncedSearchFilter,
+  //   folders,
+  //   secrets,
+  //   dynamicSecrets,
+  //   paginationOffset,
+  //   perPage,
+  //   filter.tags,
+  //   importedSecrets
+  // ]);
 
   useEffect(() => {
     // reset page if no longer valid
-    if (rows.totalRows < paginationOffset) setPage(1);
-  }, [rows.totalRows]);
+    if (totalCount < paginationOffset) setPage(1);
+  }, [totalCount]);
 
   // loading screen when you don't have permission but as folder's is viewable need to wait for that
   const loadingOnDenied = !canReadSecret && isFoldersLoading;
@@ -395,45 +413,42 @@ export const SecretMainPage = () => {
                     >
                       Key
                       <FontAwesomeIcon
-                        icon={sortDir === SortDir.ASC ? faArrowDown : faArrowUp}
+                        icon={orderDirection === OrderByDirection.ASC ? faArrowDown : faArrowUp}
                         className="ml-2"
                       />
                     </div>
                     <div className="flex-grow px-4 py-2">Value</div>
                   </div>
                 )}
-                {canReadSecret && (
-                  <SecretImportListView
-                    searchTerm={filter.searchFilter}
-                    secretImports={rows.imports}
-                    isFetching={isSecretImportsLoading || isSecretImportsFetching}
-                    environment={environment}
-                    workspaceId={workspaceId}
-                    secretPath={secretPath}
-                    secrets={secrets}
-                    importedSecrets={importedSecrets}
-                  />
-                )}
-                <FolderListView
-                  folders={rows.folders}
-                  environment={environment}
-                  workspaceId={workspaceId}
-                  secretPath={secretPath}
-                  sortDir={sortDir}
-                  searchTerm={filter.searchFilter}
-                />
-                {canReadSecret && (
-                  <DynamicSecretListView
-                    sortDir={sortDir}
-                    environment={environment}
-                    projectSlug={projectSlug}
-                    secretPath={secretPath}
-                    dynamicSecrets={rows.dynamicSecrets || []}
-                  />
-                )}
+                {/* {canReadSecret && ( */}
+                {/*  <SecretImportListView */}
+                {/*    searchTerm={filter.searchFilter} */}
+                {/*    secretImports={rows.imports} */}
+                {/*    isFetching={isSecretImportsLoading || isSecretImportsFetching} */}
+                {/*    environment={environment} */}
+                {/*    workspaceId={workspaceId} */}
+                {/*    secretPath={secretPath} */}
+                {/*    secrets={secrets} */}
+                {/*    importedSecrets={importedSecrets} */}
+                {/*  /> */}
+                {/* )} */}
+                {/* <FolderListView */}
+                {/*  folders={rows.folders} */}
+                {/*  environment={environment} */}
+                {/*  workspaceId={workspaceId} */}
+                {/*  secretPath={secretPath} */}
+                {/* /> */}
+                {/* {canReadSecret && ( */}
+                {/*  <DynamicSecretListView */}
+                {/*    environment={environment} */}
+                {/*    projectSlug={projectSlug} */}
+                {/*    secretPath={secretPath} */}
+                {/*    dynamicSecrets={rows.dynamicSecrets || []} */}
+                {/*  /> */}
+                {/* )} */}
                 {canReadSecret && (
                   <SecretListView
-                    secrets={rows.secrets}
+                    secrets={secrets}
                     tags={tags}
                     isVisible={isVisible}
                     environment={environment}
@@ -443,10 +458,10 @@ export const SecretMainPage = () => {
                   />
                 )}
                 {!canReadSecret && folders?.length === 0 && <PermissionDeniedBanner />}
-                {!loadingOnAccess && rows.totalRows > INIT_PER_PAGE && (
+                {!loadingOnAccess && totalCount > INIT_PER_PAGE && (
                   <Pagination
                     className="border-t border-solid border-t-mineshaft-600"
-                    count={rows.totalRows}
+                    count={totalCount}
                     page={page}
                     perPage={perPage}
                     onChangePage={(newPage) => setPage(newPage)}

@@ -5,6 +5,8 @@ import { TDbClient } from "@app/db";
 import { SecretsV2Schema, SecretType, TableName, TSecretsV2, TSecretsV2Update } from "@app/db/schemas";
 import { BadRequestError, DatabaseError } from "@app/lib/errors";
 import { ormify, selectAllTableCols, sqlNestRelationships } from "@app/lib/knex";
+import { OrderByDirection } from "@app/lib/types";
+import { SecretsOrderBy } from "@app/services/secret/secret-types";
 
 export type TSecretV2BridgeDALFactory = ReturnType<typeof secretV2BridgeDALFactory>;
 
@@ -181,7 +183,17 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
     }
   };
 
-  const findByFolderIds = async (folderIds: string[], userId?: string, tx?: Knex) => {
+  const findByFolderIds = async (
+    folderIds: string[],
+    userId?: string,
+    tx?: Knex,
+    filters?: {
+      limit?: number;
+      offset?: number;
+      orderBy?: SecretsOrderBy;
+      orderDirection?: OrderByDirection;
+    }
+  ) => {
     try {
       // check if not uui then userId id is null (corner case because service token's ID is not UUI in effort to keep backwards compatibility from mongo)
       if (userId && !uuidValidate(userId)) {
@@ -189,7 +201,7 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
         userId = undefined;
       }
 
-      const secs = await (tx || db.replicaNode())(TableName.SecretV2)
+      const query = (tx || db.replicaNode())(TableName.SecretV2)
         .whereIn("folderId", folderIds)
         .where((bd) => {
           void bd.whereNull("userId").orWhere({ userId: userId || null });
@@ -208,7 +220,16 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
         .select(db.ref("id").withSchema(TableName.SecretTag).as("tagId"))
         .select(db.ref("color").withSchema(TableName.SecretTag).as("tagColor"))
         .select(db.ref("slug").withSchema(TableName.SecretTag).as("tagSlug"))
-        .orderBy("id", "asc");
+        .orderBy(
+          filters?.orderBy === SecretsOrderBy.Name ? "key" : "id",
+          filters?.orderDirection ?? OrderByDirection.ASC
+        );
+
+      if (filters?.limit) {
+        void query.limit(filters.limit).offset(filters.offset ?? 0);
+      }
+
+      const secs = await query;
 
       const data = sqlNestRelationships({
         data: secs,

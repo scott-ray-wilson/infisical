@@ -965,7 +965,8 @@ export const secretServiceFactory = ({
     includeImports,
     expandSecretReferences,
     recursive,
-    tagSlugs = []
+    tagSlugs = [],
+    ...v2Params
   }: TGetSecretsRawDTO) => {
     const { botKey, shouldUseSecretV2Bridge } = await projectBotService.getBotKey(projectId);
     if (shouldUseSecretV2Bridge) {
@@ -980,7 +981,8 @@ export const secretServiceFactory = ({
         recursive,
         actorAuthMethod,
         includeImports,
-        tagSlugs
+        tagSlugs,
+        ...v2Params
       });
       return { secrets, imports };
     }

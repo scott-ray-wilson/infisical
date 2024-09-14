@@ -1,7 +1,7 @@
 import { Knex } from "knex";
 
 import { SecretType, TSecretBlindIndexes, TSecrets, TSecretsInsert, TSecretsUpdate } from "@app/db/schemas";
-import { TProjectPermission } from "@app/lib/types";
+import { OrderByDirection, TProjectPermission } from "@app/lib/types";
 import { TProjectDALFactory } from "@app/services/project/project-dal";
 import { TProjectBotDALFactory } from "@app/services/project-bot/project-bot-dal";
 import { TSecretDALFactory } from "@app/services/secret/secret-dal";
@@ -143,6 +143,10 @@ export type TDeleteBulkSecretDTO = {
   }>;
 } & TProjectPermission;
 
+export enum SecretsOrderBy {
+  Name = "name" // key but using name for use across resources
+}
+
 export type TGetSecretsRawDTO = {
   expandSecretReferences?: boolean;
   path: string;
@@ -150,6 +154,11 @@ export type TGetSecretsRawDTO = {
   includeImports?: boolean;
   recursive?: boolean;
   tagSlugs?: string[];
+  orderBy?: SecretsOrderBy;
+  orderDirection?: OrderByDirection;
+  offset?: number;
+  limit?: number;
+  search?: string;
 } & TProjectPermission;
 
 export type TGetASecretRawDTO = {

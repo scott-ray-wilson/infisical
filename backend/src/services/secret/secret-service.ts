@@ -954,6 +954,46 @@ export const secretServiceFactory = ({
     return secretsDeleted;
   };
 
+  const getSecretsRawCount = async ({
+    projectId,
+    path,
+    actor,
+    actorId,
+    actorOrgId,
+    actorAuthMethod,
+    environment,
+    includeImports,
+    expandSecretReferences,
+    recursive,
+    tagSlugs = [],
+    ...v2Params
+  }: TGetSecretsRawDTO) => {
+    const { shouldUseSecretV2Bridge } = await projectBotService.getBotKey(projectId);
+
+    if (!shouldUseSecretV2Bridge)
+      throw new BadRequestError({
+        message: "Project version does not support secret pagination",
+        name: "pagination_not_supported"
+      });
+
+    const count = await secretV2BridgeService.getSecretsCount({
+      projectId,
+      expandSecretReferences,
+      actorId,
+      actor,
+      actorOrgId,
+      environment,
+      path,
+      recursive,
+      actorAuthMethod,
+      includeImports,
+      tagSlugs,
+      ...v2Params
+    });
+
+    return count;
+  };
+
   const getSecretsRaw = async ({
     projectId,
     path,
@@ -2658,6 +2698,7 @@ export const secretServiceFactory = ({
     getSecretVersions,
     backfillSecretReferences,
     moveSecrets,
-    startSecretV2Migration
+    startSecretV2Migration,
+    getSecretsRawCount
   };
 };

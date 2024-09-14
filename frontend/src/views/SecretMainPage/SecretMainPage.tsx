@@ -27,6 +27,7 @@ import {
 } from "@app/hooks/api";
 import { useGetProjectSecretsDetails } from "@app/hooks/api/dashboard";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
+import { FolderListView } from "@app/views/SecretMainPage/components/FolderListView";
 
 import { SecretV2MigrationSection } from "../SecretOverviewPage/components/SecretV2MigrationSection";
 import { ActionBar } from "./components/ActionBar";
@@ -119,14 +120,23 @@ export const SecretMainPage = () => {
     }
   );
 
-  const { secrets, totalCount } = data ?? { secrets: [], totalCount: 0 };
-
-  // fetch folders
-  const { data: folders, isLoading: isFoldersLoading } = useGetProjectFolders({
+  const { data: foldersData, isLoading: isFoldersLoading } = useGetProjectFolders({
     projectId: workspaceId,
     environment,
-    path: secretPath
+    path: secretPath,
+    options: {
+      enabled: !canReadSecret // gotten with details if user has read access
+    }
   });
+
+  // TODO: hide pagination if only folders OR older version of project
+
+  // TODO test
+  const folders = canReadSecret ? data?.folders : foldersData;
+
+  const { secrets, totalCount } = data ?? { secrets: [], folders: [], totalCount: 0 };
+
+  // fetch folders
 
   // fetch secret imports
   const {
@@ -237,8 +247,7 @@ export const SecretMainPage = () => {
 
   // loading screen when u have permission
   const loadingOnAccess =
-    canReadSecret &&
-    (isDetailsLoading || isSecretImportsLoading || isFoldersLoading || isDynamicSecretLoading);
+    canReadSecret && (isDetailsLoading || isSecretImportsLoading || isDynamicSecretLoading);
 
   // const rows = useMemo(() => {
   //   const filteredSecrets =
@@ -432,12 +441,12 @@ export const SecretMainPage = () => {
                 {/*    importedSecrets={importedSecrets} */}
                 {/*  /> */}
                 {/* )} */}
-                {/* <FolderListView */}
-                {/*  folders={rows.folders} */}
-                {/*  environment={environment} */}
-                {/*  workspaceId={workspaceId} */}
-                {/*  secretPath={secretPath} */}
-                {/* /> */}
+                <FolderListView
+                  folders={folders}
+                  environment={environment}
+                  workspaceId={workspaceId}
+                  secretPath={secretPath}
+                />
                 {/* {canReadSecret && ( */}
                 {/*  <DynamicSecretListView */}
                 {/*    environment={environment} */}

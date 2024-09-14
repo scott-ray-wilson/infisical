@@ -183,6 +183,38 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
     }
   };
 
+  const countByFolderIds = async (
+    folderIds: string[],
+    userId?: string,
+    tx?: Knex,
+    filters?: {
+      search?: string;
+    }
+  ) => {
+    try {
+      // check if not uui then userId id is null (corner case because service token's ID is not UUI in effort to keep backwards compatibility from mongo)
+      if (userId && !uuidValidate(userId)) {
+        // eslint-disable-next-line no-param-reassign
+        userId = undefined;
+      }
+
+      const secrets = await (tx || db.replicaNode())(TableName.SecretV2)
+        .whereIn("folderId", folderIds)
+        .where((bd) => {
+          void bd.whereNull("userId").orWhere({ userId: userId || null });
+
+          if (filters?.search) {
+            void bd.whereILike("name", `%${filters?.search}%`);
+          }
+        })
+        .count();
+
+      return Number(secrets[0]?.count);
+    } catch (error) {
+      throw new DatabaseError({ error, name: "get project secret count" });
+    }
+  };
+
   const findByFolderIds = async (
     folderIds: string[],
     userId?: string,
@@ -192,6 +224,7 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
       offset?: number;
       orderBy?: SecretsOrderBy;
       orderDirection?: OrderByDirection;
+      search?: string;
     }
   ) => {
     try {
@@ -205,6 +238,10 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
         .whereIn("folderId", folderIds)
         .where((bd) => {
           void bd.whereNull("userId").orWhere({ userId: userId || null });
+
+          if (filters?.search) {
+            void bd.whereILike("name", `%${filters?.search}%`);
+          }
         })
         .leftJoin(
           TableName.SecretV2JnTag,
@@ -405,6 +442,7 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
     findBySecretKeys,
     upsertSecretReferences,
     findReferencedSecretReferences,
-    findAllProjectSecretValues
+    findAllProjectSecretValues,
+    countByFolderIds
   };
 };

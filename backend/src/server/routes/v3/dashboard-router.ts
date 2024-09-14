@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { SecretTagsSchema } from "@app/db/schemas";
+import { SecretFoldersSchema, SecretTagsSchema } from "@app/db/schemas";
 import { EventType, UserAgentType } from "@app/ee/services/audit-log/audit-log-types";
 import { DASHBOARD } from "@app/lib/api-docs";
 import { BadRequestError } from "@app/lib/errors";
@@ -30,16 +30,16 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         }
       ],
       querystring: z.object({
-        workspaceId: z.string().trim().optional().describe(DASHBOARD.SECRET_DETAILS_LIST.workspaceId),
-        environment: z.string().trim().optional().describe(DASHBOARD.SECRET_DETAILS_LIST.environment),
+        workspaceId: z.string().trim().describe(DASHBOARD.SECRET_DETAILS_LIST.workspaceId),
+        environment: z.string().trim().describe(DASHBOARD.SECRET_DETAILS_LIST.environment),
         secretPath: z
           .string()
           .trim()
           .default("/")
           .transform(removeTrailingSlash)
           .describe(DASHBOARD.SECRET_DETAILS_LIST.secretPath),
-        offset: z.coerce.number().min(0).default(0).describe(DASHBOARD.SECRET_DETAILS_LIST.offset).optional(),
-        limit: z.coerce.number().min(1).max(100).default(100).describe(DASHBOARD.SECRET_DETAILS_LIST.limit).optional(),
+        offset: z.coerce.number().min(0).optional().default(0).describe(DASHBOARD.SECRET_DETAILS_LIST.offset),
+        limit: z.coerce.number().min(1).max(100).optional().default(100).describe(DASHBOARD.SECRET_DETAILS_LIST.limit),
         orderBy: z
           .nativeEnum(SecretsOrderBy)
           .default(SecretsOrderBy.Name)
@@ -67,6 +67,9 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
                 .optional()
             })
             .array(),
+          folders: SecretFoldersSchema.array(),
+          totalSecretCount: z.number(),
+          totalFolderCount: z.number(),
           totalCount: z.number()
         })
       }
@@ -77,7 +80,40 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
 
       if (!workspaceId || !environment) throw new BadRequestError({ message: "Missing workspace id or environment" });
 
-      const { secrets, imports } = await server.services.secret.getSecretsRaw({
+      let remainingLimit = limit;
+      let adjustedOffset = offset;
+
+      let folders: Awaited<ReturnType<typeof server.services.folder.getFolders>> = [];
+      let secrets: Awaited<ReturnType<typeof server.services.secret.getSecretsRaw>>["secrets"] = [];
+
+      const totalFolderCount = await server.services.folder.getProjectFolderCount({
+        actorId: req.permission.id,
+        actor: req.permission.type,
+        actorAuthMethod: req.permission.authMethod,
+        actorOrgId: req.permission.orgId,
+        projectId: req.query.workspaceId,
+        path: secretPath,
+        environment
+      });
+
+      if (totalFolderCount > limit * offset) {
+        folders = await server.services.folder.getFolders({
+          actorId: req.permission.id,
+          actor: req.permission.type,
+          actorAuthMethod: req.permission.authMethod,
+          actorOrgId: req.permission.orgId,
+          ...req.query,
+          projectId: req.query.workspaceId,
+          path: secretPath
+          // TODO: limit/offset
+        });
+
+        remainingLimit -= folders.length;
+      } else {
+        adjustedOffset = Math.max(0, offset - totalFolderCount);
+      }
+
+      const totalSecretCount = await server.services.secret.getSecretsRawCount({
         actorId: req.permission.id,
         actor: req.permission.type,
         actorOrgId: req.permission.orgId,
@@ -85,46 +121,67 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         actorAuthMethod: req.permission.authMethod,
         projectId: workspaceId,
         path: secretPath,
-        limit,
-        offset,
-        orderBy,
-        orderDirection,
         search
         // includeImports: req.query.include_imports,
         // recursive: req.query.recursive,
         // tagSlugs: req.query.tagSlugs
       });
 
-      await server.services.auditLog.createAuditLog({
-        projectId: workspaceId,
-        ...req.auditLogInfo,
-        event: {
-          type: EventType.GET_SECRETS,
-          metadata: {
-            environment,
-            secretPath: req.query.secretPath,
-            numberOfSecrets: secrets.length
-          }
-        }
-      });
+      if (remainingLimit > 0) {
+        const secretsRaw = await server.services.secret.getSecretsRaw({
+          actorId: req.permission.id,
+          actor: req.permission.type,
+          actorOrgId: req.permission.orgId,
+          environment,
+          actorAuthMethod: req.permission.authMethod,
+          projectId: workspaceId,
+          path: secretPath,
+          limit: remainingLimit,
+          offset: adjustedOffset,
+          orderBy,
+          orderDirection,
+          search
+          // includeImports: req.query.include_imports,
+          // recursive: req.query.recursive,
+          // tagSlugs: req.query.tagSlugs
+        });
 
-      if (getUserAgentType(req.headers["user-agent"]) !== UserAgentType.K8_OPERATOR) {
-        await server.services.telemetry.sendPostHogEvents({
-          event: PostHogEventTypes.SecretPulled,
-          distinctId: getTelemetryDistinctId(req),
-          properties: {
-            numberOfSecrets: secrets.length,
-            workspaceId,
-            environment,
-            secretPath: req.query.secretPath,
-            channel: getUserAgentType(req.headers["user-agent"]),
-            ...req.auditLogInfo
+        secrets = secretsRaw.secrets;
+
+        await server.services.auditLog.createAuditLog({
+          projectId: workspaceId,
+          ...req.auditLogInfo,
+          event: {
+            type: EventType.GET_SECRETS,
+            metadata: {
+              environment,
+              secretPath: req.query.secretPath,
+              numberOfSecrets: secrets.length
+            }
           }
         });
+
+        if (getUserAgentType(req.headers["user-agent"]) !== UserAgentType.K8_OPERATOR) {
+          await server.services.telemetry.sendPostHogEvents({
+            event: PostHogEventTypes.SecretPulled,
+            distinctId: getTelemetryDistinctId(req),
+            properties: {
+              numberOfSecrets: secrets.length,
+              workspaceId,
+              environment,
+              secretPath: req.query.secretPath,
+              channel: getUserAgentType(req.headers["user-agent"]),
+              ...req.auditLogInfo
+            }
+          });
+        }
       }
 
-      // TODO: not hardcode
-      return { secrets, imports, totalCount: 12 };
+      remainingLimit -= secrets.length;
+
+      console.log("secrets", secrets, totalSecretCount);
+
+      return { secrets, folders, totalFolderCount, totalSecretCount, totalCount: totalFolderCount + totalSecretCount };
     }
   });
 };

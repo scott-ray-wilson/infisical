@@ -413,6 +413,33 @@ export const secretFolderServiceFactory = ({
     return folders;
   };
 
+  const getProjectFolderCount = async ({
+    projectId,
+    actor,
+    actorId,
+    actorOrgId,
+    actorAuthMethod,
+    environment,
+    path: secretPath
+  }: TGetFolderDTO) => {
+    // folder list is allowed to be read by anyone
+    // permission to check does user has access
+    await permissionService.getProjectPermission(actor, actorId, projectId, actorAuthMethod, actorOrgId);
+
+    const env = await projectEnvDAL.findOne({ projectId, slug: environment });
+    if (!env) throw new BadRequestError({ message: "Environment not found", name: "get project folder count" });
+
+    const parentFolder = await folderDAL.findBySecretPath(projectId, environment, secretPath);
+    if (!parentFolder) return 0;
+
+    const folders = await folderDAL.find(
+      { envId: env.id, parentId: parentFolder.id, isReserved: false },
+      { count: true }
+    );
+
+    return Number(folders[0]?.count ?? 0);
+  };
+
   const getFolderById = async ({ actor, actorId, actorOrgId, actorAuthMethod, id }: TGetFolderByIdDTO) => {
     const folder = await folderDAL.findById(id);
     if (!folder) throw new NotFoundError({ message: "folder not found" });
@@ -429,6 +456,7 @@ export const secretFolderServiceFactory = ({
     updateManyFolders,
     deleteFolder,
     getFolders,
-    getFolderById
+    getFolderById,
+    getProjectFolderCount
   };
 };

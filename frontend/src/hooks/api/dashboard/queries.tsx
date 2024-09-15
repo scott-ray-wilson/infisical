@@ -15,29 +15,29 @@ import { mergePersonalSecrets } from "@app/hooks/api/secrets/queries";
 
 export const dashboardKeys = {
   // getProjectSecretsOverview: ({
-  //   workspaceId,
+  //   projectId,
   //   secretPath,
   //   ...params
   // }: TGetDashboardProjectSecretsOverviewDTO) =>
-  //   [{ workspaceId, secretPath }, "secrets-overview", params] as const,
+  //   [{ projectId, secretPath }, "secrets-overview", params] as const,
   getProjectSecretsDetails: ({
-    workspaceId,
+    projectId,
     secretPath,
     environment,
     ...params
   }: TGetDashboardProjectSecretsDetailsDTO) =>
-    [{ workspaceId, secretPath, environment }, "secrets-details", params] as const
+    [{ projectId, secretPath, environment }, "secrets-details", params] as const
 };
 
 // export const fetchProjectSecretsOverview = async ({
-//   workspaceId,
+//   projectId,
 //   secretPath
 // }: TGetDashboardProjectSecretsOverviewDTO) => {
 //   const { data } = await apiRequest.get<DashboardProjectSecretOverviewResponse>(
 //     "/api/v3/dashboard/secrets-overview",
 //     {
 //       params: {
-//         workspaceId,
+//         projectId,
 //         secretPath
 //       }
 //     }
@@ -59,7 +59,7 @@ export const fetchProjectSecretsDetails = async (params: TGetDashboardProjectSec
 
 // export const useGetProjectSecretsOverview = (
 //   {
-//     workspaceId,
+//     projectId,
 //     secretPath,
 //     offset = 0,
 //     limit = 100,
@@ -80,9 +80,9 @@ export const fetchProjectSecretsDetails = async (params: TGetDashboardProjectSec
 //   useQuery({
 //     ...options,
 //     // wait for all values to be available
-//     enabled: Boolean(workspaceId) && (options?.enabled ?? true),
-//     queryKey: dashboardKeys.getProjectSecretsOverview({ workspaceId, secretPath }),
-//     queryFn: () => fetchProjectSecretsOverview({ workspaceId, secretPath }),
+//     enabled: Boolean(projectId) && (options?.enabled ?? true),
+//     queryKey: dashboardKeys.getProjectSecretsOverview({ projectId, secretPath }),
+//     queryFn: () => fetchProjectSecretsOverview({ projectId, secretPath }),
 //     onError: (error) => {
 //       if (axios.isAxiosError(error)) {
 //         const serverResponse = error.response?.data as { message: string };
@@ -106,14 +106,18 @@ export const fetchProjectSecretsDetails = async (params: TGetDashboardProjectSec
 
 export const useGetProjectSecretsDetails = (
   {
-    workspaceId,
+    projectId,
     secretPath,
     environment,
     offset = 0,
     limit = 100,
     orderBy = DashboardSecretsOrderBy.Name,
     orderDirection = OrderByDirection.ASC,
-    search = ""
+    search = "",
+    includeSecrets,
+    includeFolders,
+    includeImports,
+    includeDynamicSecrets
   }: TGetDashboardProjectSecretsDetailsDTO,
   options?: Omit<
     UseQueryOptions<
@@ -128,7 +132,7 @@ export const useGetProjectSecretsDetails = (
   return useQuery({
     ...options,
     // wait for all values to be available
-    enabled: Boolean(workspaceId) && (options?.enabled ?? true),
+    enabled: Boolean(projectId) && (options?.enabled ?? true),
     queryKey: dashboardKeys.getProjectSecretsDetails({
       secretPath,
       search,
@@ -136,8 +140,12 @@ export const useGetProjectSecretsDetails = (
       orderBy,
       orderDirection,
       offset,
-      workspaceId,
-      environment
+      projectId,
+      environment,
+      includeSecrets,
+      includeFolders,
+      includeImports,
+      includeDynamicSecrets
     }),
     queryFn: () =>
       fetchProjectSecretsDetails({
@@ -147,8 +155,12 @@ export const useGetProjectSecretsDetails = (
         orderBy,
         orderDirection,
         offset,
-        workspaceId,
-        environment
+        projectId,
+        environment,
+        includeSecrets,
+        includeFolders,
+        includeImports,
+        includeDynamicSecrets
       }),
     onError: (error) => {
       if (axios.isAxiosError(error)) {

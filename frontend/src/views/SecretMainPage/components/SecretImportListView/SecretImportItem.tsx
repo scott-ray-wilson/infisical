@@ -31,12 +31,6 @@ type Props = {
   secretPath?: string;
   secretImport?: TSecretImport;
   isReplicationExpand?: boolean;
-  importedSecrets: {
-    key: string;
-    value?: string;
-    overriden: { env: string; secretPath: string };
-  }[];
-  searchTerm: string;
   onExpandReplicateSecrets: (id: string) => void;
 };
 
@@ -65,8 +59,6 @@ export const EnvFolderIcon = ({
 export const SecretImportItem = ({
   onDelete,
   isReplicationExpand,
-  importedSecrets = [],
-  searchTerm = "",
   secretPath,
   environment,
   secretImport,
@@ -87,17 +79,17 @@ export const SecretImportItem = ({
     id
   });
   const resyncSecretReplication = useResyncSecretReplication();
-  useEffect(() => {
-    const filteredSecrets = importedSecrets.filter((secret) =>
-      secret.key.toUpperCase().includes(searchTerm.toUpperCase())
-    );
-
-    if (filteredSecrets.length > 0 && searchTerm) {
-      setIsExpanded.on();
-    } else {
-      setIsExpanded.off();
-    }
-  }, [searchTerm]);
+  // useEffect(() => {
+  //   const filteredSecrets = importedSecrets.filter((secret) =>
+  //     secret.key.toUpperCase().includes(searchTerm.toUpperCase())
+  //   );
+  //
+  //   if (filteredSecrets.length > 0 && searchTerm) {
+  //     setIsExpanded.on();
+  //   } else {
+  //     setIsExpanded.off();
+  //   }
+  // }, [searchTerm]);
 
   useEffect(() => {
     if (isDragging) {
@@ -139,6 +131,8 @@ export const SecretImportItem = ({
       setIsExpanded.toggle();
     }
   };
+
+  const importedSecrets: any[] = []; // TODO: get
 
   return (
     <>
@@ -302,21 +296,19 @@ export const SecretImportItem = ({
                       </td>
                     </tr>
                   )}
-                  {importedSecrets
-                    .filter((secret) => secret.key.toUpperCase().includes(searchTerm.toUpperCase()))
-                    .map(({ key, value, overriden }, index) => (
-                      <tr key={`${id}-${key}-${index + 1}`}>
-                        <td className="h-10" style={{ padding: "0.25rem 1rem" }}>
-                          {key}
-                        </td>
-                        <td className="h-10" style={{ padding: "0.25rem 1rem" }}>
-                          <SecretInput value={value} isReadOnly />
-                        </td>
-                        <td className="h-10" style={{ padding: "0.25rem 1rem" }}>
-                          <EnvFolderIcon env={overriden?.env} secretPath={overriden?.secretPath} />
-                        </td>
-                      </tr>
-                    ))}
+                  {importedSecrets.map(({ key, value, overriden }, index) => (
+                    <tr key={`${id}-${key}-${index + 1}`}>
+                      <td className="h-10" style={{ padding: "0.25rem 1rem" }}>
+                        {key}
+                      </td>
+                      <td className="h-10" style={{ padding: "0.25rem 1rem" }}>
+                        <SecretInput value={value} isReadOnly />
+                      </td>
+                      <td className="h-10" style={{ padding: "0.25rem 1rem" }}>
+                        <EnvFolderIcon env={overriden?.env} secretPath={overriden?.secretPath} />
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </TableContainer>

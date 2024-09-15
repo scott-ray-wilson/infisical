@@ -201,11 +201,12 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
       const secrets = await (tx || db.replicaNode())(TableName.SecretV2)
         .whereIn("folderId", folderIds)
         .where((bd) => {
-          void bd.whereNull("userId").orWhere({ userId: userId || null });
-
           if (filters?.search) {
-            void bd.whereILike("name", `%${filters?.search}%`);
+            void bd.whereILike("key", `%${filters?.search}%`);
           }
+        })
+        .where((bd) => {
+          void bd.whereNull("userId").orWhere({ userId: userId || null });
         })
         .count();
 
@@ -237,11 +238,12 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
       const query = (tx || db.replicaNode())(TableName.SecretV2)
         .whereIn("folderId", folderIds)
         .where((bd) => {
-          void bd.whereNull("userId").orWhere({ userId: userId || null });
-
           if (filters?.search) {
-            void bd.whereILike("name", `%${filters?.search}%`);
+            void bd.whereILike("key", `%${filters?.search}%`);
           }
+        })
+        .where((bd) => {
+          void bd.whereNull("userId").orWhere({ userId: userId || null });
         })
         .leftJoin(
           TableName.SecretV2JnTag,

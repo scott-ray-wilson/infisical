@@ -93,10 +93,11 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         actorOrgId: req.permission.orgId,
         projectId: req.query.workspaceId,
         path: secretPath,
-        environment
+        environment,
+        search
       });
 
-      if (totalFolderCount > limit * offset) {
+      if (totalFolderCount > offset) {
         folders = await server.services.folder.getFolders({
           actorId: req.permission.id,
           actor: req.permission.type,
@@ -104,11 +105,13 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           actorOrgId: req.permission.orgId,
           ...req.query,
           projectId: req.query.workspaceId,
-          path: secretPath
-          // TODO: limit/offset
+          path: secretPath,
+          limit: remainingLimit,
+          offset: adjustedOffset
         });
 
         remainingLimit -= folders.length;
+        adjustedOffset = 0;
       } else {
         adjustedOffset = Math.max(0, offset - totalFolderCount);
       }
@@ -178,8 +181,6 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       }
 
       remainingLimit -= secrets.length;
-
-      console.log("secrets", secrets, totalSecretCount);
 
       return { secrets, folders, totalFolderCount, totalSecretCount, totalCount: totalFolderCount + totalSecretCount };
     }

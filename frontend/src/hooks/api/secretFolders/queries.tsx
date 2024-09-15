@@ -8,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 
 import { apiRequest } from "@app/config/request";
+import { dashboardKeys } from "@app/hooks/api/dashboard/queries";
 
 import { secretSnapshotKeys } from "../secretSnapshots/queries";
 import {
@@ -125,6 +126,13 @@ export const useCreateFolder = () => {
     },
     onSuccess: (_, { projectId, environment, path }) => {
       queryClient.invalidateQueries(
+        dashboardKeys.getProjectSecretsDetails({
+          workspaceId: projectId,
+          environment,
+          secretPath: path ?? "/"
+        })
+      );
+      queryClient.invalidateQueries(
         folderQueryKeys.getSecretFolders({ projectId, environment, path })
       );
       queryClient.invalidateQueries(
@@ -151,6 +159,13 @@ export const useUpdateFolder = () => {
       return data;
     },
     onSuccess: (_, { projectId, environment, path }) => {
+      queryClient.invalidateQueries(
+        dashboardKeys.getProjectSecretsDetails({
+          workspaceId: projectId,
+          environment,
+          secretPath: path ?? "/"
+        })
+      );
       queryClient.invalidateQueries(
         folderQueryKeys.getSecretFolders({ projectId, environment, path })
       );
@@ -180,7 +195,11 @@ export const useDeleteFolder = () => {
     },
     onSuccess: (_, { path = "/", projectId, environment }) => {
       queryClient.invalidateQueries(
-        folderQueryKeys.getSecretFolders({ projectId, environment, path })
+        dashboardKeys.getProjectSecretsDetails({
+          workspaceId: projectId,
+          environment,
+          secretPath: path
+        })
       );
       queryClient.invalidateQueries(
         secretSnapshotKeys.list({ workspaceId: projectId, environment, directory: path })
@@ -206,6 +225,13 @@ export const useUpdateFolderBatch = () => {
     },
     onSuccess: (_, { projectId, folders }) => {
       folders.forEach((folder) => {
+        queryClient.invalidateQueries(
+          dashboardKeys.getProjectSecretsDetails({
+            workspaceId: projectId,
+            environment: folder.environment,
+            secretPath: folder.path ?? "/"
+          })
+        );
         queryClient.invalidateQueries(
           folderQueryKeys.getSecretFolders({
             projectId,

@@ -8,7 +8,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import NavHeader from "@app/components/navigation/NavHeader";
 import { createNotification } from "@app/components/notifications";
 import { PermissionDeniedBanner } from "@app/components/permissions";
-import { ContentLoader, Pagination } from "@app/components/v2";
+import { Badge, ContentLoader, Pagination } from "@app/components/v2";
 import {
   ProjectPermissionActions,
   ProjectPermissionSub,
@@ -134,7 +134,11 @@ export const SecretMainPage = () => {
   // TODO test
   const folders = canReadSecret ? data?.folders : foldersData;
 
-  const { secrets, totalCount } = data ?? { secrets: [], folders: [], totalCount: 0 };
+  const { secrets, totalCount, totalSecretCount, totalFolderCount } = data ?? {
+    secrets: [],
+    folders: [],
+    totalCount: 0
+  };
 
   // fetch folders
 
@@ -461,6 +465,12 @@ export const SecretMainPage = () => {
                 {!canReadSecret && folders?.length === 0 && <PermissionDeniedBanner />}
                 {!loadingOnAccess && totalCount > INIT_PER_PAGE && (
                   <Pagination
+                    startAdornment={
+                      <div className="flex items-center gap-2">
+                        <Badge variant="primary">Folders: {totalFolderCount}</Badge>
+                        <Badge variant="success">Secrets: {totalSecretCount}</Badge>
+                      </div>
+                    }
                     className="border-t border-solid border-t-mineshaft-600"
                     count={totalCount}
                     page={page}

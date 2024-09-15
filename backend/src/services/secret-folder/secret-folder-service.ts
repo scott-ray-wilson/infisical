@@ -7,6 +7,7 @@ import { TPermissionServiceFactory } from "@app/ee/services/permission/permissio
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/ee/services/permission/project-permission";
 import { TSecretSnapshotServiceFactory } from "@app/ee/services/secret-snapshot/secret-snapshot-service";
 import { BadRequestError, NotFoundError } from "@app/lib/errors";
+import { OrderByDirection } from "@app/lib/types";
 
 import { TProjectDALFactory } from "../project/project-dal";
 import { TProjectEnvDALFactory } from "../project-env/project-env-dal";
@@ -396,7 +397,12 @@ export const secretFolderServiceFactory = ({
     actorOrgId,
     actorAuthMethod,
     environment,
-    path: secretPath
+    path: secretPath,
+    search,
+    orderBy,
+    orderDirection,
+    limit,
+    offset
   }: TGetFolderDTO) => {
     // folder list is allowed to be read by anyone
     // permission to check does user has access
@@ -408,8 +414,19 @@ export const secretFolderServiceFactory = ({
     const parentFolder = await folderDAL.findBySecretPath(projectId, environment, secretPath);
     if (!parentFolder) return [];
 
-    const folders = await folderDAL.find({ envId: env.id, parentId: parentFolder.id, isReserved: false });
-
+    const folders = await folderDAL.find(
+      {
+        envId: env.id,
+        parentId: parentFolder.id,
+        isReserved: false,
+        $search: search ? { name: `%${search}%` } : undefined
+      },
+      {
+        sort: orderBy ? [[orderBy, orderDirection ?? OrderByDirection.ASC]] : undefined,
+        limit,
+        offset
+      }
+    );
     return folders;
   };
 
@@ -420,7 +437,8 @@ export const secretFolderServiceFactory = ({
     actorOrgId,
     actorAuthMethod,
     environment,
-    path: secretPath
+    path: secretPath,
+    search
   }: TGetFolderDTO) => {
     // folder list is allowed to be read by anyone
     // permission to check does user has access
@@ -433,7 +451,12 @@ export const secretFolderServiceFactory = ({
     if (!parentFolder) return 0;
 
     const folders = await folderDAL.find(
-      { envId: env.id, parentId: parentFolder.id, isReserved: false },
+      {
+        envId: env.id,
+        parentId: parentFolder.id,
+        isReserved: false,
+        $search: search ? { name: `%${search}%` } : undefined
+      },
       { count: true }
     );
 

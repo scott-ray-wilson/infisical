@@ -90,9 +90,6 @@ type Props = {
   secretPath?: string;
   secretImports?: TSecretImport[];
   isFetching?: boolean;
-  secrets?: SecretV3RawSanitized[];
-  importedSecrets?: TImportedSecrets;
-  searchTerm: string;
 };
 
 export const SecretImportListView = ({
@@ -100,10 +97,7 @@ export const SecretImportListView = ({
   environment,
   workspaceId,
   secretPath,
-  importedSecrets,
-  secrets = [],
-  isFetching,
-  searchTerm
+  isFetching
 }: Props) => {
   const { popUp, handlePopUpOpen, handlePopUpClose, handlePopUpToggle } = usePopUp([
     "deleteSecretImport"
@@ -200,17 +194,10 @@ export const SecretImportListView = ({
             // TODO(akhilmhdh): change this and pass this whole object instead of one by one
             return (
               <SecretImportItem
-                searchTerm={searchTerm}
                 key={`imported-env-${item.id}`}
                 isReplicationExpand={replicationSecrets?.[item.id]}
                 onExpandReplicateSecrets={handleOpenReplicationSecrets}
                 secretImport={item}
-                importedSecrets={computeImportedSecretRows(
-                  item.importEnv.slug,
-                  item.importPath,
-                  importedSecrets,
-                  secrets
-                )}
                 secretPath={secretPath}
                 environment={environment}
                 onDelete={() => handlePopUpOpen("deleteSecretImport", item)}

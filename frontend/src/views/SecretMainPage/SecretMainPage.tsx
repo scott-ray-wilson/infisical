@@ -18,9 +18,7 @@ import {
 import { useDebounce, usePopUp } from "@app/hooks";
 import {
   useGetDynamicSecrets,
-  useGetProjectFolders,
   useGetSecretApprovalPolicyOfABoard,
-  useGetSecretImports,
   useGetWorkspaceSnapshotList,
   useGetWsSnapshotCount,
   useGetWsTags
@@ -28,6 +26,7 @@ import {
 import { useGetProjectSecretsDetails } from "@app/hooks/api/dashboard";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { FolderListView } from "@app/views/SecretMainPage/components/FolderListView";
+import { SecretImportListView } from "@app/views/SecretMainPage/components/SecretImportListView";
 
 import { SecretV2MigrationSection } from "../SecretOverviewPage/components/SecretV2MigrationSection";
 import { ActionBar } from "./components/ActionBar";
@@ -105,56 +104,57 @@ export const SecretMainPage = () => {
   //   }
   // });
 
-  const { data, isLoading: isDetailsLoading } = useGetProjectSecretsDetails(
-    {
-      environment,
-      workspaceId,
-      secretPath,
-      offset: paginationOffset,
-      limit: perPage,
-      search: debouncedSearchFilter,
-      orderDirection
-    },
-    {
-      enabled: canReadSecret
-    }
-  );
-
-  const { data: foldersData, isLoading: isFoldersLoading } = useGetProjectFolders({
-    projectId: workspaceId,
+  const { data, isLoading: isDetailsLoading } = useGetProjectSecretsDetails({
     environment,
-    path: secretPath,
-    options: {
-      enabled: !canReadSecret // gotten with details if user has read access
-    }
+    projectId: workspaceId,
+    secretPath,
+    offset: paginationOffset,
+    limit: perPage,
+    search: debouncedSearchFilter,
+    orderDirection,
+    // TODO: add UI to toggle resources
+    includeSecrets: canReadSecret,
+    includeDynamicSecrets: canReadSecret,
+    includeImports: canReadSecret,
+    includeFolders: true
   });
+
+  // const { data: foldersData, isLoading: isFoldersLoading } = useGetProjectFolders({
+  //   projectId: workspaceId,
+  //   environment,
+  //   path: secretPath,
+  //   options: {
+  //     enabled: !canReadSecret // gotten with details if user has read access
+  //   }
+  // });
 
   // TODO: hide pagination if only folders OR older version of project
 
-  // TODO test
-  const folders = canReadSecret ? data?.folders : foldersData;
-
-  const { secrets, totalCount, totalSecretCount, totalFolderCount } = data ?? {
-    secrets: [],
-    folders: [],
-    totalCount: 0
-  };
+  const {
+    secrets,
+    folders,
+    imports,
+    totalCount = 0,
+    totalSecretCount,
+    totalFolderCount,
+    totalImportCount
+  } = data ?? {};
 
   // fetch folders
 
   // fetch secret imports
-  const {
-    data: secretImports,
-    isLoading: isSecretImportsLoading
-    // isFetching: isSecretImportsFetching
-  } = useGetSecretImports({
-    projectId: workspaceId,
-    environment,
-    path: secretPath,
-    options: {
-      enabled: canReadSecret
-    }
-  });
+  // const {
+  //   data: secretImports,
+  //   isLoading: isSecretImportsLoading
+  //   // isFetching: isSecretImportsFetching
+  // } = useGetSecretImports({
+  //   projectId: workspaceId,
+  //   environment,
+  //   path: secretPath,
+  //   options: {
+  //     enabled: canReadSecret
+  //   }
+  // });
 
   // fetch imported secrets to show user the overriden ones
   // const { data: importedSecrets } = useGetImportedSecretsSingleEnv({
@@ -166,7 +166,7 @@ export const SecretMainPage = () => {
   //   }
   // });
 
-  const { data: dynamicSecrets, isLoading: isDynamicSecretLoading } = useGetDynamicSecrets({
+  const { data: dynamicSecrets } = useGetDynamicSecrets({
     projectSlug,
     environmentSlug: environment,
     path: secretPath
@@ -202,8 +202,8 @@ export const SecretMainPage = () => {
     isPaused: !canDoReadRollback
   });
 
-  const isNotEmtpy = Boolean(
-    secrets?.length || folders?.length || secretImports?.length || dynamicSecrets?.length
+  const isNotEmpty = Boolean(
+    secrets?.length || folders?.length || imports?.length || dynamicSecrets?.length
   );
 
   const handleSortToggle = () =>
@@ -250,8 +250,8 @@ export const SecretMainPage = () => {
   }, []);
 
   // loading screen when u have permission
-  const loadingOnAccess =
-    canReadSecret && (isDetailsLoading || isSecretImportsLoading || isDynamicSecretLoading);
+  // const isLoading =
+  //   canReadSecret && (isDetailsLoading || isSecretImportsLoading || isDynamicSecretLoading);
 
   // const rows = useMemo(() => {
   //   const filteredSecrets =
@@ -361,9 +361,9 @@ export const SecretMainPage = () => {
     if (totalCount < paginationOffset) setPage(1);
   }, [totalCount]);
 
-  // loading screen when you don't have permission but as folder's is viewable need to wait for that
-  const loadingOnDenied = !canReadSecret && isFoldersLoading;
-  if (loadingOnAccess || loadingOnDenied) {
+  // // loading screen when you don't have permission but as folder's is viewable need to wait for that
+  // const loadingOnDenied = !canReadSecret && isFoldersLoading;
+  if (isDetailsLoading) {
     return <ContentLoader text={LOADER_TEXT} />;
   }
 
@@ -410,10 +410,10 @@ export const SecretMainPage = () => {
               isSnapshotCountLoading={isSnapshotCountLoading}
               onClickRollbackMode={() => handlePopUpToggle("snapshots", true)}
             />
-            <div className="thin-scrollbar mt-3 overflow-y-auto overflow-x-hidden rounded-md bg-mineshaft-800 text-left text-sm text-bunker-300">
+            <div className="thin-scrollbar mt-3 overflow-y-auto overflow-x-hidden rounded-md rounded-b-none bg-mineshaft-800 text-left text-sm text-bunker-300">
               <div className="flex flex-col" id="dashboard">
-                {isNotEmtpy && (
-                  <div className="flex border-b border-mineshaft-600 font-medium">
+                {isNotEmpty && (
+                  <div className="sticky top-0 flex border-b border-mineshaft-600 bg-mineshaft-800 font-medium">
                     <div style={{ width: "2.8rem" }} className="flex-shrink-0 px-4 py-3" />
                     <div
                       className="flex w-80 flex-shrink-0 items-center border-r border-mineshaft-600 px-4 py-2"
@@ -433,18 +433,15 @@ export const SecretMainPage = () => {
                     <div className="flex-grow px-4 py-2">Value</div>
                   </div>
                 )}
-                {/* {canReadSecret && ( */}
-                {/*  <SecretImportListView */}
-                {/*    searchTerm={filter.searchFilter} */}
-                {/*    secretImports={rows.imports} */}
-                {/*    isFetching={isSecretImportsLoading || isSecretImportsFetching} */}
-                {/*    environment={environment} */}
-                {/*    workspaceId={workspaceId} */}
-                {/*    secretPath={secretPath} */}
-                {/*    secrets={secrets} */}
-                {/*    importedSecrets={importedSecrets} */}
-                {/*  /> */}
-                {/* )} */}
+                {canReadSecret && (
+                  <SecretImportListView
+                    secretImports={imports}
+                    isFetching={isDetailsLoading}
+                    environment={environment}
+                    workspaceId={workspaceId}
+                    secretPath={secretPath}
+                  />
+                )}
                 <FolderListView
                   folders={folders}
                   environment={environment}
@@ -471,24 +468,25 @@ export const SecretMainPage = () => {
                   />
                 )}
                 {!canReadSecret && folders?.length === 0 && <PermissionDeniedBanner />}
-                {!loadingOnAccess && totalCount > INIT_PER_PAGE && (
-                  <Pagination
-                    startAdornment={
-                      <div className="flex items-center gap-2">
-                        <Badge variant="primary">Folders: {totalFolderCount}</Badge>
-                        <Badge variant="success">Secrets: {totalSecretCount}</Badge>
-                      </div>
-                    }
-                    className="border-t border-solid border-t-mineshaft-600"
-                    count={totalCount}
-                    page={page}
-                    perPage={perPage}
-                    onChangePage={(newPage) => setPage(newPage)}
-                    onChangePerPage={(newPerPage) => setPerPage(newPerPage)}
-                  />
-                )}
               </div>
             </div>
+            {!isDetailsLoading && totalCount > INIT_PER_PAGE && (
+              <Pagination
+                startAdornment={
+                  <div className="flex items-center gap-2">
+                    <Badge variant="primary">Folders: {totalFolderCount}</Badge>
+                    <Badge variant="success">Imports: {totalImportCount}</Badge>
+                    <Badge variant="danger">Secrets: {totalSecretCount}</Badge>
+                  </div>
+                }
+                className="rounded-b-md border-t border-solid border-t-mineshaft-600"
+                count={totalCount}
+                page={page}
+                perPage={perPage}
+                onChangePage={(newPage) => setPage(newPage)}
+                onChangePerPage={(newPerPage) => setPerPage(newPerPage)}
+              />
+            )}
             <CreateSecretForm
               environment={environment}
               workspaceId={workspaceId}
@@ -501,7 +499,7 @@ export const SecretMainPage = () => {
               environment={environment}
               workspaceId={workspaceId}
               secretPath={secretPath}
-              isSmaller={isNotEmtpy}
+              isSmaller={isNotEmpty}
               environments={currentWorkspace?.environments}
               isProtectedBranch={isProtectedBranch}
             />

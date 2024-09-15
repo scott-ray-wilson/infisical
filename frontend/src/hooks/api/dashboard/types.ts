@@ -1,5 +1,6 @@
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { TSecretFolder } from "@app/hooks/api/secretFolders/types";
+import { TSecretImport } from "@app/hooks/api/secretImports/types";
 import { SecretV3Raw, SecretV3RawSanitized } from "@app/hooks/api/secrets/types";
 
 export type DashboardProjectSecretOverviewResponse = {
@@ -9,8 +10,11 @@ export type DashboardProjectSecretOverviewResponse = {
 export type DashboardProjectSecretsDetailsResponse = {
   secrets: SecretV3Raw[];
   folders: TSecretFolder[];
+  imports: TSecretImport[];
   totalSecretCount: number;
   totalFolderCount: number;
+  totalImportCount: number;
+  totalDynamicSecretCount: number;
   totalCount: number;
 };
 
@@ -30,13 +34,17 @@ export enum DashboardSecretsOrderBy {
 }
 
 export type TGetDashboardProjectSecretsOverviewDTO = {
-  workspaceId: string;
+  projectId: string;
   secretPath: string;
   offset?: number;
   limit?: number;
   orderBy?: DashboardSecretsOrderBy;
   orderDirection?: OrderByDirection;
   search?: string;
+  includeSecrets?: boolean;
+  includeFolders?: boolean;
+  includeImports?: boolean;
+  includeDynamicSecrets?: boolean;
 };
 
 export type TGetDashboardProjectSecretsDetailsDTO = TGetDashboardProjectSecretsOverviewDTO & {

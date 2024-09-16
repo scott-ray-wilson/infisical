@@ -310,7 +310,10 @@ export const ActionBar = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="p-0">
               <DropdownMenuItem
-                onClick={() => onToggleRowType(RowType.Import)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onToggleRowType(RowType.Import);
+                }}
                 icon={filter?.include[RowType.Import] && <FontAwesomeIcon icon={faCheckCircle} />}
                 iconPos="right"
               >
@@ -320,7 +323,10 @@ export const ActionBar = ({
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => onToggleRowType(RowType.Folder)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onToggleRowType(RowType.Folder);
+                }}
                 icon={filter?.include[RowType.Folder] && <FontAwesomeIcon icon={faCheckCircle} />}
                 iconPos="right"
               >
@@ -330,7 +336,10 @@ export const ActionBar = ({
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => onToggleRowType(RowType.DynamicSecret)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onToggleRowType(RowType.DynamicSecret);
+                }}
                 icon={
                   filter?.include[RowType.DynamicSecret] && <FontAwesomeIcon icon={faCheckCircle} />
                 }
@@ -342,7 +351,10 @@ export const ActionBar = ({
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => onToggleRowType(RowType.Secret)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onToggleRowType(RowType.Secret);
+                }}
                 icon={filter?.include[RowType.Secret] && <FontAwesomeIcon icon={faCheckCircle} />}
                 iconPos="right"
               >

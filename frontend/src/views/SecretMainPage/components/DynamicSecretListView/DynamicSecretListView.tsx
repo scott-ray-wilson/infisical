@@ -37,7 +37,7 @@ const formatProviderName = (type: DynamicSecretProviders) => {
 };
 
 type Props = {
-  dynamicSecrets: TDynamicSecret[];
+  dynamicSecrets?: TDynamicSecret[];
   environment: string;
   projectSlug: string;
   secretPath?: string;

@@ -7,20 +7,33 @@ import { apiRequest } from "@app/config/request";
 import {
   DashboardProjectSecretsDetails,
   DashboardProjectSecretsDetailsResponse,
+  DashboardProjectSecretsOverview,
+  DashboardProjectSecretsOverviewResponse,
   DashboardSecretsOrderBy,
-  TGetDashboardProjectSecretsDetailsDTO
+  TGetDashboardProjectSecretsDetailsDTO,
+  TGetDashboardProjectSecretsOverviewDTO
 } from "@app/hooks/api/dashboard/types";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { mergePersonalSecrets } from "@app/hooks/api/secrets/queries";
+import { SecretV3RawSanitized } from "@app/hooks/api/secrets/types";
 
 export const dashboardKeys = {
   all: () => ["dashboard"] as const,
-  // getProjectSecretsOverview: ({
-  //   projectId,
-  //   secretPath,
-  //   ...params
-  // }: TGetDashboardProjectSecretsOverviewDTO) =>
-  //   [{ projectId, secretPath }, "secrets-overview", params] as const,
+  getDashboardSecrets: ({
+    projectId,
+    secretPath
+  }: Pick<TGetDashboardProjectSecretsDetailsDTO, "projectId" | "secretPath">) =>
+    [...dashboardKeys.all(), { projectId, secretPath }] as const,
+  getProjectSecretsOverview: ({
+    projectId,
+    secretPath,
+    ...params
+  }: TGetDashboardProjectSecretsOverviewDTO) =>
+    [
+      ...dashboardKeys.getDashboardSecrets({ projectId, secretPath }),
+      "secrets-overview",
+      params
+    ] as const,
   getProjectSecretsDetails: ({
     projectId,
     secretPath,
@@ -28,29 +41,33 @@ export const dashboardKeys = {
     ...params
   }: TGetDashboardProjectSecretsDetailsDTO) =>
     [
-      ...dashboardKeys.all(),
-      { projectId, secretPath, environment },
+      ...dashboardKeys.getDashboardSecrets({ projectId, secretPath }),
+      environment,
       "secrets-details",
       params
     ] as const
 };
 
-// export const fetchProjectSecretsOverview = async ({
-//   projectId,
-//   secretPath
-// }: TGetDashboardProjectSecretsOverviewDTO) => {
-//   const { data } = await apiRequest.get<DashboardProjectSecretOverviewResponse>(
-//     "/api/v3/dashboard/secrets-overview",
-//     {
-//       params: {
-//         projectId,
-//         secretPath
-//       }
-//     }
-//   );
-//
-//   return data;
-// };
+export const fetchProjectSecretsOverview = async ({
+  includeFolders,
+  includeSecrets,
+  includeDynamicSecrets,
+  ...params
+}: TGetDashboardProjectSecretsOverviewDTO) => {
+  const { data } = await apiRequest.get<DashboardProjectSecretsOverviewResponse>(
+    "/api/v3/dashboard/secrets-overview",
+    {
+      params: {
+        ...params,
+        includeFolders: includeFolders ? "1" : "",
+        includeSecrets: includeSecrets ? "1" : "",
+        includeDynamicSecrets: includeDynamicSecrets ? "1" : ""
+      }
+    }
+  );
+
+  return data;
+};
 
 export const fetchProjectSecretsDetails = async ({
   includeFolders,
@@ -121,6 +138,84 @@ export const fetchProjectSecretsDetails = async ({
 //       []
 //     )
 //   });
+
+export const useGetProjectSecretsOverview = (
+  {
+    projectId,
+    secretPath,
+    offset = 0,
+    limit = 100,
+    orderBy = DashboardSecretsOrderBy.Name,
+    orderDirection = OrderByDirection.ASC,
+    search = "",
+    includeSecrets,
+    includeFolders,
+    includeDynamicSecrets
+  }: TGetDashboardProjectSecretsOverviewDTO,
+  options?: Omit<
+    UseQueryOptions<
+      DashboardProjectSecretsOverviewResponse,
+      unknown,
+      DashboardProjectSecretsOverview,
+      ReturnType<typeof dashboardKeys.getProjectSecretsOverview>
+    >,
+    "queryKey" | "queryFn"
+  >
+) => {
+  return useQuery({
+    ...options,
+    // wait for all values to be available
+    enabled: Boolean(projectId) && (options?.enabled ?? true),
+    queryKey: dashboardKeys.getProjectSecretsOverview({
+      secretPath,
+      search,
+      limit,
+      orderBy,
+      orderDirection,
+      offset,
+      projectId,
+      includeSecrets,
+      includeFolders,
+      includeDynamicSecrets
+    }),
+    queryFn: () =>
+      fetchProjectSecretsOverview({
+        secretPath,
+        search,
+        limit,
+        orderBy,
+        orderDirection,
+        offset,
+        projectId,
+        includeSecrets,
+        includeFolders,
+        includeDynamicSecrets
+      }),
+    onError: (error) => {
+      if (axios.isAxiosError(error)) {
+        const serverResponse = error.response?.data as { message: string };
+        createNotification({
+          title: "Error fetching secret details",
+          type: "error",
+          text: serverResponse.message
+        });
+      }
+    },
+    select: useCallback(
+      (data: Awaited<ReturnType<typeof fetchProjectSecretsOverview>>) => ({
+        ...data,
+        secrets: data.secrets
+          ? mergePersonalSecrets(data.secrets).reduce<Record<string, SecretV3RawSanitized>>(
+              (prev, curr) => ({ ...prev, [curr.key]: curr }),
+              {}
+            )
+          : undefined
+      }),
+      []
+    ),
+    keepPreviousData: true
+  });
+};
 
 export const useGetProjectSecretsDetails = (
   {
@@ -193,7 +288,7 @@ export const useGetProjectSecretsDetails = (
     select: useCallback(
       (data: Awaited<ReturnType<typeof fetchProjectSecretsDetails>>) => ({
         ...data,
-        secrets: mergePersonalSecrets(data.secrets)
+        secrets: data.secrets ? mergePersonalSecrets(data.secrets) : undefined
       }),
       []
     ),

@@ -238,7 +238,7 @@ export const SecretMainPage = () => {
 
   return (
     <StoreProvider>
-      <div className="container mx-auto flex h-full flex-col px-6 text-mineshaft-50 dark:[color-scheme:dark]">
+      <div className="container mx-auto flex  flex-col px-6 text-mineshaft-50 dark:[color-scheme:dark]">
         <SecretV2MigrationSection />
         <div className="relative right-6 -top-2 mb-2 ml-6">
           <NavHeader

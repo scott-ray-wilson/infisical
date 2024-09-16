@@ -4,31 +4,37 @@ import { TSecretFolder } from "@app/hooks/api/secretFolders/types";
 import { TSecretImport } from "@app/hooks/api/secretImports/types";
 import { SecretV3Raw, SecretV3RawSanitized } from "@app/hooks/api/secrets/types";
 
-export type DashboardProjectSecretOverviewResponse = {
-  secrets: SecretV3Raw[];
+export type DashboardProjectSecretsOverviewResponse = {
+  folders?: TSecretFolder[];
+  dynamicSecrets?: TDynamicSecret[];
+  secrets?: SecretV3Raw[];
+  totalSecretCount?: number;
+  totalFolderCount?: number;
+  totalDynamicSecretCount?: number;
+  totalCount: number;
 };
 
-export type DashboardProjectSecretsDetailsResponse = {
-  imports: TSecretImport[];
-  folders: TSecretFolder[];
-  dynamicSecrets: TDynamicSecret[];
-  secrets: SecretV3Raw[];
-  totalSecretCount: number;
-  totalFolderCount: number;
-  totalImportCount: number;
-  totalDynamicSecretCount: number;
-  totalCount: number;
+export type DashboardProjectSecretsDetailsResponse = DashboardProjectSecretsOverviewResponse & {
+  imports?: TSecretImport[];
+  totalImportCount?: number;
 };
 
 // export type DashboardProjectSecretsOverview = {
 //   secrets: Record<string, SecretV3RawSanitized>;
 // };
 
+export type DashboardProjectSecretsOverview = Omit<
+  DashboardProjectSecretsOverviewResponse,
+  "secrets"
+> & {
+  secrets?: Record<string, SecretV3RawSanitized>;
+};
+
 export type DashboardProjectSecretsDetails = Omit<
   DashboardProjectSecretsDetailsResponse,
   "secrets"
 > & {
-  secrets: SecretV3RawSanitized[];
+  secrets?: SecretV3RawSanitized[];
 };
 
 export enum DashboardSecretsOrderBy {
@@ -45,10 +51,10 @@ export type TGetDashboardProjectSecretsOverviewDTO = {
   search?: string;
   includeSecrets?: boolean;
   includeFolders?: boolean;
-  includeImports?: boolean;
   includeDynamicSecrets?: boolean;
 };
 
 export type TGetDashboardProjectSecretsDetailsDTO = TGetDashboardProjectSecretsOverviewDTO & {
   environment: string;
+  includeImports?: boolean;
 };

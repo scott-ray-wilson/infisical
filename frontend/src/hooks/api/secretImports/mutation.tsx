@@ -33,7 +33,7 @@ export const useCreateSecretImport = () => {
         secretImportKeys.getSecretImportSecrets({ projectId, environment, path })
       );
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({ projectId, environment, secretPath: path ?? "/" })
+        dashboardKeys.getDashboardSecrets({ projectId, secretPath: path ?? "/" })
       );
     }
   });
@@ -60,7 +60,7 @@ export const useUpdateSecretImport = () => {
         secretImportKeys.getSecretImportSecrets({ environment, path, projectId })
       );
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({ projectId, environment, secretPath: path ?? "/" })
+        dashboardKeys.getDashboardSecrets({ projectId, secretPath: path ?? "/" })
       );
     }
   });
@@ -101,7 +101,7 @@ export const useDeleteSecretImport = () => {
         secretImportKeys.getSecretImportSecrets({ projectId, environment, path })
       );
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({ projectId, environment, secretPath: path ?? "/" })
+        dashboardKeys.getDashboardSecrets({ projectId, secretPath: path ?? "/" })
       );
     }
   });

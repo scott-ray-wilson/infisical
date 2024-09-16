@@ -126,9 +126,8 @@ export const useCreateFolder = () => {
     },
     onSuccess: (_, { projectId, environment, path }) => {
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({
+        dashboardKeys.getDashboardSecrets({
           projectId,
-          environment,
           secretPath: path ?? "/"
         })
       );
@@ -160,9 +159,8 @@ export const useUpdateFolder = () => {
     },
     onSuccess: (_, { projectId, environment, path }) => {
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({
+        dashboardKeys.getDashboardSecrets({
           projectId,
-          environment,
           secretPath: path ?? "/"
         })
       );
@@ -195,9 +193,8 @@ export const useDeleteFolder = () => {
     },
     onSuccess: (_, { path = "/", projectId, environment }) => {
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({
+        dashboardKeys.getDashboardSecrets({
           projectId,
-          environment,
           secretPath: path
         })
       );
@@ -229,9 +226,8 @@ export const useUpdateFolderBatch = () => {
     onSuccess: (_, { projectId, folders }) => {
       folders.forEach((folder) => {
         queryClient.invalidateQueries(
-          dashboardKeys.getProjectSecretsDetails({
+          dashboardKeys.getDashboardSecrets({
             projectId,
-            environment: folder.environment,
             secretPath: folder.path ?? "/"
           })
         );

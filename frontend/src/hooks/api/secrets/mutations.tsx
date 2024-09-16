@@ -46,7 +46,7 @@ export const useCreateSecretV3 = ({
     },
     onSuccess: (_, { workspaceId, environment, secretPath }) => {
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({ projectId: workspaceId, environment, secretPath })
+        dashboardKeys.getDashboardSecrets({ projectId: workspaceId, secretPath })
       );
       queryClient.invalidateQueries(
         secretKeys.getProjectSecret({ workspaceId, environment, secretPath })
@@ -101,7 +101,7 @@ export const useUpdateSecretV3 = ({
     },
     onSuccess: (_, { workspaceId, environment, secretPath }) => {
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({ projectId: workspaceId, environment, secretPath })
+        dashboardKeys.getDashboardSecrets({ projectId: workspaceId, secretPath })
       );
       queryClient.invalidateQueries(
         secretKeys.getProjectSecret({ workspaceId, environment, secretPath })
@@ -147,7 +147,7 @@ export const useDeleteSecretV3 = ({
     },
     onSuccess: (_, { workspaceId, environment, secretPath }) => {
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({ projectId: workspaceId, environment, secretPath })
+        dashboardKeys.getDashboardSecrets({ projectId: workspaceId, secretPath })
       );
       queryClient.invalidateQueries(
         secretKeys.getProjectSecret({ workspaceId, environment, secretPath })
@@ -183,7 +183,7 @@ export const useCreateSecretBatch = ({
     },
     onSuccess: (_, { workspaceId, environment, secretPath }) => {
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({ projectId: workspaceId, environment, secretPath })
+        dashboardKeys.getDashboardSecrets({ projectId: workspaceId, secretPath })
       );
       queryClient.invalidateQueries(
         secretKeys.getProjectSecret({ workspaceId, environment, secretPath })
@@ -219,7 +219,7 @@ export const useUpdateSecretBatch = ({
     },
     onSuccess: (_, { workspaceId, environment, secretPath }) => {
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({ projectId: workspaceId, environment, secretPath })
+        dashboardKeys.getDashboardSecrets({ projectId: workspaceId, secretPath })
       );
       queryClient.invalidateQueries(
         secretKeys.getProjectSecret({ workspaceId, environment, secretPath })
@@ -257,7 +257,7 @@ export const useDeleteSecretBatch = ({
     },
     onSuccess: (_, { workspaceId, environment, secretPath }) => {
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({ projectId: workspaceId, environment, secretPath })
+        dashboardKeys.getDashboardSecrets({ projectId: workspaceId, secretPath })
       );
       queryClient.invalidateQueries(
         secretKeys.getProjectSecret({ workspaceId, environment, secretPath })
@@ -315,9 +315,8 @@ export const useMoveSecrets = ({
     },
     onSuccess: (_, { projectId, sourceEnvironment, sourceSecretPath }) => {
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({
+        dashboardKeys.getDashboardSecrets({
           projectId,
-          environment: sourceEnvironment,
           secretPath: sourceSecretPath
         })
       );

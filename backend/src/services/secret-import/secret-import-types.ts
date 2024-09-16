@@ -32,6 +32,7 @@ export type TDeleteSecretImportDTO = {
 export type TGetSecretImportsDTO = {
   environment: string;
   path: string;
+  search?: string;
 } & TProjectPermission;
 
 export type TGetSecretsFromImportDTO = {

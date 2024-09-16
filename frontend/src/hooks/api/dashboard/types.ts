@@ -1,3 +1,4 @@
+import { TDynamicSecret } from "@app/hooks/api/dynamicSecret/types";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { TSecretFolder } from "@app/hooks/api/secretFolders/types";
 import { TSecretImport } from "@app/hooks/api/secretImports/types";
@@ -8,9 +9,10 @@ export type DashboardProjectSecretOverviewResponse = {
 };
 
 export type DashboardProjectSecretsDetailsResponse = {
-  secrets: SecretV3Raw[];
-  folders: TSecretFolder[];
   imports: TSecretImport[];
+  folders: TSecretFolder[];
+  dynamicSecrets: TDynamicSecret[];
+  secrets: SecretV3Raw[];
   totalSecretCount: number;
   totalFolderCount: number;
   totalImportCount: number;

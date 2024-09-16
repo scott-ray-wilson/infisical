@@ -2,13 +2,21 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/router";
 import { subject } from "@casl/ability";
-import { faArrowDown, faArrowUp } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowDown,
+  faArrowUp,
+  faFileImport,
+  faFingerprint,
+  faFolder,
+  faKey
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { twMerge } from "tailwind-merge";
 
 import NavHeader from "@app/components/navigation/NavHeader";
 import { createNotification } from "@app/components/notifications";
 import { PermissionDeniedBanner } from "@app/components/permissions";
-import { Badge, ContentLoader, Pagination } from "@app/components/v2";
+import { ContentLoader, Pagination } from "@app/components/v2";
 import {
   ProjectPermissionActions,
   ProjectPermissionSub,
@@ -17,7 +25,6 @@ import {
 } from "@app/context";
 import { useDebounce, usePopUp } from "@app/hooks";
 import {
-  useGetDynamicSecrets,
   useGetSecretApprovalPolicyOfABoard,
   useGetWorkspaceSnapshotList,
   useGetWsSnapshotCount,
@@ -25,6 +32,7 @@ import {
 } from "@app/hooks/api";
 import { useGetProjectSecretsDetails } from "@app/hooks/api/dashboard";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
+import { DynamicSecretListView } from "@app/views/SecretMainPage/components/DynamicSecretListView";
 import { FolderListView } from "@app/views/SecretMainPage/components/FolderListView";
 import { SecretImportListView } from "@app/views/SecretMainPage/components/SecretImportListView";
 
@@ -36,7 +44,7 @@ import { SecretDropzone } from "./components/SecretDropzone";
 import { SecretListView } from "./components/SecretListView";
 import { SnapshotView } from "./components/SnapshotView";
 import { StoreProvider } from "./SecretMainPage.store";
-import { Filter } from "./SecretMainPage.types";
+import { Filter, RowType } from "./SecretMainPage.types";
 
 const LOADER_TEXT = [
   "Retrieving your encrypted secrets...",
@@ -53,11 +61,7 @@ export const SecretMainPage = () => {
 
   const [isVisible, setIsVisible] = useState(false);
   const [orderDirection, setOrderDirection] = useState<OrderByDirection>(OrderByDirection.ASC);
-  const [filter, setFilter] = useState<Filter>({
-    tags: {},
-    searchFilter: (router.query.searchFilter as string) || ""
-  });
-  const debouncedSearchFilter = useDebounce(filter.searchFilter);
+
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(INIT_PER_PAGE);
   const paginationOffset = (page - 1) * perPage;
@@ -80,6 +84,18 @@ export const SecretMainPage = () => {
     ProjectPermissionSub.SecretRollback
   );
 
+  const [filter, setFilter] = useState<Filter>({
+    tags: {},
+    searchFilter: (router.query.searchFilter as string) || "",
+    include: {
+      [RowType.Folder]: true,
+      [RowType.Import]: canReadSecret,
+      [RowType.DynamicSecret]: canReadSecret,
+      [RowType.Secret]: canReadSecret
+    }
+  });
+  const debouncedSearchFilter = useDebounce(filter.searchFilter);
+
   useEffect(() => {
     if (
       !isWorkspaceLoading &&
@@ -88,7 +104,7 @@ export const SecretMainPage = () => {
     ) {
       router.push(`/project/${workspaceId}/secrets/overview`);
       createNotification({
-        text: "No envronment found with given slug",
+        text: "No environment found with given slug",
         type: "error"
       });
     }
@@ -112,11 +128,10 @@ export const SecretMainPage = () => {
     limit: perPage,
     search: debouncedSearchFilter,
     orderDirection,
-    // TODO: add UI to toggle resources
-    includeSecrets: canReadSecret,
-    includeDynamicSecrets: canReadSecret,
-    includeImports: canReadSecret,
-    includeFolders: true
+    includeImports: canReadSecret && filter.include.import,
+    includeFolders: filter.include.folder,
+    includeDynamicSecrets: canReadSecret && filter.include.dynamic,
+    includeSecrets: canReadSecret && filter.include.secret
   });
 
   // const { data: foldersData, isLoading: isFoldersLoading } = useGetProjectFolders({
@@ -131,13 +146,15 @@ export const SecretMainPage = () => {
   // TODO: hide pagination if only folders OR older version of project
 
   const {
-    secrets,
-    folders,
     imports,
-    totalCount = 0,
-    totalSecretCount,
-    totalFolderCount,
-    totalImportCount
+    folders,
+    dynamicSecrets,
+    secrets,
+    totalImportCount = 0,
+    totalFolderCount = 0,
+    totalDynamicSecretCount = 0,
+    totalSecretCount = 0,
+    totalCount = 0
   } = data ?? {};
 
   // fetch folders
@@ -166,11 +183,11 @@ export const SecretMainPage = () => {
   //   }
   // });
 
-  const { data: dynamicSecrets } = useGetDynamicSecrets({
-    projectSlug,
-    environmentSlug: environment,
-    path: secretPath
-  });
+  // const { data: dynamicSecrets } = useGetDynamicSecrets({
+  //   projectSlug,
+  //   environmentSlug: environment,
+  //   path: secretPath
+  // });
 
   // fech tags
   const { data: tags } = useGetWsTags(canReadSecret ? workspaceId : "");
@@ -228,6 +245,20 @@ export const SecretMainPage = () => {
         if (isTagPresent) delete newTagFilter[tagId];
         else newTagFilter[tagId] = true;
         return { ...state, tags: newTagFilter };
+      }),
+    []
+  );
+
+  const handleToggleRowType = useCallback(
+    (rowType: RowType) =>
+      setFilter((state) => {
+        return {
+          ...state,
+          include: {
+            ...state.include,
+            [rowType]: !state.include[rowType]
+          }
+        };
       }),
     []
   );
@@ -367,6 +398,8 @@ export const SecretMainPage = () => {
     return <ContentLoader text={LOADER_TEXT} />;
   }
 
+  const showPagination = true; // TODO: determine
+
   return (
     <StoreProvider>
       <div className="container mx-auto flex h-full flex-col px-6 text-mineshaft-50 dark:[color-scheme:dark]">
@@ -395,17 +428,23 @@ export const SecretMainPage = () => {
               isVisible={isVisible}
               filter={filter}
               tags={tags}
-              onVisiblilityToggle={handleToggleVisibility}
+              onVisibilityToggle={handleToggleVisibility}
               onSearchChange={handleSearchChange}
               onToggleTagFilter={handleTagToggle}
               snapshotCount={snapshotCount || 0}
               isSnapshotCountLoading={isSnapshotCountLoading}
+              onToggleRowType={handleToggleRowType}
               onClickRollbackMode={() => handlePopUpToggle("snapshots", true)}
             />
             <div className="thin-scrollbar mt-3 overflow-y-auto overflow-x-hidden rounded-md rounded-b-none bg-mineshaft-800 text-left text-sm text-bunker-300">
               <div className="flex flex-col" id="dashboard">
                 {isNotEmpty && (
-                  <div className="sticky top-0 flex border-b border-mineshaft-600 bg-mineshaft-800 font-medium">
+                  <div
+                    className={twMerge(
+                      "flex border-b border-mineshaft-600 font-medium",
+                      showPagination ? "sticky top-0 bg-mineshaft-800" : ""
+                    )}
+                  >
                     <div style={{ width: "2.8rem" }} className="flex-shrink-0 px-4 py-3" />
                     <div
                       className="flex w-80 flex-shrink-0 items-center border-r border-mineshaft-600 px-4 py-2"
@@ -440,14 +479,14 @@ export const SecretMainPage = () => {
                   workspaceId={workspaceId}
                   secretPath={secretPath}
                 />
-                {/* {canReadSecret && ( */}
-                {/*  <DynamicSecretListView */}
-                {/*    environment={environment} */}
-                {/*    projectSlug={projectSlug} */}
-                {/*    secretPath={secretPath} */}
-                {/*    dynamicSecrets={rows.dynamicSecrets || []} */}
-                {/*  /> */}
-                {/* )} */}
+                {canReadSecret && (
+                  <DynamicSecretListView
+                    environment={environment}
+                    projectSlug={projectSlug}
+                    secretPath={secretPath}
+                    dynamicSecrets={dynamicSecrets}
+                  />
+                )}
                 {canReadSecret && (
                   <SecretListView
                     secrets={secrets}
@@ -462,13 +501,34 @@ export const SecretMainPage = () => {
                 {!canReadSecret && folders?.length === 0 && <PermissionDeniedBanner />}
               </div>
             </div>
-            {!isDetailsLoading && totalCount > INIT_PER_PAGE && (
+            {showPagination && !isDetailsLoading && totalCount > INIT_PER_PAGE && (
               <Pagination
                 startAdornment={
-                  <div className="flex items-center gap-2">
-                    <Badge variant="primary">Folders: {totalFolderCount}</Badge>
-                    <Badge variant="success">Imports: {totalImportCount}</Badge>
-                    <Badge variant="danger">Secrets: {totalSecretCount}</Badge>
+                  <div className="flex items-center gap-2 divide-x divide-mineshaft-500 text-sm text-mineshaft-400">
+                    {totalImportCount > 0 && (
+                      <div className="flex items-center gap-2">
+                        <FontAwesomeIcon icon={faFileImport} className=" text-green-700" />
+                        <span>{totalImportCount}</span>
+                      </div>
+                    )}
+                    {totalFolderCount > 0 && (
+                      <div className="flex items-center gap-2 pl-2">
+                        <FontAwesomeIcon icon={faFolder} className="text-yellow-700" />
+                        <span>{totalFolderCount}</span>
+                      </div>
+                    )}
+                    {totalDynamicSecretCount > 0 && (
+                      <div className="flex items-center gap-2 pl-2">
+                        <FontAwesomeIcon icon={faFingerprint} className="text-yellow-700" />
+                        <span>{totalDynamicSecretCount}</span>
+                      </div>
+                    )}
+                    {totalSecretCount > 0 && (
+                      <div className="flex items-center gap-2 pl-2">
+                        <FontAwesomeIcon icon={faKey} className="text-bunker-300" />
+                        <span>{totalSecretCount}</span>
+                      </div>
+                    )}
                   </div>
                 }
                 className="rounded-b-md border-t border-solid border-t-mineshaft-600"

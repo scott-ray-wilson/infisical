@@ -46,11 +46,23 @@ export const dashboardKeys = {
 //   return data;
 // };
 
-export const fetchProjectSecretsDetails = async (params: TGetDashboardProjectSecretsDetailsDTO) => {
+export const fetchProjectSecretsDetails = async ({
+  includeFolders,
+  includeImports,
+  includeSecrets,
+  includeDynamicSecrets,
+  ...params
+}: TGetDashboardProjectSecretsDetailsDTO) => {
   const { data } = await apiRequest.get<DashboardProjectSecretsDetailsResponse>(
     "/api/v3/dashboard/secrets-details",
     {
-      params
+      params: {
+        ...params,
+        includeImports: includeImports ? "1" : "",
+        includeFolders: includeFolders ? "1" : "",
+        includeSecrets: includeSecrets ? "1" : "",
+        includeDynamicSecrets: includeDynamicSecrets ? "1" : ""
+      }
     }
   );
 

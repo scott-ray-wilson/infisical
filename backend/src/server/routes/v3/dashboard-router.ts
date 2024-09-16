@@ -126,8 +126,6 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       let remainingLimit = limit;
       let adjustedOffset = offset;
 
-      console.log("include", includeFolders, includeSecrets, includeDynamicSecrets, includeImports);
-
       let imports: Awaited<ReturnType<typeof server.services.secretImport.getImports>> = [];
       let folders: Awaited<ReturnType<typeof server.services.folder.getFolders>> = [];
       let secrets: Awaited<ReturnType<typeof server.services.secret.getSecretsRaw>>["secrets"] = [];
@@ -182,7 +180,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           remainingLimit -= imports.length;
           adjustedOffset = 0;
         } else {
-          adjustedOffset = Math.max(0, offset - totalImportCount);
+          adjustedOffset = Math.max(0, adjustedOffset - totalImportCount);
         }
       }
 
@@ -219,7 +217,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           remainingLimit -= folders.length;
           adjustedOffset = 0;
         } else {
-          adjustedOffset = Math.max(0, offset - totalFolderCount);
+          adjustedOffset = Math.max(0, adjustedOffset - totalFolderCount);
         }
       }
 
@@ -253,12 +251,14 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             })
           });
 
-          remainingLimit -= secrets.length;
+          remainingLimit -= dynamicSecrets.length;
           adjustedOffset = 0;
         } else {
-          adjustedOffset = Math.max(0, offset - totalSecretCount);
+          adjustedOffset = Math.max(0, adjustedOffset - totalDynamicSecretCount);
         }
       }
+
+      console.log("adjusted", remainingLimit, adjustedOffset);
 
       if (includeSecrets) {
         totalSecretCount = await server.services.secret.getSecretsRawCount({
@@ -327,8 +327,6 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           }
         }
       }
-
-      console.log("include imports", includeImports, imports);
 
       return {
         imports,

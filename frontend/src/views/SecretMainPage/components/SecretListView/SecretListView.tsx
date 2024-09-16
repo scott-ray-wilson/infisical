@@ -215,7 +215,11 @@ export const SecretListView = ({
           if (cb) cb();
         }
         queryClient.invalidateQueries(
-          dashboardKeys.getProjectSecretsDetails({ workspaceId, environment, secretPath })
+          dashboardKeys.getProjectSecretsDetails({
+            projectId: workspaceId,
+            environment,
+            secretPath
+          })
         );
         queryClient.invalidateQueries(
           secretKeys.getProjectSecret({ workspaceId, environment, secretPath })
@@ -251,7 +255,7 @@ export const SecretListView = ({
       await handleSecretOperation("delete", SecretType.Shared, key, { secretId });
       // wrap this in another function and then reuse
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({ workspaceId, environment, secretPath })
+        dashboardKeys.getProjectSecretsDetails({ projectId: workspaceId, environment, secretPath })
       );
       queryClient.invalidateQueries(
         secretKeys.getProjectSecret({ workspaceId, environment, secretPath })

@@ -192,7 +192,7 @@ export const SecretDropzone = ({
         secretKeys.getProjectSecret({ workspaceId, environment, secretPath })
       );
       queryClient.invalidateQueries(
-        dashboardKeys.getProjectSecretsDetails({ workspaceId, environment, secretPath })
+        dashboardKeys.getProjectSecretsDetails({ projectId: workspaceId, environment, secretPath })
       );
       queryClient.invalidateQueries(secretApprovalRequestKeys.count({ workspaceId }));
       handlePopUpClose("overlapKeyWarning");

@@ -127,7 +127,7 @@ export const useCreateFolder = () => {
     onSuccess: (_, { projectId, environment, path }) => {
       queryClient.invalidateQueries(
         dashboardKeys.getProjectSecretsDetails({
-          workspaceId: projectId,
+          projectId,
           environment,
           secretPath: path ?? "/"
         })
@@ -161,7 +161,7 @@ export const useUpdateFolder = () => {
     onSuccess: (_, { projectId, environment, path }) => {
       queryClient.invalidateQueries(
         dashboardKeys.getProjectSecretsDetails({
-          workspaceId: projectId,
+          projectId,
           environment,
           secretPath: path ?? "/"
         })
@@ -196,10 +196,13 @@ export const useDeleteFolder = () => {
     onSuccess: (_, { path = "/", projectId, environment }) => {
       queryClient.invalidateQueries(
         dashboardKeys.getProjectSecretsDetails({
-          workspaceId: projectId,
+          projectId,
           environment,
           secretPath: path
         })
+      );
+      queryClient.invalidateQueries(
+        folderQueryKeys.getSecretFolders({ projectId, environment, path })
       );
       queryClient.invalidateQueries(
         secretSnapshotKeys.list({ workspaceId: projectId, environment, directory: path })
@@ -227,7 +230,7 @@ export const useUpdateFolderBatch = () => {
       folders.forEach((folder) => {
         queryClient.invalidateQueries(
           dashboardKeys.getProjectSecretsDetails({
-            workspaceId: projectId,
+            projectId,
             environment: folder.environment,
             secretPath: folder.path ?? "/"
           })

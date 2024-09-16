@@ -14,6 +14,7 @@ import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { mergePersonalSecrets } from "@app/hooks/api/secrets/queries";
 
 export const dashboardKeys = {
+  all: () => ["dashboard"] as const,
   // getProjectSecretsOverview: ({
   //   projectId,
   //   secretPath,
@@ -26,7 +27,12 @@ export const dashboardKeys = {
     environment,
     ...params
   }: TGetDashboardProjectSecretsDetailsDTO) =>
-    [{ projectId, secretPath, environment }, "secrets-details", params] as const
+    [
+      ...dashboardKeys.all(),
+      { projectId, secretPath, environment },
+      "secrets-details",
+      params
+    ] as const
 };
 
 // export const fetchProjectSecretsOverview = async ({

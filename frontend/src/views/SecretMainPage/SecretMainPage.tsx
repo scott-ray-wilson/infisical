@@ -35,6 +35,7 @@ import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { DynamicSecretListView } from "@app/views/SecretMainPage/components/DynamicSecretListView";
 import { FolderListView } from "@app/views/SecretMainPage/components/FolderListView";
 import { SecretImportListView } from "@app/views/SecretMainPage/components/SecretImportListView";
+import { SecretTableResourceCount } from "@app/views/SecretOverviewPage/components/SecretTableResourceCount/SecretTableResourceCount";
 
 import { SecretV2MigrationSection } from "../SecretOverviewPage/components/SecretV2MigrationSection";
 import { ActionBar } from "./components/ActionBar";
@@ -347,32 +348,12 @@ export const SecretMainPage = () => {
             {!isDetailsLoading && totalCount > INIT_PER_PAGE && (
               <Pagination
                 startAdornment={
-                  <div className="flex items-center gap-2 divide-x divide-mineshaft-500 text-sm text-mineshaft-400">
-                    {totalImportCount > 0 && (
-                      <div className="flex items-center gap-2">
-                        <FontAwesomeIcon icon={faFileImport} className=" text-green-700" />
-                        <span>{totalImportCount}</span>
-                      </div>
-                    )}
-                    {totalFolderCount > 0 && (
-                      <div className="flex items-center gap-2 pl-2">
-                        <FontAwesomeIcon icon={faFolder} className="text-yellow-700" />
-                        <span>{totalFolderCount}</span>
-                      </div>
-                    )}
-                    {totalDynamicSecretCount > 0 && (
-                      <div className="flex items-center gap-2 pl-2">
-                        <FontAwesomeIcon icon={faFingerprint} className="text-yellow-700" />
-                        <span>{totalDynamicSecretCount}</span>
-                      </div>
-                    )}
-                    {totalSecretCount > 0 && (
-                      <div className="flex items-center gap-2 pl-2">
-                        <FontAwesomeIcon icon={faKey} className="text-bunker-300" />
-                        <span>{totalSecretCount}</span>
-                      </div>
-                    )}
-                  </div>
+                  <SecretTableResourceCount
+                    dynamicSecretCount={totalDynamicSecretCount}
+                    importCount={totalImportCount}
+                    secretCount={totalSecretCount}
+                    folderCount={totalFolderCount}
+                  />
                 }
                 className="rounded-b-md border-t border-solid border-t-mineshaft-600"
                 count={totalCount}

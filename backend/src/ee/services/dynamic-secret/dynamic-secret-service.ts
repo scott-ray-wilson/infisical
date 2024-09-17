@@ -1,6 +1,6 @@
 import { ForbiddenError, subject } from "@casl/ability";
 
-import { SecretKeyEncoding } from "@app/db/schemas";
+import { SecretKeyEncoding, TDynamicSecrets, TSecretFolders } from "@app/db/schemas";
 import { TLicenseServiceFactory } from "@app/ee/services/license/license-service";
 import { TPermissionServiceFactory } from "@app/ee/services/permission/permission-service";
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/ee/services/permission/project-permission";
@@ -32,7 +32,7 @@ type TDynamicSecretServiceFactoryDep = {
     "pruneDynamicSecret" | "unsetLeaseRevocation"
   >;
   licenseService: Pick<TLicenseServiceFactory, "getPlan">;
-  folderDAL: Pick<TSecretFolderDALFactory, "findBySecretPath">;
+  folderDAL: Pick<TSecretFolderDALFactory, "findBySecretPath" | "findBySecretPathMultiEnv">;
   projectDAL: Pick<TProjectDALFactory, "findProjectBySlug">;
   permissionService: Pick<TPermissionServiceFactory, "getProjectPermission">;
 };
@@ -301,6 +301,51 @@ export const dynamicSecretServiceFactory = ({
     return { ...dynamicSecretCfg, inputs: providerInputs };
   };
 
+  const getCountMultiEnv = async ({
+    actorAuthMethod,
+    actorOrgId,
+    actorId,
+    actor,
+    projectSlug,
+    path,
+    environmentSlugs,
+    search,
+    ...params
+  }: Omit<TListDynamicSecretsDTO, "environmentSlug"> & { environmentSlugs: string[] }) => {
+    let { projectId } = params;
+
+    if (!projectId) {
+      if (!projectSlug) throw new BadRequestError({ message: "Project ID or slug required" });
+      const project = await projectDAL.findProjectBySlug(projectSlug, actorOrgId);
+      if (!project) throw new BadRequestError({ message: "Project not found" });
+      projectId = project.id;
+    }
+
+    const { permission } = await permissionService.getProjectPermission(
+      actor,
+      actorId,
+      projectId,
+      actorAuthMethod,
+      actorOrgId
+    );
+
+    environmentSlugs.forEach((environmentSlug) =>
+      ForbiddenError.from(permission).throwUnlessCan(
+        ProjectPermissionActions.Read,
+        subject(ProjectPermissionSub.Secrets, { environment: environmentSlug, secretPath: path })
+      )
+    );
+
+    const folders = await folderDAL.findBySecretPathMultiEnv(projectId, environmentSlugs, path);
+    if (!folders.length) throw new BadRequestError({ message: "Folders not found" });
+
+    const dynamicSecretCfg = await dynamicSecretDAL.find(
+      { $in: { folderId: folders.map((folder) => folder.id) }, $search: search ? { name: `%${search}%` } : undefined },
+      { count: true }
+    );
+    return Number(dynamicSecretCfg[0]?.count ?? 0);
+  };
+
   const getCount = async ({
     actorAuthMethod,
     actorOrgId,
@@ -393,12 +438,81 @@ export const dynamicSecretServiceFactory = ({
     return dynamicSecretCfg;
   };
 
+  const listMultiEnv = async ({
+    actorAuthMethod,
+    actorOrgId,
+    actorId,
+    actor,
+    projectSlug,
+    path,
+    environmentSlugs,
+    limit,
+    offset,
+    orderBy,
+    orderDirection = OrderByDirection.ASC,
+    search,
+    ...params
+  }: Omit<TListDynamicSecretsDTO, "environmentSlug"> & { environmentSlugs: string[] }) => {
+    let { projectId } = params;
+
+    if (!projectId) {
+      if (!projectSlug) throw new BadRequestError({ message: "Project ID or slug required" });
+      const project = await projectDAL.findProjectBySlug(projectSlug, actorOrgId);
+      if (!project) throw new BadRequestError({ message: "Project not found" });
+      projectId = project.id;
+    }
+
+    const { permission } = await permissionService.getProjectPermission(
+      actor,
+      actorId,
+      projectId,
+      actorAuthMethod,
+      actorOrgId
+    );
+
+    environmentSlugs.forEach((environmentSlug) =>
+      ForbiddenError.from(permission).throwUnlessCan(
+        ProjectPermissionActions.Read,
+        subject(ProjectPermissionSub.Secrets, { environment: environmentSlug, secretPath: path })
+      )
+    );
+
+    const folders = await folderDAL.findBySecretPathMultiEnv(projectId, environmentSlugs, path);
+    if (!folders.length) throw new BadRequestError({ message: "Folders not found" });
+
+    const dynamicSecretCfg = await dynamicSecretDAL.find(
+      {
+        $in: {
+          folderId: folders.map((folder) => folder.id)
+        },
+        $search: search ? { name: `%${search}%` } : undefined
+      },
+      {
+        limit,
+        offset,
+        sort: orderBy ? [[orderBy, orderDirection]] : undefined
+      }
+    );
+
+    const folderEnvMap: Map<string, string> = new Map(folders.map((folder) => [folder.id, folder.environment.slug]));
+
+    const data: { [key: string]: Array<(typeof dynamicSecretCfg)[number]> } = {};
+    dynamicSecretCfg.forEach((secret) => {
+      const slug = folderEnvMap.get(secret.folderId);
+      data[slug!] = [...(data[slug!] ?? []), secret];
+    });
+
+    return data;
+  };
+
   return {
     create,
     updateByName,
     deleteByName,
     getDetails,
     list,
-    getCount
+    listMultiEnv,
+    getCount,
+    getCountMultiEnv
   };
 };

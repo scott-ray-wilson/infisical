@@ -67,6 +67,7 @@ import { useUpdateFolderBatch } from "@app/hooks/api/secretFolders/queries";
 import { TUpdateFolderBatchDTO } from "@app/hooks/api/secretFolders/types";
 import { SecretType, TSecretFolder } from "@app/hooks/api/types";
 import { useFolderOverview } from "@app/hooks/utils";
+import { SecretTableResourceCount } from "@app/views/SecretOverviewPage/components/SecretTableResourceCount/SecretTableResourceCount";
 
 import { FolderForm } from "../SecretMainPage/components/ActionBar/FolderForm";
 import { CreateSecretForm } from "./components/CreateSecretForm";
@@ -237,10 +238,18 @@ export const SecretOverviewPage = () => {
     secretPath,
     orderDirection,
     orderBy: DashboardSecretsOrderBy.Name,
-    includeFolders: true
+    includeFolders: true,
+    includeDynamicSecrets: true,
+    search: debouncedSearchFilter
   });
 
-  const { folders, totalCount = 0 } = overview ?? {};
+  const {
+    folders,
+    totalCount = 0,
+    totalFolderCount,
+    totalSecretCount,
+    totalDynamicSecretCount
+  } = overview ?? {};
   const { folderNames, getFolderByNameAndEnv, isFolderPresentInEnv } = useFolderOverview(
     folders,
     orderDirection
@@ -907,10 +916,17 @@ export const SecretOverviewPage = () => {
                 </Tr>
               </TFoot>
             </Table>
-            {!isOverviewLoading && rows.length > INIT_PER_PAGE && (
+            {!isOverviewLoading && totalCount > INIT_PER_PAGE && (
               <Pagination
+                startAdornment={
+                  <SecretTableResourceCount
+                    dynamicSecretCount={totalDynamicSecretCount}
+                    secretCount={totalSecretCount}
+                    folderCount={totalFolderCount}
+                  />
+                }
                 className="border-t border-solid border-t-mineshaft-600"
-                count={rows.length}
+                count={totalCount}
                 page={page}
                 perPage={perPage}
                 onChangePage={(newPage) => setPage(newPage)}

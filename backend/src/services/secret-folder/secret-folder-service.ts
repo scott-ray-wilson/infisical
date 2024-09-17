@@ -465,19 +465,7 @@ export const secretFolderServiceFactory = ({
       const slug = envMap.get(folder.envId);
       data[slug!] = [...(data[slug!] ?? []), folder];
     });
-    // const folders = await folderDAL.find(
-    //   {
-    //     envId: env.id,
-    //     parentId: parentFolder.id,
-    //     isReserved: false,
-    //     $search: search ? { name: `%${search}%` } : undefined
-    //   },
-    //   {
-    //     sort: orderBy ? [[orderBy, orderDirection ?? OrderByDirection.ASC]] : undefined,
-    //     limit,
-    //     offset
-    //   }
-    // );
+
     return data;
   };
 

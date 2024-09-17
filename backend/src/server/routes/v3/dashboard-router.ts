@@ -125,7 +125,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       let secrets:
         | { [key: string]: Awaited<ReturnType<typeof server.services.secret.getSecretsRaw>>["secrets"] }
         | undefined;
-      let dynamicSecrets: { [key: string]: Awaited<ReturnType<typeof server.services.dynamicSecret.list>> } | undefined;
+      let dynamicSecrets: Awaited<ReturnType<typeof server.services.dynamicSecret.listMultiEnv>> | undefined;
 
       let totalFolderCount: number | undefined;
       let totalDynamicSecretCount: number | undefined;
@@ -161,51 +161,57 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             })
           });
 
-          remainingLimit -= Math.max(...Object.values(folders).map((f) => f.length));
+          remainingLimit -= new Set(
+            ...Object.values(folders).flatMap((folderGroup) => folderGroup.map((folder) => folder.name))
+          ).size;
           adjustedOffset = 0;
         } else {
           adjustedOffset = Math.max(0, adjustedOffset - totalFolderCount);
         }
       }
 
-      console.log("total folder count", totalFolderCount);
+      console.log("remaining limit", remainingLimit);
 
-      // if (includeDynamicSecrets) {
-      //   totalDynamicSecretCount = await server.services.dynamicSecret.getCount({
-      //     actor: req.permission.type,
-      //     actorId: req.permission.id,
-      //     actorAuthMethod: req.permission.authMethod,
-      //     actorOrgId: req.permission.orgId,
-      //     projectId,
-      //     search,
-      //     environmentSlug: environment,
-      //     path: secretPath
-      //   });
-      //
-      //   if (remainingLimit > 0 && totalDynamicSecretCount > adjustedOffset) {
-      //     dynamicSecrets = await server.services.dynamicSecret.list({
-      //       actor: req.permission.type,
-      //       actorId: req.permission.id,
-      //       actorAuthMethod: req.permission.authMethod,
-      //       actorOrgId: req.permission.orgId,
-      //       projectId,
-      //       search,
-      //       orderBy,
-      //       orderDirection,
-      //       environmentSlug: environment,
-      //       path: secretPath,
-      //       ...(enablePagination && {
-      //         limit: remainingLimit,
-      //         offset: adjustedOffset
-      //       })
-      //     });
-      //
-      //     remainingLimit -= dynamicSecrets.length;
-      //     adjustedOffset = 0;
-      //   } else {
-      //     adjustedOffset = Math.max(0, adjustedOffset - totalDynamicSecretCount);
-      //   }
-      // }
+      if (includeDynamicSecrets) {
+        totalDynamicSecretCount = await server.services.dynamicSecret.getCountMultiEnv({
+          actor: req.permission.type,
+          actorId: req.permission.id,
+          actorAuthMethod: req.permission.authMethod,
+          actorOrgId: req.permission.orgId,
+          projectId,
+          search,
+          environmentSlugs: environments,
+          path: secretPath
+        });
+
+        if (remainingLimit > 0 && totalDynamicSecretCount > adjustedOffset) {
+          dynamicSecrets = await server.services.dynamicSecret.listMultiEnv({
+            actor: req.permission.type,
+            actorId: req.permission.id,
+            actorAuthMethod: req.permission.authMethod,
+            actorOrgId: req.permission.orgId,
+            projectId,
+            search,
+            orderBy,
+            orderDirection,
+            environmentSlugs: environments,
+            path: secretPath,
+            ...(enablePagination && {
+              limit: remainingLimit,
+              offset: adjustedOffset
+            })
+          });
+
+          remainingLimit -= new Set(
+            ...Object.values(dynamicSecrets).flatMap((dynamicSecretGroup) =>
+              dynamicSecretGroup.map((dynamicSecret) => dynamicSecret.name)
+            )
+          ).size;
+          adjustedOffset = 0;
+        } else {
+          adjustedOffset = Math.max(0, adjustedOffset - totalDynamicSecretCount);
+        }
+      }
 
       // if (includeSecrets) {
       //   totalSecretCount = await server.services.secret.getSecretsRawCount({
@@ -530,8 +536,6 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           adjustedOffset = Math.max(0, adjustedOffset - totalDynamicSecretCount);
         }
       }
-
-      console.log("adjusted", remainingLimit, adjustedOffset);
 
       if (includeSecrets) {
         totalSecretCount = await server.services.secret.getSecretsRawCount({

@@ -6,17 +6,24 @@ import { SecretV3Raw, SecretV3RawSanitized } from "@app/hooks/api/secrets/types"
 
 export type DashboardProjectSecretsOverviewResponse = {
   folders?: { [key: string]: TSecretFolder[] };
-  dynamicSecrets?: TDynamicSecret[];
-  secrets?: SecretV3Raw[];
+  dynamicSecrets?: { [key: string]: TDynamicSecret[] };
+  secrets?: { [key: string]: SecretV3Raw[] };
   totalSecretCount?: number;
   totalFolderCount?: number;
   totalDynamicSecretCount?: number;
   totalCount: number;
 };
 
-export type DashboardProjectSecretsDetailsResponse = DashboardProjectSecretsOverviewResponse & {
+export type DashboardProjectSecretsDetailsResponse = {
   imports?: TSecretImport[];
+  folders?: TSecretFolder[];
+  dynamicSecrets?: TDynamicSecret[];
+  secrets?: SecretV3Raw[];
   totalImportCount?: number;
+  totalFolderCount?: number;
+  totalDynamicSecretCount?: number;
+  totalSecretCount?: number;
+  totalCount: number;
 };
 
 // export type DashboardProjectSecretsOverview = {

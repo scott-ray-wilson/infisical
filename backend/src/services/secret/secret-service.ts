@@ -486,6 +486,44 @@ export const secretServiceFactory = ({
     return { ...deletedSecret[0], _id: deletedSecret[0].id, workspace: projectId, environment, secretPath: path };
   };
 
+  const getSecretsCount = async ({
+    actorId,
+    path,
+    environment,
+    projectId,
+    actor,
+    actorOrgId,
+    actorAuthMethod
+  }: Pick<
+    TGetSecretsDTO,
+    "actor" | "actorId" | "path" | "environment" | "projectId" | "actorOrgId" | "actorAuthMethod"
+  >) => {
+    const { permission } = await permissionService.getProjectPermission(
+      actor,
+      actorId,
+      projectId,
+      actorAuthMethod,
+      actorOrgId
+    );
+
+    ForbiddenError.from(permission).throwUnlessCan(
+      ProjectPermissionActions.Read,
+      subject(ProjectPermissionSub.Secrets, { environment, secretPath: path })
+    );
+
+    const folder = await folderDAL.findBySecretPath(projectId, environment, path);
+    if (!folder) return 0;
+
+    const paths = [{ folderId: folder.id, path }];
+
+    const count = await secretDAL.getCountByFolderIds(
+      paths.map((p) => p.folderId),
+      actorId
+    );
+
+    return count;
+  };
+
   const getSecrets = async ({
     actorId,
     path,
@@ -495,7 +533,9 @@ export const secretServiceFactory = ({
     actorOrgId,
     actorAuthMethod,
     includeImports,
-    recursive
+    recursive,
+    limit,
+    offset
   }: TGetSecretsDTO) => {
     const { permission } = await permissionService.getProjectPermission(
       actor,
@@ -545,7 +585,9 @@ export const secretServiceFactory = ({
 
     const secrets = await secretDAL.findByFolderIds(
       paths.map((p) => p.folderId),
-      actorId
+      actorId,
+      undefined,
+      { limit, offset }
     );
 
     if (includeImports) {
@@ -970,24 +1012,33 @@ export const secretServiceFactory = ({
   }: TGetSecretsRawDTO) => {
     const { shouldUseSecretV2Bridge } = await projectBotService.getBotKey(projectId);
 
-    if (!shouldUseSecretV2Bridge)
-      throw new BadRequestError({
-        message: "Project version does not support secret pagination",
-        name: "pagination_not_supported"
+    if (shouldUseSecretV2Bridge) {
+      const count = await secretV2BridgeService.getSecretsCount({
+        projectId,
+        expandSecretReferences,
+        actorId,
+        actor,
+        actorOrgId,
+        environment,
+        path,
+        recursive,
+        actorAuthMethod,
+        includeImports,
+        tagSlugs,
+        ...v2Params
       });
 
-    const count = await secretV2BridgeService.getSecretsCount({
+      return count;
+    }
+
+    const count = getSecretsCount({
       projectId,
-      expandSecretReferences,
       actorId,
       actor,
       actorOrgId,
       environment,
       path,
-      recursive,
       actorAuthMethod,
-      includeImports,
-      tagSlugs,
       ...v2Params
     });
 
@@ -1006,7 +1057,7 @@ export const secretServiceFactory = ({
     expandSecretReferences,
     recursive,
     tagSlugs = [],
-    ...v2Params
+    ...params
   }: TGetSecretsRawDTO) => {
     const { botKey, shouldUseSecretV2Bridge } = await projectBotService.getBotKey(projectId);
     if (shouldUseSecretV2Bridge) {
@@ -1022,7 +1073,7 @@ export const secretServiceFactory = ({
         actorAuthMethod,
         includeImports,
         tagSlugs,
-        ...v2Params
+        ...params
       });
       return { secrets, imports };
     }
@@ -1038,7 +1089,8 @@ export const secretServiceFactory = ({
       actorAuthMethod,
       path,
       includeImports,
-      recursive
+      recursive,
+      ...params
     });
 
     const decryptedSecrets = secrets.map((el) => decryptSecretRaw(el, botKey));

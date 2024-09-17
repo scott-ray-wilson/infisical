@@ -167,7 +167,12 @@ export const secretDALFactory = (db: TDbClient) => {
     }
   };
 
-  const findByFolderIds = async (folderIds: string[], userId?: string, tx?: Knex) => {
+  const findByFolderIds = async (
+    folderIds: string[],
+    userId?: string,
+    tx?: Knex,
+    filters?: { offset?: number; limit?: number }
+  ) => {
     try {
       // check if not uui then userId id is null (corner case because service token's ID is not UUI in effort to keep backwards compatibility from mongo)
       if (userId && !uuidValidate(userId)) {
@@ -175,7 +180,7 @@ export const secretDALFactory = (db: TDbClient) => {
         userId = undefined;
       }
 
-      const secs = await (tx || db.replicaNode())(TableName.Secret)
+      const query = (tx || db.replicaNode())(TableName.Secret)
         .whereIn("folderId", folderIds)
         .where((bd) => {
           void bd.whereNull("userId").orWhere({ userId: userId || null });
@@ -187,6 +192,13 @@ export const secretDALFactory = (db: TDbClient) => {
         .select(db.ref("color").withSchema(TableName.SecretTag).as("tagColor"))
         .select(db.ref("slug").withSchema(TableName.SecretTag).as("tagSlug"))
         .orderBy("id", "asc");
+
+      if (filters?.limit) {
+        void query.limit(filters.limit).offset(filters?.offset ?? 0);
+      }
+
+      const secs = await query;
+
       const data = sqlNestRelationships({
         data: secs,
         key: "id",
@@ -207,6 +219,27 @@ export const secretDALFactory = (db: TDbClient) => {
       return data;
     } catch (error) {
       throw new DatabaseError({ error, name: "get all secret" });
+    }
+  };
+
+  const getCountByFolderIds = async (folderIds: string[], userId?: string, tx?: Knex) => {
+    try {
+      // check if not uui then userId id is null (corner case because service token's ID is not UUI in effort to keep backwards compatibility from mongo)
+      if (userId && !uuidValidate(userId)) {
+        // eslint-disable-next-line no-param-reassign
+        userId = undefined;
+      }
+
+      const secs = await (tx || db.replicaNode())(TableName.Secret)
+        .whereIn("folderId", folderIds)
+        .where((bd) => {
+          void bd.whereNull("userId").orWhere({ userId: userId || null });
+        })
+        .count();
+
+      return Number(secs[0]?.count ?? 0);
+    } catch (error) {
+      throw new DatabaseError({ error, name: "get all secret count" });
     }
   };
 
@@ -352,6 +385,7 @@ export const secretDALFactory = (db: TDbClient) => {
     findByBlindIndexes,
     upsertSecretReferences,
     findReferencedSecretReferences,
-    findAllProjectSecretValues
+    findAllProjectSecretValues,
+    getCountByFolderIds
   };
 };

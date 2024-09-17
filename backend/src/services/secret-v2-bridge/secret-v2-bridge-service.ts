@@ -453,39 +453,15 @@ export const secretV2BridgeServiceFactory = ({
       actorOrgId
     );
 
-    let paths: { folderId: string; path: string }[] = [];
+    ForbiddenError.from(permission).throwUnlessCan(
+      ProjectPermissionActions.Read,
+      subject(ProjectPermissionSub.Secrets, { environment, secretPath: path })
+    );
 
-    if (recursive) {
-      const deepPaths = await recursivelyGetSecretPaths({
-        folderDAL,
-        projectEnvDAL,
-        projectId,
-        environment,
-        currentPath: path,
-        hasAccess: (permissionEnvironment, permissionSecretPath) =>
-          permission.can(
-            ProjectPermissionActions.Read,
-            subject(ProjectPermissionSub.Secrets, {
-              environment: permissionEnvironment,
-              secretPath: permissionSecretPath
-            })
-          )
-      });
+    const folder = await folderDAL.findBySecretPath(projectId, environment, path);
+    if (!folder) return 0;
 
-      if (!deepPaths) return 0;
-
-      paths = deepPaths.map(({ folderId, path: p }) => ({ folderId, path: p }));
-    } else {
-      ForbiddenError.from(permission).throwUnlessCan(
-        ProjectPermissionActions.Read,
-        subject(ProjectPermissionSub.Secrets, { environment, secretPath: path })
-      );
-
-      const folder = await folderDAL.findBySecretPath(projectId, environment, path);
-      if (!folder) return 0;
-
-      paths = [{ folderId: folder.id, path }];
-    }
+    const paths = [{ folderId: folder.id, path }];
 
     const count = await secretDAL.countByFolderIds(
       paths.map((p) => p.folderId),

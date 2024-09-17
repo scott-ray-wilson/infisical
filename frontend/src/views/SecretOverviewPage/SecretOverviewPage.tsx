@@ -56,22 +56,22 @@ import {
   useCreateSecretV3,
   useDeleteSecretV3,
   useGetDynamicSecretsOfAllEnv,
-  useGetFoldersByEnv,
   useGetImportedSecretsAllEnvs,
   useGetProjectSecretsAllEnv,
   useUpdateSecretV3
 } from "@app/hooks/api";
 import { useGetProjectSecretsOverview } from "@app/hooks/api/dashboard/queries";
+import { DashboardSecretsOrderBy } from "@app/hooks/api/dashboard/types";
+import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { useUpdateFolderBatch } from "@app/hooks/api/secretFolders/queries";
 import { TUpdateFolderBatchDTO } from "@app/hooks/api/secretFolders/types";
 import { SecretType, TSecretFolder } from "@app/hooks/api/types";
+import { useFolderOverview } from "@app/hooks/utils";
 
 import { FolderForm } from "../SecretMainPage/components/ActionBar/FolderForm";
 import { CreateSecretForm } from "./components/CreateSecretForm";
 import { FolderBreadCrumbs } from "./components/FolderBreadCrumbs";
-import { SecretOverviewDynamicSecretRow } from "./components/SecretOverviewDynamicSecretRow";
 import { SecretOverviewFolderRow } from "./components/SecretOverviewFolderRow";
-import { SecretOverviewTableRow } from "./components/SecretOverviewTableRow";
 import { SecretV2MigrationSection } from "./components/SecretV2MigrationSection";
 import { SelectionPanel } from "./components/SelectionPanel/SelectionPanel";
 
@@ -97,7 +97,7 @@ export const SecretOverviewPage = () => {
   // coz when overflow the table goes to the right
   const parentTableRef = useRef<HTMLTableElement>(null);
   const [expandableTableWidth, setExpandableTableWidth] = useState(0);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [orderDirection, setOrderDirection] = useState<OrderByDirection>(OrderByDirection.ASC);
   const { permission } = useProjectPermission();
 
   useEffect(() => {
@@ -211,11 +211,12 @@ export const SecretOverviewPage = () => {
     secretPath
   });
 
-  const { folders, folderNames, isFolderPresentInEnv, getFolderByNameAndEnv } = useGetFoldersByEnv({
-    // projectId: workspaceId,
-    path: secretPath,
-    environments: userAvailableEnvs.map(({ slug }) => slug)
-  });
+  //
+  // const { folders, folderNames, isFolderPresentInEnv, getFolderByNameAndEnv } = useGetFoldersByEnv({
+  //   // projectId: workspaceId,
+  //   path: secretPath,
+  //   environments: userAvailableEnvs.map(({ slug }) => slug)
+  // });
 
   const { isImportedSecretPresentInEnv, getImportedSecretByKey } = useGetImportedSecretsAllEnvs({
     // projectId: workspaceId,
@@ -230,14 +231,22 @@ export const SecretOverviewPage = () => {
       path: secretPath
     });
 
-  const { isLoading, data } = useGetProjectSecretsOverview({
+  const { isLoading: isOverviewLoading, data: overview } = useGetProjectSecretsOverview({
     projectId: workspaceId,
     environments: visibleEnvs.map((env) => env.slug),
     secretPath,
+    orderDirection,
+    orderBy: DashboardSecretsOrderBy.Name,
     includeFolders: true
   });
 
-  console.log("data", data);
+  const { folders, totalCount = 0 } = overview ?? {};
+  const { folderNames, getFolderByNameAndEnv, isFolderPresentInEnv } = useFolderOverview(
+    folders,
+    orderDirection
+  );
+
+  console.log("data", overview);
 
   const { mutateAsync: createSecretV3 } = useCreateSecretV3();
   const { mutateAsync: updateSecretV3 } = useUpdateSecretV3();
@@ -486,22 +495,22 @@ export const SecretOverviewPage = () => {
     const filteredSecretNames =
       secKeys
         ?.filter((name) => name.toUpperCase().includes(debouncedSearchFilter.toUpperCase()))
-        .sort((a, b) => (sortDir === "asc" ? a.localeCompare(b) : b.localeCompare(a))) ?? [];
+        .sort((a, b) => (orderDirection === "asc" ? a.localeCompare(b) : b.localeCompare(a))) ?? [];
     const filteredFolderNames =
       folderNames
         ?.filter((name) => name.toLowerCase().includes(debouncedSearchFilter.toLowerCase()))
-        .sort((a, b) => (sortDir === "asc" ? a.localeCompare(b) : b.localeCompare(a))) ?? [];
+        .sort((a, b) => (orderDirection === "asc" ? a.localeCompare(b) : b.localeCompare(a))) ?? [];
     const filteredDynamicSecrets =
       dynamicSecretNames
         ?.filter((name) => name.toLowerCase().includes(debouncedSearchFilter.toLowerCase()))
-        .sort((a, b) => (sortDir === "asc" ? a.localeCompare(b) : b.localeCompare(a))) ?? [];
+        .sort((a, b) => (orderDirection === "asc" ? a.localeCompare(b) : b.localeCompare(a))) ?? [];
 
     return [
       ...filteredFolderNames.map((name) => ({ name, type: RowType.Folder })),
       ...filteredDynamicSecrets.map((name) => ({ name, type: RowType.DynamicSecret })),
       ...filteredSecretNames.map((name) => ({ name, type: RowType.Secret }))
     ];
-  }, [sortDir, debouncedSearchFilter, secKeys, folderNames, dynamicSecretNames]);
+  }, [orderDirection, debouncedSearchFilter, secKeys, folderNames, dynamicSecretNames]);
 
   const paginationOffset = (page - 1) * perPage;
 
@@ -510,12 +519,12 @@ export const SecretOverviewPage = () => {
     if (rows.length < paginationOffset) setPage(1);
   }, [rows.length]);
 
-  const isTableLoading =
-    folders?.some(({ isLoading }) => isLoading) ||
-    secrets?.some(({ isLoading }) => isLoading) ||
-    dynamicSecrets?.some(({ isLoading }) => isLoading);
+  // const isTableLoading =
+  //   folders?.some(({ isLoading }) => isLoading) ||
+  //   secrets?.some(({ isLoading }) => isLoading) ||
+  //   dynamicSecrets?.some(({ isLoading }) => isLoading);
 
-  if (isLoading) {
+  if (isOverviewLoading) {
     // if (isWorkspaceLoading || isTableLoading) {
     return (
       <div className="container mx-auto flex h-screen w-full items-center justify-center px-8 text-mineshaft-50 dark:[color-scheme:dark]">
@@ -535,12 +544,12 @@ export const SecretOverviewPage = () => {
   // This is needed to also show imports from other paths – right now those are missing.
   // const combinedKeys = [...secKeys, ...secretImports.map((impSecrets) => impSecrets?.data?.map((impSec) => impSec.secrets?.map((impSecKey) => impSecKey.key))).flat().flat()];
 
-  const isTableEmpty =
-    !(
-      folders?.every(({ isLoading }) => isLoading) &&
-      secrets?.every(({ isLoading }) => isLoading) &&
-      dynamicSecrets?.every(({ isLoading }) => isLoading)
-    ) && rows.length === 0;
+  const isTableEmpty = totalCount === 0;
+  // !(
+  //   folders?.every(({ isLoading }) => isLoading) &&
+  //   secrets?.every(({ isLoading }) => isLoading) &&
+  //   dynamicSecrets?.every(({ isLoading }) => isLoading)
+  // ) && rows.length === 0;
 
   return (
     <>
@@ -738,9 +747,17 @@ export const SecretOverviewPage = () => {
                         variant="plain"
                         className="ml-2"
                         ariaLabel="sort"
-                        onClick={() => setSortDir((prev) => (prev === "asc" ? "desc" : "asc"))}
+                        onClick={() =>
+                          setOrderDirection((prev) =>
+                            prev === OrderByDirection.ASC
+                              ? OrderByDirection.DESC
+                              : OrderByDirection.ASC
+                          )
+                        }
                       >
-                        <FontAwesomeIcon icon={sortDir === "asc" ? faArrowDown : faArrowUp} />
+                        <FontAwesomeIcon
+                          icon={orderDirection === "asc" ? faArrowDown : faArrowUp}
+                        />
                       </IconButton>
                     </div>
                   </Th>
@@ -777,7 +794,7 @@ export const SecretOverviewPage = () => {
                 </Tr>
               </THead>
               <TBody>
-                {canViewOverviewPage && isTableLoading && (
+                {canViewOverviewPage && isOverviewLoading && (
                   <TableSkeleton
                     columns={visibleEnvs.length + 1}
                     innerKey="secret-overview-loading"
@@ -819,7 +836,7 @@ export const SecretOverviewPage = () => {
                     </Td>
                   </Tr>
                 )}
-                {isTableEmpty && !isTableLoading && visibleEnvs.length > 0 && (
+                {isTableEmpty && !isOverviewLoading && visibleEnvs.length > 0 && (
                   <Tr>
                     <Td colSpan={visibleEnvs.length + 1}>
                       <EmptyState
@@ -844,60 +861,26 @@ export const SecretOverviewPage = () => {
                     </Td>
                   </Tr>
                 )}
-                {!isTableLoading &&
-                  rows.slice(paginationOffset, paginationOffset + perPage).map((row, index) => {
-                    switch (row.type) {
-                      case RowType.Secret:
-                        if (visibleEnvs?.length === 0) return null;
-                        return (
-                          <SecretOverviewTableRow
-                            isSelected={selectedEntries.secret[row.name]}
-                            onToggleSecretSelect={() =>
-                              toggleSelectedEntry(EntryType.SECRET, row.name)
-                            }
-                            secretPath={secretPath}
-                            getImportedSecretByKey={getImportedSecretByKey}
-                            isImportedSecretPresentInEnv={isImportedSecretPresentInEnv}
-                            onSecretCreate={handleSecretCreate}
-                            onSecretDelete={handleSecretDelete}
-                            onSecretUpdate={handleSecretUpdate}
-                            key={`overview-${row.name}-${index + 1}`}
-                            environments={visibleEnvs}
-                            secretKey={row.name}
-                            getSecretByKey={getSecretByKey}
-                            expandableColWidth={expandableTableWidth}
-                          />
-                        );
-                      case RowType.DynamicSecret:
-                        return (
-                          <SecretOverviewDynamicSecretRow
-                            dynamicSecretName={row.name}
-                            isDynamicSecretInEnv={isDynamicSecretPresentInEnv}
-                            environments={visibleEnvs}
-                            key={`overview-${row.name}-${index + 1}`}
-                          />
-                        );
-                      case RowType.Folder:
-                        return (
-                          <SecretOverviewFolderRow
-                            folderName={row.name}
-                            isFolderPresentInEnv={isFolderPresentInEnv}
-                            isSelected={selectedEntries.folder[row.name]}
-                            onToggleFolderSelect={() =>
-                              toggleSelectedEntry(EntryType.FOLDER, row.name)
-                            }
-                            environments={visibleEnvs}
-                            key={`overview-${row.name}-${index + 1}`}
-                            onClick={handleFolderClick}
-                            onToggleFolderEdit={(name: string) =>
-                              handlePopUpOpen("updateFolder", { name })
-                            }
-                          />
-                        );
-                      default:
-                        return null;
-                    }
-                  })}
+                {!isOverviewLoading && (
+                  <>
+                    {folderNames.map((folderName, index) => (
+                      <SecretOverviewFolderRow
+                        folderName={folderName}
+                        isFolderPresentInEnv={isFolderPresentInEnv}
+                        isSelected={selectedEntries.folder[folderName]}
+                        onToggleFolderSelect={() =>
+                          toggleSelectedEntry(EntryType.FOLDER, folderName)
+                        }
+                        environments={visibleEnvs}
+                        key={`overview-${folderName}-${index + 1}`}
+                        onClick={handleFolderClick}
+                        onToggleFolderEdit={(name: string) =>
+                          handlePopUpOpen("updateFolder", { name })
+                        }
+                      />
+                    ))}
+                  </>
+                )}
               </TBody>
               <TFoot>
                 <Tr className="sticky bottom-0 z-10 border-0 bg-mineshaft-800">
@@ -924,7 +907,7 @@ export const SecretOverviewPage = () => {
                 </Tr>
               </TFoot>
             </Table>
-            {!isTableLoading && rows.length > INIT_PER_PAGE && (
+            {!isOverviewLoading && rows.length > INIT_PER_PAGE && (
               <Pagination
                 className="border-t border-solid border-t-mineshaft-600"
                 count={rows.length}

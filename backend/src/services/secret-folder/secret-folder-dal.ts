@@ -5,6 +5,8 @@ import { TableName, TProjectEnvironments, TSecretFolders, TSecretFoldersUpdate }
 import { BadRequestError, DatabaseError } from "@app/lib/errors";
 import { groupBy, removeTrailingSlash } from "@app/lib/fn";
 import { ormify, selectAllTableCols } from "@app/lib/knex";
+import { OrderByDirection } from "@app/lib/types";
+import { SecretsOrderBy } from "@app/services/secret/secret-types";
 
 export const validateFolderName = (folderName: string) => {
   const validNameRegex = /^[a-zA-Z0-9-_]+$/;
@@ -379,13 +381,19 @@ export const secretFolderDALFactory = (db: TDbClient) => {
     {
       environmentIds,
       parentIds,
-      search
+      search,
+      limit,
+      offset = 0,
+      orderBy = SecretsOrderBy.Name,
+      orderDirection = OrderByDirection.ASC
     }: {
       environmentIds: string[];
       parentIds: string[];
       search?: string;
       limit?: number;
       offset?: number;
+      orderBy?: SecretsOrderBy;
+      orderDirection?: OrderByDirection;
     },
     tx?: Knex
   ) => {
@@ -402,14 +410,24 @@ export const secretFolderDALFactory = (db: TDbClient) => {
     // );
 
     try {
-      const folders = await (tx || db.replicaNode())(TableName.SecretFolder)
+      const query = (tx || db.replicaNode())(TableName.SecretFolder)
         .whereIn("parentId", parentIds)
         .whereIn("envId", environmentIds)
         .where("isReserved", false)
+        .where((bd) => {
+          if (search) {
+            void bd.whereILike("name", `%${search}%`);
+          }
+        })
         .select(
           selectAllTableCols(TableName.SecretFolder),
           db.raw(`DENSE_RANK() OVER (partition by "name" ORDER BY "name" ASC) as rank`)
-        );
+        )
+        .orderBy(orderBy, orderDirection);
+
+      if (limit) void query.limit(limit).offset(offset);
+
+      const folders = await query;
 
       return folders;
     } catch (error) {
@@ -427,6 +445,6 @@ export const secretFolderDALFactory = (db: TDbClient) => {
     findSecretPathByFolderIds,
     findClosestFolder,
     findByProjectId,
-    findByProjectIdMultiEnv: findByMultiEnv
+    findByMultiEnv
   };
 };

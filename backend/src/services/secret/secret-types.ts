@@ -81,6 +81,8 @@ export type TGetSecretsDTO = {
   environment: string;
   includeImports?: boolean;
   recursive?: boolean;
+  limit?: number;
+  offset?: number;
 } & TProjectPermission;
 
 export type TGetASecretDTO = {

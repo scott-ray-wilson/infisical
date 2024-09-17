@@ -5,7 +5,7 @@ import { TSecretImport } from "@app/hooks/api/secretImports/types";
 import { SecretV3Raw, SecretV3RawSanitized } from "@app/hooks/api/secrets/types";
 
 export type DashboardProjectSecretsOverviewResponse = {
-  folders?: TSecretFolder[];
+  folders?: { [key: string]: TSecretFolder[] };
   dynamicSecrets?: TDynamicSecret[];
   secrets?: SecretV3Raw[];
   totalSecretCount?: number;

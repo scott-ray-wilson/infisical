@@ -438,11 +438,7 @@ export const secretFolderServiceFactory = ({
     actorAuthMethod,
     environments,
     path: secretPath,
-    search,
-    orderBy,
-    orderDirection,
-    limit,
-    offset
+    ...params
   }: Omit<TGetFolderDTO, "environment"> & { environments: string[] }) => {
     // folder list is allowed to be read by anyone
     // permission to check does user has access
@@ -458,10 +454,10 @@ export const secretFolderServiceFactory = ({
 
     const envMap: Map<string, string> = new Map(envs.map((env) => [env.id, env.slug]));
 
-    const folders = await folderDAL.findByProjectIdMultiEnv({
-      projectId,
+    const folders = await folderDAL.findByMultiEnv({
       environmentIds: envs.map((env) => env.id),
-      parentIds: parentFolders.map((folder) => folder.id)
+      parentIds: parentFolders.map((folder) => folder.id),
+      ...params
     });
 
     const data: { [key: string]: TSecretFolders[] } = {};

@@ -55,7 +55,9 @@ export type TFindOpt<R extends object = object, TCount extends boolean = boolean
   limit?: number;
   offset?: number;
   sort?: Array<[keyof R, "asc" | "desc"] | [keyof R, "asc" | "desc", "first" | "last"]>;
+  groupBy?: keyof R;
   count?: TCount;
+  countDistinct?: keyof R;
   tx?: Knex;
 };
 
@@ -88,7 +90,7 @@ export const ormify = <DbOps extends object, Tname extends keyof Tables>(db: Kne
   },
   find: async <TCount extends boolean = false>(
     filter: TFindFilter<Tables[Tname]["base"]>,
-    { offset, limit, sort, count, tx }: TFindOpt<Tables[Tname]["base"], TCount> = {}
+    { offset, limit, sort, count, tx, countDistinct }: TFindOpt<Tables[Tname]["base"], TCount> = {}
   ) => {
     try {
       const query = (tx || db.replicaNode())(tableName).where(buildFindFilter(filter));
@@ -101,6 +103,10 @@ export const ormify = <DbOps extends object, Tname extends keyof Tables>(db: Kne
       if (sort) {
         void query.orderBy(sort.map(([column, order, nulls]) => ({ column: column as string, order, nulls })));
       }
+      if (countDistinct) {
+        void query.countDistinct(countDistinct);
+      }
+
       const res = (await query) as TFindReturn<typeof query, TCount>;
       return res;
     } catch (error) {

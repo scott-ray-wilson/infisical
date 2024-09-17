@@ -61,6 +61,7 @@ import {
   useGetProjectSecretsAllEnv,
   useUpdateSecretV3
 } from "@app/hooks/api";
+import { useGetProjectSecretsOverview } from "@app/hooks/api/dashboard/queries";
 import { useUpdateFolderBatch } from "@app/hooks/api/secretFolders/queries";
 import { TUpdateFolderBatchDTO } from "@app/hooks/api/secretFolders/types";
 import { SecretType, TSecretFolder } from "@app/hooks/api/types";
@@ -205,29 +206,38 @@ export const SecretOverviewPage = () => {
     secKeys,
     getEnvSecretKeyCount
   } = useGetProjectSecretsAllEnv({
-    workspaceId,
+    // workspaceId,
     envs: userAvailableEnvs.map(({ slug }) => slug),
     secretPath
   });
 
   const { folders, folderNames, isFolderPresentInEnv, getFolderByNameAndEnv } = useGetFoldersByEnv({
-    projectId: workspaceId,
+    // projectId: workspaceId,
     path: secretPath,
     environments: userAvailableEnvs.map(({ slug }) => slug)
   });
 
   const { isImportedSecretPresentInEnv, getImportedSecretByKey } = useGetImportedSecretsAllEnvs({
-    projectId: workspaceId,
+    // projectId: workspaceId,
     path: secretPath,
     environments: userAvailableEnvs.map(({ slug }) => slug)
   });
 
   const { dynamicSecretNames, dynamicSecrets, isDynamicSecretPresentInEnv } =
     useGetDynamicSecretsOfAllEnv({
-      projectSlug,
+      // projectSlug,
       environmentSlugs: userAvailableEnvs.map(({ slug }) => slug),
       path: secretPath
     });
+
+  const { isLoading, data } = useGetProjectSecretsOverview({
+    projectId: workspaceId,
+    environments: visibleEnvs.map((env) => env.slug),
+    secretPath,
+    includeFolders: true
+  });
+
+  console.log("data", data);
 
   const { mutateAsync: createSecretV3 } = useCreateSecretV3();
   const { mutateAsync: updateSecretV3 } = useUpdateSecretV3();
@@ -505,7 +515,8 @@ export const SecretOverviewPage = () => {
     secrets?.some(({ isLoading }) => isLoading) ||
     dynamicSecrets?.some(({ isLoading }) => isLoading);
 
-  if (isWorkspaceLoading || isTableLoading) {
+  if (isLoading) {
+    // if (isWorkspaceLoading || isTableLoading) {
     return (
       <div className="container mx-auto flex h-screen w-full items-center justify-center px-8 text-mineshaft-50 dark:[color-scheme:dark]">
         <img

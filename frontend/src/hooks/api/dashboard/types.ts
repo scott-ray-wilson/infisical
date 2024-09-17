@@ -52,9 +52,13 @@ export type TGetDashboardProjectSecretsOverviewDTO = {
   includeSecrets?: boolean;
   includeFolders?: boolean;
   includeDynamicSecrets?: boolean;
+  environments: string[];
 };
 
-export type TGetDashboardProjectSecretsDetailsDTO = TGetDashboardProjectSecretsOverviewDTO & {
+export type TGetDashboardProjectSecretsDetailsDTO = Omit<
+  TGetDashboardProjectSecretsOverviewDTO,
+  "environments"
+> & {
   environment: string;
   includeImports?: boolean;
 };

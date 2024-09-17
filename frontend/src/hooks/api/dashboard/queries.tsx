@@ -52,6 +52,7 @@ export const fetchProjectSecretsOverview = async ({
   includeFolders,
   includeSecrets,
   includeDynamicSecrets,
+  environments,
   ...params
 }: TGetDashboardProjectSecretsOverviewDTO) => {
   const { data } = await apiRequest.get<DashboardProjectSecretsOverviewResponse>(
@@ -59,6 +60,7 @@ export const fetchProjectSecretsOverview = async ({
     {
       params: {
         ...params,
+        environments: encodeURIComponent(environments.join(",")),
         includeFolders: includeFolders ? "1" : "",
         includeSecrets: includeSecrets ? "1" : "",
         includeDynamicSecrets: includeDynamicSecrets ? "1" : ""
@@ -150,7 +152,8 @@ export const useGetProjectSecretsOverview = (
     search = "",
     includeSecrets,
     includeFolders,
-    includeDynamicSecrets
+    includeDynamicSecrets,
+    environments
   }: TGetDashboardProjectSecretsOverviewDTO,
   options?: Omit<
     UseQueryOptions<
@@ -176,7 +179,8 @@ export const useGetProjectSecretsOverview = (
       projectId,
       includeSecrets,
       includeFolders,
-      includeDynamicSecrets
+      includeDynamicSecrets,
+      environments
     }),
     queryFn: () =>
       fetchProjectSecretsOverview({
@@ -189,7 +193,8 @@ export const useGetProjectSecretsOverview = (
         projectId,
         includeSecrets,
         includeFolders,
-        includeDynamicSecrets
+        includeDynamicSecrets,
+        environments
       }),
     onError: (error) => {
       if (axios.isAxiosError(error)) {

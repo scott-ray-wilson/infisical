@@ -83,7 +83,7 @@ const sqlFindMultipleFolderByEnvPathQuery = (db: Knex, query: Array<{ envId: str
     .from<TSecretFolders & { depth: number; path: string }>("parent");
 };
 
-const sqlFindFolderByPathQuery = (db: Knex, projectId: string, environment: string, secretPath: string) => {
+const sqlFindFolderByPathQuery = (db: Knex, projectId: string, environments: string[], secretPath: string) => {
   // this is removing an trailing slash like /folder1/folder2/ -> /folder1/folder2
   const formatedPath = secretPath.at(-1) === "/" && secretPath.length > 1 ? secretPath.slice(0, -1) : secretPath;
   // next goal to sanitize saw the raw sql query is safe
@@ -111,7 +111,7 @@ const sqlFindFolderByPathQuery = (db: Knex, projectId: string, environment: stri
           projectId,
           parentId: null
         })
-        .where(`${TableName.Environment}.slug`, environment)
+        .whereIn(`${TableName.Environment}.slug`, environments)
         .select(selectAllTableCols(TableName.SecretFolder))
         .union(
           (qb) =>
@@ -139,14 +139,14 @@ const sqlFindFolderByPathQuery = (db: Knex, projectId: string, environment: stri
     .from<TSecretFolders & { depth: number; path: string }>("parent")
     .leftJoin<TProjectEnvironments>(TableName.Environment, `${TableName.Environment}.id`, "parent.envId")
     .select<
-      TSecretFolders & {
+      (TSecretFolders & {
         depth: number;
         path: string;
         envId: string;
         envSlug: string;
         envName: string;
         projectId: string;
-      }
+      })[]
     >(
       selectAllTableCols("parent" as TableName.SecretFolder),
       db.ref("id").withSchema(TableName.Environment).as("envId"),
@@ -214,7 +214,7 @@ export const secretFolderDALFactory = (db: TDbClient) => {
       const folder = await sqlFindFolderByPathQuery(
         tx || db.replicaNode(),
         projectId,
-        environment,
+        [environment],
         removeTrailingSlash(path)
       )
         .orderBy("depth", "desc")
@@ -230,6 +230,29 @@ export const secretFolderDALFactory = (db: TDbClient) => {
     }
   };
 
+  const findBySecretPathMultiEnv = async (projectId: string, environments: string[], path: string, tx?: Knex) => {
+    try {
+      const folders = await sqlFindFolderByPathQuery(
+        tx || db.replicaNode(),
+        projectId,
+        environments,
+        removeTrailingSlash(path)
+      ).orderBy("depth", "desc");
+
+      // TODO: what is this preventing?
+      // if (folder && folder.path !== removeTrailingSlash(path)) {
+      //   return;
+      // }
+
+      return folders.map((folder) => {
+        const { envId: id, envName: name, envSlug: slug, ...el } = folder;
+        return { ...el, envId: id, environment: { id, name, slug } };
+      });
+    } catch (error) {
+      throw new DatabaseError({ error, name: "Find by secret path multi env" });
+    }
+  };
+
   // used in folder creation
   // even if its the original given /path1/path2
   // it will stop automatically at /path2
@@ -238,7 +261,7 @@ export const secretFolderDALFactory = (db: TDbClient) => {
       const folder = await sqlFindFolderByPathQuery(
         tx || db.replicaNode(),
         projectId,
-        environment,
+        [environment],
         removeTrailingSlash(path)
       )
         .orderBy("depth", "desc")
@@ -352,14 +375,58 @@ export const secretFolderDALFactory = (db: TDbClient) => {
     }
   };
 
+  const findByMultiEnv = async (
+    {
+      environmentIds,
+      parentIds,
+      search
+    }: {
+      environmentIds: string[];
+      parentIds: string[];
+      search?: string;
+      limit?: number;
+      offset?: number;
+    },
+    tx?: Knex
+  ) => {
+    // const folders = await folderDAL.find(
+    //     {
+    //         $in: {
+    //             envId: envs.map((env) => env.id),
+    //             parentId: parentFolders.map((folder) => folder.id)
+    //         },
+    //         isReserved: false,
+    //         $search: search ? { name: `%${search}%` } : undefined
+    //     },
+    //     { countDistinct: "name" }
+    // );
+
+    try {
+      const folders = await (tx || db.replicaNode())(TableName.SecretFolder)
+        .whereIn("parentId", parentIds)
+        .whereIn("envId", environmentIds)
+        .where("isReserved", false)
+        .select(
+          selectAllTableCols(TableName.SecretFolder),
+          db.raw(`DENSE_RANK() OVER (partition by "name" ORDER BY "name" ASC) as rank`)
+        );
+
+      return folders;
+    } catch (error) {
+      throw new DatabaseError({ error, name: "Find multi env" });
+    }
+  };
+
   return {
     ...secretFolderOrm,
     update,
     findBySecretPath,
+    findBySecretPathMultiEnv,
     findById,
     findByManySecretPath,
     findSecretPathByFolderIds,
     findClosestFolder,
-    findByProjectId
+    findByProjectId,
+    findByProjectIdMultiEnv: findByMultiEnv
   };
 };

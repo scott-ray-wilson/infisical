@@ -711,6 +711,20 @@ export const DASHBOARD = {
     includeFolders: "Whether to include project folders in the response.",
     includeImports: "Whether to include project secret imports in the response.",
     includeDynamicSecrets: "Whether to include dynamic project secrets in the response."
+  },
+  SECRET_OVERVIEW_LIST: {
+    projectId: "The ID of the project to list secrets/folders from.",
+    environments:
+      "The slugs of the environments to list secrets/folders from (comma separated, ie 'environments=dev,staging,prod').",
+    secretPath: "The secret path to list secrets/folders from.",
+    offset: "The offset to start from. If you enter 10, it will start from the 10th secret/folder.",
+    limit: "The number of secrets/folders to return.",
+    orderBy: "The column to order secrets/folders by.",
+    orderDirection: "The direction secrets/folders will be sorted in.",
+    search: "The text string that secrets/folders names will be filtered by.",
+    includeSecrets: "Whether to include project secrets in the response.",
+    includeFolders: "Whether to include project folders in the response.",
+    includeDynamicSecrets: "Whether to include dynamic project secrets in the response."
   }
 } as const;
 

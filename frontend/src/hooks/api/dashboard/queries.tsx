@@ -206,18 +206,28 @@ export const useGetProjectSecretsOverview = (
         });
       }
     },
-    select: useCallback(
-      (data: Awaited<ReturnType<typeof fetchProjectSecretsOverview>>) => ({
-        ...data,
-        secrets: data.secrets
-          ? mergePersonalSecrets(data.secrets).reduce<Record<string, SecretV3RawSanitized>>(
-              (prev, curr) => ({ ...prev, [curr.key]: curr }),
-              {}
-            )
-          : undefined
-      }),
-      []
-    ),
+    select: useCallback((data: Awaited<ReturnType<typeof fetchProjectSecretsOverview>>) => {
+      const { secrets, ...select } = data;
+
+      let sanitizedSecrets: Record<string, Record<string, SecretV3RawSanitized>> = {};
+
+      if (secrets) {
+        sanitizedSecrets = {};
+        Object.entries(secrets).forEach(([env, rawSecrets]) => {
+          const environmentSecrets = mergePersonalSecrets(rawSecrets).reduce<
+            Record<string, SecretV3RawSanitized>
+          >((prev, curr) => ({ ...prev, [curr.key]: curr }), {});
+
+          sanitizedSecrets[env] = environmentSecrets;
+        });
+      }
+      return {
+        ...select,
+        ...(secrets && {
+          secrets: sanitizedSecrets
+        })
+      };
+    }, []),
     keepPreviousData: true
   });
 };

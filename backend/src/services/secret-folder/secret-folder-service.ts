@@ -445,12 +445,13 @@ export const secretFolderServiceFactory = ({
     await permissionService.getProjectPermission(actor, actorId, projectId, actorAuthMethod, actorOrgId);
 
     const envs = await projectEnvDAL.findBySlugs(projectId, environments);
+    const data: { [key: string]: TSecretFolders[] } = {};
 
     if (!envs.length)
       throw new BadRequestError({ message: "Environment(s) not found", name: "get project folder count" });
 
     const parentFolders = await folderDAL.findBySecretPathMultiEnv(projectId, environments, secretPath);
-    if (!parentFolders.length) return [];
+    if (!parentFolders.length) return data;
 
     const envMap: Map<string, string> = new Map(envs.map((env) => [env.id, env.slug]));
 
@@ -460,9 +461,7 @@ export const secretFolderServiceFactory = ({
       ...params
     });
 
-    console.log("folders", folders);
-
-    const data: { [key: string]: TSecretFolders[] } = {};
+    // reorganize folders into respective envs
     folders.forEach((folder) => {
       const slug = envMap.get(folder.envId);
       data[slug!] = [...(data[slug!] ?? []), folder];
@@ -505,7 +504,7 @@ export const secretFolderServiceFactory = ({
       { countDistinct: "name" }
     );
 
-    // ts-ignore TODO: comeback!
+    // @ts-expect-error need to add type support to find TODO: comeback!
     return Number(folders[0]?.count ?? 0);
   };
 

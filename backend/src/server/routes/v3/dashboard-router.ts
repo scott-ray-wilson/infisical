@@ -122,9 +122,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       let adjustedOffset = offset;
 
       let folders: Awaited<ReturnType<typeof server.services.folder.getFoldersMultiEnv>> | undefined;
-      let secrets:
-        | { [key: string]: Awaited<ReturnType<typeof server.services.secret.getSecretsRaw>>["secrets"] }
-        | undefined;
+      let secrets: Awaited<ReturnType<typeof server.services.secret.getSecretsRawMultiEnv>> | undefined;
       let dynamicSecrets: Awaited<ReturnType<typeof server.services.dynamicSecret.listMultiEnv>> | undefined;
 
       let totalFolderCount: number | undefined;
@@ -161,9 +159,10 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             })
           });
 
-          remainingLimit -= new Set(
+          const uniqueFolderCount = new Set(
             ...Object.values(folders).map((folderGroup) => folderGroup.flatMap((folder) => folder.name))
           ).size;
+          remainingLimit -= uniqueFolderCount;
           adjustedOffset = 0;
         } else {
           adjustedOffset = Math.max(0, adjustedOffset - totalFolderCount);
@@ -200,84 +199,84 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             })
           });
 
-          remainingLimit -= new Set(
-            ...Object.values(dynamicSecrets).flatMap((dynamicSecretGroup) =>
-              dynamicSecretGroup.map((dynamicSecret) => dynamicSecret.name)
+          const uniqueDynamicSecretsCount = new Set(
+            ...Object.values(dynamicSecrets).map((dynamicSecretGroup) =>
+              dynamicSecretGroup.flatMap((dynamicSecret) => dynamicSecret.name)
             )
           ).size;
+
+          remainingLimit -= uniqueDynamicSecretsCount;
           adjustedOffset = 0;
         } else {
           adjustedOffset = Math.max(0, adjustedOffset - totalDynamicSecretCount);
         }
       }
 
-      // if (includeSecrets) {
-      //   totalSecretCount = await server.services.secret.getSecretsRawCount({
-      //     actorId: req.permission.id,
-      //     actor: req.permission.type,
-      //     actorOrgId: req.permission.orgId,
-      //     environment,
-      //     actorAuthMethod: req.permission.authMethod,
-      //     projectId,
-      //     path: secretPath,
-      //     search
-      //     // includeImports: req.query.include_imports,
-      //     // recursive: req.query.recursive,
-      //     // tagSlugs: req.query.tagSlugs
-      //   });
-      //
-      //   if (remainingLimit > 0 && totalSecretCount > adjustedOffset) {
-      //     const secretsRaw = await server.services.secret.getSecretsRaw({
-      //       actorId: req.permission.id,
-      //       actor: req.permission.type,
-      //       actorOrgId: req.permission.orgId,
-      //       environment,
-      //       actorAuthMethod: req.permission.authMethod,
-      //       projectId,
-      //       path: secretPath,
-      //       orderBy,
-      //       orderDirection,
-      //       search,
-      //       ...(enablePagination && {
-      //         limit: remainingLimit,
-      //         offset: adjustedOffset
-      //       })
-      //       // includeImports: req.query.include_imports,
-      //       // recursive: req.query.recursive,
-      //       // tagSlugs: req.query.tagSlugs
-      //     });
-      //
-      //     secrets = secretsRaw.secrets;
-      //
-      //     await server.services.auditLog.createAuditLog({
-      //       projectId,
-      //       ...req.auditLogInfo,
-      //       event: {
-      //         type: EventType.GET_SECRETS,
-      //         metadata: {
-      //           environment,
-      //           secretPath: req.query.secretPath,
-      //           numberOfSecrets: secrets.length
-      //         }
-      //       }
-      //     });
-      //
-      //     if (getUserAgentType(req.headers["user-agent"]) !== UserAgentType.K8_OPERATOR) {
-      //       await server.services.telemetry.sendPostHogEvents({
-      //         event: PostHogEventTypes.SecretPulled,
-      //         distinctId: getTelemetryDistinctId(req),
-      //         properties: {
-      //           numberOfSecrets: secrets.length,
-      //           workspaceId: projectId,
-      //           environment,
-      //           secretPath: req.query.secretPath,
-      //           channel: getUserAgentType(req.headers["user-agent"]),
-      //           ...req.auditLogInfo
-      //         }
-      //       });
-      //     }
-      //   }
-      // }
+      if (includeSecrets) {
+        totalSecretCount = await server.services.secret.getSecretsCountMultiEnv({
+          actorId: req.permission.id,
+          actor: req.permission.type,
+          actorOrgId: req.permission.orgId,
+          environments,
+          actorAuthMethod: req.permission.authMethod,
+          projectId,
+          path: secretPath,
+          search
+          // tagSlugs: req.query.tagSlugs
+        });
+
+        if (remainingLimit > 0 && totalSecretCount > adjustedOffset) {
+          secrets = await server.services.secret.getSecretsRawMultiEnv({
+            actorId: req.permission.id,
+            actor: req.permission.type,
+            actorOrgId: req.permission.orgId,
+            environments,
+            actorAuthMethod: req.permission.authMethod,
+            projectId,
+            path: secretPath,
+            orderBy,
+            orderDirection,
+            search,
+            ...(enablePagination && {
+              limit: remainingLimit,
+              offset: adjustedOffset
+            })
+            // tagSlugs: req.query.tagSlugs
+          });
+
+          const uniqueSecretsCount = new Set(
+            ...Object.values(secrets).flatMap((secretGroup) => secretGroup.map((secret) => secret.secretKey))
+          ).size;
+
+          await server.services.auditLog.createAuditLog({
+            projectId,
+            ...req.auditLogInfo,
+            event: {
+              type: EventType.GET_SECRETS,
+              metadata: {
+                environment: environments.join(","), // TODO: verify if ok, or keep separate?
+                secretPath,
+                numberOfSecrets: uniqueSecretsCount
+              }
+            }
+          });
+
+          if (getUserAgentType(req.headers["user-agent"]) !== UserAgentType.K8_OPERATOR) {
+            await server.services.telemetry.sendPostHogEvents({
+              event: PostHogEventTypes.SecretPulled,
+              distinctId: getTelemetryDistinctId(req),
+              properties: {
+                numberOfSecrets: uniqueSecretsCount,
+                workspaceId: projectId,
+                environment: environments.join(","), // TODO: verify if ok, or keep separate?
+                secretPath,
+                channel: getUserAgentType(req.headers["user-agent"]),
+                ...req.auditLogInfo
+              }
+            });
+          }
+        }
+      }
 
       return {
         folders,
@@ -536,7 +535,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       }
 
       if (includeSecrets) {
-        totalSecretCount = await server.services.secret.getSecretsRawCount({
+        totalSecretCount = await server.services.secret.getSecretsCount({
           actorId: req.permission.id,
           actor: req.permission.type,
           actorOrgId: req.permission.orgId,

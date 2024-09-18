@@ -59,7 +59,7 @@ type TSecretV2BridgeServiceFactoryDep = {
   projectEnvDAL: Pick<TProjectEnvDALFactory, "findOne">;
   folderDAL: Pick<
     TSecretFolderDALFactory,
-    "findBySecretPath" | "updateById" | "findById" | "findByManySecretPath" | "find"
+    "findBySecretPath" | "updateById" | "findById" | "findByManySecretPath" | "find" | "findBySecretPathMultiEnv"
   >;
   secretImportDAL: Pick<TSecretImportDALFactory, "find" | "findByFolderIds">;
   secretQueueService: Pick<TSecretQueueFactory, "syncSecrets" | "handleSecretReminder" | "removeSecretReminder">;
@@ -431,6 +431,52 @@ export const secretV2BridgeServiceFactory = ({
     });
   };
 
+  const getSecretsCountMultiEnv = async ({
+    actorId,
+    path,
+
+    projectId,
+    actor,
+    actorOrgId,
+    actorAuthMethod,
+    environments,
+    // tagSlugs = [],
+    ...params
+  }: Pick<
+    TGetSecretsDTO,
+    "actorId" | "actor" | "path" | "projectId" | "actorOrgId" | "actorAuthMethod" | "tagSlugs" | "search"
+  > & {
+    environments: string[];
+  }) => {
+    const { permission } = await permissionService.getProjectPermission(
+      actor,
+      actorId,
+      projectId,
+      actorAuthMethod,
+      actorOrgId
+    );
+
+    // verify user has access to all environments
+    environments.forEach((environment) =>
+      ForbiddenError.from(permission).throwUnlessCan(
+        ProjectPermissionActions.Read,
+        subject(ProjectPermissionSub.Secrets, { environment, secretPath: path })
+      )
+    );
+
+    const folders = await folderDAL.findBySecretPathMultiEnv(projectId, environments, path);
+    if (!folders.length) return 0;
+
+    const count = await secretDAL.countByFolderIds(
+      folders.map((folder) => folder.id),
+      actorId,
+      undefined,
+      params
+    );
+
+    return count;
+  };
+
   const getSecretsCount = async ({
     actorId,
     path,
@@ -439,12 +485,19 @@ export const secretV2BridgeServiceFactory = ({
     actor,
     actorOrgId,
     actorAuthMethod,
-    includeImports,
-    recursive,
-    // tagSlugs = [],
-    expandSecretReferences: shouldExpandSecretReferences,
     ...params
-  }: TGetSecretsDTO) => {
+  }: Pick<
+    TGetSecretsDTO,
+    | "actorId"
+    | "actor"
+    | "path"
+    | "projectId"
+    | "actorOrgId"
+    | "actorAuthMethod"
+    | "tagSlugs"
+    | "environment"
+    | "search"
+  >) => {
     const { permission } = await permissionService.getProjectPermission(
       actor,
       actorId,
@@ -461,16 +514,100 @@ export const secretV2BridgeServiceFactory = ({
     const folder = await folderDAL.findBySecretPath(projectId, environment, path);
     if (!folder) return 0;
 
-    const paths = [{ folderId: folder.id, path }];
+    const count = await secretDAL.countByFolderIds([folder.id], actorId, undefined, params);
 
-    const count = await secretDAL.countByFolderIds(
+    return count;
+  };
+
+  const getSecretsMultiEnv = async ({
+    actorId,
+    path,
+    environments,
+    projectId,
+    actor,
+    actorOrgId,
+    actorAuthMethod,
+    tagSlugs = [],
+    ...params
+  }: Pick<
+    TGetSecretsDTO,
+    "actorId" | "actor" | "path" | "projectId" | "actorOrgId" | "actorAuthMethod" | "tagSlugs" | "search"
+  > & {
+    environments: string[];
+  }) => {
+    const { permission } = await permissionService.getProjectPermission(
+      actor,
+      actorId,
+      projectId,
+      actorAuthMethod,
+      actorOrgId
+    );
+
+    let paths: { folderId: string; path: string; environment: string }[] = [];
+
+    // verify user has access to all environments
+    environments.forEach((environment) =>
+      ForbiddenError.from(permission).throwUnlessCan(
+        ProjectPermissionActions.Read,
+        subject(ProjectPermissionSub.Secrets, { environment, secretPath: path })
+      )
+    );
+
+    const folders = await folderDAL.findBySecretPathMultiEnv(projectId, environments, path);
+
+    const data: { [key: string]: typeof decryptedSecrets } = {};
+
+    if (!folders.length) {
+      environments.forEach((env) => {
+        data[env] = [];
+      });
+
+      return data;
+    }
+
+    paths = folders.map((folder) => ({ folderId: folder.id, path, environment: folder.environment.slug }));
+
+    const groupedPaths = groupBy(paths, (p) => p.folderId);
+
+    const secrets = await secretDAL.findByFolderIds(
       paths.map((p) => p.folderId),
       actorId,
       undefined,
       params
     );
 
-    return count;
+    const { decryptor: secretManagerDecryptor } = await kmsService.createCipherPairWithDataKey({
+      type: KmsDataKey.SecretManager,
+      projectId
+    });
+
+    const decryptedSecrets = secrets.map((secret) =>
+      reshapeBridgeSecret(
+        projectId,
+        groupedPaths[secret.folderId][0].environment,
+        groupedPaths[secret.folderId][0].path,
+        {
+          ...secret,
+          value: secret.encryptedValue
+            ? secretManagerDecryptor({ cipherTextBlob: secret.encryptedValue }).toString()
+            : "",
+          comment: secret.encryptedComment
+            ? secretManagerDecryptor({ cipherTextBlob: secret.encryptedComment }).toString()
+            : ""
+        }
+      )
+    );
+
+    // TODO: need to move to query
+    const filteredSecrets = tagSlugs.length
+      ? decryptedSecrets.filter((secret) => Boolean(secret.tags?.find((el) => tagSlugs.includes(el.slug))))
+      : decryptedSecrets;
+
+    filteredSecrets.forEach((secret) => {
+      data[secret.environment] = [...(data[secret.environment] ?? []), secret];
+    });
+
+    return data;
   };
 
   const getSecrets = async ({
@@ -1463,6 +1600,8 @@ export const secretV2BridgeServiceFactory = ({
     getSecretVersions,
     backfillSecretReferences,
     moveSecrets,
-    getSecretsCount
+    getSecretsCount,
+    getSecretsCountMultiEnv,
+    getSecretsMultiEnv
   };
 };

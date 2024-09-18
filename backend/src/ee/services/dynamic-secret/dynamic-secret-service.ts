@@ -1,6 +1,6 @@
 import { ForbiddenError, subject } from "@casl/ability";
 
-import { SecretKeyEncoding, TDynamicSecrets, TSecretFolders } from "@app/db/schemas";
+import { SecretKeyEncoding } from "@app/db/schemas";
 import { TLicenseServiceFactory } from "@app/ee/services/license/license-service";
 import { TPermissionServiceFactory } from "@app/ee/services/permission/permission-service";
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/ee/services/permission/project-permission";
@@ -344,6 +344,7 @@ export const dynamicSecretServiceFactory = ({
       { countDistinct: "name" }
     );
     // TODO: comeback
+    // @ts-expect-error need to add type support to find
     return Number(dynamicSecretCfg[0]?.count ?? 0);
   };
 

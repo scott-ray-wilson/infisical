@@ -486,7 +486,7 @@ export const secretServiceFactory = ({
     return { ...deletedSecret[0], _id: deletedSecret[0].id, workspace: projectId, environment, secretPath: path };
   };
 
-  const getSecretsCount = async ({
+  const getSecretsV1Count = async ({
     actorId,
     path,
     environment,
@@ -996,7 +996,7 @@ export const secretServiceFactory = ({
     return secretsDeleted;
   };
 
-  const getSecretsRawCount = async ({
+  const getSecretsCount = async ({
     projectId,
     path,
     actor,
@@ -1004,26 +1004,31 @@ export const secretServiceFactory = ({
     actorOrgId,
     actorAuthMethod,
     environment,
-    includeImports,
-    expandSecretReferences,
-    recursive,
     tagSlugs = [],
     ...v2Params
-  }: TGetSecretsRawDTO) => {
+  }: Pick<
+    TGetSecretsRawDTO,
+    | "projectId"
+    | "path"
+    | "actor"
+    | "actorId"
+    | "actorOrgId"
+    | "actorAuthMethod"
+    | "environment"
+    | "tagSlugs"
+    | "search"
+  >) => {
     const { shouldUseSecretV2Bridge } = await projectBotService.getBotKey(projectId);
 
     if (shouldUseSecretV2Bridge) {
       const count = await secretV2BridgeService.getSecretsCount({
         projectId,
-        expandSecretReferences,
         actorId,
         actor,
         actorOrgId,
         environment,
         path,
-        recursive,
         actorAuthMethod,
-        includeImports,
         tagSlugs,
         ...v2Params
       });
@@ -1031,7 +1036,7 @@ export const secretServiceFactory = ({
       return count;
     }
 
-    const count = getSecretsCount({
+    const count = getSecretsV1Count({
       projectId,
       actorId,
       actor,
@@ -1043,6 +1048,209 @@ export const secretServiceFactory = ({
     });
 
     return count;
+  };
+
+  const getSecretsCountMultiEnv = async ({
+    projectId,
+    path,
+    actor,
+    actorId,
+    actorOrgId,
+    actorAuthMethod,
+    environments,
+    tagSlugs = [],
+    ...v2Params
+  }: Pick<
+    TGetSecretsRawDTO,
+    "projectId" | "path" | "actor" | "actorId" | "actorOrgId" | "actorAuthMethod" | "tagSlugs" | "search"
+  > & { environments: string[] }) => {
+    const { shouldUseSecretV2Bridge } = await projectBotService.getBotKey(projectId);
+
+    if (!shouldUseSecretV2Bridge)
+      throw new BadRequestError({
+        message: "Project version does not support pagination",
+        name: "pagination_not_supported"
+      });
+
+    const count = await secretV2BridgeService.getSecretsCountMultiEnv({
+      projectId,
+      actorId,
+      actor,
+      actorOrgId,
+      environments,
+      path,
+      actorAuthMethod,
+      tagSlugs,
+      ...v2Params
+    });
+
+    return count;
+    // TODO: if even supporting?
+    // return 0;
+    // const count = getSecretsV1Count({
+    //   projectId,
+    //   actorId,
+    //   actor,
+    //   actorOrgId,
+    //   environment,
+    //   path,
+    //   actorAuthMethod,
+    //   ...v2Params
+    // });
+    //
+    // return count;
+  };
+
+  const getSecretsRawMultiEnv = async ({
+    projectId,
+    path,
+    actor,
+    actorId,
+    actorOrgId,
+    actorAuthMethod,
+    environments,
+    tagSlugs = [],
+    ...params
+  }: Omit<TGetSecretsRawDTO, "environment" | "includeImports" | "expandSecretReferences" | "recursive"> & {
+    environments: string[];
+  }) => {
+    const {
+      // botKey,
+      shouldUseSecretV2Bridge
+    } = await projectBotService.getBotKey(projectId);
+
+    if (!shouldUseSecretV2Bridge)
+      throw new BadRequestError({
+        message: "Project version does not support pagination",
+        name: "pagination_not_supported"
+      });
+
+    const secrets = await secretV2BridgeService.getSecretsMultiEnv({
+      projectId,
+      actorId,
+      actor,
+      actorOrgId,
+      environments,
+      path,
+      actorAuthMethod,
+      tagSlugs,
+      ...params
+    });
+
+    return secrets;
+
+    // if (!botKey) throw new BadRequestError({ message: "Project bot not found", name: "bot_not_found_error" });
+
+    // return {} as typeof secrets; // TODO
+    //
+    // const { secrets, imports } = await getSecrets({
+    //   actorId,
+    //   projectId,
+    //   environments,
+    //   actor,
+    //   actorOrgId,
+    //   actorAuthMethod,
+    //   path,
+    //   includeImports,
+    //   recursive,
+    //   ...params // TODO: might not support
+    // });
+    //
+    // const decryptedSecrets = secrets.map((el) => decryptSecretRaw(el, botKey));
+    // const filteredSecrets = tagSlugs.length
+    //   ? decryptedSecrets.filter((secret) => Boolean(secret.tags?.find((el) => tagSlugs.includes(el.slug))))
+    //   : decryptedSecrets;
+    // const processedImports = (imports || [])?.map(({ secrets: importedSecrets, ...el }) => {
+    //   const decryptedImportSecrets = importedSecrets.map((sec) =>
+    //     decryptSecretRaw(
+    //       { ...sec, environment: el.environment, workspace: projectId, secretPath: el.secretPath },
+    //       botKey
+    //     )
+    //   );
+    //
+    //   // secret-override to handle duplicate keys from different import levels
+    //   // this prioritizes secret values from direct imports
+    //   const importedKeys = new Set<string>();
+    //   const importedEntries = decryptedImportSecrets.reduce(
+    //     (
+    //       accum: {
+    //         secretKey: string;
+    //         secretPath: string;
+    //         workspace: string;
+    //         environment: string;
+    //         secretValue: string;
+    //         secretComment: string;
+    //         version: number;
+    //         type: string;
+    //         _id: string;
+    //         id: string;
+    //         user: string | null | undefined;
+    //         skipMultilineEncoding: boolean | null | undefined;
+    //       }[],
+    //       sec
+    //     ) => {
+    //       if (!importedKeys.has(sec.secretKey)) {
+    //         importedKeys.add(sec.secretKey);
+    //         return [...accum, sec];
+    //       }
+    //       return accum;
+    //     },
+    //     []
+    //   );
+    //
+    //   return {
+    //     ...el,
+    //     secrets: importedEntries
+    //   };
+    // });
+    //
+    // const expandSecret = interpolateSecrets({
+    //   folderDAL,
+    //   projectId,
+    //   secretDAL,
+    //   secretEncKey: botKey
+    // });
+    //
+    // if (expandSecretReferences) {
+    //   const secretsGroupByPath = groupBy(filteredSecrets, (i) => i.secretPath);
+    //   await Promise.allSettled(
+    //     Object.keys(secretsGroupByPath).map((groupedPath) =>
+    //       Promise.allSettled(
+    //         secretsGroupByPath[groupedPath].map(async (decryptedSecret, index) => {
+    //           const expandedSecretValue = await expandSecret({
+    //             value: decryptedSecret.secretValue,
+    //             secretPath: groupedPath,
+    //             environment,
+    //             skipMultilineEncoding: decryptedSecret.skipMultilineEncoding
+    //           });
+    //           // eslint-disable-next-line no-param-reassign
+    //           secretsGroupByPath[groupedPath][index].secretValue = expandedSecretValue || "";
+    //         })
+    //       )
+    //     )
+    //   );
+    //   await Promise.allSettled(
+    //     processedImports.map((processedImport) =>
+    //       Promise.allSettled(
+    //         processedImport.secrets.map(async (decryptedSecret, index) => {
+    //           const expandedSecretValue = await expandSecret({
+    //             value: decryptedSecret.secretValue,
+    //             secretPath: path,
+    //             environment,
+    //             skipMultilineEncoding: decryptedSecret.skipMultilineEncoding
+    //           });
+    //           // eslint-disable-next-line no-param-reassign
+    //           processedImport.secrets[index].secretValue = expandedSecretValue || "";
+    //         })
+    //       )
+    //     )
+    //   );
+    // }
+    //
+    // return {
+    //   secrets: filteredSecrets,
+    //   imports: processedImports
+    // };
   };
 
   const getSecretsRaw = async ({
@@ -1090,7 +1298,7 @@ export const secretServiceFactory = ({
       path,
       includeImports,
       recursive,
-      ...params
+      ...params // TODO: might not support
     });
 
     const decryptedSecrets = secrets.map((el) => decryptSecretRaw(el, botKey));
@@ -2751,6 +2959,8 @@ export const secretServiceFactory = ({
     backfillSecretReferences,
     moveSecrets,
     startSecretV2Migration,
-    getSecretsRawCount
+    getSecretsCount,
+    getSecretsCountMultiEnv,
+    getSecretsRawMultiEnv
   };
 };

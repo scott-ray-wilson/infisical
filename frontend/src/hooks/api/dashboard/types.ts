@@ -34,7 +34,7 @@ export type DashboardProjectSecretsOverview = Omit<
   DashboardProjectSecretsOverviewResponse,
   "secrets"
 > & {
-  secrets?: Record<string, SecretV3RawSanitized>;
+  secrets?: Record<string, Record<string, SecretV3RawSanitized>>;
 };
 
 export type DashboardProjectSecretsDetails = Omit<

@@ -63,3 +63,37 @@ export const useDynamicSecretOverview = (
 
   return { dynamicSecretNames, isDynamicSecretPresentInEnv };
 };
+
+export const useSecretOverview = (
+  secrets: DashboardProjectSecretsOverview["secrets"],
+  orderDirection: OrderByDirection
+) => {
+  const secKeys = useMemo(() => {
+    const keys = new Set<string>();
+    Object.values(secrets ?? {})?.forEach((secretGroup) => {
+      Object.keys(secretGroup || {}).forEach((key) => {
+        keys.add(key);
+      });
+    });
+    return [...keys].sort((a, b) =>
+      orderDirection === OrderByDirection.ASC ? a.localeCompare(b) : b.localeCompare(a)
+    );
+  }, [secrets]);
+
+  const getEnvSecretKeyCount = useCallback(
+    (env: string) => {
+      return Object.keys(secrets?.[env] || {}).length;
+    },
+    [secrets]
+  );
+
+  const getSecretByKey = useCallback(
+    (env: string, key: string) => {
+      const sec = secrets?.[env]?.[key];
+      return sec;
+    },
+    [secrets]
+  );
+
+  return { secKeys, getSecretByKey, getEnvSecretKeyCount };
+};

@@ -189,6 +189,7 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
     tx?: Knex,
     filters?: {
       search?: string;
+      tagSlugs?: string[]; // TODO
     }
   ) => {
     try {
@@ -212,7 +213,7 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
 
       return Number(secrets[0]?.count);
     } catch (error) {
-      throw new DatabaseError({ error, name: "get project secret count" });
+      throw new DatabaseError({ error, name: "get folder secret count" });
     }
   };
 

@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { subject } from "@casl/ability";
-import { faCheckCircle, faCircle } from "@fortawesome/free-regular-svg-icons";
+import { faCheckCircle } from "@fortawesome/free-regular-svg-icons";
 import {
   faAngleDown,
   faArrowDown,
@@ -58,9 +58,7 @@ import {
   useCreateFolder,
   useCreateSecretV3,
   useDeleteSecretV3,
-  useGetDynamicSecretsOfAllEnv,
   useGetImportedSecretsAllEnvs,
-  useGetProjectSecretsAllEnv,
   useUpdateSecretV3
 } from "@app/hooks/api";
 import { useGetProjectSecretsOverview } from "@app/hooks/api/dashboard/queries";
@@ -69,11 +67,10 @@ import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { useUpdateFolderBatch } from "@app/hooks/api/secretFolders/queries";
 import { TUpdateFolderBatchDTO } from "@app/hooks/api/secretFolders/types";
 import { SecretType, TSecretFolder } from "@app/hooks/api/types";
-import { useDynamicSecretOverview, useFolderOverview } from "@app/hooks/utils";
-import { DynamicSecretListView } from "@app/views/SecretMainPage/components/DynamicSecretListView";
+import { useDynamicSecretOverview, useFolderOverview, useSecretOverview } from "@app/hooks/utils";
 import { SecretOverviewDynamicSecretRow } from "@app/views/SecretOverviewPage/components/SecretOverviewDynamicSecretRow";
 import { SecretOverviewTableRow } from "@app/views/SecretOverviewPage/components/SecretOverviewTableRow";
-import { SecretTableResourceCount } from "@app/views/SecretOverviewPage/components/SecretTableResourceCount/SecretTableResourceCount";
+import { SecretTableResourceCount } from "@app/views/SecretOverviewPage/components/SecretTableResourceCount";
 
 import { FolderForm } from "../SecretMainPage/components/ActionBar/FolderForm";
 import { CreateSecretForm } from "./components/CreateSecretForm";
@@ -216,36 +213,13 @@ export const SecretOverviewPage = () => {
     );
   }, [userAvailableEnvs, secretPath]);
 
-  const {
-    data: secrets,
-    getSecretByKey,
-    secKeys,
-    getEnvSecretKeyCount
-  } = useGetProjectSecretsAllEnv({
-    // workspaceId,
-    envs: userAvailableEnvs.map(({ slug }) => slug),
-    secretPath
-  });
-
-  //
-  // const { folders, folderNames, isFolderPresentInEnv, getFolderByNameAndEnv } = useGetFoldersByEnv({
-  //   // projectId: workspaceId,
-  //   path: secretPath,
-  //   environments: userAvailableEnvs.map(({ slug }) => slug)
-  // });
-
   const { isImportedSecretPresentInEnv, getImportedSecretByKey } = useGetImportedSecretsAllEnvs({
-    // projectId: workspaceId,
+    projectId: workspaceId,
     path: secretPath,
     environments: userAvailableEnvs.map(({ slug }) => slug)
   });
 
-  // const { dynamicSecretNames, dynamicSecrets, isDynamicSecretPresentInEnv } =
-  //   useGetDynamicSecretsOfAllEnv({
-  //     // projectSlug,
-  //     environmentSlugs: userAvailableEnvs.map(({ slug }) => slug),
-  //     path: secretPath
-  //   });
+  const paginationOffset = (page - 1) * perPage;
 
   const { isLoading: isOverviewLoading, data: overview } = useGetProjectSecretsOverview({
     projectId: workspaceId,
@@ -258,10 +232,11 @@ export const SecretOverviewPage = () => {
     includeSecrets: filter.secret,
     search: debouncedSearchFilter,
     limit: perPage,
-    offset: (page - 1) * perPage
+    offset: paginationOffset
   });
 
   const {
+    secrets,
     folders,
     dynamicSecrets,
     totalCount = 0,
@@ -277,6 +252,11 @@ export const SecretOverviewPage = () => {
 
   const { dynamicSecretNames, isDynamicSecretPresentInEnv } = useDynamicSecretOverview(
     dynamicSecrets,
+    orderDirection
+  );
+
+  const { secKeys, getSecretByKey, getEnvSecretKeyCount } = useSecretOverview(
+    secrets,
     orderDirection
   );
 
@@ -525,38 +505,10 @@ export const SecretOverviewPage = () => {
     }
   };
 
-  const rows = useMemo(() => {
-    const filteredSecretNames =
-      secKeys
-        ?.filter((name) => name.toUpperCase().includes(debouncedSearchFilter.toUpperCase()))
-        .sort((a, b) => (orderDirection === "asc" ? a.localeCompare(b) : b.localeCompare(a))) ?? [];
-    const filteredFolderNames =
-      folderNames
-        ?.filter((name) => name.toLowerCase().includes(debouncedSearchFilter.toLowerCase()))
-        .sort((a, b) => (orderDirection === "asc" ? a.localeCompare(b) : b.localeCompare(a))) ?? [];
-    const filteredDynamicSecrets =
-      dynamicSecretNames
-        ?.filter((name) => name.toLowerCase().includes(debouncedSearchFilter.toLowerCase()))
-        .sort((a, b) => (orderDirection === "asc" ? a.localeCompare(b) : b.localeCompare(a))) ?? [];
-
-    return [
-      ...filteredFolderNames.map((name) => ({ name, type: RowType.Folder })),
-      ...filteredDynamicSecrets.map((name) => ({ name, type: RowType.DynamicSecret })),
-      ...filteredSecretNames.map((name) => ({ name, type: RowType.Secret }))
-    ];
-  }, [orderDirection, debouncedSearchFilter, secKeys, folderNames, dynamicSecretNames]);
-
-  const paginationOffset = (page - 1) * perPage;
-
   useEffect(() => {
     // reset page if no longer valid
     if (totalCount < paginationOffset) setPage(1);
   }, [totalCount]);
-
-  // const isTableLoading =
-  //   folders?.some(({ isLoading }) => isLoading) ||
-  //   secrets?.some(({ isLoading }) => isLoading) ||
-  //   dynamicSecrets?.some(({ isLoading }) => isLoading);
 
   const handleToggleRowType = useCallback(
     (rowType: RowType) =>
@@ -570,7 +522,6 @@ export const SecretOverviewPage = () => {
   );
 
   if (isOverviewLoading) {
-    // if (isWorkspaceLoading || isTableLoading) {
     return (
       <div className="container mx-auto flex h-screen w-full items-center justify-center px-8 text-mineshaft-50 dark:[color-scheme:dark]">
         <img
@@ -590,11 +541,6 @@ export const SecretOverviewPage = () => {
   // const combinedKeys = [...secKeys, ...secretImports.map((impSecrets) => impSecrets?.data?.map((impSec) => impSec.secrets?.map((impSecKey) => impSecKey.key))).flat().flat()];
 
   const isTableEmpty = totalCount === 0;
-  // !(
-  //   folders?.every(({ isLoading }) => isLoading) &&
-  //   secrets?.every(({ isLoading }) => isLoading) &&
-  //   dynamicSecrets?.every(({ isLoading }) => isLoading)
-  // ) && rows.length === 0;
 
   return (
     <>
@@ -681,16 +627,13 @@ export const SecretOverviewPage = () => {
                         const isEnvSelected = visibleEnvs.map((env) => env.id).includes(envId);
                         return (
                           <DropdownMenuItem
-                            onClick={() => handleEnvSelect(envId)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleEnvSelect(envId);
+                            }}
                             key={envId}
-                            icon={
-                              isEnvSelected ? (
-                                <FontAwesomeIcon className="text-primary" icon={faCheckCircle} />
-                              ) : (
-                                <FontAwesomeIcon className="text-mineshaft-400" icon={faCircle} />
-                              )
-                            }
-                            iconPos="left"
+                            icon={isEnvSelected && <FontAwesomeIcon icon={faCheckCircle} />}
+                            iconPos="right"
                           >
                             <div className="flex items-center">{name}</div>
                           </DropdownMenuItem>
@@ -709,22 +652,6 @@ export const SecretOverviewPage = () => {
                     </Button>
                   </DropdownMenuItem> */}
                     <DropdownMenuLabel>Filter project resources</DropdownMenuLabel>
-
-                    {/* <DropdownMenuItem
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleToggleRowType(RowType.Import);
-                      }}
-                      icon={
-                        filter?.include[RowType.Import] && <FontAwesomeIcon icon={faCheckCircle} />
-                      }
-                      iconPos="right"
-                    >
-                      <div className="flex items-center gap-2">
-                        <FontAwesomeIcon icon={faFileImport} className=" text-green-700" />
-                        <span>Imports</span>
-                      </div>
-                    </DropdownMenuItem> */}
                     <DropdownMenuItem
                       onClick={(e) => {
                         e.preventDefault();
@@ -990,24 +917,23 @@ export const SecretOverviewPage = () => {
                         key={`overview-${dynamicSecretName}-${index + 1}`}
                       />
                     ))}
-                    {/*     <SecretOverviewTableRow
-                      isSelected={selectedEntries.secret[row.name]}
-                    onToggleSecretSelect={() =>
-                        toggleSelectedEntry(EntryType.SECRET, row.name)
-                    }
-                    secretPath={secretPath}
-                    getImportedSecretByKey={getImportedSecretByKey}
-                    isImportedSecretPresentInEnv={isImportedSecretPresentInEnv}
-                    onSecretCreate={handleSecretCreate}
-                    onSecretDelete={handleSecretDelete}
-                    onSecretUpdate={handleSecretUpdate}
-                    key={`overview-${row.name}-${index + 1}`}
-                    environments={visibleEnvs}
-                    secretKey={row.name}
-                    getSecretByKey={getSecretByKey}
-                    expandableColWidth={expandableTableWidth}
-                  />
-                */}
+                    {secKeys.map((key, index) => (
+                      <SecretOverviewTableRow
+                        isSelected={selectedEntries.secret[key]}
+                        onToggleSecretSelect={() => toggleSelectedEntry(EntryType.SECRET, key)}
+                        secretPath={secretPath}
+                        getImportedSecretByKey={getImportedSecretByKey}
+                        isImportedSecretPresentInEnv={isImportedSecretPresentInEnv}
+                        onSecretCreate={handleSecretCreate}
+                        onSecretDelete={handleSecretDelete}
+                        onSecretUpdate={handleSecretUpdate}
+                        key={`overview-${key}-${index + 1}`}
+                        environments={visibleEnvs}
+                        secretKey={key}
+                        getSecretByKey={getSecretByKey}
+                        expandableColWidth={expandableTableWidth}
+                      />
+                    ))}
                   </>
                 )}
               </TBody>

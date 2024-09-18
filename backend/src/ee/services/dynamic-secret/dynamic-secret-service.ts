@@ -341,8 +341,9 @@ export const dynamicSecretServiceFactory = ({
 
     const dynamicSecretCfg = await dynamicSecretDAL.find(
       { $in: { folderId: folders.map((folder) => folder.id) }, $search: search ? { name: `%${search}%` } : undefined },
-      { count: true }
+      { countDistinct: "name" }
     );
+    // TODO: comeback
     return Number(dynamicSecretCfg[0]?.count ?? 0);
   };
 
@@ -446,11 +447,6 @@ export const dynamicSecretServiceFactory = ({
     projectSlug,
     path,
     environmentSlugs,
-    limit,
-    offset,
-    orderBy,
-    orderDirection = OrderByDirection.ASC,
-    search,
     ...params
   }: Omit<TListDynamicSecretsDTO, "environmentSlug"> & { environmentSlugs: string[] }) => {
     let { projectId } = params;
@@ -480,19 +476,10 @@ export const dynamicSecretServiceFactory = ({
     const folders = await folderDAL.findBySecretPathMultiEnv(projectId, environmentSlugs, path);
     if (!folders.length) throw new BadRequestError({ message: "Folders not found" });
 
-    const dynamicSecretCfg = await dynamicSecretDAL.find(
-      {
-        $in: {
-          folderId: folders.map((folder) => folder.id)
-        },
-        $search: search ? { name: `%${search}%` } : undefined
-      },
-      {
-        limit,
-        offset,
-        sort: orderBy ? [[orderBy, orderDirection]] : undefined
-      }
-    );
+    const dynamicSecretCfg = await dynamicSecretDAL.findMultiEnv({
+      folderIds: folders.map((folder) => folder.id),
+      ...params
+    });
 
     const folderEnvMap: Map<string, string> = new Map(folders.map((folder) => [folder.id, folder.environment.slug]));
 

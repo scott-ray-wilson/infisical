@@ -309,6 +309,7 @@ export const ActionBar = ({
               </IconButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="p-0">
+              <DropdownMenuGroup>Filter By</DropdownMenuGroup>
               <DropdownMenuItem
                 onClick={(e) => {
                   e.preventDefault();
@@ -363,7 +364,6 @@ export const ActionBar = ({
                   <span>Secrets</span>
                 </div>
               </DropdownMenuItem>
-              <DropdownMenuGroup>Filter By</DropdownMenuGroup>
               <DropdownSubMenu>
                 <DropdownSubMenuTrigger
                   iconPos="right"

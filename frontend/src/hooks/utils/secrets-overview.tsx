@@ -35,3 +35,31 @@ export const useFolderOverview = (
 
   return { folderNames, isFolderPresentInEnv, getFolderByNameAndEnv };
 };
+
+export const useDynamicSecretOverview = (
+  dynamicSecrets: DashboardProjectSecretsOverview["dynamicSecrets"],
+  orderDirection: OrderByDirection
+) => {
+  const dynamicSecretNames = useMemo(() => {
+    const names = new Set<string>();
+    Object.values(dynamicSecrets ?? {})?.forEach((folderGroup) => {
+      folderGroup.forEach((folder) => {
+        names.add(folder.name);
+      });
+    });
+    return [...names].sort((a, b) =>
+      orderDirection === OrderByDirection.ASC ? a.localeCompare(b) : b.localeCompare(a)
+    );
+  }, [dynamicSecrets]);
+
+  const isDynamicSecretPresentInEnv = useCallback(
+    (name: string, env: string) => {
+      return Boolean(
+        dynamicSecrets?.[env]?.find(({ name: dynamicSecretName }) => dynamicSecretName === name)
+      );
+    },
+    [dynamicSecrets]
+  );
+
+  return { dynamicSecretNames, isDynamicSecretPresentInEnv };
+};

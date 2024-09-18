@@ -460,6 +460,8 @@ export const secretFolderServiceFactory = ({
       ...params
     });
 
+    console.log("folders", folders);
+
     const data: { [key: string]: TSecretFolders[] } = {};
     folders.forEach((folder) => {
       const slug = envMap.get(folder.envId);

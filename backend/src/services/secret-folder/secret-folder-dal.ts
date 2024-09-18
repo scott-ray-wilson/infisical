@@ -241,15 +241,22 @@ export const secretFolderDALFactory = (db: TDbClient) => {
         removeTrailingSlash(path)
       ).orderBy("depth", "desc");
 
-      // TODO: what is this preventing?
-      // if (folder && folder.path !== removeTrailingSlash(path)) {
-      //   return;
-      // }
+      // TODO: move maxDepth logic to SQL
 
-      return folders.map((folder) => {
-        const { envId: id, envName: name, envSlug: slug, ...el } = folder;
-        return { ...el, envId: id, environment: { id, name, slug } };
-      });
+      const firstFolder = folders[0];
+
+      if (firstFolder && firstFolder.path !== removeTrailingSlash(path)) {
+        return [];
+      }
+
+      const maxDepth = firstFolder.depth;
+
+      return folders
+        .filter((folder) => folder.depth === maxDepth) // only want folder IDs with same name
+        .map((folder) => {
+          const { envId: id, envName: name, envSlug: slug, ...el } = folder;
+          return { ...el, envId: id, environment: { id, name, slug } };
+        });
     } catch (error) {
       throw new DatabaseError({ error, name: "Find by secret path multi env" });
     }
@@ -397,18 +404,6 @@ export const secretFolderDALFactory = (db: TDbClient) => {
     },
     tx?: Knex
   ) => {
-    // const folders = await folderDAL.find(
-    //     {
-    //         $in: {
-    //             envId: envs.map((env) => env.id),
-    //             parentId: parentFolders.map((folder) => folder.id)
-    //         },
-    //         isReserved: false,
-    //         $search: search ? { name: `%${search}%` } : undefined
-    //     },
-    //     { countDistinct: "name" }
-    // );
-
     try {
       const query = (tx || db.replicaNode())(TableName.SecretFolder)
         .whereIn("parentId", parentIds)
@@ -419,13 +414,19 @@ export const secretFolderDALFactory = (db: TDbClient) => {
             void bd.whereILike("name", `%${search}%`);
           }
         })
-        .select(
-          selectAllTableCols(TableName.SecretFolder),
-          db.raw(`DENSE_RANK() OVER (partition by "name" ORDER BY "name" ASC) as rank`)
-        )
+        .select(selectAllTableCols(TableName.SecretFolder), db.raw(`DENSE_RANK() OVER (ORDER BY "name" ASC) as rank`))
         .orderBy(orderBy, orderDirection);
 
-      if (limit) void query.limit(limit).offset(offset);
+      if (limit) {
+        const rankOffset = offset + 1;
+        return await (tx || db)
+          .with("w", query)
+          .select("*")
+          .from<Awaited<typeof query>[number]>("w")
+          // ranks start from 1
+          .where("w.rank", ">=", rankOffset)
+          .andWhere("w.rank", "<", rankOffset + limit);
+      }
 
       const folders = await query;
 

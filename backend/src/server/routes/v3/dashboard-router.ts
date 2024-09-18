@@ -162,15 +162,13 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           });
 
           remainingLimit -= new Set(
-            ...Object.values(folders).flatMap((folderGroup) => folderGroup.map((folder) => folder.name))
+            ...Object.values(folders).map((folderGroup) => folderGroup.flatMap((folder) => folder.name))
           ).size;
           adjustedOffset = 0;
         } else {
           adjustedOffset = Math.max(0, adjustedOffset - totalFolderCount);
         }
       }
-
-      console.log("remaining limit", remainingLimit);
 
       if (includeDynamicSecrets) {
         totalDynamicSecretCount = await server.services.dynamicSecret.getCountMultiEnv({

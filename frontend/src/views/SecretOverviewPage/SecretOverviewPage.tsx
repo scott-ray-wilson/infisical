@@ -8,8 +8,11 @@ import {
   faAngleDown,
   faArrowDown,
   faArrowUp,
+  faFingerprint,
+  faFolder,
   faFolderBlank,
   faFolderPlus,
+  faKey,
   faList,
   faMagnifyingGlass,
   faPlus
@@ -66,7 +69,10 @@ import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { useUpdateFolderBatch } from "@app/hooks/api/secretFolders/queries";
 import { TUpdateFolderBatchDTO } from "@app/hooks/api/secretFolders/types";
 import { SecretType, TSecretFolder } from "@app/hooks/api/types";
-import { useFolderOverview } from "@app/hooks/utils";
+import { useDynamicSecretOverview, useFolderOverview } from "@app/hooks/utils";
+import { DynamicSecretListView } from "@app/views/SecretMainPage/components/DynamicSecretListView";
+import { SecretOverviewDynamicSecretRow } from "@app/views/SecretOverviewPage/components/SecretOverviewDynamicSecretRow";
+import { SecretOverviewTableRow } from "@app/views/SecretOverviewPage/components/SecretOverviewTableRow";
 import { SecretTableResourceCount } from "@app/views/SecretOverviewPage/components/SecretTableResourceCount/SecretTableResourceCount";
 
 import { FolderForm } from "../SecretMainPage/components/ActionBar/FolderForm";
@@ -84,9 +90,12 @@ export enum EntryType {
 enum RowType {
   Folder = "folder",
   DynamicSecret = "dynamic",
-  Secret = "Secret"
+  Secret = "secret"
 }
 
+type Filter = {
+  [key in RowType]: boolean;
+};
 const INIT_PER_PAGE = 20;
 
 export const SecretOverviewPage = () => {
@@ -114,6 +123,12 @@ export const SecretOverviewPage = () => {
   const [searchFilter, setSearchFilter] = useState("");
   const debouncedSearchFilter = useDebounce(searchFilter);
   const secretPath = (router.query?.secretPath as string) || "/";
+
+  const [filter, setFilter] = useState<Filter>({
+    [RowType.Folder]: true,
+    [RowType.DynamicSecret]: true,
+    [RowType.Secret]: true
+  });
 
   const [selectedEntries, setSelectedEntries] = useState<{
     [EntryType.FOLDER]: Record<string, boolean>;
@@ -225,12 +240,12 @@ export const SecretOverviewPage = () => {
     environments: userAvailableEnvs.map(({ slug }) => slug)
   });
 
-  const { dynamicSecretNames, dynamicSecrets, isDynamicSecretPresentInEnv } =
-    useGetDynamicSecretsOfAllEnv({
-      // projectSlug,
-      environmentSlugs: userAvailableEnvs.map(({ slug }) => slug),
-      path: secretPath
-    });
+  // const { dynamicSecretNames, dynamicSecrets, isDynamicSecretPresentInEnv } =
+  //   useGetDynamicSecretsOfAllEnv({
+  //     // projectSlug,
+  //     environmentSlugs: userAvailableEnvs.map(({ slug }) => slug),
+  //     path: secretPath
+  //   });
 
   const { isLoading: isOverviewLoading, data: overview } = useGetProjectSecretsOverview({
     projectId: workspaceId,
@@ -238,20 +253,30 @@ export const SecretOverviewPage = () => {
     secretPath,
     orderDirection,
     orderBy: DashboardSecretsOrderBy.Name,
-    includeFolders: true,
-    includeDynamicSecrets: true,
-    search: debouncedSearchFilter
+    includeFolders: filter.folder,
+    includeDynamicSecrets: filter.dynamic,
+    includeSecrets: filter.secret,
+    search: debouncedSearchFilter,
+    limit: perPage,
+    offset: (page - 1) * perPage
   });
 
   const {
     folders,
+    dynamicSecrets,
     totalCount = 0,
     totalFolderCount,
     totalSecretCount,
     totalDynamicSecretCount
   } = overview ?? {};
+
   const { folderNames, getFolderByNameAndEnv, isFolderPresentInEnv } = useFolderOverview(
     folders,
+    orderDirection
+  );
+
+  const { dynamicSecretNames, isDynamicSecretPresentInEnv } = useDynamicSecretOverview(
+    dynamicSecrets,
     orderDirection
   );
 
@@ -525,13 +550,24 @@ export const SecretOverviewPage = () => {
 
   useEffect(() => {
     // reset page if no longer valid
-    if (rows.length < paginationOffset) setPage(1);
-  }, [rows.length]);
+    if (totalCount < paginationOffset) setPage(1);
+  }, [totalCount]);
 
   // const isTableLoading =
   //   folders?.some(({ isLoading }) => isLoading) ||
   //   secrets?.some(({ isLoading }) => isLoading) ||
   //   dynamicSecrets?.some(({ isLoading }) => isLoading);
+
+  const handleToggleRowType = useCallback(
+    (rowType: RowType) =>
+      setFilter((state) => {
+        return {
+          ...state,
+          [rowType]: !state[rowType]
+        };
+      }),
+    []
+  );
 
   if (isOverviewLoading) {
     // if (isWorkspaceLoading || isTableLoading) {
@@ -672,6 +708,64 @@ export const SecretOverviewPage = () => {
                       Create an environment
                     </Button>
                   </DropdownMenuItem> */}
+                    <DropdownMenuLabel>Filter project resources</DropdownMenuLabel>
+
+                    {/* <DropdownMenuItem
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleToggleRowType(RowType.Import);
+                      }}
+                      icon={
+                        filter?.include[RowType.Import] && <FontAwesomeIcon icon={faCheckCircle} />
+                      }
+                      iconPos="right"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FontAwesomeIcon icon={faFileImport} className=" text-green-700" />
+                        <span>Imports</span>
+                      </div>
+                    </DropdownMenuItem> */}
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleToggleRowType(RowType.Folder);
+                      }}
+                      icon={filter[RowType.Folder] && <FontAwesomeIcon icon={faCheckCircle} />}
+                      iconPos="right"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FontAwesomeIcon icon={faFolder} className="text-yellow-700" />
+                        <span>Folders</span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleToggleRowType(RowType.DynamicSecret);
+                      }}
+                      icon={
+                        filter[RowType.DynamicSecret] && <FontAwesomeIcon icon={faCheckCircle} />
+                      }
+                      iconPos="right"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FontAwesomeIcon icon={faFingerprint} className=" text-yellow-700" />
+                        <span>Dynamic Secrets</span>
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleToggleRowType(RowType.Secret);
+                      }}
+                      icon={filter[RowType.Secret] && <FontAwesomeIcon icon={faCheckCircle} />}
+                      iconPos="right"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FontAwesomeIcon icon={faKey} className=" text-bunker-300" />
+                        <span>Secrets</span>
+                      </div>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
@@ -888,6 +982,32 @@ export const SecretOverviewPage = () => {
                         }
                       />
                     ))}
+                    {dynamicSecretNames.map((dynamicSecretName, index) => (
+                      <SecretOverviewDynamicSecretRow
+                        dynamicSecretName={dynamicSecretName}
+                        isDynamicSecretInEnv={isDynamicSecretPresentInEnv}
+                        environments={visibleEnvs}
+                        key={`overview-${dynamicSecretName}-${index + 1}`}
+                      />
+                    ))}
+                    {/*     <SecretOverviewTableRow
+                      isSelected={selectedEntries.secret[row.name]}
+                    onToggleSecretSelect={() =>
+                        toggleSelectedEntry(EntryType.SECRET, row.name)
+                    }
+                    secretPath={secretPath}
+                    getImportedSecretByKey={getImportedSecretByKey}
+                    isImportedSecretPresentInEnv={isImportedSecretPresentInEnv}
+                    onSecretCreate={handleSecretCreate}
+                    onSecretDelete={handleSecretDelete}
+                    onSecretUpdate={handleSecretUpdate}
+                    key={`overview-${row.name}-${index + 1}`}
+                    environments={visibleEnvs}
+                    secretKey={row.name}
+                    getSecretByKey={getSecretByKey}
+                    expandableColWidth={expandableTableWidth}
+                  />
+                */}
                   </>
                 )}
               </TBody>

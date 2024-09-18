@@ -471,7 +471,7 @@ export const secretV2BridgeServiceFactory = ({
       folders.map((folder) => folder.id),
       actorId,
       undefined,
-      params
+      { ...params, distinct: "key" }
     );
 
     return count;

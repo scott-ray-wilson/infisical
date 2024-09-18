@@ -190,6 +190,7 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
     filters?: {
       search?: string;
       tagSlugs?: string[]; // TODO
+      distinct?: string;
     }
   ) => {
     try {
@@ -199,7 +200,7 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
         userId = undefined;
       }
 
-      const secrets = await (tx || db.replicaNode())(TableName.SecretV2)
+      const query = (tx || db.replicaNode())(TableName.SecretV2)
         .whereIn("folderId", folderIds)
         .where((bd) => {
           if (filters?.search) {
@@ -211,7 +212,13 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
         })
         .count();
 
-      return Number(secrets[0]?.count);
+      if (filters?.distinct) {
+        void query.countDistinct(filters.distinct);
+      }
+
+      const secrets = await query;
+
+      return Number(secrets[0]?.count ?? 0);
     } catch (error) {
       throw new DatabaseError({ error, name: "get folder secret count" });
     }
@@ -256,7 +263,7 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
           `${TableName.SecretV2JnTag}.${TableName.SecretTag}Id`,
           `${TableName.SecretTag}.id`
         )
-        .select(selectAllTableCols(TableName.SecretV2))
+        .select(selectAllTableCols(TableName.SecretV2), db.raw(`DENSE_RANK() OVER (ORDER BY "key" ASC) as rank`))
         .select(db.ref("id").withSchema(TableName.SecretTag).as("tagId"))
         .select(db.ref("color").withSchema(TableName.SecretTag).as("tagColor"))
         .select(db.ref("slug").withSchema(TableName.SecretTag).as("tagSlug"))
@@ -265,11 +272,19 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
           filters?.orderDirection ?? OrderByDirection.ASC
         );
 
-      if (filters?.limit) {
-        void query.limit(filters.limit).offset(filters.offset ?? 0);
-      }
+      let secs: Awaited<typeof query>;
 
-      const secs = await query;
+      if (filters?.limit) {
+        const rankOffset = (filters?.offset ?? 0) + 1;
+        secs = await (tx || db)
+          .with("w", query)
+          .select("*")
+          .from<Awaited<typeof query>[number]>("w")
+          .where("w.rank", ">=", rankOffset)
+          .andWhere("w.rank", "<", rankOffset + filters.limit);
+      } else {
+        secs = await query;
+      }
 
       const data = sqlNestRelationships({
         data: secs,

@@ -90,7 +90,7 @@ type Props = {
   secretPath?: string;
   secretImports?: TSecretImport[];
   isFetching?: boolean;
-  secrets?: SecretV3RawSanitized[];
+  // secrets?: SecretV3RawSanitized[];
   importedSecrets?: TImportedSecrets;
   searchTerm: string;
 };
@@ -101,7 +101,7 @@ export const SecretImportListView = ({
   workspaceId,
   secretPath,
   importedSecrets,
-  secrets = [],
+  // secrets = [],
   isFetching,
   searchTerm
 }: Props) => {
@@ -208,8 +208,8 @@ export const SecretImportListView = ({
                 importedSecrets={computeImportedSecretRows(
                   item.importEnv.slug,
                   item.importPath,
-                  importedSecrets,
-                  secrets
+                  importedSecrets
+                  // secrets scott - now that secrets are paginated we are not showing if they are overridden
                 )}
                 secretPath={secretPath}
                 environment={environment}

@@ -18,6 +18,7 @@ import {
 } from "@app/context";
 import { useDebounce, usePopUp } from "@app/hooks";
 import {
+  useGetImportedSecretsSingleEnv,
   useGetSecretApprovalPolicyOfABoard,
   useGetWorkspaceSnapshotList,
   useGetWsSnapshotCount,
@@ -129,6 +130,16 @@ export const SecretMainPage = () => {
     totalSecretCount = 0,
     totalCount = 0
   } = data ?? {};
+
+  // fetch imported secrets to show user the overriden ones
+  const { data: importedSecrets } = useGetImportedSecretsSingleEnv({
+    projectId: workspaceId,
+    environment,
+    path: secretPath,
+    options: {
+      enabled: canReadSecret
+    }
+  });
 
   // fech tags
   const { data: tags } = useGetWsTags(canReadSecret ? workspaceId : "");
@@ -308,6 +319,7 @@ export const SecretMainPage = () => {
                     environment={environment}
                     workspaceId={workspaceId}
                     secretPath={secretPath}
+                    importedSecrets={importedSecrets}
                   />
                 )}
                 <FolderListView

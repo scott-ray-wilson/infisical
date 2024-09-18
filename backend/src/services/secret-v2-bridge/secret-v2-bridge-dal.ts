@@ -209,15 +209,17 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
         })
         .where((bd) => {
           void bd.whereNull("userId").orWhere({ userId: userId || null });
-        })
-        .count();
+        });
 
       if (filters?.distinct) {
         void query.countDistinct(filters.distinct);
+      } else {
+        void query.count();
       }
 
       const secrets = await query;
 
+      // @ts-expect-error unable to infer from above?
       return Number(secrets[0]?.count ?? 0);
     } catch (error) {
       throw new DatabaseError({ error, name: "get folder secret count" });

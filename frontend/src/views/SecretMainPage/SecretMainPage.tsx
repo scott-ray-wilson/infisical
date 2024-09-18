@@ -105,7 +105,11 @@ export const SecretMainPage = () => {
     }
   }, [isWorkspaceLoading, currentWorkspace, environment, router.isReady]);
 
-  const { data, isLoading: isDetailsLoading } = useGetProjectSecretsDetails({
+  const {
+    data,
+    isLoading: isDetailsLoading,
+    isFetching: isDetailsFetching
+  } = useGetProjectSecretsDetails({
     environment,
     projectId: workspaceId,
     secretPath,
@@ -313,24 +317,26 @@ export const SecretMainPage = () => {
                     <div className="flex-grow px-4 py-2">Value</div>
                   </div>
                 )}
-                {canReadSecret && (
+                {canReadSecret && imports?.length && (
                   <SecretImportListView
                     searchTerm={debouncedSearchFilter}
                     secretImports={imports}
-                    isFetching={isDetailsLoading}
+                    isFetching={isDetailsFetching}
                     environment={environment}
                     workspaceId={workspaceId}
                     secretPath={secretPath}
                     importedSecrets={importedSecrets}
                   />
                 )}
-                <FolderListView
-                  folders={folders}
-                  environment={environment}
-                  workspaceId={workspaceId}
-                  secretPath={secretPath}
-                />
-                {canReadSecret && (
+                {folders?.length && (
+                  <FolderListView
+                    folders={folders}
+                    environment={environment}
+                    workspaceId={workspaceId}
+                    secretPath={secretPath}
+                  />
+                )}
+                {canReadSecret && dynamicSecrets?.length && (
                   <DynamicSecretListView
                     environment={environment}
                     projectSlug={projectSlug}
@@ -338,7 +344,7 @@ export const SecretMainPage = () => {
                     dynamicSecrets={dynamicSecrets}
                   />
                 )}
-                {canReadSecret && (
+                {canReadSecret && secrets?.length && (
                   <SecretListView
                     secrets={secrets}
                     tags={tags}

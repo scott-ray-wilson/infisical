@@ -163,10 +163,11 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             })
           });
 
+          // get the count of unique folder names to properly adjust remaining limit
           const uniqueFolderCount = new Set(
             Object.values(folders).flatMap((folderGroup) => folderGroup.flatMap((folder) => folder.name))
           ).size;
-          console.log("unique folder count", uniqueFolderCount);
+
           remainingLimit -= uniqueFolderCount;
           adjustedOffset = 0;
         } else {
@@ -204,6 +205,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             })
           });
 
+          // get the count of unique dynamic secret names to properly adjust remaining limit
           const uniqueDynamicSecretsCount = new Set(
             Object.values(dynamicSecrets).flatMap((dynamicSecretGroup) =>
               dynamicSecretGroup.flatMap((dynamicSecret) => dynamicSecret.name)
@@ -227,7 +229,6 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           projectId,
           path: secretPath,
           search
-          // tagSlugs: req.query.tagSlugs
         });
 
         if (remainingLimit > 0 && totalSecretCount > adjustedOffset) {
@@ -246,7 +247,6 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
               limit: remainingLimit,
               offset: adjustedOffset
             })
-            // tagSlugs: req.query.tagSlugs
           });
 
           const uniqueSecretsCount = new Set(
@@ -259,7 +259,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             event: {
               type: EventType.GET_SECRETS,
               metadata: {
-                environment: environments.join(","), // TODO: verify if ok, or keep separate?
+                environment: environments.join(","), // TODO: verify if ok, or should we iterate for each env?
                 secretPath,
                 numberOfSecrets: uniqueSecretsCount
               }
@@ -273,7 +273,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
               properties: {
                 numberOfSecrets: uniqueSecretsCount,
                 workspaceId: projectId,
-                environment: environments.join(","), // TODO: verify if ok, or keep separate?
+                environment: environments.join(","), // TODO: verify if ok, or should we iterate for each env?
                 secretPath,
                 channel: getUserAgentType(req.headers["user-agent"]),
                 ...req.auditLogInfo

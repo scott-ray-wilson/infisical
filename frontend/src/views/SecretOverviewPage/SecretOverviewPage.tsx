@@ -879,7 +879,7 @@ export const SecretOverviewPage = () => {
                     </Td>
                   </Tr>
                 )}
-                {!isOverviewLoading && (
+                {!isOverviewLoading && visibleEnvs.length > 0 && (
                   <>
                     {folderNames.map((folderName, index) => (
                       <SecretOverviewFolderRow

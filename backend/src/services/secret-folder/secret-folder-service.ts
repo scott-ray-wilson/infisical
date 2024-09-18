@@ -504,7 +504,6 @@ export const secretFolderServiceFactory = ({
       { countDistinct: "name" }
     );
 
-    // @ts-expect-error need to add type support to find TODO: comeback!
     return Number(folders[0]?.count ?? 0);
   };
 

@@ -314,6 +314,7 @@ export const SecretMainPage = () => {
                 )}
                 {canReadSecret && (
                   <SecretImportListView
+                    searchTerm={debouncedSearchFilter}
                     secretImports={imports}
                     isFetching={isDetailsLoading}
                     environment={environment}

@@ -234,14 +234,16 @@ export const secretFolderDALFactory = (db: TDbClient) => {
 
   const findBySecretPathMultiEnv = async (projectId: string, environments: string[], path: string, tx?: Knex) => {
     try {
+      const pathDepth = removeTrailingSlash(path).split("/").filter(Boolean).length + 1;
+
       const folders = await sqlFindFolderByPathQuery(
         tx || db.replicaNode(),
         projectId,
         environments,
         removeTrailingSlash(path)
-      ).orderBy("depth", "desc");
-
-      // TODO: move maxDepth logic to SQL
+      )
+        .orderBy("depth", "desc")
+        .where("depth", pathDepth);
 
       const firstFolder = folders[0];
 
@@ -249,14 +251,10 @@ export const secretFolderDALFactory = (db: TDbClient) => {
         return [];
       }
 
-      const maxDepth = firstFolder.depth;
-
-      return folders
-        .filter((folder) => folder.depth === maxDepth) // only want folder IDs with same name
-        .map((folder) => {
-          const { envId: id, envName: name, envSlug: slug, ...el } = folder;
-          return { ...el, envId: id, environment: { id, name, slug } };
-        });
+      return folders.map((folder) => {
+        const { envId: id, envName: name, envSlug: slug, ...el } = folder;
+        return { ...el, envId: id, environment: { id, name, slug } };
+      });
     } catch (error) {
       throw new DatabaseError({ error, name: "Find by secret path multi env" });
     }

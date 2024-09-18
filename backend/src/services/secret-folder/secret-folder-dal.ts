@@ -412,7 +412,10 @@ export const secretFolderDALFactory = (db: TDbClient) => {
             void bd.whereILike("name", `%${search}%`);
           }
         })
-        .select(selectAllTableCols(TableName.SecretFolder), db.raw(`DENSE_RANK() OVER (ORDER BY "name" ASC) as rank`))
+        .select(
+          selectAllTableCols(TableName.SecretFolder),
+          db.raw(`DENSE_RANK() OVER (ORDER BY "name" ${orderDirection ?? OrderByDirection.ASC}) as rank`)
+        )
         .orderBy(orderBy, orderDirection);
 
       if (limit) {

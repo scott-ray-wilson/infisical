@@ -96,7 +96,7 @@ type Props = {
 };
 
 export const SecretImportListView = ({
-  secretImports = [],
+  secretImports,
   environment,
   workspaceId,
   secretPath,
@@ -117,11 +117,11 @@ export const SecretImportListView = ({
     useSensor(KeyboardSensor, {})
   );
 
-  const [items, setItems] = useState(secretImports);
+  const [items, setItems] = useState(secretImports ?? []);
 
   useEffect(() => {
     if (!isFetching) {
-      setItems(secretImports);
+      setItems(secretImports ?? []);
     }
   }, [isFetching, secretImports]);
 
@@ -170,7 +170,7 @@ export const SecretImportListView = ({
   };
 
   const handleOpenReplicationSecrets = (replicationImportId: string) => {
-    const reservedImport = secretImports.find(
+    const reservedImport = secretImports?.find(
       ({ isReserved, importPath, importEnv }) =>
         importEnv.slug === environment &&
         isReserved &&

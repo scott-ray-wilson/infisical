@@ -102,53 +102,6 @@ export const fetchProjectSecretsDetails = async ({
   return data;
 };
 
-// export const useGetProjectSecretsOverview = (
-//   {
-//     projectId,
-//     secretPath,
-//     offset = 0,
-//     limit = 100,
-//     orderBy = DashboardSecretsOrderBy.Name,
-//     orderDirection = OrderByDirection.ASC,
-//     search = ""
-//   }: TGetDashboardProjectSecretsOverviewDTO,
-//   options?: Omit<
-//     UseQueryOptions<
-//       DashboardProjectSecretOverviewResponse,
-//       unknown,
-//       DashboardProjectSecretsOverview,
-//       ReturnType<typeof dashboardKeys.getProjectSecretsOverview>
-//     >,
-//     "queryKey" | "queryFn"
-//   >
-// ) =>
-//   useQuery({
-//     ...options,
-//     // wait for all values to be available
-//     enabled: Boolean(projectId) && (options?.enabled ?? true),
-//     queryKey: dashboardKeys.getProjectSecretsOverview({ projectId, secretPath }),
-//     queryFn: () => fetchProjectSecretsOverview({ projectId, secretPath }),
-//     onError: (error) => {
-//       if (axios.isAxiosError(error)) {
-//         const serverResponse = error.response?.data as { message: string };
-//         createNotification({
-//           title: "Error fetching secret overview",
-//           type: "error",
-//           text: serverResponse.message
-//         });
-//       }
-//     },
-//     select: useCallback(
-//       (data: Awaited<ReturnType<typeof fetchProjectSecretsOverview>>) => ({
-//         secrets: mergePersonalSecrets(data.secrets).reduce<Record<string, SecretV3RawSanitized>>(
-//           (prev, curr) => ({ ...prev, [curr.key]: curr }),
-//           {}
-//         )
-//       }),
-//       []
-//     )
-//   });
-
 export const useGetProjectSecretsOverview = (
   {
     projectId,
@@ -176,7 +129,7 @@ export const useGetProjectSecretsOverview = (
   return useQuery({
     ...options,
     // wait for all values to be available
-    enabled: Boolean(projectId) && (options?.enabled ?? true),
+    enabled: Boolean(projectId) && (options?.enabled ?? true) && Boolean(environments.length),
     queryKey: dashboardKeys.getProjectSecretsOverview({
       secretPath,
       search,

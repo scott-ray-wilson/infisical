@@ -302,7 +302,9 @@ export const ActionBar = ({
                 ariaLabel="Download"
                 className={twMerge(
                   "transition-all",
-                  Object.keys(filter.tags).length && "border-primary/50 text-primary"
+                  (Object.keys(filter.tags).length ||
+                    Object.values(filter.include).filter((include) => !include).length) &&
+                    "border-primary/50 text-primary"
                 )}
               >
                 <FontAwesomeIcon icon={faFilter} />

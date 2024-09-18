@@ -38,7 +38,10 @@ export const dynamicSecretDALFactory = (db: TDbClient) => {
             void bd.whereILike("name", `%${search}%`);
           }
         })
-        .select(selectAllTableCols(TableName.DynamicSecret), db.raw(`DENSE_RANK() OVER (ORDER BY "name" ASC) as rank`))
+        .select(
+          selectAllTableCols(TableName.DynamicSecret),
+          db.raw(`DENSE_RANK() OVER (ORDER BY "name" ${orderDirection ?? OrderByDirection.ASC}) as rank`)
+        )
         .orderBy(orderBy, orderDirection);
 
       if (limit) {

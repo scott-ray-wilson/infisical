@@ -164,8 +164,9 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           });
 
           const uniqueFolderCount = new Set(
-            ...Object.values(folders).map((folderGroup) => folderGroup.flatMap((folder) => folder.name))
+            Object.values(folders).flatMap((folderGroup) => folderGroup.flatMap((folder) => folder.name))
           ).size;
+          console.log("unique folder count", uniqueFolderCount);
           remainingLimit -= uniqueFolderCount;
           adjustedOffset = 0;
         } else {
@@ -204,7 +205,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           });
 
           const uniqueDynamicSecretsCount = new Set(
-            ...Object.values(dynamicSecrets).map((dynamicSecretGroup) =>
+            Object.values(dynamicSecrets).flatMap((dynamicSecretGroup) =>
               dynamicSecretGroup.flatMap((dynamicSecret) => dynamicSecret.name)
             )
           ).size;

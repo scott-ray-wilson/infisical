@@ -190,7 +190,6 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
     filters?: {
       search?: string;
       tagSlugs?: string[];
-      distinct?: string;
     }
   ) => {
     try {
@@ -209,17 +208,28 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
         })
         .where((bd) => {
           void bd.whereNull("userId").orWhere({ userId: userId || null });
-        });
+        })
+        .countDistinct("key");
 
-      if (filters?.distinct) {
-        void query.countDistinct(filters.distinct);
-      } else {
-        void query.count();
+      // only need to join tags if filtering by slugs
+      const slugs = filters?.tagSlugs?.filter(Boolean);
+      if (slugs && slugs.length > 0) {
+        void query
+          .leftJoin(
+            TableName.SecretV2JnTag,
+            `${TableName.SecretV2}.id`,
+            `${TableName.SecretV2JnTag}.${TableName.SecretV2}Id`
+          )
+          .leftJoin(
+            TableName.SecretTag,
+            `${TableName.SecretV2JnTag}.${TableName.SecretTag}Id`,
+            `${TableName.SecretTag}.id`
+          )
+          .whereIn("slug", slugs);
       }
 
       const secrets = await query;
 
-      // @ts-expect-error unable to infer from above?
       return Number(secrets[0]?.count ?? 0);
     } catch (error) {
       throw new DatabaseError({ error, name: "get folder secret count" });
@@ -266,7 +276,10 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
           `${TableName.SecretV2JnTag}.${TableName.SecretTag}Id`,
           `${TableName.SecretTag}.id`
         )
-        .select(selectAllTableCols(TableName.SecretV2), db.raw(`DENSE_RANK() OVER (ORDER BY "key" ASC) as rank`))
+        .select(
+          selectAllTableCols(TableName.SecretV2),
+          db.raw(`DENSE_RANK() OVER (ORDER BY "key" ${filters?.orderDirection ?? OrderByDirection.ASC}) as rank`)
+        )
         .select(db.ref("id").withSchema(TableName.SecretTag).as("tagId"))
         .select(db.ref("color").withSchema(TableName.SecretTag).as("tagColor"))
         .select(db.ref("slug").withSchema(TableName.SecretTag).as("tagSlug"))

@@ -18,6 +18,7 @@ import {
   faPlus
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { twMerge } from "tailwind-merge";
 
 import NavHeader from "@app/components/navigation/NavHeader";
 import { createNotification } from "@app/components/notifications";
@@ -187,30 +188,21 @@ export const SecretOverviewPage = () => {
   }, [isWorkspaceLoading, workspaceId, router.isReady]);
 
   const userAvailableEnvs = currentWorkspace?.environments || [];
-  const [visibleEnvs, setVisibleEnvs] = useState(
-    userAvailableEnvs?.filter(({ slug }) =>
-      permission.can(
-        ProjectPermissionActions.Read,
-        subject(ProjectPermissionSub.Secrets, {
-          environment: slug,
-          secretPath
-        })
-      )
+
+  const readableEnvs = userAvailableEnvs?.filter(({ slug }) =>
+    permission.can(
+      ProjectPermissionActions.Read,
+      subject(ProjectPermissionSub.Secrets, {
+        environment: slug,
+        secretPath
+      })
     )
   );
 
+  const [visibleEnvs, setVisibleEnvs] = useState(readableEnvs);
+
   useEffect(() => {
-    setVisibleEnvs(
-      userAvailableEnvs?.filter(({ slug }) =>
-        permission.can(
-          ProjectPermissionActions.Read,
-          subject(ProjectPermissionSub.Secrets, {
-            environment: slug,
-            secretPath
-          })
-        )
-      )
-    );
+    setVisibleEnvs(readableEnvs);
   }, [userAvailableEnvs, secretPath]);
 
   const { isImportedSecretPresentInEnv, getImportedSecretByKey } = useGetImportedSecretsAllEnvs({
@@ -259,8 +251,6 @@ export const SecretOverviewPage = () => {
     secrets,
     orderDirection
   );
-
-  console.log("data", overview);
 
   const { mutateAsync: createSecretV3 } = useCreateSecretV3();
   const { mutateAsync: updateSecretV3 } = useUpdateSecretV3();
@@ -542,6 +532,10 @@ export const SecretOverviewPage = () => {
 
   const isTableEmpty = totalCount === 0;
 
+  const isFiltered =
+    Boolean(Object.values(filter).filter((enabled) => !enabled).length) ||
+    visibleEnvs.length !== readableEnvs?.length;
+
   return (
     <>
       <div className="container mx-auto px-6 text-mineshaft-50 dark:[color-scheme:dark]">
@@ -602,7 +596,10 @@ export const SecretOverviewPage = () => {
                       ariaLabel="Environments"
                       variant="plain"
                       size="sm"
-                      className="flex h-10 w-11 items-center justify-center overflow-hidden border border-mineshaft-600 bg-mineshaft-800 p-0 hover:border-primary/60 hover:bg-primary/10"
+                      className={twMerge(
+                        "flex h-10 w-11 items-center justify-center overflow-hidden border border-mineshaft-600 bg-mineshaft-800 p-0 transition-all hover:border-primary/60 hover:bg-primary/10",
+                        isFiltered && "border-primary/50 text-primary"
+                      )}
                     >
                       <Tooltip content="Choose visible environments" className="mb-2">
                         <FontAwesomeIcon icon={faList} />
@@ -611,34 +608,25 @@ export const SecretOverviewPage = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Choose visible environments</DropdownMenuLabel>
-                    {userAvailableEnvs
-                      .filter(({ slug }) =>
-                        permission.can(
-                          ProjectPermissionActions.Read,
-                          subject(ProjectPermissionSub.Secrets, {
-                            environment: slug,
-                            secretPath
-                          })
-                        )
-                      )
-                      .map((availableEnv) => {
-                        const { id: envId, name } = availableEnv;
+                    {readableEnvs.map((availableEnv) => {
+                      const { id: envId, name } = availableEnv;
 
-                        const isEnvSelected = visibleEnvs.map((env) => env.id).includes(envId);
-                        return (
-                          <DropdownMenuItem
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handleEnvSelect(envId);
-                            }}
-                            key={envId}
-                            icon={isEnvSelected && <FontAwesomeIcon icon={faCheckCircle} />}
-                            iconPos="right"
-                          >
-                            <div className="flex items-center">{name}</div>
-                          </DropdownMenuItem>
-                        );
-                      })}
+                      const isEnvSelected = visibleEnvs.map((env) => env.id).includes(envId);
+                      return (
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handleEnvSelect(envId);
+                          }}
+                          key={envId}
+                          disabled={visibleEnvs?.length === 1}
+                          icon={isEnvSelected && <FontAwesomeIcon icon={faCheckCircle} />}
+                          iconPos="right"
+                        >
+                          <div className="flex items-center">{name}</div>
+                        </DropdownMenuItem>
+                      );
+                    })}
                     {/* <DropdownMenuItem className="px-1.5" asChild>
                     <Button
                       size="xs"

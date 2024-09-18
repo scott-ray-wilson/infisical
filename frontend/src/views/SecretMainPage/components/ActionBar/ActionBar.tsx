@@ -377,10 +377,10 @@ export const ActionBar = ({
                     <DropdownMenuItem
                       onClick={(evt) => {
                         evt.preventDefault();
-                        onToggleTagFilter(id);
+                        onToggleTagFilter(slug);
                       }}
                       key={id}
-                      icon={filter?.tags[id] && <FontAwesomeIcon icon={faCheckCircle} />}
+                      icon={filter?.tags[slug] && <FontAwesomeIcon icon={faCheckCircle} />}
                       iconPos="right"
                     >
                       <div className="flex items-center">

@@ -707,6 +707,7 @@ export const DASHBOARD = {
     orderBy: "The column to order secrets/folders by.",
     orderDirection: "The direction secrets/folders will be sorted in.",
     search: "The text string that secrets/folders names will be filtered by.",
+    tags: "The tags that secrets will be filtered by (comma separated, ie 'tags=billing,engineering').",
     includeSecrets: "Whether to include project secrets in the response.",
     includeFolders: "Whether to include project folders in the response.",
     includeImports: "Whether to include project secret imports in the response.",

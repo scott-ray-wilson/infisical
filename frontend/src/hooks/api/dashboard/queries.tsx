@@ -76,6 +76,7 @@ export const fetchProjectSecretsDetails = async ({
   includeImports,
   includeSecrets,
   includeDynamicSecrets,
+  tags,
   ...params
 }: TGetDashboardProjectSecretsDetailsDTO) => {
   const { data } = await apiRequest.get<DashboardProjectSecretsDetailsResponse>(
@@ -86,7 +87,14 @@ export const fetchProjectSecretsDetails = async ({
         includeImports: includeImports ? "1" : "",
         includeFolders: includeFolders ? "1" : "",
         includeSecrets: includeSecrets ? "1" : "",
-        includeDynamicSecrets: includeDynamicSecrets ? "1" : ""
+        includeDynamicSecrets: includeDynamicSecrets ? "1" : "",
+        tags: encodeURIComponent(
+          Object.entries(tags)
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            .filter(([_, enabled]) => enabled)
+            .map(([tag]) => tag)
+            .join(",")
+        )
       }
     }
   );
@@ -245,7 +253,8 @@ export const useGetProjectSecretsDetails = (
     includeSecrets,
     includeFolders,
     includeImports,
-    includeDynamicSecrets
+    includeDynamicSecrets,
+    tags
   }: TGetDashboardProjectSecretsDetailsDTO,
   options?: Omit<
     UseQueryOptions<
@@ -273,7 +282,8 @@ export const useGetProjectSecretsDetails = (
       includeSecrets,
       includeFolders,
       includeImports,
-      includeDynamicSecrets
+      includeDynamicSecrets,
+      tags
     }),
     queryFn: () =>
       fetchProjectSecretsDetails({
@@ -288,7 +298,8 @@ export const useGetProjectSecretsDetails = (
         includeSecrets,
         includeFolders,
         includeImports,
-        includeDynamicSecrets
+        includeDynamicSecrets,
+        tags
       }),
     onError: (error) => {
       if (axios.isAxiosError(error)) {

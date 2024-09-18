@@ -116,7 +116,8 @@ export const SecretMainPage = () => {
     includeImports: canReadSecret && filter.include.import,
     includeFolders: filter.include.folder,
     includeDynamicSecrets: canReadSecret && filter.include.dynamic,
-    includeSecrets: canReadSecret && filter.include.secret
+    includeSecrets: canReadSecret && filter.include.secret,
+    tags: filter.tags
   });
 
   const {
@@ -190,12 +191,12 @@ export const SecretMainPage = () => {
   };
 
   const handleTagToggle = useCallback(
-    (tagId: string) =>
+    (tagSlug: string) =>
       setFilter((state) => {
-        const isTagPresent = Boolean(state.tags?.[tagId]);
+        const isTagPresent = Boolean(state.tags?.[tagSlug]);
         const newTagFilter = { ...state.tags };
-        if (isTagPresent) delete newTagFilter[tagId];
-        else newTagFilter[tagId] = true;
+        if (isTagPresent) delete newTagFilter[tagSlug];
+        else newTagFilter[tagSlug] = true;
         return { ...state, tags: newTagFilter };
       }),
     []

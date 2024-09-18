@@ -620,7 +620,6 @@ export const secretV2BridgeServiceFactory = ({
     actorAuthMethod,
     includeImports,
     recursive,
-    tagSlugs = [],
     expandSecretReferences: shouldExpandSecretReferences,
     ...params
   }: TGetSecretsDTO) => {
@@ -692,9 +691,9 @@ export const secretV2BridgeServiceFactory = ({
       })
     );
     // TODO: need to move to query
-    const filteredSecrets = tagSlugs.length
-      ? decryptedSecrets.filter((secret) => Boolean(secret.tags?.find((el) => tagSlugs.includes(el.slug))))
-      : decryptedSecrets;
+    // const filteredSecrets = tagSlugs.length
+    //   ? decryptedSecrets.filter((secret) => Boolean(secret.tags?.find((el) => tagSlugs.includes(el.slug))))
+    //   : decryptedSecrets;
     const expandSecretReferences = expandSecretReferencesFactory({
       projectId,
       folderDAL,
@@ -703,7 +702,7 @@ export const secretV2BridgeServiceFactory = ({
     });
 
     if (shouldExpandSecretReferences) {
-      const secretsGroupByPath = groupBy(filteredSecrets, (i) => i.secretPath);
+      const secretsGroupByPath = groupBy(decryptedSecrets, (i) => i.secretPath);
       await Promise.allSettled(
         Object.keys(secretsGroupByPath).map((groupedPath) =>
           Promise.allSettled(
@@ -724,7 +723,7 @@ export const secretV2BridgeServiceFactory = ({
 
     if (!includeImports) {
       return {
-        secrets: filteredSecrets
+        secrets: decryptedSecrets
       };
     }
 
@@ -752,7 +751,7 @@ export const secretV2BridgeServiceFactory = ({
     });
 
     return {
-      secrets: filteredSecrets,
+      secrets: decryptedSecrets,
       imports: importedSecrets
     };
   };

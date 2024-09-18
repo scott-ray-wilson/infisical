@@ -31,7 +31,11 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       ],
       querystring: z.object({
         projectId: z.string().trim().describe(DASHBOARD.SECRET_OVERVIEW_LIST.projectId),
-        environments: z.string().trim().describe(DASHBOARD.SECRET_OVERVIEW_LIST.environments),
+        environments: z
+          .string()
+          .trim()
+          .transform(decodeURIComponent)
+          .describe(DASHBOARD.SECRET_OVERVIEW_LIST.environments),
         secretPath: z
           .string()
           .trim()
@@ -111,7 +115,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         includeDynamicSecrets
       } = req.query;
 
-      const environments = decodeURIComponent(req.query.environments).split(",");
+      const environments = req.query.environments.split(",");
 
       if (!projectId || environments.length === 0)
         throw new BadRequestError({ message: "Missing workspace id or environment" });
@@ -325,6 +329,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           .describe(DASHBOARD.SECRET_DETAILS_LIST.orderDirection)
           .optional(),
         search: z.string().trim().describe(DASHBOARD.SECRET_DETAILS_LIST.search).optional(),
+        tags: z.string().trim().transform(decodeURIComponent).describe(DASHBOARD.SECRET_DETAILS_LIST.tags).optional(),
         includeSecrets: z.coerce
           .boolean()
           .optional()
@@ -394,6 +399,8 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         includeDynamicSecrets,
         includeImports
       } = req.query;
+
+      const tags = req.query.tags?.split(",") ?? [];
 
       if (!projectId || !environment) throw new BadRequestError({ message: "Missing workspace id or environment" });
 
@@ -543,10 +550,8 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           actorAuthMethod: req.permission.authMethod,
           projectId,
           path: secretPath,
-          search
-          // includeImports: req.query.include_imports,
-          // recursive: req.query.recursive,
-          // tagSlugs: req.query.tagSlugs
+          search,
+          tagSlugs: tags
         });
 
         if (remainingLimit > 0 && totalSecretCount > adjustedOffset) {
@@ -564,10 +569,8 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             ...(enablePagination && {
               limit: remainingLimit,
               offset: adjustedOffset
-            })
-            // includeImports: req.query.include_imports,
-            // recursive: req.query.recursive,
-            // tagSlugs: req.query.tagSlugs
+            }),
+            tagSlugs: tags
           });
 
           secrets = secretsRaw.secrets;

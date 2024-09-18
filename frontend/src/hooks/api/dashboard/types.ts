@@ -68,4 +68,5 @@ export type TGetDashboardProjectSecretsDetailsDTO = Omit<
 > & {
   environment: string;
   includeImports?: boolean;
+  tags: Record<string, boolean>;
 };

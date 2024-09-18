@@ -189,7 +189,7 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
     tx?: Knex,
     filters?: {
       search?: string;
-      tagSlugs?: string[]; // TODO
+      tagSlugs?: string[];
       distinct?: string;
     }
   ) => {
@@ -236,6 +236,7 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
       orderBy?: SecretsOrderBy;
       orderDirection?: OrderByDirection;
       search?: string;
+      tagSlugs?: string[];
     }
   ) => {
     try {
@@ -269,6 +270,12 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
         .select(db.ref("id").withSchema(TableName.SecretTag).as("tagId"))
         .select(db.ref("color").withSchema(TableName.SecretTag).as("tagColor"))
         .select(db.ref("slug").withSchema(TableName.SecretTag).as("tagSlug"))
+        .where((bd) => {
+          const slugs = filters?.tagSlugs?.filter(Boolean);
+          if (slugs && slugs.length > 0) {
+            void bd.whereIn("slug", slugs);
+          }
+        })
         .orderBy(
           filters?.orderBy === SecretsOrderBy.Name ? "key" : "id",
           filters?.orderDirection ?? OrderByDirection.ASC

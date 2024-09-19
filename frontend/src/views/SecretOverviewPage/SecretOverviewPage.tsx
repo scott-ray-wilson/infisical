@@ -68,6 +68,7 @@ import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { useUpdateFolderBatch } from "@app/hooks/api/secretFolders/queries";
 import { TUpdateFolderBatchDTO } from "@app/hooks/api/secretFolders/types";
 import { SecretType, TSecretFolder } from "@app/hooks/api/types";
+import { ProjectVersion } from "@app/hooks/api/workspace/types";
 import { useDynamicSecretOverview, useFolderOverview, useSecretOverview } from "@app/hooks/utils";
 import { SecretOverviewDynamicSecretRow } from "@app/views/SecretOverviewPage/components/SecretOverviewDynamicSecretRow";
 import { SecretOverviewTableRow } from "@app/views/SecretOverviewPage/components/SecretOverviewTableRow";
@@ -115,6 +116,8 @@ export const SecretOverviewPage = () => {
   }, [parentTableRef.current]);
 
   const { currentWorkspace, isLoading: isWorkspaceLoading } = useWorkspace();
+  const isProjectV3 = currentWorkspace?.version === ProjectVersion.V3;
+  // const isProjectV3 = false;
   const { currentOrg } = useOrganization();
   const workspaceId = currentWorkspace?.id as string;
   const projectSlug = currentWorkspace?.slug as string;
@@ -213,19 +216,22 @@ export const SecretOverviewPage = () => {
 
   const paginationOffset = (page - 1) * perPage;
 
-  const { isLoading: isOverviewLoading, data: overview } = useGetProjectSecretsOverview({
-    projectId: workspaceId,
-    environments: visibleEnvs.map((env) => env.slug),
-    secretPath,
-    orderDirection,
-    orderBy: DashboardSecretsOrderBy.Name,
-    includeFolders: filter.folder,
-    includeDynamicSecrets: filter.dynamic,
-    includeSecrets: filter.secret,
-    search: debouncedSearchFilter,
-    limit: perPage,
-    offset: paginationOffset
-  });
+  const { isLoading: isOverviewLoading, data: overview } = useGetProjectSecretsOverview(
+    {
+      projectId: workspaceId,
+      environments: visibleEnvs.map((env) => env.slug),
+      secretPath,
+      orderDirection,
+      orderBy: DashboardSecretsOrderBy.Name,
+      includeFolders: filter.folder,
+      includeDynamicSecrets: filter.dynamic,
+      includeSecrets: filter.secret,
+      search: debouncedSearchFilter,
+      limit: perPage,
+      offset: paginationOffset
+    },
+    { enabled: isProjectV3 }
+  );
 
   const {
     secrets,
@@ -511,7 +517,7 @@ export const SecretOverviewPage = () => {
     []
   );
 
-  if (isOverviewLoading) {
+  if (isWorkspaceLoading || (isProjectV3 && isOverviewLoading)) {
     return (
       <div className="container mx-auto flex h-screen w-full items-center justify-center px-8 text-mineshaft-50 dark:[color-scheme:dark]">
         <img
@@ -536,10 +542,16 @@ export const SecretOverviewPage = () => {
     Boolean(Object.values(filter).filter((enabled) => !enabled).length) ||
     visibleEnvs.length !== readableEnvs?.length;
 
+  if (!isProjectV3)
+    return (
+      <div className="container flex h-full w-full flex-col items-center justify-center px-6 text-mineshaft-50 dark:[color-scheme:dark]">
+        <SecretV2MigrationSection />
+      </div>
+    );
+
   return (
     <>
       <div className="container mx-auto px-6 text-mineshaft-50 dark:[color-scheme:dark]">
-        <SecretV2MigrationSection />
         <div className="relative right-5 ml-4">
           <NavHeader pageName={t("dashboard.title")} isProjectRelated />
         </div>

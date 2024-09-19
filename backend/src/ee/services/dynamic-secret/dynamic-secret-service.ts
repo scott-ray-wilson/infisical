@@ -343,8 +343,7 @@ export const dynamicSecretServiceFactory = ({
       { $in: { folderId: folders.map((folder) => folder.id) }, $search: search ? { name: `%${search}%` } : undefined },
       { countDistinct: "name" }
     );
-    // TODO: comeback
-    // @ts-expect-error need to add type support to find
+
     return Number(dynamicSecretCfg[0]?.count ?? 0);
   };
 

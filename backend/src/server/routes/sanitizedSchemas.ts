@@ -183,5 +183,6 @@ export const SanitizedProjectSchema = ProjectsSchema.pick({
   upgradeStatus: true,
   pitVersionLimit: true,
   kmsCertificateKeyId: true,
-  auditLogsRetentionDays: true
+  auditLogsRetentionDays: true,
+  defaultMembershipRole: true
 });

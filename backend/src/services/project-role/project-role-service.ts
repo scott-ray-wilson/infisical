@@ -165,6 +165,12 @@ export const projectRoleServiceFactory = ({
       });
     }
 
+    // prevent deletion of custom role if set as default org membership role
+    if (project.defaultMembershipRole === roleId)
+      throw new BadRequestError({
+        message: "Cannot delete default project membership role. Please re-assign and try again."
+      });
+
     const [deletedRole] = await projectRoleDAL.delete({ id: roleId, projectId });
     if (!deletedRole) throw new NotFoundError({ message: "Project role not found", name: "Delete role" });
 

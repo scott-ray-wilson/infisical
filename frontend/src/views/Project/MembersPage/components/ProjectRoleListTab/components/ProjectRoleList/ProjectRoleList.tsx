@@ -27,15 +27,20 @@ import { useDeleteProjectRole, useGetProjectRoles } from "@app/hooks/api";
 import { TProjectRole } from "@app/hooks/api/roles/types";
 import { RoleModal } from "@app/views/Project/RolePage/components";
 
+/* TODO: uncomment project default role UI additions once it has application */
+
 export const ProjectRoleList = () => {
   const router = useRouter();
   const { popUp, handlePopUpOpen, handlePopUpClose, handlePopUpToggle } = usePopUp([
     "role",
     "deleteRole"
+    // "upgradePlan"
   ] as const);
   const { currentWorkspace } = useWorkspace();
   const projectSlug = currentWorkspace?.slug || "";
   const projectId = currentWorkspace?.id || "";
+  // const { subscription } = useSubscription();
+  // const updateProject = useUpdateProject();
 
   const { data: roles, isLoading: isRolesLoading } = useGetProjectRoles(projectSlug);
 
@@ -55,6 +60,35 @@ export const ProjectRoleList = () => {
       createNotification({ type: "error", text: "Failed to delete role" });
     }
   };
+
+  // const handleSetRoleAsDefault = async (defaultMembershipRoleSlug: string) => {
+  //   const isCustomRole = isCustomProjectRole(defaultMembershipRoleSlug);
+  //
+  //   if (isCustomRole && subscription && !subscription?.rbac) {
+  //     handlePopUpOpen("upgradePlan", {
+  //       description: "You can assign custom roles to members if you upgrade your Infisical plan."
+  //     });
+  //     return;
+  //   }
+  //
+  //   try {
+  //     await updateProject.mutateAsync({
+  //       slug: projectSlug,
+  //       defaultMembershipRoleSlug
+  //     });
+  //     createNotification({
+  //       type: "success",
+  //       text: "Successfully updated project default membership role"
+  //     });
+  //     handlePopUpClose("deleteRole");
+  //   } catch (err) {
+  //     console.log(err);
+  //     createNotification({
+  //       type: "error",
+  //       text: "Failed to update project default membership role"
+  //     });
+  //   }
+  // };
 
   return (
     <div className="rounded-lg border border-mineshaft-600 bg-mineshaft-900 p-4">
@@ -88,6 +122,9 @@ export const ProjectRoleList = () => {
             {roles?.map((role) => {
               const { id, name, slug } = role;
               const isNonMutatable = ["admin", "member", "viewer", "no-access"].includes(slug);
+              // const isDefaultProjectRole = isCustomProjectRole(slug)
+              //   ? id === currentWorkspace?.defaultMembershipRole
+              //   : slug === currentWorkspace?.defaultMembershipRole;
 
               return (
                 <Tr
@@ -95,7 +132,20 @@ export const ProjectRoleList = () => {
                   className="h-10 cursor-pointer transition-colors duration-100 hover:bg-mineshaft-700"
                   onClick={() => router.push(`/project/${projectId}/roles/${slug}`)}
                 >
-                  <Td>{name}</Td>
+                  <Td>
+                    <div className="flex">
+                      <p className="overflow-hidden text-ellipsis whitespace-nowrap">{name}</p>
+                      {/* {isDefaultProjectRole && (
+                        <Tooltip content="Members joining your organization will be assigned this role unless otherwise specified">
+                          <div>
+                            <Badge variant="success" className="ml-1">
+                              Default
+                            </Badge>
+                          </div>
+                        </Tooltip>
+                      )} */}
+                    </div>
+                  </Td>
                   <Td>{slug}</Td>
                   <Td>
                     <DropdownMenu>
@@ -124,12 +174,44 @@ export const ProjectRoleList = () => {
                             </DropdownMenuItem>
                           )}
                         </ProjectPermissionCan>
+                        {/*
+                        {!isDefaultProjectRole && (
+                          <OrgPermissionCan
+                            I={OrgPermissionActions.Edit}
+                            a={OrgPermissionSubjects.Settings}
+                          >
+                            {(isAllowed) => (
+                              <DropdownMenuItem
+                                className={twMerge(
+                                  !isAllowed && "pointer-events-none cursor-not-allowed opacity-50"
+                                )}
+                                disabled={!isAllowed}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleSetRoleAsDefault(slug);
+                                }}
+                              >
+                                Set as Default Role
+                              </DropdownMenuItem>
+                            )}
+                          </OrgPermissionCan>
+                        )}
+                        */}
                         {!isNonMutatable && (
                           <ProjectPermissionCan
                             I={ProjectPermissionActions.Delete}
                             a={ProjectPermissionSub.Role}
                           >
                             {(isAllowed) => (
+                              /*  <Tooltip
+                                position="left"
+                                content={
+                                  isDefaultProjectRole
+                                    ? "Cannot delete default project membership role. Re-assign default to allow deletion."
+                                    : ""
+                                }
+                              >
+                                <div> */
                               <DropdownMenuItem
                                 className={twMerge(
                                   isAllowed
@@ -144,6 +226,8 @@ export const ProjectRoleList = () => {
                               >
                                 Delete Role
                               </DropdownMenuItem>
+                              /*   </div>
+                              </Tooltip> */
                             )}
                           </ProjectPermissionCan>
                         )}
@@ -166,6 +250,11 @@ export const ProjectRoleList = () => {
         onClose={() => handlePopUpClose("deleteRole")}
         onDeleteApproved={handleRoleDelete}
       />
+      {/* <UpgradePlanModal
+        isOpen={popUp.upgradePlan.isOpen}
+        onOpenChange={(isOpen) => handlePopUpToggle("upgradePlan", isOpen)}
+        text={(popUp.upgradePlan?.data as { description: string })?.description}
+      /> */}
     </div>
   );
 };

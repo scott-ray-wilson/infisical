@@ -4,7 +4,7 @@ import { apiRequest } from "@app/config/request";
 
 import { userKeys } from "../users/query-keys";
 import { workspaceKeys } from "./query-keys";
-import { TUpdateWorkspaceGroupRoleDTO } from "./types";
+import { TUpdateWorkspaceGroupRoleDTO, UpdateProjectDTO } from "./types";
 
 export const useAddGroupToWorkspace = () => {
   const queryClient = useQueryClient();
@@ -93,6 +93,19 @@ export const useMigrateProjectToV3 = () => {
   return useMutation<{}, {}, { workspaceId: string }>({
     mutationFn: ({ workspaceId }) => {
       return apiRequest.post(`/api/v1/workspace/${workspaceId}/migrate-v3`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries(workspaceKeys.getAllUserWorkspace);
+    }
+  });
+};
+
+export const useUpdateProject = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation<{}, {}, UpdateProjectDTO>({
+    mutationFn: ({ slug, name, defaultMembershipRoleSlug }) => {
+      return apiRequest.patch(`/api/v2/workspace/${slug}`, { name, defaultMembershipRoleSlug });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(workspaceKeys.getAllUserWorkspace);

@@ -7,9 +7,11 @@ import { createNotification } from "@app/components/notifications";
 import { ProjectPermissionCan } from "@app/components/permissions";
 import { Button, FormControl, Input } from "@app/components/v2";
 import { ProjectPermissionActions, ProjectPermissionSub, useWorkspace } from "@app/context";
-import { useRenameWorkspace } from "@app/hooks/api";
+import { useUpdateProject } from "@app/hooks/api";
 
 import { CopyButton } from "./CopyButton";
+
+/* TODO: uncomment project default role UI additions once it has application */
 
 const formSchema = yup.object({
   name: yup
@@ -17,32 +19,62 @@ const formSchema = yup.object({
     .required()
     .label("Project Name")
     .max(64, "Too long, maximum length is 64 characters")
+  // defaultMembershipRoleSlug: yup.string().required().label("Default Membership Role")
 });
 
 type FormData = yup.InferType<typeof formSchema>;
 
+// export const isCustomProjectRole = (slug: string) =>
+//   !Object.values(ProjectMembershipRole).includes(slug as ProjectMembershipRole);
+
 export const ProjectNameChangeSection = () => {
-  
   const { currentWorkspace } = useWorkspace();
-  const { mutateAsync, isLoading } = useRenameWorkspace();
+  const { mutateAsync, isLoading } = useUpdateProject();
+
+  // const { permission } = useProjectPermission();
+  // const canReadProjectRoles = permission.can(
+  //   ProjectPermissionActions.Read,
+  //   ProjectPermissionSub.Role
+  // );
+
+  // const { data: roles, isLoading: isRolesLoading } = useGetProjectRoles(
+  //   currentWorkspace?.slug!,
+  //   canReadProjectRoles
+  // );
 
   const { handleSubmit, control, reset } = useForm<FormData>({ resolver: yupResolver(formSchema) });
+  // const [isFormInitialized, setIsFormInitialized] = useState(false);
 
   useEffect(() => {
     if (currentWorkspace) {
       reset({
         name: currentWorkspace.name
+        // ...(canReadProjectRoles &&
+        //   roles?.length && {
+        //     // will always be present, can't remove role if default
+        //     defaultMembershipRoleSlug: isCustomProjectRole(currentWorkspace.defaultMembershipRole)
+        //       ? roles?.find((role) => currentWorkspace.defaultMembershipRole === role.id)?.slug!
+        //       : currentWorkspace.defaultMembershipRole
+        //   })
       });
+      // setIsFormInitialized(true);
     }
-  }, [currentWorkspace]);
+  }, [
+    currentWorkspace
+    // roles
+  ]);
 
-  const onFormSubmit = async ({ name }: FormData) => {
+  const onFormSubmit = async ({
+    name
+  }: // defaultMembershipRoleSlug
+  FormData) => {
     try {
       if (!currentWorkspace?.id) return;
 
       await mutateAsync({
-        workspaceID: currentWorkspace.id,
-        newWorkspaceName: name
+        slug: currentWorkspace.slug,
+        name
+        // defaultMembershipRoleSlug
       });
 
       createNotification({
@@ -57,6 +89,14 @@ export const ProjectNameChangeSection = () => {
       });
     }
   };
+
+  // if (!isFormInitialized) {
+  //   return (
+  //     <div className="flex h-[25.25rem] w-full items-center justify-center">
+  //       <Spinner size="lg" />
+  //     </div>
+  //   );
+  // }
 
   return (
     <form
@@ -103,6 +143,48 @@ export const ProjectNameChangeSection = () => {
           )}
         </ProjectPermissionCan>
       </div>
+      {/*
+      {canReadProjectRoles && (
+        <div className="pb-4">
+          <h2 className="text-md mb-2 text-mineshaft-100">Default Project Member Role</h2>
+          <ProjectPermissionCan
+            I={ProjectPermissionActions.Edit}
+            a={ProjectPermissionSub.Workspace}
+          >
+            {(isAllowed) => (
+              <Controller
+                defaultValue=""
+                control={control}
+                name="defaultMembershipRoleSlug"
+                render={({ field: { value, onChange }, fieldState: { error } }) => (
+                  <FormControl
+                    helperText="Users joining this project will be assigned this role unless otherwise specified"
+                    isError={Boolean(error)}
+                    errorText={error?.message}
+                    className="max-w-md"
+                  >
+                    <Select
+                      isDisabled={isRolesLoading || !isAllowed}
+                      className="w-full capitalize"
+                      value={value}
+                      onValueChange={onChange}
+                    >
+                      {roles?.map((role) => {
+                        return (
+                          <SelectItem key={role.id} value={role.slug}>
+                            {role.name}
+                          </SelectItem>
+                        );
+                      })}
+                    </Select>
+                  </FormControl>
+                )}
+              />
+            )}
+          </ProjectPermissionCan>
+        </div>
+      )}
+*/}
       <ProjectPermissionCan I={ProjectPermissionActions.Edit} a={ProjectPermissionSub.Workspace}>
         {(isAllowed) => (
           <Button

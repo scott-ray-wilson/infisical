@@ -54,11 +54,11 @@ export const getProjectRoles = async (projectId: string) => {
   return data.roles;
 };
 
-export const useGetProjectRoles = (projectSlug: string) =>
+export const useGetProjectRoles = (projectSlug: string, enabled?: boolean) =>
   useQuery({
     queryKey: roleQueryKeys.getProjectRoles(projectSlug),
     queryFn: () => getProjectRoles(projectSlug),
-    enabled: Boolean(projectSlug)
+    enabled: Boolean(projectSlug) && enabled
   });
 
 export const useGetProjectRoleBySlug = (projectSlug: string, roleSlug: string) =>

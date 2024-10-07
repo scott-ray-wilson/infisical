@@ -289,7 +289,15 @@ export const registerProjectRouter = async (server: FastifyZodProvider) => {
       }),
       body: z.object({
         name: z.string().trim().optional().describe("The new name of the project."),
-        autoCapitalization: z.boolean().optional().describe("The new auto-capitalization setting.")
+        autoCapitalization: z.boolean().optional().describe("The new auto-capitalization setting."),
+        defaultMembershipRoleSlug: z
+          .string()
+          .min(1)
+          .trim()
+          .refine((v) => slugify(v) === v, {
+            message: "Membership role must be a valid slug"
+          })
+          .optional()
       }),
       response: {
         200: SanitizedProjectSchema
@@ -306,7 +314,8 @@ export const registerProjectRouter = async (server: FastifyZodProvider) => {
         },
         update: {
           name: req.body.name,
-          autoCapitalization: req.body.autoCapitalization
+          autoCapitalization: req.body.autoCapitalization,
+          defaultMembershipRoleSlug: req.body.defaultMembershipRoleSlug
         },
         actorId: req.permission.id,
         actorAuthMethod: req.permission.authMethod,

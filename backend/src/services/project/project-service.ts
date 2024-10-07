@@ -38,7 +38,11 @@ import { TProjectSlackConfigDALFactory } from "../slack/project-slack-config-dal
 import { TSlackIntegrationDALFactory } from "../slack/slack-integration-dal";
 import { TUserDALFactory } from "../user/user-dal";
 import { TProjectDALFactory } from "./project-dal";
-import { assignWorkspaceKeysToMembers, createProjectKey } from "./project-fns";
+import {
+  assignWorkspaceKeysToMembers,
+  createProjectKey,
+  getDefaultProjectMembershipRoleForUpdateProject
+} from "./project-fns";
 import { TProjectQueueFactory } from "./project-queue";
 import {
   TCreateProjectDTO,
@@ -94,7 +98,7 @@ type TProjectServiceFactoryDep = {
   orgDAL: Pick<TOrgDALFactory, "findOne">;
   keyStore: Pick<TKeyStoreFactory, "deleteItem">;
   projectBotDAL: Pick<TProjectBotDALFactory, "create">;
-  projectRoleDAL: Pick<TProjectRoleDALFactory, "find">;
+  projectRoleDAL: TProjectRoleDALFactory;
   kmsService: Pick<
     TKmsServiceFactory,
     | "updateProjectSecretManagerKmsKey"
@@ -456,9 +460,22 @@ export const projectServiceFactory = ({
     );
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Edit, ProjectPermissionSub.Settings);
 
+    let defaultMembershipRole: string | undefined;
+    const plan = await licenseService.getPlan(project.orgId);
+
+    if (update.defaultMembershipRoleSlug) {
+      defaultMembershipRole = await getDefaultProjectMembershipRoleForUpdateProject({
+        membershipRoleSlug: update.defaultMembershipRoleSlug,
+        projectId: project.id,
+        projectRoleDAL,
+        plan
+      });
+    }
+
     const updatedProject = await projectDAL.updateById(project.id, {
       name: update.name,
-      autoCapitalization: update.autoCapitalization
+      autoCapitalization: update.autoCapitalization,
+      defaultMembershipRole
     });
     return updatedProject;
   };

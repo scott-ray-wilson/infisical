@@ -1,10 +1,12 @@
 import crypto from "crypto";
 
-import { ProjectVersion, TProjects } from "@app/db/schemas";
+import { ProjectMembershipRole, ProjectVersion, TProjects } from "@app/db/schemas";
+import { TFeatureSet } from "@app/ee/services/license/license-types";
 import { decryptAsymmetric, encryptAsymmetric } from "@app/lib/crypto";
-import { NotFoundError } from "@app/lib/errors";
+import { BadRequestError, NotFoundError } from "@app/lib/errors";
 import { TKmsServiceFactory } from "@app/services/kms/kms-service";
 import { TProjectDALFactory } from "@app/services/project/project-dal";
+import { TProjectRoleDALFactory } from "@app/services/project-role/project-role-dal";
 
 import { AddUserToWsDTO } from "./project-types";
 
@@ -101,4 +103,57 @@ export const getProjectKmsCertificateKeyId = async ({
   });
 
   return keyId;
+};
+
+// filter custom because this should never be passed; only reserved role slug or custom role ID
+const RESERVED_PROJECT_ROLES = Object.values(ProjectMembershipRole).filter((role) => role !== "custom");
+
+// this is only for use when updating a project
+export const getDefaultProjectMembershipRoleForUpdateProject = async ({
+  membershipRoleSlug,
+  projectRoleDAL,
+  plan,
+  projectId
+}: {
+  projectId: string;
+  membershipRoleSlug: string;
+  projectRoleDAL: TProjectRoleDALFactory;
+  plan: TFeatureSet;
+}) => {
+  const isCustomRole = !RESERVED_PROJECT_ROLES.includes(membershipRoleSlug as ProjectMembershipRole);
+
+  if (isCustomRole) {
+    // verify rbac enabled
+    if (!plan?.rbac)
+      throw new BadRequestError({
+        message:
+          "Failed to set custom default role due to plan RBAC restriction. Upgrade plan to set custom default org membership role."
+      });
+
+    // check that custom role exists
+    const customRole = await projectRoleDAL.findOne({ slug: membershipRoleSlug, projectId });
+    if (!customRole) throw new BadRequestError({ name: "UpdateProject", message: "Project role not found" });
+
+    // use ID for default role
+    return customRole.id;
+  }
+
+  // not custom, use reserved slug
+  return membershipRoleSlug;
+};
+
+// this is only for use when creating a project membership
+export const getDefaultProjectMembershipRoleDto = async (
+  defaultProjectMembershipRole: string // can either be ID or reserved slug
+) => {
+  const isCustomRole = !RESERVED_PROJECT_ROLES.includes(defaultProjectMembershipRole as ProjectMembershipRole);
+
+  if (isCustomRole)
+    return {
+      roleId: defaultProjectMembershipRole,
+      role: ProjectMembershipRole.Custom
+    };
+
+  // will be reserved slug
+  return { roleId: undefined, role: defaultProjectMembershipRole as ProjectMembershipRole };
 };

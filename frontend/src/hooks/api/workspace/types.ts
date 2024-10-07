@@ -28,6 +28,7 @@ export type Workspace = {
   createdAt: string;
 
   roles?: TProjectRole[];
+  defaultMembershipRole: string;
 };
 
 export type WorkspaceEnv = {
@@ -57,6 +58,12 @@ export type TGetUpgradeProjectStatusDTO = {
 export type CreateWorkspaceDTO = {
   projectName: string;
   kmsKeyId?: string;
+};
+
+export type UpdateProjectDTO = {
+  slug: string;
+  name?: string;
+  defaultMembershipRoleSlug?: string;
 };
 
 export type RenameWorkspaceDTO = { workspaceID: string; newWorkspaceName: string };

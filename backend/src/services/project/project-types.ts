@@ -66,7 +66,7 @@ export type TUpdateProjectDTO = {
   update: {
     name?: string;
     autoCapitalization?: boolean;
-    defaultMembershipRoleSlug?: string;
+    // defaultMembershipRoleSlug?: string;
   };
 } & Omit<TProjectPermission, "projectId">;
 

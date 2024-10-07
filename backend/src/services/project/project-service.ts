@@ -38,11 +38,7 @@ import { TProjectSlackConfigDALFactory } from "../slack/project-slack-config-dal
 import { TSlackIntegrationDALFactory } from "../slack/slack-integration-dal";
 import { TUserDALFactory } from "../user/user-dal";
 import { TProjectDALFactory } from "./project-dal";
-import {
-  assignWorkspaceKeysToMembers,
-  createProjectKey,
-  getDefaultProjectMembershipRoleForUpdateProject
-} from "./project-fns";
+import { assignWorkspaceKeysToMembers, createProjectKey } from "./project-fns";
 import { TProjectQueueFactory } from "./project-queue";
 import {
   TCreateProjectDTO,
@@ -460,22 +456,22 @@ export const projectServiceFactory = ({
     );
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Edit, ProjectPermissionSub.Settings);
 
-    let defaultMembershipRole: string | undefined;
-    const plan = await licenseService.getPlan(project.orgId);
+    // let defaultMembershipRole: string | undefined;
+    // const plan = await licenseService.getPlan(project.orgId);
 
-    if (update.defaultMembershipRoleSlug) {
-      defaultMembershipRole = await getDefaultProjectMembershipRoleForUpdateProject({
-        membershipRoleSlug: update.defaultMembershipRoleSlug,
-        projectId: project.id,
-        projectRoleDAL,
-        plan
-      });
-    }
+    // if (update.defaultMembershipRoleSlug) {
+    //   defaultMembershipRole = await getDefaultProjectMembershipRoleForUpdateProject({
+    //     membershipRoleSlug: update.defaultMembershipRoleSlug,
+    //     projectId: project.id,
+    //     projectRoleDAL,
+    //     plan
+    //   });
+    // }
 
     const updatedProject = await projectDAL.updateById(project.id, {
       name: update.name,
-      autoCapitalization: update.autoCapitalization,
-      defaultMembershipRole
+      autoCapitalization: update.autoCapitalization
+      // defaultMembershipRole
     });
     return updatedProject;
   };

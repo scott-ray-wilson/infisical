@@ -104,8 +104,15 @@ export const useUpdateProject = () => {
   const queryClient = useQueryClient();
 
   return useMutation<{}, {}, UpdateProjectDTO>({
-    mutationFn: ({ slug, name, defaultMembershipRoleSlug }) => {
-      return apiRequest.patch(`/api/v2/workspace/${slug}`, { name, defaultMembershipRoleSlug });
+    mutationFn: ({
+      slug,
+      name
+      // defaultMembershipRoleSlug
+    }) => {
+      return apiRequest.patch(`/api/v2/workspace/${slug}`, {
+        name
+        // defaultMembershipRoleSlug
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries(workspaceKeys.getAllUserWorkspace);

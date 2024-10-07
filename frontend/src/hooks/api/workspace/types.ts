@@ -63,7 +63,7 @@ export type CreateWorkspaceDTO = {
 export type UpdateProjectDTO = {
   slug: string;
   name?: string;
-  defaultMembershipRoleSlug?: string;
+  // defaultMembershipRoleSlug?: string;
 };
 
 export type RenameWorkspaceDTO = { workspaceID: string; newWorkspaceName: string };

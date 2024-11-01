@@ -1438,3 +1438,26 @@ export const KMS = {
     ciphertext: "The ciphertext to be decrypted (base64 encoded)."
   }
 };
+
+export const ProjectTemplates = {
+  CREATE: {
+    name: "The name of the project template to be created. Must be slug-friendly.",
+    description: "An optional description of the project template.",
+    roles: "The roles to be created when this template is applied to a project.",
+    environments: "The environments to be created when this template is applied to a project."
+  },
+  UPDATE: {
+    templateId: "The ID of the project template to be updated.",
+    name: "The updated name of this project template. Must be slug-friendly.",
+    description: "The updated description of this project template.",
+    roles: "The updated roles to be created when this template is applied to a project.",
+    environments: "The updated environments to be created when this template is applied to a project."
+  },
+  DELETE: {
+    templateId: "The ID of the project template to be deleted."
+  },
+  APPLY: {
+    projectId: "The ID of the project to which the template should be applied.",
+    templateId: "The ID of the project template to be applied."
+  }
+};

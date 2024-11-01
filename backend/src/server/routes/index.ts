@@ -43,6 +43,8 @@ import { oidcConfigDALFactory } from "@app/ee/services/oidc/oidc-config-dal";
 import { oidcConfigServiceFactory } from "@app/ee/services/oidc/oidc-config-service";
 import { permissionDALFactory } from "@app/ee/services/permission/permission-dal";
 import { permissionServiceFactory } from "@app/ee/services/permission/permission-service";
+import { projectTemplatesDALFactory } from "@app/ee/services/project-templates/project-templates-dal";
+import { projectTemplatesServiceFactory } from "@app/ee/services/project-templates/project-templates-service";
 import { projectUserAdditionalPrivilegeDALFactory } from "@app/ee/services/project-user-additional-privilege/project-user-additional-privilege-dal";
 import { projectUserAdditionalPrivilegeServiceFactory } from "@app/ee/services/project-user-additional-privilege/project-user-additional-privilege-service";
 import { rateLimitDALFactory } from "@app/ee/services/rate-limit/rate-limit-dal";
@@ -339,6 +341,8 @@ export const registerRoutes = async (
   const workflowIntegrationDAL = workflowIntegrationDALFactory(db);
 
   const externalGroupOrgRoleMappingDAL = externalGroupOrgRoleMappingDALFactory(db);
+
+  const projectTemplatesDAL = projectTemplatesDALFactory(db);
 
   const permissionService = permissionServiceFactory({
     permissionDAL,
@@ -1256,6 +1260,12 @@ export const registerRoutes = async (
     externalGroupOrgRoleMappingDAL
   });
 
+  const projectTemplatesService = projectTemplatesServiceFactory({
+    licenseService,
+    permissionService,
+    projectTemplatesDAL
+  });
+
   await superAdminService.initServerCfg();
   //
   // setup the communication with license key server
@@ -1343,7 +1353,8 @@ export const registerRoutes = async (
     slack: slackService,
     workflowIntegration: workflowIntegrationService,
     migration: migrationService,
-    externalGroupOrgRoleMapping: externalGroupOrgRoleMappingService
+    externalGroupOrgRoleMapping: externalGroupOrgRoleMappingService,
+    projectTemplates: projectTemplatesService
   });
 
   const cronJobs: CronJob[] = [];

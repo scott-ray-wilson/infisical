@@ -9,7 +9,7 @@ import { readLimit, writeLimit } from "@app/server/config/rateLimiter";
 import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
 import { AuthMode } from "@app/services/auth/auth-type";
 
-const NameSlugSchema = z
+const SlugSchema = z
   .string()
   .trim()
   .min(1)
@@ -21,7 +21,8 @@ const NameSlugSchema = z
 
 const ProjectTemplateRolesSchema = z
   .object({
-    name: NameSlugSchema,
+    name: z.string().trim().min(1),
+    slug: SlugSchema,
     description: z.string().trim().optional(),
     permissions: ProjectPermissionV2Schema.array()
   })
@@ -29,7 +30,8 @@ const ProjectTemplateRolesSchema = z
 
 const ProjectTemplateEnvironmentsSchema = z
   .object({
-    name: NameSlugSchema,
+    name: z.string().trim().min(1),
+    slug: SlugSchema,
     position: z.number().min(1)
   })
   .array();
@@ -74,10 +76,16 @@ export const registerProjectTemplatesRouter = async (server: FastifyZodProvider)
     schema: {
       description: "Create a project template.",
       body: z.object({
-        name: NameSlugSchema.describe(ProjectTemplates.CREATE.name),
+        name: SlugSchema.describe(ProjectTemplates.CREATE.name),
         description: z.string().trim().optional().describe(ProjectTemplates.CREATE.description),
         roles: ProjectTemplateRolesSchema.describe(ProjectTemplates.CREATE.roles),
-        environments: ProjectTemplateEnvironmentsSchema.describe(ProjectTemplates.CREATE.environments)
+        environments: ProjectTemplateEnvironmentsSchema.optional()
+          .default([
+            { name: "Development", slug: "dev", position: 1 },
+            { name: "Staging", slug: "staging", position: 2 },
+            { name: "Production", slug: "prod", position: 3 }
+          ])
+          .describe(ProjectTemplates.CREATE.environments)
       }),
       response: {
         200: z.object({
@@ -112,10 +120,10 @@ export const registerProjectTemplatesRouter = async (server: FastifyZodProvider)
       description: "Update a project template.",
       params: z.object({ templateId: z.string().uuid().describe(ProjectTemplates.APPLY.templateId) }),
       body: z.object({
-        name: NameSlugSchema.describe(ProjectTemplates.UPDATE.name),
+        name: SlugSchema.optional().describe(ProjectTemplates.UPDATE.name),
         description: z.string().trim().optional().describe(ProjectTemplates.UPDATE.description),
-        roles: ProjectTemplateRolesSchema.describe(ProjectTemplates.UPDATE.roles),
-        environments: ProjectTemplateEnvironmentsSchema.describe(ProjectTemplates.UPDATE.environments)
+        roles: ProjectTemplateRolesSchema.optional().describe(ProjectTemplates.UPDATE.roles),
+        environments: ProjectTemplateEnvironmentsSchema.optional().describe(ProjectTemplates.UPDATE.environments)
       }),
       response: {
         200: z.object({

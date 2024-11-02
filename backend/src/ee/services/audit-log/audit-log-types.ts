@@ -1,6 +1,6 @@
 import {
-  ProjectTemplateEnvironment,
-  ProjectTemplateRole
+  TCreateProjectTemplateDTO,
+  TUpdateProjectTemplateDTO
 } from "@app/ee/services/project-templates/project-templates-types";
 import { SymmetricEncryption } from "@app/lib/crypto/cipher";
 import { TProjectPermission } from "@app/lib/types";
@@ -1634,21 +1634,12 @@ interface GetProjectTemplatesEvent {
 
 interface CreateProjectTemplateEvent {
   type: EventType.CREATE_PROJECT_TEMPLATE;
-  metadata: {
-    name: string;
-    roles: ProjectTemplateRole[];
-    environments: ProjectTemplateEnvironment[];
-  };
+  metadata: TCreateProjectTemplateDTO;
 }
 
 interface UpdateProjectTemplateEvent {
   type: EventType.UPDATE_PROJECT_TEMPLATE;
-  metadata: {
-    templateId: string;
-    name: string;
-    roles: ProjectTemplateRole[];
-    environments: ProjectTemplateEnvironment[];
-  };
+  metadata: TUpdateProjectTemplateDTO & { templateId: string };
 }
 
 interface DeleteProjectTemplateEvent {

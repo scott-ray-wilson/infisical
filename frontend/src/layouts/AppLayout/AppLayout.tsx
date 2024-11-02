@@ -41,6 +41,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
+  Badge,
   Button,
   Checkbox,
   DropdownMenu,
@@ -796,6 +797,19 @@ export const AppLayout = ({ children }: LayoutProps) => {
                             icon="system-outline-168-view-headline"
                           >
                             Audit Logs
+                          </MenuItem>
+                        </a>
+                      </Link>
+                      <Link href={`/org/${currentOrg?.id}/project-templates`} passHref>
+                        <a>
+                          <MenuItem
+                            isSelected={
+                              router.asPath === `/org/${currentOrg?.id}/project-templates`
+                            }
+                            icon="system-outline-82-extension"
+                          >
+                            Project Templates
+                            <Badge className="ml-2">New</Badge>
                           </MenuItem>
                         </a>
                       </Link>

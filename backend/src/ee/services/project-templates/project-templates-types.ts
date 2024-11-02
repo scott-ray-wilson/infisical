@@ -1,7 +1,7 @@
 import { TProjectEnvironments, TProjectRoles } from "@app/db/schemas";
 
-export type ProjectTemplateRole = Pick<TProjectRoles, "name" | "description" | "permissions">;
-export type ProjectTemplateEnvironment = Pick<TProjectEnvironments, "name" | "position">;
+export type ProjectTemplateRole = Pick<TProjectRoles, "name" | "slug" | "description" | "permissions">;
+export type ProjectTemplateEnvironment = Pick<TProjectEnvironments, "name" | "slug" | "position">;
 
 export type TCreateProjectTemplateDTO = {
   name: string;
@@ -10,4 +10,4 @@ export type TCreateProjectTemplateDTO = {
   environments: ProjectTemplateEnvironment[];
 };
 
-export type TUpdateProjectTemplateDTO = TCreateProjectTemplateDTO;
+export type TUpdateProjectTemplateDTO = Partial<TCreateProjectTemplateDTO>;

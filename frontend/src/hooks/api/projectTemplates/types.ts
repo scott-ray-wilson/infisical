@@ -10,9 +10,13 @@ export type TProjectTemplate = {
   updatedAt: string;
 };
 
+export type TListProjectTemplates = { projectTemplates: TProjectTemplate[] };
+
 export type TCreateProjectTemplateDTO = {
   name: string;
   description?: string;
 };
 
-export type TListProjectTemplates = { projectTemplates: TProjectTemplate[] };
+export type TDeleteProjectTemplateDTO = {
+  templateId: string;
+};

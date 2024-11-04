@@ -1,3 +1,4 @@
+import { packRules } from "@casl/ability/extra";
 import slugify from "@sindresorhus/slugify";
 import { z } from "zod";
 
@@ -78,14 +79,12 @@ export const registerProjectTemplatesRouter = async (server: FastifyZodProvider)
       body: z.object({
         name: SlugSchema.describe(ProjectTemplates.CREATE.name),
         description: z.string().trim().optional().describe(ProjectTemplates.CREATE.description),
-        roles: ProjectTemplateRolesSchema.describe(ProjectTemplates.CREATE.roles),
-        environments: ProjectTemplateEnvironmentsSchema.optional()
-          .default([
-            { name: "Development", slug: "dev", position: 1 },
-            { name: "Staging", slug: "staging", position: 2 },
-            { name: "Production", slug: "prod", position: 3 }
-          ])
-          .describe(ProjectTemplates.CREATE.environments)
+        roles: ProjectTemplateRolesSchema.default([]).describe(ProjectTemplates.CREATE.roles),
+        environments: ProjectTemplateEnvironmentsSchema.default([
+          { name: "Development", slug: "dev", position: 1 },
+          { name: "Staging", slug: "staging", position: 2 },
+          { name: "Production", slug: "prod", position: 3 }
+        ]).describe(ProjectTemplates.CREATE.environments)
       }),
       response: {
         200: z.object({

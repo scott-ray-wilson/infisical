@@ -1,4 +1,4 @@
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import slugify from "@sindresorhus/slugify";
 import { z } from "zod";
@@ -11,12 +11,9 @@ import {
   Modal,
   ModalClose,
   ModalContent,
-  Select,
-  SelectItem,
   TextArea
 } from "@app/components/v2";
-import { useWorkspace } from "@app/context";
-import { EncryptionAlgorithm, TCmek, useCreateCmek, useUpdateCmek } from "@app/hooks/api/cmeks";
+import { useCreateProjectTemplate } from "@app/hooks/api/projectTemplates";
 
 const formSchema = z.object({
   name: z
@@ -38,13 +35,14 @@ type Props = {
   onOpenChange: (isOpen: boolean) => void;
 };
 
-type FormProps = Props & {
+type FormProps = {
   onComplete: () => void;
 };
 
 const ProjectTemplateForm = ({ onComplete }: FormProps) => {
+  const createProjectTemplate = useCreateProjectTemplate();
+
   const {
-    control,
     handleSubmit,
     register,
     formState: { isSubmitting, errors }
@@ -53,27 +51,18 @@ const ProjectTemplateForm = ({ onComplete }: FormProps) => {
     defaultValues: {}
   });
 
-  const handleCreateCmek = async ({ encryptionAlgorithm, name, description }: FormData) => {
-    const mutation = isUpdate
-      ? updateCmek.mutateAsync({ keyId: cmek.id, projectId, name, description })
-      : createCmek.mutateAsync({
-          projectId,
-          encryptionAlgorithm,
-          name,
-          description
-        });
-
+  const handleCreateCmek = async (data: FormData) => {
     try {
-      await mutation;
+      await createProjectTemplate.mutateAsync(data);
       createNotification({
-        text: `Successfully ${isUpdate ? "updated" : "added"} key`,
+        text: "Successfully created project template",
         type: "success"
       });
       onComplete();
     } catch (err) {
       console.error(err);
       createNotification({
-        text: `Failed to ${isUpdate ? "update" : "add"} key`,
+        text: "Failed to create project template",
         type: "error"
       });
     }
@@ -87,25 +76,8 @@ const ProjectTemplateForm = ({ onComplete }: FormProps) => {
         isError={Boolean(errors.name?.message)}
         label="Name"
       >
-        <Input autoFocus placeholder="my-secret-key" {...register("name")} />
+        <Input autoFocus placeholder="my-project-template" {...register("name")} />
       </FormControl>
-      {!isUpdate && (
-        <Controller
-          control={control}
-          name="encryptionAlgorithm"
-          render={({ field: { onChange, ...field }, fieldState: { error } }) => (
-            <FormControl label="Algorithm" errorText={error?.message} isError={Boolean(error)}>
-              <Select defaultValue={field.value} onValueChange={onChange} className="w-full">
-                {Object.entries(EncryptionAlgorithm)?.map(([key, value]) => (
-                  <SelectItem value={value} key={`source-environment-${key}`}>
-                    {key.replaceAll("_", "-")}
-                  </SelectItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-        />
-      )}
       <FormControl
         label="Description (optional)"
         errorText={errors.description?.message}
@@ -124,7 +96,7 @@ const ProjectTemplateForm = ({ onComplete }: FormProps) => {
           isLoading={isSubmitting}
           isDisabled={isSubmitting}
         >
-          {isUpdate ? "Update" : "Add"} Key
+          Add Template
         </Button>
         <ModalClose asChild>
           <Button colorSchema="secondary" variant="plain">

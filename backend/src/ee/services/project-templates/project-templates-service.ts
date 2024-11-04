@@ -1,4 +1,6 @@
 import { ForbiddenError } from "@casl/ability";
+import { packRules } from "@casl/ability/extra";
+import { unknown } from "zod";
 
 import { TLicenseServiceFactory } from "@app/ee/services/license/license-service";
 import { OrgPermissionActions, OrgPermissionSubjects } from "@app/ee/services/permission/org-permission";
@@ -50,7 +52,10 @@ export const projectTemplatesServiceFactory = ({
     return projectTemplates;
   };
 
-  const createProjectTemplate = async (params: TCreateProjectTemplateDTO, actor: OrgServiceActor) => {
+  const createProjectTemplate = async (
+    { roles, environments, ...params }: TCreateProjectTemplateDTO,
+    actor: OrgServiceActor
+  ) => {
     const { permission } = await permissionService.getOrgPermission(
       actor.type,
       actor.id,
@@ -70,13 +75,19 @@ export const projectTemplatesServiceFactory = ({
 
     const projectTemplate = await projectTemplatesDAL.create({
       ...params,
+      roles: JSON.stringify(roles.map((role) => ({ ...role, permissions: packRules(role.permissions) }))),
+      environments: JSON.stringify(environments),
       orgId: actor.orgId
     });
 
     return projectTemplate;
   };
 
-  const updateProjectTemplateById = async (id: string, params: TUpdateProjectTemplateDTO, actor: OrgServiceActor) => {
+  const updateProjectTemplateById = async (
+    id: string,
+    { roles, environments, ...params }: TUpdateProjectTemplateDTO,
+    actor: OrgServiceActor
+  ) => {
     const { permission } = await permissionService.getOrgPermission(
       actor.type,
       actor.id,
@@ -94,7 +105,13 @@ export const projectTemplatesServiceFactory = ({
         message: "Failed to update project template due to plan restriction. Upgrade plan to access project templates."
       });
 
-    const projectTemplate = await projectTemplatesDAL.updateById(id, params);
+    const projectTemplate = await projectTemplatesDAL.updateById(id, {
+      ...params,
+      roles: roles
+        ? JSON.stringify(roles.map((role) => ({ ...role, permissions: packRules(role.permissions) })))
+        : undefined,
+      environments: environments ? JSON.stringify(environments) : undefined
+    });
 
     return projectTemplate;
   };

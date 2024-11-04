@@ -8,11 +8,13 @@ import {
   TCmekDecryptResponse,
   TCmekEncrypt,
   TCmekEncryptResponse,
-  TDeleteCmek,
   TUpdateCmek
 } from "@app/hooks/api/cmeks/types";
 import { projectTemplateKeys } from "@app/hooks/api/projectTemplates/queries";
-import { TCreateProjectTemplateDTO } from "@app/hooks/api/projectTemplates/types";
+import {
+  TCreateProjectTemplateDTO,
+  TDeleteProjectTemplateDTO
+} from "@app/hooks/api/projectTemplates/types";
 
 export const useCreateProjectTemplate = () => {
   const queryClient = useQueryClient();
@@ -22,9 +24,7 @@ export const useCreateProjectTemplate = () => {
 
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries(projectTemplateKeys.list());
-    }
+    onSuccess: () => queryClient.invalidateQueries(projectTemplateKeys.list())
   });
 };
 
@@ -46,17 +46,15 @@ export const useUpdateCmek = () => {
   });
 };
 
-export const useDeleteCmek = () => {
+export const useDeleteProjectTemplate = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ keyId }: TDeleteCmek) => {
-      const { data } = await apiRequest.delete(`/api/v1/kms/keys/${keyId}`);
+    mutationFn: async ({ templateId }: TDeleteProjectTemplateDTO) => {
+      const { data } = await apiRequest.delete(`/api/v1/project-templates/${templateId}`);
 
       return data;
     },
-    onSuccess: (_, { projectId }) => {
-      queryClient.invalidateQueries(cmekKeys.getCmeksByProjectId({ projectId }));
-    }
+    onSuccess: () => queryClient.invalidateQueries(projectTemplateKeys.list())
   });
 };
 

@@ -69,6 +69,36 @@ export const registerProjectTemplatesRouter = async (server: FastifyZodProvider)
   });
 
   server.route({
+    method: "GET",
+    url: "/",
+    config: {
+      rateLimit: readLimit
+    },
+    schema: {
+      description: "List project templates for the current organization.",
+      response: {
+        200: z.object({
+          projectTemplates: ProjectTemplatesSchema.array()
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
+    handler: async (req) => {
+      const projectTemplates = await server.services.projectTemplates.listProjectTemplatesByOrg(req.permission);
+
+      await server.services.auditLog.createAuditLog({
+        ...req.auditLogInfo,
+        orgId: req.permission.orgId,
+        event: {
+          type: EventType.GET_PROJECT_TEMPLATES
+        }
+      });
+
+      return { projectTemplates };
+    }
+  });
+
+  server.route({
     method: "POST",
     url: "/",
     config: {

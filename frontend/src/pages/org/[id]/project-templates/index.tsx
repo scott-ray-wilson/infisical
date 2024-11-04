@@ -8,7 +8,6 @@ const ProjectTemplates = () => {
       <Head>
         <title>Infisical | Project Templates</title>
         <link rel="icon" href="/infisical.ico" />
-        <meta property="og:image" content="/images/message.png" />
       </Head>
       <ProjectTemplatesPage />
     </div>

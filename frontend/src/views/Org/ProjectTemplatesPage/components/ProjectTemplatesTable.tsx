@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/router";
 import {
   faCircleInfo,
   faClone,
@@ -21,6 +22,7 @@ import {
   Tooltip,
   Tr
 } from "@app/components/v2";
+import { useOrganization } from "@app/context";
 import { usePopUp } from "@app/hooks";
 import { useListProjectTemplates } from "@app/hooks/api/projectTemplates";
 import { DeleteProjectTemplateModal } from "@app/views/Org/ProjectTemplatesPage/components/DeleteProjectTemplateModal";
@@ -28,8 +30,18 @@ import { DeleteProjectTemplateModal } from "@app/views/Org/ProjectTemplatesPage/
 export const ProjectTemplatesTable = () => {
   const { isLoading, data: projectTemplates = [] } = useListProjectTemplates();
   const [search, setSearch] = useState("");
+  const router = useRouter();
+  const { currentOrg } = useOrganization();
 
   const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp(["deleteTemplate"] as const);
+
+  const filteredTemplates = useMemo(
+    () =>
+      projectTemplates?.filter((template) =>
+        template.name.toLowerCase().includes(search.toLowerCase().trim())
+      ) ?? [],
+    [search, projectTemplates]
+  );
 
   return (
     <div>
@@ -57,10 +69,14 @@ export const ProjectTemplatesTable = () => {
                 key="project-templates"
               />
             )}
-            {projectTemplates?.map((template) => {
+            {filteredTemplates.map((template) => {
               const { id, name, roles, environments, description } = template;
               return (
-                <Tr className="cursor-pointer hover:bg-mineshaft-700" key={id}>
+                <Tr
+                  onClick={() => router.push(`/org/${currentOrg?.id}/project-templates/${id}`)}
+                  className="cursor-pointer hover:bg-mineshaft-700"
+                  key={id}
+                >
                   <Td>
                     {name}
                     {description && (
@@ -128,10 +144,17 @@ export const ProjectTemplatesTable = () => {
                 </Tr>
               );
             })}
-            {projectTemplates?.length === 0 && (
+            {filteredTemplates?.length === 0 && (
               <Tr>
                 <Td colSpan={5}>
-                  <EmptyState title="No project templates found" icon={faClone} />
+                  <EmptyState
+                    title={
+                      search.trim()
+                        ? "No project templates match search"
+                        : "No project templates found"
+                    }
+                    icon={faClone}
+                  />
                 </Td>
               </Tr>
             )}

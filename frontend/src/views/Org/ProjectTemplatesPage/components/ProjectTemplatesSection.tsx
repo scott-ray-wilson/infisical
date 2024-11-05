@@ -8,7 +8,7 @@ import { Button, UpgradePlanModal } from "@app/components/v2";
 import { OrgPermissionActions, OrgPermissionSubjects, useSubscription } from "@app/context";
 import { usePopUp } from "@app/hooks/usePopUp";
 
-import { CreateProjectTemplateModal } from "./CreateProjectTemplateModal";
+import { ProjectTemplateDetailsModal } from "./ProjectTemplateDetailsModal";
 import { ProjectTemplatesTable } from "./ProjectTemplatesTable";
 
 export const ProjectTemplatesSection = () => {
@@ -48,7 +48,7 @@ export const ProjectTemplatesSection = () => {
         </OrgPermissionCan>
       </div>
       <ProjectTemplatesTable />
-      <CreateProjectTemplateModal
+      <ProjectTemplateDetailsModal
         isOpen={popUp.addTemplate.isOpen}
         onOpenChange={(isOpen) => handlePopUpToggle("addTemplate", isOpen)}
       />

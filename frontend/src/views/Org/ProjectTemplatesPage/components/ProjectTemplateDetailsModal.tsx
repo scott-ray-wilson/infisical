@@ -1,4 +1,5 @@
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import slugify from "@sindresorhus/slugify";
 import { z } from "zod";
@@ -13,7 +14,12 @@ import {
   ModalContent,
   TextArea
 } from "@app/components/v2";
-import { useCreateProjectTemplate } from "@app/hooks/api/projectTemplates";
+import { useOrganization } from "@app/context";
+import {
+  TProjectTemplate,
+  useCreateProjectTemplate,
+  useUpdateProjectTemplate
+} from "@app/hooks/api/projectTemplates";
 
 const formSchema = z.object({
   name: z
@@ -33,14 +39,19 @@ export type FormData = z.infer<typeof formSchema>;
 type Props = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  projectTemplate?: TProjectTemplate;
 };
 
 type FormProps = {
+  projectTemplate?: TProjectTemplate;
   onComplete: () => void;
 };
 
-const ProjectTemplateForm = ({ onComplete }: FormProps) => {
+const ProjectTemplateForm = ({ onComplete, projectTemplate }: FormProps) => {
   const createProjectTemplate = useCreateProjectTemplate();
+  const updateProjectTemplate = useUpdateProjectTemplate();
+  const router = useRouter();
+  const { currentOrg } = useOrganization();
 
   const {
     handleSubmit,
@@ -48,28 +59,40 @@ const ProjectTemplateForm = ({ onComplete }: FormProps) => {
     formState: { isSubmitting, errors }
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {}
+    defaultValues: {
+      name: projectTemplate?.name,
+      description: projectTemplate?.description
+    }
   });
 
-  const handleCreateCmek = async (data: FormData) => {
+  const onFormSubmit = async (data: FormData) => {
+    const mutation = projectTemplate
+      ? updateProjectTemplate.mutateAsync({ templateId: projectTemplate.id, ...data })
+      : createProjectTemplate.mutateAsync(data);
     try {
-      await createProjectTemplate.mutateAsync(data);
+      const template = await mutation;
       createNotification({
-        text: "Successfully created project template",
+        text: `Successfully ${
+          projectTemplate ? "updated template details" : "created project template"
+        }`,
         type: "success"
       });
+
+      if (!projectTemplate) router.push(`/org/${currentOrg?.id}/project-templates/${template.id}`);
       onComplete();
     } catch (err) {
       console.error(err);
       createNotification({
-        text: "Failed to create project template",
+        text: `Failed to ${
+          projectTemplate ? "update template details" : "create project template"
+        }`,
         type: "error"
       });
     }
   };
 
   return (
-    <form onSubmit={handleSubmit(handleCreateCmek)}>
+    <form onSubmit={handleSubmit(onFormSubmit)}>
       <FormControl
         helperText="Name must be slug-friendly"
         errorText={errors.name?.message}
@@ -96,7 +119,7 @@ const ProjectTemplateForm = ({ onComplete }: FormProps) => {
           isLoading={isSubmitting}
           isDisabled={isSubmitting}
         >
-          Add Template
+          {projectTemplate ? "Update" : "Add"} Template
         </Button>
         <ModalClose asChild>
           <Button colorSchema="secondary" variant="plain">
@@ -108,11 +131,16 @@ const ProjectTemplateForm = ({ onComplete }: FormProps) => {
   );
 };
 
-export const CreateProjectTemplateModal = ({ isOpen, onOpenChange }: Props) => {
+export const ProjectTemplateDetailsModal = ({ isOpen, onOpenChange, projectTemplate }: Props) => {
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-      <ModalContent title="Create Template">
-        <ProjectTemplateForm onComplete={() => onOpenChange(false)} />
+      <ModalContent
+        title={projectTemplate ? "Edit Project Template Details" : "Create Project Template"}
+      >
+        <ProjectTemplateForm
+          projectTemplate={projectTemplate}
+          onComplete={() => onOpenChange(false)}
+        />
       </ModalContent>
     </Modal>
   );

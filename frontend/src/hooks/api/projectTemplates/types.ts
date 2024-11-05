@@ -11,12 +11,16 @@ export type TProjectTemplate = {
 };
 
 export type TListProjectTemplates = { projectTemplates: TProjectTemplate[] };
-export type TGetProjectTemplateById = { projectTemplate: TProjectTemplate };
+export type TProjectTemplateResponse = { projectTemplate: TProjectTemplate };
 
 export type TCreateProjectTemplateDTO = {
   name: string;
   description?: string;
 };
+
+export type TUpdateProjectTemplateDTO = Partial<
+  Pick<TProjectTemplate, "name" | "description" | "roles" | "environments">
+> & { templateId: string };
 
 export type TDeleteProjectTemplateDTO = {
   templateId: string;

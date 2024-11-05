@@ -26,7 +26,17 @@ const ProjectTemplateRolesSchema = z
     description: z.string().trim().optional(),
     permissions: ProjectPermissionV2Schema.array()
   })
-  .array();
+  .array()
+
+  .superRefine((roles, ctx) => {
+    if (!roles.length) return;
+
+    if (new Set(roles.map((v) => v.name)).size > 1)
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Role names must be unique" });
+
+    if (new Set(roles.map((v) => v.slug)).size > 1)
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Role slugs must be unique" });
+  });
 
 const ProjectTemplateEnvironmentsSchema = z
   .object({
@@ -34,7 +44,24 @@ const ProjectTemplateEnvironmentsSchema = z
     slug: SlugSchema,
     position: z.number().min(1)
   })
-  .array();
+  .array()
+  .min(1)
+  .superRefine((environments, ctx) => {
+    if (new Set(environments.map((v) => v.name)).size !== environments.length)
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Environment names must be unique" });
+
+    if (new Set(environments.map((v) => v.slug)).size !== environments.length)
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Environment slugs must be unique" });
+
+    if (
+      environments.some((env) => env.position < 1 || env.position > environments.length) ||
+      new Set(environments.map((env) => env.position)).size !== environments.length
+    )
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "One or more invalid positions specified for environments. Positions must be sequential starting at 1."
+      });
+  });
 
 export const registerProjectTemplatesRouter = async (server: FastifyZodProvider) => {
   server.route({

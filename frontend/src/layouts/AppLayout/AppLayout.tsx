@@ -803,9 +803,9 @@ export const AppLayout = ({ children }: LayoutProps) => {
                       <Link href={`/org/${currentOrg?.id}/project-templates`} passHref>
                         <a>
                           <MenuItem
-                            isSelected={
-                              router.asPath === `/org/${currentOrg?.id}/project-templates`
-                            }
+                            isSelected={router.asPath.includes(
+                              `/org/${currentOrg?.id}/project-templates`
+                            )}
                             icon="system-outline-82-extension"
                           >
                             Project Templates

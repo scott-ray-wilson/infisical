@@ -133,7 +133,10 @@ export const ProjectTemplatesTable = () => {
                   </Td>
                   <Td className="w-5">
                     <IconButton
-                      onClick={() => handlePopUpOpen("deleteTemplate", template)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePopUpOpen("deleteTemplate", template);
+                      }}
                       variant="plain"
                       colorSchema="danger"
                       ariaLabel="Delete template"

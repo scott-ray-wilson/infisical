@@ -2,9 +2,9 @@ import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 
 import { apiRequest } from "@app/config/request";
 import {
-  TGetProjectTemplateById,
   TListProjectTemplates,
-  TProjectTemplate
+  TProjectTemplate,
+  TProjectTemplateResponse
 } from "@app/hooks/api/projectTemplates/types";
 
 export const projectTemplateKeys = {
@@ -50,7 +50,7 @@ export const useGetProjectTemplateById = (
   return useQuery({
     queryKey: projectTemplateKeys.byId(templateId),
     queryFn: async () => {
-      const { data } = await apiRequest.get<TGetProjectTemplateById>(
+      const { data } = await apiRequest.get<TProjectTemplateResponse>(
         `/api/v1/project-templates/${templateId}`
       );
 

@@ -11,6 +11,7 @@ export type TProjectTemplate = {
 };
 
 export type TListProjectTemplates = { projectTemplates: TProjectTemplate[] };
+export type TGetProjectTemplateById = { projectTemplate: TProjectTemplate };
 
 export type TCreateProjectTemplateDTO = {
   name: string;

@@ -52,6 +52,34 @@ export const projectTemplatesServiceFactory = ({
     return projectTemplates;
   };
 
+  const findProjectTemplatesById = async (id: string, actor: OrgServiceActor) => {
+    const { permission } = await permissionService.getOrgPermission(
+      actor.type,
+      actor.id,
+      actor.orgId,
+      actor.authMethod,
+      actor.orgId
+    );
+
+    ForbiddenError.from(permission).throwUnlessCan(OrgPermissionActions.Read, OrgPermissionSubjects.ProjectTemplates);
+
+    const plan = await licenseService.getPlan(actor.orgId);
+
+    if (!plan.projectTemplates)
+      throw new BadRequestError({
+        message: "Failed to access project templates due to plan restriction. Upgrade plan to access project templates."
+      });
+
+    const [projectTemplate] = await projectTemplatesDAL.find({
+      id,
+      orgId: actor.orgId
+    });
+
+    if (!projectTemplate) throw new NotFoundError({ message: `Could not find a project template with ID ${id}` });
+
+    return projectTemplate;
+  };
+
   const createProjectTemplate = async (
     { roles, environments, ...params }: TCreateProjectTemplateDTO,
     actor: OrgServiceActor
@@ -170,6 +198,7 @@ export const projectTemplatesServiceFactory = ({
     createProjectTemplate,
     updateProjectTemplateById,
     deleteProjectTemplateById,
-    applyProjectTemplateById
+    applyProjectTemplateById,
+    findProjectTemplatesById
   };
 };

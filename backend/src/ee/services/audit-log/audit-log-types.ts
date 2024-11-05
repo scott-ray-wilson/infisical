@@ -198,6 +198,7 @@ export enum EventType {
   UPDATE_EXTERNAL_GROUP_ORG_ROLE_MAPPINGS = "update-external-group-org-role-mapping",
   GET_EXTERNAL_GROUP_ORG_ROLE_MAPPINGS = "get-external-group-org-role-mapping",
   GET_PROJECT_TEMPLATES = "get-project-templates",
+  GET_PROJECT_TEMPLATE = "get-project-template",
   CREATE_PROJECT_TEMPLATE = "create-project-template",
   UPDATE_PROJECT_TEMPLATE = "update-project-template",
   DELETE_PROJECT_TEMPLATE = "delete-project-template",
@@ -1632,6 +1633,13 @@ interface GetProjectTemplatesEvent {
   metadata?: Record<string, never>; // not needed, based off orgId
 }
 
+interface GetProjectTemplateEvent {
+  type: EventType.GET_PROJECT_TEMPLATE;
+  metadata: {
+    templateId: string;
+  };
+}
+
 interface CreateProjectTemplateEvent {
   type: EventType.CREATE_PROJECT_TEMPLATE;
   metadata: TCreateProjectTemplateDTO;
@@ -1807,6 +1815,7 @@ export type Event =
   | GetExternalGroupOrgRoleMappingsEvent
   | UpdateExternalGroupOrgRoleMappingsEvent
   | GetProjectTemplatesEvent
+  | GetProjectTemplateEvent
   | CreateProjectTemplateEvent
   | UpdateProjectTemplateEvent
   | DeleteProjectTemplateEvent

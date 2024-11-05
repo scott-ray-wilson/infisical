@@ -1,6 +1,5 @@
 import { createNotification } from "@app/components/notifications";
 import { DeleteActionModal } from "@app/components/v2";
-import { TCmek, useDeleteCmek } from "@app/hooks/api/cmeks";
 import { TProjectTemplate, useDeleteProjectTemplate } from "@app/hooks/api/projectTemplates";
 
 type Props = {
@@ -16,7 +15,7 @@ export const DeleteProjectTemplateModal = ({ isOpen, onOpenChange, template }: P
 
   const { id: templateId, name } = template;
 
-  const handleDeleteCmek = async () => {
+  const handleDeleteProjectTemplate = async () => {
     try {
       await deleteTemplate.mutateAsync({
         templateId
@@ -43,10 +42,10 @@ export const DeleteProjectTemplateModal = ({ isOpen, onOpenChange, template }: P
   return (
     <DeleteActionModal
       isOpen={isOpen}
-      title={`Are you sure want to delete ${name}?`}
       onChange={onOpenChange}
+      title={`Are you sure want to delete ${name}?`}
       deleteKey="confirm"
-      onDeleteApproved={handleDeleteCmek}
+      onDeleteApproved={handleDeleteProjectTemplate}
     />
   );
 };

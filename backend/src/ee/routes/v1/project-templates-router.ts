@@ -1,4 +1,3 @@
-import { packRules } from "@casl/ability/extra";
 import slugify from "@sindresorhus/slugify";
 import { z } from "zod";
 
@@ -70,31 +69,40 @@ export const registerProjectTemplatesRouter = async (server: FastifyZodProvider)
 
   server.route({
     method: "GET",
-    url: "/",
+    url: "/:templateId",
     config: {
       rateLimit: readLimit
     },
     schema: {
-      description: "List project templates for the current organization.",
+      description: "Get a project template by ID.",
+      params: z.object({
+        templateId: z.string().uuid()
+      }),
       response: {
         200: z.object({
-          projectTemplates: ProjectTemplatesSchema.array()
+          projectTemplate: ProjectTemplatesSchema
         })
       }
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
-      const projectTemplates = await server.services.projectTemplates.listProjectTemplatesByOrg(req.permission);
+      const projectTemplate = await server.services.projectTemplates.findProjectTemplatesById(
+        req.params.templateId,
+        req.permission
+      );
 
       await server.services.auditLog.createAuditLog({
         ...req.auditLogInfo,
         orgId: req.permission.orgId,
         event: {
-          type: EventType.GET_PROJECT_TEMPLATES
+          type: EventType.GET_PROJECT_TEMPLATE,
+          metadata: {
+            templateId: req.params.templateId
+          }
         }
       });
 
-      return { projectTemplates };
+      return { projectTemplate };
     }
   });
 

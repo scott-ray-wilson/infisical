@@ -42,7 +42,8 @@ export const ProjectTemplateEnvironmentsForm = ({ projectTemplate }: Props) => {
   const {
     control,
     handleSubmit,
-    formState: { isDirty, errors }
+    formState: { isDirty, errors },
+    reset
   } = useForm<TFormSchema>({
     defaultValues: {
       environments: projectTemplate.environments
@@ -61,13 +62,15 @@ export const ProjectTemplateEnvironmentsForm = ({ projectTemplate }: Props) => {
 
   const onFormSubmit = async (form: TFormSchema) => {
     try {
-      await updateProjectTemplate.mutateAsync({
+      const { environments: updatedEnvs } = await updateProjectTemplate.mutateAsync({
         environments: form.environments.map((env, index) => ({
           ...env,
           position: index + 1
         })),
         templateId: projectTemplate.id
       });
+
+      reset({ environments: updatedEnvs });
 
       createNotification({
         text: "Project template updated successfully",

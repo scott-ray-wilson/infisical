@@ -43,6 +43,7 @@ import {
   Button,
   Checkbox,
   FormControl,
+  FormLabel,
   IconButton,
   Input,
   Modal,
@@ -69,6 +70,7 @@ import {
   useRegisterUserAction
 } from "@app/hooks/api";
 import { INTERNAL_KMS_KEY_ID } from "@app/hooks/api/kms/types";
+import { useListProjectTemplates } from "@app/hooks/api/projectTemplates";
 // import { fetchUserWsKey } from "@app/hooks/api/keys/queries";
 import { useFetchServerStatus } from "@app/hooks/api/serverDetails";
 import { Workspace } from "@app/hooks/api/types";
@@ -482,7 +484,8 @@ const formSchema = yup.object({
     .trim()
     .max(64, "Too long, maximum length is 64 characters"),
   addMembers: yup.bool().required().label("Add Members"),
-  kmsKeyId: yup.string().label("KMS Key ID")
+  kmsKeyId: yup.string().label("KMS Key ID"),
+  templateId: yup.string().label("Project Template ID")
 });
 
 type TAddProjectFormData = yup.InferType<typeof formSchema>;
@@ -535,6 +538,15 @@ const OrganizationPage = () => {
 
   const { data: externalKmsList } = useGetExternalKmsList(currentOrg?.id!, {
     enabled: permission.can(OrgPermissionActions.Read, OrgPermissionSubjects.Kms)
+  });
+
+  const canReadProjectTemplates = permission.can(
+    OrgPermissionActions.Read,
+    OrgPermissionSubjects.ProjectTemplates
+  );
+
+  const { data: projectTemplates = [] } = useListProjectTemplates({
+    enabled: canReadProjectTemplates
   });
 
   const onCreateProject = async ({ name, addMembers, kmsKeyId }: TAddProjectFormData) => {
@@ -1075,6 +1087,36 @@ const OrganizationPage = () => {
                 )}
               />
             </div>
+            <Controller
+              control={control}
+              name="templateId"
+              render={({ field: { value, onChange } }) => (
+                <OrgPermissionCan
+                  I={OrgPermissionActions.Read}
+                  a={OrgPermissionSubjects.ProjectTemplates}
+                >
+                  {(isAllowed) => (
+                    <>
+                      <FormLabel label="Project Template" className="mt-4" />
+                      <Select
+                        placeholder="Default"
+                        isDisabled={!isAllowed}
+                        value={value}
+                        onValueChange={onChange}
+                        className="w-60"
+                      >
+                        {projectTemplates.map((template) => (
+                          <SelectItem key={template.id} value={template.id}>
+                            {template.name}
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    </>
+                  )}
+                </OrgPermissionCan>
+              )}
+            />
+
             <div className="mt-14 flex">
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="advance-settings" className="data-[state=open]:border-none">

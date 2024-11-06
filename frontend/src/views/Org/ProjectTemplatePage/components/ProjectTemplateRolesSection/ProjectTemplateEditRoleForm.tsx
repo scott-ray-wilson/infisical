@@ -2,7 +2,6 @@ import { Controller, FormProvider, useForm } from "react-hook-form";
 import { faChevronLeft, faPlus, faSave } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { is } from "date-fns/locale";
 import { twMerge } from "tailwind-merge";
 import { z } from "zod";
 
@@ -72,6 +71,7 @@ export const ProjectTemplateEditRoleForm = ({
           }
         ]
       });
+      onGoBack();
       createNotification({
         text: "Template roles successfully updated",
         type: "success"

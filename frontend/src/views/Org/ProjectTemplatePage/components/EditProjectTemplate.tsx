@@ -16,6 +16,7 @@ import {
 import { OrgPermissionActions, OrgPermissionSubjects, useOrganization } from "@app/context";
 import { usePopUp } from "@app/hooks";
 import { TProjectTemplate, useDeleteProjectTemplate } from "@app/hooks/api/projectTemplates";
+import { ProjectTemplateRolesSection } from "@app/views/Org/ProjectTemplatePage/components/ProjectTemplateRolesSection";
 import { ProjectTemplateDetailsModal } from "@app/views/Org/ProjectTemplatesPage/components/ProjectTemplateDetailsModal";
 
 import { ProjectTemplateEnvironmentsForm } from "./ProjectTemplateEnvironmentsForm";
@@ -61,7 +62,7 @@ export const EditProjectTemplate = ({ projectTemplate }: Props) => {
     <>
       <div className="mb-4 flex items-center justify-between border-b border-bunker-400">
         <div className="mb-4 flex flex-col">
-          <h3 className="text-xl">{name}</h3>
+          <h3 className="text-xl font-semibold">{name}</h3>
           <h2 className="text-sm text-mineshaft-400">{description || "Project Template"}</h2>
         </div>
 
@@ -118,6 +119,7 @@ export const EditProjectTemplate = ({ projectTemplate }: Props) => {
         </DropdownMenu>
       </div>
       <ProjectTemplateEnvironmentsForm projectTemplate={projectTemplate} />
+      <ProjectTemplateRolesSection projectTemplate={projectTemplate} />
       <ProjectTemplateDetailsModal
         isOpen={popUp.editDetails.isOpen}
         onOpenChange={(isOpen) => handlePopUpToggle("editDetails", isOpen)}

@@ -1,18 +1,18 @@
-import { TProjectEnvironments } from "@app/db/schemas";
+import { TProjectEnvironments, TProjectTemplates } from "@app/db/schemas";
 import { TProjectPermissionV2Schema } from "@app/ee/services/permission/project-permission";
 
-export type ProjectTemplateEnvironment = Pick<TProjectEnvironments, "name" | "slug" | "position">;
+export type TProjectTemplateEnvironment = Pick<TProjectEnvironments, "name" | "slug" | "position">;
+
+export type TProjectTemplateRole = {
+  slug: string;
+  permissions: TProjectPermissionV2Schema[];
+};
 
 export type TCreateProjectTemplateDTO = {
   name: string;
   description?: string;
-  roles: {
-    name: string;
-    slug: string;
-    description?: string;
-    permissions: TProjectPermissionV2Schema[];
-  }[];
-  environments: ProjectTemplateEnvironment[];
+  roles: TProjectTemplateRole[];
+  environments: TProjectTemplateEnvironment[];
 };
 
 export type TUpdateProjectTemplateDTO = Partial<TCreateProjectTemplateDTO>;

@@ -7,6 +7,7 @@ import { ProjectPermissionV2Schema } from "@app/ee/services/permission/project-p
 import { ProjectTemplates } from "@app/lib/api-docs";
 import { readLimit, writeLimit } from "@app/server/config/rateLimiter";
 import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
+import { unpackPermissions } from "@app/server/routes/santizedSchemas/permission";
 import { AuthMode } from "@app/services/auth/auth-type";
 
 const SlugSchema = z
@@ -21,9 +22,7 @@ const SlugSchema = z
 
 const ProjectTemplateRolesSchema = z
   .object({
-    name: z.string().trim().min(1),
     slug: SlugSchema,
-    description: z.string().trim().optional(),
     permissions: ProjectPermissionV2Schema.array()
   })
   .array()
@@ -31,10 +30,7 @@ const ProjectTemplateRolesSchema = z
   .superRefine((roles, ctx) => {
     if (!roles.length) return;
 
-    if (new Set(roles.map((v) => v.name)).size > 1)
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Role names must be unique" });
-
-    if (new Set(roles.map((v) => v.slug)).size > 1)
+    if (new Set(roles.map((v) => v.slug)).size !== roles.length)
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Role slugs must be unique" });
   });
 

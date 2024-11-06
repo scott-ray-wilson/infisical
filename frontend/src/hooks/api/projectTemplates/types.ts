@@ -4,7 +4,7 @@ export type TProjectTemplate = {
   id: string;
   name: string;
   description?: string;
-  roles: Pick<TProjectRole, "name" | "slug" | "description" | "permissions">[];
+  roles: Pick<TProjectRole, "slug" | "permissions">[];
   environments: { name: string; slug: string; position: number }[];
   createdAt: string;
   updatedAt: string;

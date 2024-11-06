@@ -59,10 +59,10 @@ export const ProjectTemplateEnvironmentsForm = ({ projectTemplate }: Props) => {
 
   const updateProjectTemplate = useUpdateProjectTemplate();
 
-  const onFormSubmit = async ({ environments }: TFormSchema) => {
+  const onFormSubmit = async (form: TFormSchema) => {
     try {
       await updateProjectTemplate.mutateAsync({
-        environments: environments.map((env, index) => ({
+        environments: form.environments.map((env, index) => ({
           ...env,
           position: index + 1
         })),
@@ -89,7 +89,7 @@ export const ProjectTemplateEnvironmentsForm = ({ projectTemplate }: Props) => {
     >
       <div className="mb-4 flex items-center justify-between border-b border-mineshaft-400 pb-4">
         <div>
-          <h2 className="text-lg">Project Environments</h2>
+          <h2 className="text-lg font-semibold">Project Environments</h2>
           <p className="text-sm text-mineshaft-400">
             Add, rename, remove and reorder environments for this project template
           </p>

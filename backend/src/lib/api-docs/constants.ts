@@ -1639,3 +1639,9 @@ export const AppConnections = {
     connectionId: `The ID of the ${APP_CONNECTION_NAME_MAP[app]} connection to be deleted.`
   })
 };
+
+export const SecretSyncs = {
+  LIST: {
+    projectId: "The ID of the project to list secret syncs from."
+  }
+};

@@ -7,19 +7,21 @@ import { ProjectPermissionActions, ProjectPermissionSub } from "@app/ee/services
 import { AppConnection, TAppConnection } from "@app/lib/app-connections";
 import { APP_CONNECTION_NAME_MAP } from "@app/lib/app-connections/maps";
 import { BadRequestError, InternalServerError, NotFoundError } from "@app/lib/errors";
-import { SECRET_SYNC_NAME_MAP, SecretSync } from "@app/lib/secret-syncs";
-import { OrgServiceActor } from "@app/lib/types";
-import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
-
-import { TSecretSyncDALFactory } from "./secret-sync-dal";
 import {
+  SECRET_SYNC_NAME_MAP,
+  SecretSync,
   TCreateSecretSyncDTO,
   TDeleteSecretSyncDTO,
   TFindSecretSyncByIdDTO,
   TFindSecretSyncByNameDTO,
   TListSecretSyncsByProjectId,
   TUpdateSecretSyncDTO
-} from "./secret-sync-types";
+} from "@app/lib/secret-syncs";
+import { listSecretSyncOptions } from "@app/lib/secret-syncs/secret-sync-fns";
+import { OrgServiceActor } from "@app/lib/types";
+import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
+
+import { TSecretSyncDALFactory } from "./secret-sync-dal";
 
 type TSecretSyncServiceFactoryDep = {
   secretSyncDAL: TSecretSyncDALFactory;
@@ -270,11 +272,12 @@ export const secretSyncServiceFactory = ({
   };
 
   return {
+    listSecretSyncOptions,
+    listSecretSyncsByProjectId,
     findSecretSyncById,
     findSecretSyncByName,
     createSecretSync,
     updateSecretSync,
-    deleteSecretSync,
-    listSecretSyncsByProjectId
+    deleteSecretSync
   };
 };

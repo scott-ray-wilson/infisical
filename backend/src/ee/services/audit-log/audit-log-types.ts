@@ -5,6 +5,7 @@ import {
 import { SshCaStatus, SshCertType } from "@app/ee/services/ssh/ssh-certificate-authority-types";
 import { SshCertTemplateStatus } from "@app/ee/services/ssh-certificate-template/ssh-certificate-template-types";
 import { SymmetricEncryption } from "@app/lib/crypto/cipher";
+import { TCreateSecretSyncDTO, TUpdateSecretSyncDTO } from "@app/lib/secret-syncs";
 import { TProjectPermission } from "@app/lib/types";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import { TCreateAppConnectionDTO, TUpdateAppConnectionDTO } from "@app/services/app-connection/app-connection-types";
@@ -229,7 +230,13 @@ export enum EventType {
   GET_APP_CONNECTION = "get-app-connection",
   CREATE_APP_CONNECTION = "create-app-connection",
   UPDATE_APP_CONNECTION = "update-app-connection",
-  DELETE_APP_CONNECTION = "delete-app-connection"
+  DELETE_APP_CONNECTION = "delete-app-connection",
+  GET_SECRET_SYNCS = "get-secret-syncs",
+  GET_SECRET_SYNC = "get-secret-sync",
+  CREATE_SECRET_SYNC = "create-secret-sync",
+  UPDATE_SECRET_SYNC = "update-secret-sync",
+  DELETE_SECRET_SYNC = "delete-secret-sync",
+  MANUAL_TRIGGER_SECRET_SYNC = "manual-trigger-secret-sync"
 }
 
 interface UserActorMetadata {
@@ -1907,6 +1914,45 @@ interface DeleteAppConnectionEvent {
   };
 }
 
+interface GetSecretSyncsEvent {
+  type: EventType.GET_SECRET_SYNCS;
+  metadata: {
+    count: number;
+    syncIds: string[];
+  };
+}
+
+interface GetSecretSyncEvent {
+  type: EventType.GET_SECRET_SYNC;
+  metadata: {
+    syncId: string;
+  };
+}
+
+interface CreateSecretSyncEvent {
+  type: EventType.CREATE_SECRET_SYNC;
+  metadata: TCreateSecretSyncDTO;
+}
+
+interface UpdateSecretSyncEvent {
+  type: EventType.UPDATE_SECRET_SYNC;
+  metadata: TUpdateSecretSyncDTO;
+}
+
+interface DeleteSecretSyncEvent {
+  type: EventType.DELETE_SECRET_SYNC;
+  metadata: {
+    syncId: string;
+  };
+}
+
+interface ManualTriggerSecretSyncEvent {
+  type: EventType.MANUAL_TRIGGER_SECRET_SYNC;
+  metadata: {
+    syncId: string;
+  };
+}
+
 export type Event =
   | GetSecretsEvent
   | GetSecretEvent
@@ -2083,4 +2129,10 @@ export type Event =
   | GetAppConnectionEvent
   | CreateAppConnectionEvent
   | UpdateAppConnectionEvent
-  | DeleteAppConnectionEvent;
+  | DeleteAppConnectionEvent
+  | GetSecretSyncsEvent
+  | GetSecretSyncEvent
+  | CreateSecretSyncEvent
+  | UpdateSecretSyncEvent
+  | DeleteSecretSyncEvent
+  | ManualTriggerSecretSyncEvent;

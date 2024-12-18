@@ -195,6 +195,8 @@ import { secretImportDALFactory } from "@app/services/secret-import/secret-impor
 import { secretImportServiceFactory } from "@app/services/secret-import/secret-import-service";
 import { secretSharingDALFactory } from "@app/services/secret-sharing/secret-sharing-dal";
 import { secretSharingServiceFactory } from "@app/services/secret-sharing/secret-sharing-service";
+import { secretSyncDALFactory } from "@app/services/secret-sync/secret-sync-dal";
+import { secretSyncServiceFactory } from "@app/services/secret-sync/secret-sync-service";
 import { secretTagDALFactory } from "@app/services/secret-tag/secret-tag-dal";
 import { secretTagServiceFactory } from "@app/services/secret-tag/secret-tag-service";
 import { secretV2BridgeDALFactory } from "@app/services/secret-v2-bridge/secret-v2-bridge-dal";
@@ -317,6 +319,7 @@ export const registerRoutes = async (
   const trustedIpDAL = trustedIpDALFactory(db);
   const telemetryDAL = telemetryDALFactory(db);
   const appConnectionDAL = appConnectionDALFactory(db);
+  const secretSyncDAL = secretSyncDALFactory(db);
 
   // ee db layer ops
   const permissionDAL = permissionDALFactory(db);
@@ -1362,6 +1365,13 @@ export const registerRoutes = async (
     licenseService
   });
 
+  const secretSyncService = secretSyncServiceFactory({
+    secretSyncDAL,
+    permissionService,
+    appConnectionService,
+    licenseService
+  });
+
   await superAdminService.initServerCfg();
 
   // setup the communication with license key server
@@ -1459,7 +1469,8 @@ export const registerRoutes = async (
     externalGroupOrgRoleMapping: externalGroupOrgRoleMappingService,
     projectTemplate: projectTemplateService,
     totp: totpService,
-    appConnection: appConnectionService
+    appConnection: appConnectionService,
+    secretSync: secretSyncService
   });
 
   const cronJobs: CronJob[] = [];

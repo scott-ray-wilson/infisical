@@ -17,6 +17,7 @@ import {
   TDeleteSecretSyncDTO,
   TFindSecretSyncByIdDTO,
   TFindSecretSyncByNameDTO,
+  TListSecretSyncsByProjectId,
   TUpdateSecretSyncDTO
 } from "./secret-sync-types";
 
@@ -62,6 +63,26 @@ export const secretSyncServiceFactory = ({
     if (!subscription.appConnections) throw new BadRequestError({ message: "Secret Syncs are not available yet." });
   };
 
+  const listSecretSyncsByProjectId = async ({ projectId }: TListSecretSyncsByProjectId, actor: OrgServiceActor) => {
+    await checkSecretSyncAvailability(actor.orgId);
+
+    const { permission, ForbidOnInvalidProjectType } = await permissionService.getProjectPermission(
+      actor.type,
+      actor.id,
+      projectId,
+      actor.authMethod,
+      actor.orgId
+    );
+
+    ForbidOnInvalidProjectType(ProjectType.SecretManager);
+
+    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSync);
+
+    const secretSyncs = await secretSyncDAL.find({ projectId });
+
+    return secretSyncs;
+  };
+
   const findSecretSyncById = async ({ syncDestination, syncId }: TFindSecretSyncByIdDTO, actor: OrgServiceActor) => {
     await checkSecretSyncAvailability(actor.orgId);
 
@@ -73,6 +94,7 @@ export const secretSyncServiceFactory = ({
       });
 
     if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[syncDestination])
+      // TODO: further differentiate for sub-services
       throw new BadRequestError({
         message: `Secret sync with ID ${syncId} is not configured for ${SECRET_SYNC_NAME_MAP[syncDestination]}`
       });
@@ -109,6 +131,7 @@ export const secretSyncServiceFactory = ({
       });
 
     if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[syncDestination])
+      // TODO: further differentiate for sub-services
       throw new BadRequestError({
         message: `Secret sync with name ${syncName} is not configured for ${SECRET_SYNC_NAME_MAP[syncDestination]}`
       });
@@ -246,5 +269,12 @@ export const secretSyncServiceFactory = ({
     return deletedSecretSync;
   };
 
-  return { findSecretSyncById, findSecretSyncByName, createSecretSync, updateSecretSync, deleteSecretSync };
+  return {
+    findSecretSyncById,
+    findSecretSyncByName,
+    createSecretSync,
+    updateSecretSync,
+    deleteSecretSync,
+    listSecretSyncsByProjectId
+  };
 };

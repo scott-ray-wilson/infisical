@@ -1,5 +1,10 @@
 import { SecretSync, TSecretSync } from "@app/lib/secret-syncs";
 
+export type TListSecretSyncsByProjectId = {
+  projectId: string;
+  // TODO: add filters for sync differentiation
+};
+
 export type TFindSecretSyncByIdDTO = {
   syncId: string;
   syncDestination: SecretSync;

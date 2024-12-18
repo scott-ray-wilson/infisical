@@ -1,11 +1,27 @@
-import { AppConnection } from "@app/lib/app-connections";
-import { TSecretSync } from "@app/lib/secret-syncs";
+import { SecretSync, TSecretSync } from "@app/lib/secret-syncs";
+
+export type TFindSecretSyncByIdDTO = {
+  syncId: string;
+  syncDestination: SecretSync;
+};
+
+export type TFindSecretSyncByNameDTO = {
+  syncName: string;
+  projectId: string;
+  syncDestination: SecretSync;
+};
 
 export type TCreateSecretSyncDTO = Pick<
   TSecretSync,
   "syncConfig" | "destinationConfig" | "secretPath" | "envId" | "name" | "projectId" | "connectionId"
-> & { app: AppConnection };
+> & { syncDestination: SecretSync };
 
-export type TUpdateSecretSyncDTO = Partial<Omit<TCreateSecretSyncDTO, "connectionId">> & { syncId: string };
+export type TUpdateSecretSyncDTO = Partial<Omit<TCreateSecretSyncDTO, "connectionId">> & {
+  syncId: string;
+  syncDestination: SecretSync;
+};
 
-export type TDeleteSecretSyncDTO = { syncId: string };
+export type TDeleteSecretSyncDTO = {
+  syncDestination: SecretSync;
+  syncId: string;
+};

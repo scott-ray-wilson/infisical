@@ -2,14 +2,18 @@ import { z } from "zod";
 
 import { EventType } from "@app/ee/services/audit-log/audit-log-types";
 import { SecretSyncs } from "@app/lib/api-docs";
-import { AppConnection } from "@app/lib/app-connections";
-import { SecretSync } from "@app/lib/secret-syncs";
-import { AwsParameterStoreSchema } from "@app/lib/secret-syncs/aws-parameter-store";
 import { readLimit } from "@app/server/config/rateLimiter";
 import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
 import { AuthMode } from "@app/services/auth/auth-type";
+import {
+  AwsParameterStoreSyncListItemSchema,
+  AwsParameterStoreSyncSchema
+} from "@app/services/secret-sync/aws-parameter-store";
+import { GitHubSyncListItemSchema, GitHubSyncSchema } from "@app/services/secret-sync/github";
 
-const SecretSyncSchema = z.union([AwsParameterStoreSchema]);
+const SecretSyncSchema = z.union([AwsParameterStoreSyncSchema, GitHubSyncSchema]);
+
+const SecretSyncOptionsSchema = z.union([AwsParameterStoreSyncListItemSchema, GitHubSyncListItemSchema]);
 
 export const registerSecretSyncRouter = async (server: FastifyZodProvider) => {
   server.route({
@@ -22,18 +26,11 @@ export const registerSecretSyncRouter = async (server: FastifyZodProvider) => {
       description: "List the available Secret Sync Options.",
       response: {
         200: z.object({
-          secretSyncOptions: z
-            .object({
-              name: z.string(),
-              slug: z.nativeEnum(SecretSync),
-              app: z.nativeEnum(AppConnection)
-            })
-            .passthrough()
-            .array()
+          secretSyncOptions: SecretSyncOptionsSchema.array()
         })
       }
     },
-    onRequest: verifyAuth([AuthMode.JWT, AuthMode.SERVICE_TOKEN]),
+    onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: () => {
       const secretSyncOptions = server.services.secretSync.listSecretSyncOptions();
       return { secretSyncOptions };
@@ -55,7 +52,7 @@ export const registerSecretSyncRouter = async (server: FastifyZodProvider) => {
         200: z.object({ secretSyncs: SecretSyncSchema.array() })
       }
     },
-    onRequest: verifyAuth([AuthMode.JWT, AuthMode.SERVICE_TOKEN]),
+    onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
       const {
         params: { projectId },

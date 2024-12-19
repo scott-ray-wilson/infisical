@@ -1,15 +1,11 @@
-import { AppConnection } from "@app/lib/app-connections";
-import { SecretSync } from "@app/lib/secret-syncs/secret-sync-enums";
+import { TGitHubSync, TGitHubSyncListItem } from "@app/services/secret-sync/github";
+import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 
-import { TAwsParameterStoreSecretSync } from "./aws-parameter-store";
+import { TAwsParameterStoreSync, TAwsParameterStoreSyncListItem } from "./aws-parameter-store";
 
-export type TSecretSync = TAwsParameterStoreSecretSync;
+export type TSecretSync = TAwsParameterStoreSync | TGitHubSync;
 
-export type TSecretSyncListItem = {
-  name: string;
-  slug: SecretSync;
-  app: AppConnection;
-};
+export type TSecretSyncListItem = TAwsParameterStoreSyncListItem | TGitHubSyncListItem;
 
 export type TListSecretSyncsByProjectId = {
   projectId: string;

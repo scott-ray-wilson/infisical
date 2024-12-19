@@ -4,24 +4,26 @@ import { ProjectType } from "@app/db/schemas";
 import { TLicenseServiceFactory } from "@app/ee/services/license/license-service";
 import { TPermissionServiceFactory } from "@app/ee/services/permission/permission-service";
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/ee/services/permission/project-permission";
-import { AppConnection, TAppConnection } from "@app/lib/app-connections";
-import { APP_CONNECTION_NAME_MAP } from "@app/lib/app-connections/maps";
 import { BadRequestError, InternalServerError, NotFoundError } from "@app/lib/errors";
+import { OrgServiceActor } from "@app/lib/types";
+import { AppConnection } from "@app/services/app-connection/app-connection-enums";
+import { APP_CONNECTION_NAME_MAP } from "@app/services/app-connection/app-connection-maps";
+import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
+import { TAppConnection } from "@app/services/app-connection/app-connection-types";
+import { listSecretSyncOptions } from "@app/services/secret-sync/secret-sync-fns";
 import {
-  SECRET_SYNC_NAME_MAP,
-  SecretSync,
   TCreateSecretSyncDTO,
   TDeleteSecretSyncDTO,
   TFindSecretSyncByIdDTO,
   TFindSecretSyncByNameDTO,
   TListSecretSyncsByProjectId,
+  TSecretSync,
   TUpdateSecretSyncDTO
-} from "@app/lib/secret-syncs";
-import { listSecretSyncOptions } from "@app/lib/secret-syncs/secret-sync-fns";
-import { OrgServiceActor } from "@app/lib/types";
-import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
+} from "@app/services/secret-sync/secret-sync-types";
 
 import { TSecretSyncDALFactory } from "./secret-sync-dal";
+import { SecretSync } from "./secret-sync-enums";
+import { SECRET_SYNC_NAME_MAP } from "./secret-sync-maps";
 
 type TSecretSyncServiceFactoryDep = {
   secretSyncDAL: TSecretSyncDALFactory;
@@ -33,7 +35,8 @@ type TSecretSyncServiceFactoryDep = {
 export type TSecretSyncServiceFactory = ReturnType<typeof secretSyncServiceFactory>;
 
 const SECRET_SYNC_CONNECTION_MAP: Record<SecretSync, AppConnection> = {
-  [SecretSync.AWSParameterStore]: AppConnection.AWS
+  [SecretSync.AWSParameterStore]: AppConnection.AWS,
+  [SecretSync.GitHub]: AppConnection.GitHub
 };
 
 const BadRequestOnInvalidConnectionForSync = (syncTo: SecretSync, appConnection: TAppConnection) => {
@@ -82,7 +85,7 @@ export const secretSyncServiceFactory = ({
 
     const secretSyncs = await secretSyncDAL.find({ projectId });
 
-    return secretSyncs;
+    return secretSyncs as TSecretSync[];
   };
 
   const findSecretSyncById = async ({ syncDestination, syncId }: TFindSecretSyncByIdDTO, actor: OrgServiceActor) => {

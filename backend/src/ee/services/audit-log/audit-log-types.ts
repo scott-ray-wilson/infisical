@@ -5,7 +5,6 @@ import {
 import { SshCaStatus, SshCertType } from "@app/ee/services/ssh/ssh-certificate-authority-types";
 import { SshCertTemplateStatus } from "@app/ee/services/ssh-certificate-template/ssh-certificate-template-types";
 import { SymmetricEncryption } from "@app/lib/crypto/cipher";
-import { TCreateSecretSyncDTO, TUpdateSecretSyncDTO } from "@app/lib/secret-syncs";
 import { TProjectPermission } from "@app/lib/types";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import { TCreateAppConnectionDTO, TUpdateAppConnectionDTO } from "@app/services/app-connection/app-connection-types";
@@ -14,6 +13,7 @@ import { CertKeyAlgorithm } from "@app/services/certificate/certificate-types";
 import { CaStatus } from "@app/services/certificate-authority/certificate-authority-types";
 import { TIdentityTrustedIp } from "@app/services/identity/identity-types";
 import { PkiItemType } from "@app/services/pki-collection/pki-collection-types";
+import { TCreateSecretSyncDTO, TUpdateSecretSyncDTO } from "@app/services/secret-sync/syncs";
 
 export type TListProjectAuditLogDTO = {
   filter: {

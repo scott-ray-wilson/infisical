@@ -348,6 +348,22 @@ export const appConnectionServiceFactory = ({
     } as TAppConnection;
   };
 
+  // for internal use only, ie secret sync
+  const utilizeAppConnectionById = async (connectionId: string) => {
+    const appConnection = await appConnectionDAL.findById(connectionId);
+
+    if (!appConnection) throw new NotFoundError({ message: `Could not find App Connection with ID ${connectionId}` });
+
+    return {
+      ...appConnection,
+      credentials: await decryptAppConnectionCredentials({
+        encryptedCredentials: appConnection.encryptedCredentials,
+        orgId: appConnection.orgId,
+        kmsService
+      })
+    } as TAppConnection;
+  };
+
   return {
     listAppConnectionOptions,
     listAppConnectionsByOrg,
@@ -355,6 +371,7 @@ export const appConnectionServiceFactory = ({
     findAppConnectionByName,
     createAppConnection,
     updateAppConnection,
-    deleteAppConnection
+    deleteAppConnection,
+    utilizeAppConnectionById
   };
 };

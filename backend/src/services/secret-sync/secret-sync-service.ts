@@ -31,7 +31,7 @@ type TSecretSyncServiceFactoryDep = {
   secretSyncDAL: TSecretSyncDALFactory;
   appConnectionService: Pick<TAppConnectionServiceFactory, "utilizeAppConnectionById">;
   permissionService: Pick<TPermissionServiceFactory, "getProjectPermission" | "getOrgPermission">;
-  projectEnvDAL: Pick<TProjectEnvDALFactory, "find" | "findOne">;
+  projectEnvDAL: Pick<TProjectEnvDALFactory, "find" | "findById">;
   folderDAL: Pick<TSecretFolderDALFactory, "findBySecretPath">;
   licenseService: Pick<TLicenseServiceFactory, "getPlan">; // TODO: remove once launched
 };
@@ -174,9 +174,7 @@ export const secretSyncServiceFactory = ({
   const createSecretSync = async (params: TCreateSecretSyncDTO, actor: OrgServiceActor) => {
     await checkSecretSyncAvailability(actor.orgId);
 
-    const environment = await projectEnvDAL.findOne({
-      id: params.envId
-    });
+    const environment = await projectEnvDAL.findById(params.envId);
 
     if (!environment) throw new BadRequestError({ message: `Could not find Environment with ID ${params.envId}` });
 
@@ -276,8 +274,15 @@ export const secretSyncServiceFactory = ({
     BadRequestOnInvalidDestination(secretSync as TSecretSync, destination);
 
     const updatedSecretSync = await secretSyncDAL.transaction(async (tx) => {
-      // if (params.envId && secretSync.envId === params.envId) {
-      // }
+      if (params.envId && secretSync.envId === params.envId) {
+        const environment = await projectEnvDAL.findById(params.envId);
+
+        if (!environment) throw new BadRequestError({ message: `Could not find Environment with ID ${params.envId}` });
+
+        // TODO(scott): I don't think there's a reason we can't support moving projects but not supporting this at launch
+        if (environment.projectId !== secretSync.projectId)
+          throw new BadRequestError({ message: `Could not find Environment with ID ${params.envId}` });
+      }
 
       if (params.name && secretSync.name !== params.name) {
         const projectEnvironments = await projectEnvDAL.find({

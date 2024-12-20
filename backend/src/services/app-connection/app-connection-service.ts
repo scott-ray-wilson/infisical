@@ -1,7 +1,7 @@
 import { ForbiddenError } from "@casl/ability";
 
 import { TLicenseServiceFactory } from "@app/ee/services/license/license-service";
-import { OrgPermissionActions, OrgPermissionSubjects } from "@app/ee/services/permission/org-permission";
+import { OrgPermissionAppConnectionActions, OrgPermissionSubjects } from "@app/ee/services/permission/org-permission";
 import { TPermissionServiceFactory } from "@app/ee/services/permission/permission-service";
 import { BadRequestError, NotFoundError } from "@app/lib/errors";
 import { DiscriminativePick, OrgServiceActor } from "@app/lib/types";
@@ -65,7 +65,10 @@ export const appConnectionServiceFactory = ({
       actor.orgId
     );
 
-    ForbiddenError.from(permission).throwUnlessCan(OrgPermissionActions.Read, OrgPermissionSubjects.AppConnections);
+    ForbiddenError.from(permission).throwUnlessCan(
+      OrgPermissionAppConnectionActions.Read,
+      OrgPermissionSubjects.AppConnections
+    );
 
     const appConnections = await appConnectionDAL.find(
       app
@@ -108,7 +111,10 @@ export const appConnectionServiceFactory = ({
       appConnection.orgId
     );
 
-    ForbiddenError.from(permission).throwUnlessCan(OrgPermissionActions.Read, OrgPermissionSubjects.AppConnections);
+    ForbiddenError.from(permission).throwUnlessCan(
+      OrgPermissionAppConnectionActions.Read,
+      OrgPermissionSubjects.AppConnections
+    );
 
     if (appConnection.app !== app)
       throw new BadRequestError({ message: `App Connection with ID ${connectionId} is not for App "${app}"` });
@@ -139,7 +145,10 @@ export const appConnectionServiceFactory = ({
       appConnection.orgId
     );
 
-    ForbiddenError.from(permission).throwUnlessCan(OrgPermissionActions.Read, OrgPermissionSubjects.AppConnections);
+    ForbiddenError.from(permission).throwUnlessCan(
+      OrgPermissionAppConnectionActions.Read,
+      OrgPermissionSubjects.AppConnections
+    );
 
     if (appConnection.app !== app)
       throw new BadRequestError({ message: `App Connection with name ${connectionName} is not for App "${app}"` });
@@ -168,7 +177,10 @@ export const appConnectionServiceFactory = ({
       actor.orgId
     );
 
-    ForbiddenError.from(permission).throwUnlessCan(OrgPermissionActions.Create, OrgPermissionSubjects.AppConnections);
+    ForbiddenError.from(permission).throwUnlessCan(
+      OrgPermissionAppConnectionActions.Create,
+      OrgPermissionSubjects.AppConnections
+    );
 
     const appConnection = await appConnectionDAL.transaction(async (tx) => {
       const isConflictingName = Boolean(
@@ -237,7 +249,10 @@ export const appConnectionServiceFactory = ({
       appConnection.orgId
     );
 
-    ForbiddenError.from(permission).throwUnlessCan(OrgPermissionActions.Edit, OrgPermissionSubjects.AppConnections);
+    ForbiddenError.from(permission).throwUnlessCan(
+      OrgPermissionAppConnectionActions.Edit,
+      OrgPermissionSubjects.AppConnections
+    );
 
     const updatedAppConnection = await appConnectionDAL.transaction(async (tx) => {
       if (params.name && appConnection.name !== params.name) {
@@ -329,7 +344,10 @@ export const appConnectionServiceFactory = ({
       appConnection.orgId
     );
 
-    ForbiddenError.from(permission).throwUnlessCan(OrgPermissionActions.Delete, OrgPermissionSubjects.AppConnections);
+    ForbiddenError.from(permission).throwUnlessCan(
+      OrgPermissionAppConnectionActions.Delete,
+      OrgPermissionSubjects.AppConnections
+    );
 
     if (appConnection.app !== app)
       throw new BadRequestError({ message: `App Connection with ID ${connectionId} is not for App "${app}"` });

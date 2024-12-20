@@ -1660,7 +1660,9 @@ export const SecretSyncs = {
       description: `An optional description for the ${destinationName} Sync.`,
       secretPath: `The path to sync secrets from.`,
       envId: `The ID of the project environment to sync secrets from.`,
-      connectionId: `The ID of the ${SECRET_SYNC_CONNECTION_MAP[destination]} Connection to use for syncing.`
+      connectionId: `The ID of the ${
+        APP_CONNECTION_NAME_MAP[SECRET_SYNC_CONNECTION_MAP[destination]]
+      } Connection to use for syncing.`
     };
   },
   UPDATE: (destination: SecretSync) => {

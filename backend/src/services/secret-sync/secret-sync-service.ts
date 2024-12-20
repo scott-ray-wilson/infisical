@@ -2,7 +2,7 @@ import { ForbiddenError } from "@casl/ability";
 
 import { ProjectType } from "@app/db/schemas";
 import { TLicenseServiceFactory } from "@app/ee/services/license/license-service";
-import { OrgPermissionActions, OrgPermissionSubjects } from "@app/ee/services/permission/org-permission";
+import { OrgPermissionAppConnectionActions, OrgPermissionSubjects } from "@app/ee/services/permission/org-permission";
 import { TPermissionServiceFactory } from "@app/ee/services/permission/permission-service";
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/ee/services/permission/project-permission";
 import { BadRequestError, InternalServerError, NotFoundError } from "@app/lib/errors";
@@ -205,7 +205,10 @@ export const secretSyncServiceFactory = ({
       actor.orgId
     );
 
-    ForbiddenError.from(orgPermission).throwUnlessCan(OrgPermissionActions.Read, OrgPermissionSubjects.AppConnections);
+    ForbiddenError.from(orgPermission).throwUnlessCan(
+      OrgPermissionAppConnectionActions.Connect,
+      OrgPermissionSubjects.AppConnections
+    );
 
     BadRequestOnInvalidConnectionForSync(params.destination, appConnection);
 
@@ -273,6 +276,9 @@ export const secretSyncServiceFactory = ({
     BadRequestOnInvalidDestination(secretSync as TSecretSync, destination);
 
     const updatedSecretSync = await secretSyncDAL.transaction(async (tx) => {
+      // if (params.envId && secretSync.envId === params.envId) {
+      // }
+
       if (params.name && secretSync.name !== params.name) {
         const projectEnvironments = await projectEnvDAL.find({
           projectId: secretSync.projectId
@@ -298,7 +304,7 @@ export const secretSyncServiceFactory = ({
           });
       }
 
-      if (params.secretPath) {
+      if (params.secretPath && secretSync.secretPath !== params.secretPath) {
         const folder = await folderDAL.findBySecretPath(
           secretSync.projectId,
           secretSync.environment.slug,

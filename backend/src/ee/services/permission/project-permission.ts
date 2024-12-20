@@ -1,6 +1,10 @@
 import { AbilityBuilder, createMongoAbility, ForcedSubject, MongoAbility } from "@casl/ability";
 import { z } from "zod";
 
+import {
+  CASL_ACTION_SCHEMA_ENUM,
+  CASL_ACTION_SCHEMA_NATIVE_ENUM
+} from "@app/ee/services/permission/permission-schemas";
 import { conditionsMatcher, PermissionConditionOperators } from "@app/lib/casl";
 import { UnpackedPermissionSchema } from "@app/server/routes/santizedSchemas/permission";
 
@@ -148,14 +152,6 @@ export type ProjectPermissionSet =
   | [ProjectPermissionActions.Read, ProjectPermissionSub.SecretRollback]
   | [ProjectPermissionActions.Create, ProjectPermissionSub.SecretRollback]
   | [ProjectPermissionActions.Edit, ProjectPermissionSub.Kms];
-
-const CASL_ACTION_SCHEMA_NATIVE_ENUM = <ACTION extends z.EnumLike>(actions: ACTION) =>
-  z
-    .union([z.nativeEnum(actions), z.nativeEnum(actions).array().min(1)])
-    .transform((el) => (typeof el === "string" ? [el] : el));
-
-const CASL_ACTION_SCHEMA_ENUM = <ACTION extends z.EnumValues>(actions: ACTION) =>
-  z.union([z.enum(actions), z.enum(actions).array().min(1)]).transform((el) => (typeof el === "string" ? [el] : el));
 
 // akhilmhdh: don't modify this for v2
 // if you want to update create a new schema

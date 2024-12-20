@@ -8,11 +8,15 @@ import { buildFindFilter, ormify, selectAllTableCols } from "@app/lib/knex";
 
 export type TSecretSyncDALFactory = ReturnType<typeof secretSyncDALFactory>;
 
-const baseSecretSyncQuery = (
-  db: TDbClient,
-  whereClause?: Parameters<typeof buildFindFilter<TSecretSyncs>>[0] | null,
-  tx?: Knex
-) => {
+const baseSecretSyncQuery = ({
+  filter,
+  db,
+  tx
+}: {
+  db: TDbClient;
+  filter?: Parameters<typeof buildFindFilter<TSecretSyncs>>[0];
+  tx?: Knex;
+}) => {
   const query = (tx || db.replicaNode())(TableName.SecretSync)
     .join(TableName.Environment, `${TableName.SecretSync}.envId`, `${TableName.Environment}.id`)
     .join(TableName.AppConnection, `${TableName.SecretSync}.connectionId`, `${TableName.AppConnection}.id`)
@@ -26,9 +30,9 @@ const baseSecretSyncQuery = (
       db.ref("app").withSchema(TableName.AppConnection)
     );
 
-  if (whereClause) {
+  if (filter) {
     /* eslint-disable @typescript-eslint/no-misused-promises */
-    void query.where(buildFindFilter(whereClause));
+    void query.where(buildFindFilter(filter));
   }
 
   return query;
@@ -39,7 +43,11 @@ export const secretSyncDALFactory = (db: TDbClient) => {
 
   const findById = async (id: string, tx?: Knex) => {
     try {
-      const secretSync = await baseSecretSyncQuery(db, { [`${TableName.SecretSync}.id` as "id"]: id }, tx).first();
+      const secretSync = await baseSecretSyncQuery({
+        filter: { [`${TableName.SecretSync}.id` as "id"]: id },
+        db,
+        tx
+      }).first();
 
       if (secretSync) {
         const { envId, envName, envSlug, app, connectionName, connectionId, ...el } = secretSync;
@@ -58,7 +66,7 @@ export const secretSyncDALFactory = (db: TDbClient) => {
 
   const findOne = async (filter: Parameters<(typeof secretSyncOrm)["findOne"]>[0], tx?: Knex) => {
     try {
-      const secretSync = await baseSecretSyncQuery(db, filter, tx).first();
+      const secretSync = await baseSecretSyncQuery({ filter, db, tx }).first();
 
       if (secretSync) {
         const { envId, envName, envSlug, app, connectionName, connectionId, ...el } = secretSync;
@@ -77,7 +85,7 @@ export const secretSyncDALFactory = (db: TDbClient) => {
 
   const find = async (filter: Parameters<(typeof secretSyncOrm)["find"]>[0], tx?: Knex) => {
     try {
-      const secretSyncs = await baseSecretSyncQuery(db, filter, tx);
+      const secretSyncs = await baseSecretSyncQuery({ filter, db, tx });
 
       return secretSyncs.map(({ envId, envName, envSlug, app, connectionName, connectionId, ...el }) => ({
         ...el,

@@ -1369,7 +1369,9 @@ export const registerRoutes = async (
     secretSyncDAL,
     permissionService,
     appConnectionService,
-    licenseService
+    licenseService,
+    folderDAL,
+    projectEnvDAL
   });
 
   await superAdminService.initServerCfg();

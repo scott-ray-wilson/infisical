@@ -216,7 +216,7 @@ export const appConnectionServiceFactory = ({
       };
     });
 
-    return appConnection;
+    return appConnection as TAppConnection;
   };
 
   const updateAppConnection = async (

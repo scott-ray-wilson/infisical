@@ -1,35 +1,44 @@
 import { z } from "zod";
 
 import { EventType } from "@app/ee/services/audit-log/audit-log-types";
-import { AppConnections } from "@app/lib/api-docs";
+import { SecretSyncs } from "@app/lib/api-docs";
 import { startsWithVowel } from "@app/lib/fn";
 import { readLimit, writeLimit } from "@app/server/config/rateLimiter";
 import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
-import { AppConnection } from "@app/services/app-connection/app-connection-enums";
-import { APP_CONNECTION_NAME_MAP } from "@app/services/app-connection/app-connection-maps";
-import { TAppConnection, TAppConnectionInput } from "@app/services/app-connection/app-connection-types";
 import { AuthMode } from "@app/services/auth/auth-type";
-import { TSecretSync } from "@app/services/secret-sync/secret-sync-types";
+import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
+import { SECRET_SYNC_NAME_MAP } from "@app/services/secret-sync/secret-sync-maps";
+import { TSecretSync, TSecretSyncInput } from "@app/services/secret-sync/secret-sync-types";
 
-export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TAppConnectionInput>({
+export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TSecretSyncInput>({
   server,
-  app,
+  destination,
   createSchema,
   updateSchema,
   responseSchema
 }: {
-  app: AppConnection;
+  destination: SecretSync;
   server: FastifyZodProvider;
   createSchema: z.ZodType<{
     name: string;
-    method: I["method"];
-    credentials: I["credentials"];
+    envId: string;
+    secretPath: string;
+    connectionId: string;
+    destinationConfig: I["destinationConfig"];
+    syncOptions: I["syncOptions"];
     description?: string | null;
   }>;
-  updateSchema: z.ZodType<{ name?: string; credentials?: I["credentials"]; description?: string | null }>;
+  updateSchema: z.ZodType<{
+    name?: string;
+    envId?: string;
+    secretPath?: string;
+    destinationConfig?: I["destinationConfig"];
+    syncOptions?: I["syncOptions"];
+    description?: string | null;
+  }>;
   responseSchema: z.ZodTypeAny;
 }) => {
-  const appName = APP_CONNECTION_NAME_MAP[app];
+  const destinationName = SECRET_SYNC_NAME_MAP[destination];
 
   server.route({
     method: "GET",
@@ -38,112 +47,128 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TA
       rateLimit: readLimit
     },
     schema: {
-      description: `List the ${appName} Connections for the current organization.`,
+      description: `List the ${destinationName} Syncs for the specified project.`,
+      params: z.object({
+        projectId: z.string().trim().min(1, "Project ID required").describe(SecretSyncs.LIST(destination).projectId)
+      }),
       response: {
-        200: z.object({ appConnections: responseSchema.array() })
+        200: z.object({ secretSyncs: responseSchema.array() })
       }
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
-      const appConnections = (await server.services.appConnection.listAppConnectionsByOrg(req.permission, app)) as T[];
+      const {
+        params: { projectId }
+      } = req;
+
+      const secretSyncs = (await server.services.secretSync.listSecretSyncsByProjectId(
+        { projectId, destination },
+        req.permission
+      )) as T[];
 
       await server.services.auditLog.createAuditLog({
         ...req.auditLogInfo,
-        orgId: req.permission.orgId,
+        projectId,
         event: {
-          type: EventType.GET_APP_CONNECTIONS,
+          type: EventType.GET_SECRET_SYNCS,
           metadata: {
-            app,
-            count: appConnections.length,
-            connectionIds: appConnections.map((connection) => connection.id)
+            destination,
+            count: secretSyncs.length,
+            syncIds: secretSyncs.map((connection) => connection.id)
           }
         }
       });
 
-      return { appConnections };
+      return { secretSyncs };
     }
   });
 
   server.route({
     method: "GET",
-    url: "/:connectionId",
+    url: "/:syncId",
     config: {
       rateLimit: readLimit
     },
     schema: {
-      description: `Get the specified ${appName} Connection by ID.`,
+      description: `Get the specified ${destinationName} Sync by ID.`,
       params: z.object({
-        connectionId: z.string().uuid().describe(AppConnections.GET_BY_ID(app).connectionId)
+        syncId: z.string().uuid().describe(SecretSyncs.GET_BY_ID(destination).syncId)
       }),
       response: {
-        200: z.object({ appConnection: responseSchema })
+        200: z.object({ secretSync: responseSchema })
       }
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
-      const { connectionId } = req.params;
+      const { syncId } = req.params;
 
-      const appConnection = (await server.services.appConnection.findAppConnectionById(
-        app,
-        connectionId,
+      const secretSync = (await server.services.secretSync.findSecretSyncById(
+        { syncId, destination },
         req.permission
       )) as T;
 
       await server.services.auditLog.createAuditLog({
         ...req.auditLogInfo,
-        orgId: req.permission.orgId,
+        projectId: secretSync.projectId,
         event: {
-          type: EventType.GET_APP_CONNECTION,
+          type: EventType.GET_SECRET_SYNC,
           metadata: {
-            connectionId
+            syncId,
+            destination
           }
         }
       });
 
-      return { appConnection };
+      return { secretSync };
     }
   });
 
   server.route({
     method: "GET",
-    url: `/name/:connectionName`,
+    url: `/name/:syncName`,
     config: {
       rateLimit: readLimit
     },
     schema: {
-      description: `Get the specified ${appName} Connection by name.`,
+      description: `Get the specified ${destinationName} Sync by name and project ID.`,
       params: z.object({
-        connectionName: z
+        syncName: z
           .string()
-          .min(0, "Connection name required")
-          .describe(AppConnections.GET_BY_NAME(app).connectionName)
+          .trim()
+          .min(1, "Sync name required")
+          .describe(SecretSyncs.GET_BY_NAME(destination).syncName),
+        projectId: z
+          .string()
+          .trim()
+          .min(1, "Project ID required")
+          .describe(SecretSyncs.GET_BY_NAME(destination).projectId)
       }),
       response: {
-        200: z.object({ appConnection: responseSchema })
+        200: z.object({ secretSync: responseSchema })
       }
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
-      const { connectionName } = req.params;
+      const { syncName, projectId } = req.params;
 
-      const appConnection = (await server.services.appConnection.findAppConnectionByName(
-        app,
-        connectionName,
+      const secretSync = (await server.services.secretSync.findSecretSyncByName(
+        { syncName, projectId, destination },
         req.permission
       )) as T;
 
       await server.services.auditLog.createAuditLog({
         ...req.auditLogInfo,
-        orgId: req.permission.orgId,
+        projectId,
         event: {
-          type: EventType.GET_APP_CONNECTION,
+          type: EventType.GET_SECRET_SYNC,
           metadata: {
-            connectionId: appConnection.id
+            syncId: secretSync.id,
+            destination
           }
         }
       });
 
-      return { appConnection };
+      return { secretSync };
     }
   });
 
@@ -155,106 +180,100 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TA
     },
     schema: {
       description: `Create ${
-        startsWithVowel(appName) ? "an" : "a"
-      } ${appName} Connection for the current organization.`,
+        startsWithVowel(destinationName) ? "an" : "a"
+      } ${destinationName} Sync for the specified project environment.`,
       body: createSchema,
       response: {
-        200: z.object({ appConnection: responseSchema })
+        200: z.object({ secretSync: responseSchema })
       }
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
-      const { name, method, credentials, description } = req.body;
-
-      const appConnection = (await server.services.appConnection.createAppConnection(
-        { name, method, app, credentials, description },
+      const secretSync = (await server.services.secretSync.createSecretSync(
+        { ...req.body, destination },
         req.permission
-      )) as TAppConnection;
+      )) as T;
 
       await server.services.auditLog.createAuditLog({
         ...req.auditLogInfo,
-        orgId: req.permission.orgId,
+        projectId: secretSync.projectId,
         event: {
-          type: EventType.CREATE_APP_CONNECTION,
+          type: EventType.CREATE_SECRET_SYNC,
           metadata: {
-            name,
-            method,
-            app,
-            connectionId: appConnection.id
+            syncId: secretSync.id,
+            destination,
+            ...req.body
           }
         }
       });
 
-      return { appConnection };
+      return { secretSync };
     }
   });
 
   server.route({
     method: "PATCH",
-    url: "/:connectionId",
+    url: "/:syncId",
     config: {
       rateLimit: writeLimit
     },
     schema: {
-      description: `Update the specified ${appName} Connection.`,
+      description: `Update the specified ${destinationName} Connection.`,
       params: z.object({
-        connectionId: z.string().uuid().describe(AppConnections.UPDATE(app).connectionId)
+        syncId: z.string().uuid().describe(SecretSyncs.UPDATE(destination).syncId)
       }),
       body: updateSchema,
       response: {
-        200: z.object({ appConnection: responseSchema })
+        200: z.object({ secretSync: responseSchema })
       }
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
-      const { name, credentials, description } = req.body;
-      const { connectionId } = req.params;
+      const { syncId } = req.params;
 
-      const appConnection = (await server.services.appConnection.updateAppConnection(
-        { name, credentials, connectionId, description },
+      const secretSync = (await server.services.secretSync.updateSecretSync(
+        { ...req.body, syncId, destination },
         req.permission
       )) as T;
 
       await server.services.auditLog.createAuditLog({
         ...req.auditLogInfo,
-        orgId: req.permission.orgId,
+        projectId: secretSync.projectId,
         event: {
-          type: EventType.UPDATE_APP_CONNECTION,
+          type: EventType.UPDATE_SECRET_SYNC,
           metadata: {
-            name,
-            description,
-            credentialsUpdated: Boolean(credentials),
-            connectionId
+            syncId,
+            destination,
+            ...req.body
           }
         }
       });
 
-      return { appConnection };
+      return { secretSync };
     }
   });
 
   server.route({
     method: "DELETE",
-    url: `/:connectionId`,
+    url: `/:syncId`,
     config: {
       rateLimit: writeLimit
     },
     schema: {
-      description: `Delete the specified ${appName} Connection.`,
+      description: `Delete the specified ${destinationName} Connection.`,
       params: z.object({
-        connectionId: z.string().uuid().describe(AppConnections.DELETE(app).connectionId)
+        syncId: z.string().uuid().describe(SecretSyncs.DELETE(destination).syncId)
       }),
       response: {
-        200: z.object({ appConnection: responseSchema })
+        200: z.object({ secretSync: responseSchema })
       }
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
-      const { connectionId } = req.params;
+      const { syncId } = req.params;
 
-      const appConnection = (await server.services.appConnection.deleteAppConnection(
-        app,
-        connectionId,
+      const secretSync = (await server.services.secretSync.deleteSecretSync(
+        { destination, syncId },
         req.permission
       )) as T;
 
@@ -262,14 +281,15 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TA
         ...req.auditLogInfo,
         orgId: req.permission.orgId,
         event: {
-          type: EventType.DELETE_APP_CONNECTION,
+          type: EventType.DELETE_SECRET_SYNC,
           metadata: {
-            connectionId
+            destination,
+            syncId
           }
         }
       });
 
-      return { appConnection };
+      return { secretSync };
     }
   });
 };

@@ -8,10 +8,11 @@ import { AppConnection } from "@app/services/app-connection/app-connection-enums
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 
 export const BaseSecretSyncSchema = SecretSyncsSchema.omit({
+  destination: true,
   destinationConfig: true,
-  syncConfig: true
+  syncOptions: true
 }).extend({
-  syncConfig: z.object({
+  syncOptions: z.object({
     // TODO
   }),
   // join properties
@@ -36,8 +37,6 @@ export const GenericCreateSecretSyncFieldsSchema = (sync: SecretSync) =>
       .trim()
       .min(1, "Secret path required")
       .transform(removeTrailingSlash)
-      .optional()
-      .default("/")
       .describe(SecretSyncs.CREATE(sync).secretPath)
   });
 

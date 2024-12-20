@@ -1,7 +1,10 @@
-import { APP_CONNECTION_REGISTER_MAP, registerAppConnectionRouter } from "@app/server/routes/v1/app-connection-routers";
+import {
+  APP_CONNECTION_REGISTER_ROUTER_MAP,
+  registerAppConnectionRouter
+} from "@app/server/routes/v1/app-connection-routers";
 import { registerCmekRouter } from "@app/server/routes/v1/cmek-router";
 import { registerDashboardRouter } from "@app/server/routes/v1/dashboard-router";
-import { registerSecretSyncRouter } from "@app/server/routes/v1/secret-sync-routers";
+import { registerSecretSyncRouter, SECRET_SYNC_REGISTER_ROUTER_MAP } from "@app/server/routes/v1/secret-sync-routers";
 
 import { registerAdminRouter } from "./admin-router";
 import { registerAuthRoutes } from "./auth-router";
@@ -116,7 +119,7 @@ export const registerV1Routes = async (server: FastifyZodProvider) => {
   await server.register(
     async (appConnectionRouter) => {
       await appConnectionRouter.register(registerAppConnectionRouter);
-      for await (const [app, router] of Object.entries(APP_CONNECTION_REGISTER_MAP)) {
+      for await (const [app, router] of Object.entries(APP_CONNECTION_REGISTER_ROUTER_MAP)) {
         await appConnectionRouter.register(router, { prefix: `/${app}` });
       }
     },
@@ -126,9 +129,9 @@ export const registerV1Routes = async (server: FastifyZodProvider) => {
   await server.register(
     async (secretSyncRouter) => {
       await secretSyncRouter.register(registerSecretSyncRouter);
-      // for await (const [app, router] of Object.entries(APP_CONNECTION_REGISTER_MAP)) {
-      //     await secretSyncRouter.register(router, { prefix: `/${app}` });
-      // }
+      for await (const [destination, router] of Object.entries(SECRET_SYNC_REGISTER_ROUTER_MAP)) {
+        await secretSyncRouter.register(router, { prefix: `/${destination}` });
+      }
     },
     { prefix: "/secret-syncs" }
   );

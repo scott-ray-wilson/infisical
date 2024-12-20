@@ -9,11 +9,12 @@ export async function up(knex: Knex): Promise<void> {
       t.uuid("id", { primaryKey: true }).defaultTo(knex.fn.uuid());
       t.string("name", 32).notNullable();
       t.string("description");
+      t.string("destination").notNullable();
       t.boolean("isActive").notNullable().defaultTo(true);
       t.integer("version").defaultTo(1).notNullable();
       t.enum("syncState", ["pending", "complete", "failed"]).notNullable().defaultTo("pending");
       t.jsonb("destinationConfig").notNullable();
-      t.jsonb("syncConfig").notNullable();
+      t.jsonb("syncOptions").notNullable();
       t.string("secretPath").notNullable();
       t.uuid("envId").notNullable();
       t.foreign("envId").references("id").inTable(TableName.Environment).onDelete("CASCADE");

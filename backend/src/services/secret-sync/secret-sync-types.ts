@@ -1,39 +1,45 @@
-import { TGitHubSync, TGitHubSyncListItem } from "@app/services/secret-sync/github";
+import { TGitHubSync, TGitHubSyncInput, TGitHubSyncListItem } from "@app/services/secret-sync/github";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 
-import { TAwsParameterStoreSync, TAwsParameterStoreSyncListItem } from "./aws-parameter-store";
+import {
+  TAwsParameterStoreSync,
+  TAwsParameterStoreSyncInput,
+  TAwsParameterStoreSyncListItem
+} from "./aws-parameter-store";
 
 export type TSecretSync = TAwsParameterStoreSync | TGitHubSync;
+
+export type TSecretSyncInput = TAwsParameterStoreSyncInput | TGitHubSyncInput;
 
 export type TSecretSyncListItem = TAwsParameterStoreSyncListItem | TGitHubSyncListItem;
 
 export type TListSecretSyncsByProjectId = {
   projectId: string;
-  // TODO: add filters for sync differentiation
+  destination?: SecretSync;
 };
 
 export type TFindSecretSyncByIdDTO = {
   syncId: string;
-  syncDestination: SecretSync;
+  destination: SecretSync;
 };
 
 export type TFindSecretSyncByNameDTO = {
   syncName: string;
   projectId: string;
-  syncDestination: SecretSync;
+  destination: SecretSync;
 };
 
 export type TCreateSecretSyncDTO = Pick<
   TSecretSync,
-  "syncConfig" | "destinationConfig" | "secretPath" | "envId" | "name" | "connectionId"
-> & { syncDestination: SecretSync };
+  "syncOptions" | "destinationConfig" | "secretPath" | "envId" | "name" | "connectionId"
+> & { destination: SecretSync };
 
 export type TUpdateSecretSyncDTO = Partial<Omit<TCreateSecretSyncDTO, "connectionId">> & {
   syncId: string;
-  syncDestination: SecretSync;
+  destination: SecretSync;
 };
 
 export type TDeleteSecretSyncDTO = {
-  syncDestination: SecretSync;
+  destination: SecretSync;
   syncId: string;
 };

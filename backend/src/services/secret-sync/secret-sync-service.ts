@@ -54,11 +54,10 @@ const BadRequestOnInvalidConnectionForSync = (syncTo: SecretSync, appConnection:
     });
 };
 
-const BadRequestOnInvalidSyncDestination = (secretSync: TSecretSync, syncDestination: SecretSync) => {
-  if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[syncDestination])
-    // TODO: further differentiate for sub-services like aws
+const BadRequestOnInvalidDestination = (secretSync: TSecretSync, destination: SecretSync) => {
+  if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[destination])
     throw new BadRequestError({
-      message: `Secret sync with ID ${secretSync.id} is not configured for ${SECRET_SYNC_NAME_MAP[syncDestination]}`
+      message: `Secret sync with ID ${secretSync.id} is not configured for ${SECRET_SYNC_NAME_MAP[destination]}`
     });
 };
 
@@ -77,7 +76,10 @@ export const secretSyncServiceFactory = ({
     if (!subscription.appConnections) throw new BadRequestError({ message: "Secret Syncs are not available yet." });
   };
 
-  const listSecretSyncsByProjectId = async ({ projectId }: TListSecretSyncsByProjectId, actor: OrgServiceActor) => {
+  const listSecretSyncsByProjectId = async (
+    { projectId, destination }: TListSecretSyncsByProjectId,
+    actor: OrgServiceActor
+  ) => {
     await checkSecretSyncAvailability(actor.orgId);
 
     const { permission, ForbidOnInvalidProjectType } = await permissionService.getProjectPermission(
@@ -95,6 +97,7 @@ export const secretSyncServiceFactory = ({
     const environments = await projectEnvDAL.find({ projectId });
 
     const secretSyncs = await secretSyncDAL.find({
+      destination,
       $in: {
         envId: environments.map((env) => env.id)
       }
@@ -103,14 +106,14 @@ export const secretSyncServiceFactory = ({
     return secretSyncs as TSecretSync[];
   };
 
-  const findSecretSyncById = async ({ syncDestination, syncId }: TFindSecretSyncByIdDTO, actor: OrgServiceActor) => {
+  const findSecretSyncById = async ({ destination, syncId }: TFindSecretSyncByIdDTO, actor: OrgServiceActor) => {
     await checkSecretSyncAvailability(actor.orgId);
 
     const secretSync = await secretSyncDAL.findById(syncId);
 
     if (!secretSync)
       throw new NotFoundError({
-        message: `Could not find ${SECRET_SYNC_NAME_MAP[syncDestination]} Sync with ID ${syncId}`
+        message: `Could not find ${SECRET_SYNC_NAME_MAP[destination]} Sync with ID ${syncId}`
       });
 
     const { permission, ForbidOnInvalidProjectType } = await permissionService.getProjectPermission(
@@ -125,13 +128,13 @@ export const secretSyncServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSync);
 
-    BadRequestOnInvalidSyncDestination(secretSync as TSecretSync, syncDestination);
+    BadRequestOnInvalidDestination(secretSync as TSecretSync, destination);
 
     return secretSync as TSecretSync;
   };
 
   const findSecretSyncByName = async (
-    { syncDestination, syncName, projectId }: TFindSecretSyncByNameDTO,
+    { destination, syncName, projectId }: TFindSecretSyncByNameDTO,
     actor: OrgServiceActor
   ) => {
     await checkSecretSyncAvailability(actor.orgId);
@@ -148,7 +151,7 @@ export const secretSyncServiceFactory = ({
 
     if (!secretSync)
       throw new NotFoundError({
-        message: `Could not find ${SECRET_SYNC_NAME_MAP[syncDestination]} Sync with name ${syncName}`
+        message: `Could not find ${SECRET_SYNC_NAME_MAP[destination]} Sync with name ${syncName}`
       });
 
     const { permission, ForbidOnInvalidProjectType } = await permissionService.getProjectPermission(
@@ -163,12 +166,12 @@ export const secretSyncServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSync);
 
-    BadRequestOnInvalidSyncDestination(secretSync as TSecretSync, syncDestination);
+    BadRequestOnInvalidDestination(secretSync as TSecretSync, destination);
 
     return secretSync as TSecretSync;
   };
 
-  const createSecretSync = async ({ syncDestination, ...params }: TCreateSecretSyncDTO, actor: OrgServiceActor) => {
+  const createSecretSync = async (params: TCreateSecretSyncDTO, actor: OrgServiceActor) => {
     await checkSecretSyncAvailability(actor.orgId);
 
     const environment = await projectEnvDAL.findOne({
@@ -204,7 +207,7 @@ export const secretSyncServiceFactory = ({
 
     ForbiddenError.from(orgPermission).throwUnlessCan(OrgPermissionActions.Read, OrgPermissionSubjects.AppConnections);
 
-    BadRequestOnInvalidConnectionForSync(syncDestination, appConnection);
+    BadRequestOnInvalidConnectionForSync(params.destination, appConnection);
 
     const folder = await folderDAL.findBySecretPath(environment.projectId, environment.slug, params.secretPath);
 
@@ -245,17 +248,14 @@ export const secretSyncServiceFactory = ({
     return secretSync as TSecretSync;
   };
 
-  const updateSecretSync = async (
-    { syncDestination, syncId, ...params }: TUpdateSecretSyncDTO,
-    actor: OrgServiceActor
-  ) => {
+  const updateSecretSync = async ({ destination, syncId, ...params }: TUpdateSecretSyncDTO, actor: OrgServiceActor) => {
     await checkSecretSyncAvailability(actor.orgId);
 
     const secretSync = await secretSyncDAL.findById(syncId);
 
     if (!secretSync)
       throw new NotFoundError({
-        message: `Could not find ${SECRET_SYNC_NAME_MAP[syncDestination]} Sync with ID ${syncId}`
+        message: `Could not find ${SECRET_SYNC_NAME_MAP[destination]} Sync with ID ${syncId}`
       });
 
     const { permission, ForbidOnInvalidProjectType } = await permissionService.getProjectPermission(
@@ -270,7 +270,7 @@ export const secretSyncServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Edit, ProjectPermissionSub.SecretSync);
 
-    BadRequestOnInvalidSyncDestination(secretSync as TSecretSync, syncDestination);
+    BadRequestOnInvalidDestination(secretSync as TSecretSync, destination);
 
     const updatedSecretSync = await secretSyncDAL.transaction(async (tx) => {
       if (params.name && secretSync.name !== params.name) {
@@ -316,17 +316,17 @@ export const secretSyncServiceFactory = ({
       return updatedSync;
     });
 
-    return updatedSecretSync;
+    return updatedSecretSync as TSecretSync;
   };
 
-  const deleteSecretSync = async ({ syncDestination, syncId }: TDeleteSecretSyncDTO, actor: OrgServiceActor) => {
+  const deleteSecretSync = async ({ destination, syncId }: TDeleteSecretSyncDTO, actor: OrgServiceActor) => {
     await checkSecretSyncAvailability(actor.orgId);
 
     const secretSync = await secretSyncDAL.findById(syncId);
 
     if (!secretSync)
       throw new NotFoundError({
-        message: `Could not find ${SECRET_SYNC_NAME_MAP[syncDestination]} Sync with ID ${syncId}`
+        message: `Could not find ${SECRET_SYNC_NAME_MAP[destination]} Sync with ID ${syncId}`
       });
 
     const { permission, ForbidOnInvalidProjectType } = await permissionService.getProjectPermission(
@@ -341,11 +341,11 @@ export const secretSyncServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Delete, ProjectPermissionSub.SecretSync);
 
-    BadRequestOnInvalidSyncDestination(secretSync as TSecretSync, syncDestination);
+    BadRequestOnInvalidDestination(secretSync as TSecretSync, destination);
 
     const deletedSecretSync = await secretSyncDAL.deleteById(syncId);
 
-    return deletedSecretSync;
+    return deletedSecretSync as TSecretSync;
   };
 
   return {

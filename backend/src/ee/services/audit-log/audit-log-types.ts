@@ -13,7 +13,8 @@ import { CertKeyAlgorithm } from "@app/services/certificate/certificate-types";
 import { CaStatus } from "@app/services/certificate-authority/certificate-authority-types";
 import { TIdentityTrustedIp } from "@app/services/identity/identity-types";
 import { PkiItemType } from "@app/services/pki-collection/pki-collection-types";
-import { TCreateSecretSyncDTO, TUpdateSecretSyncDTO } from "@app/services/secret-sync/syncs";
+import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
+import { TCreateSecretSyncDTO, TUpdateSecretSyncDTO } from "@app/services/secret-sync/secret-sync-types";
 
 export type TListProjectAuditLogDTO = {
   filter: {
@@ -1917,6 +1918,7 @@ interface DeleteAppConnectionEvent {
 interface GetSecretSyncsEvent {
   type: EventType.GET_SECRET_SYNCS;
   metadata: {
+    destination?: SecretSync;
     count: number;
     syncIds: string[];
   };
@@ -1925,13 +1927,14 @@ interface GetSecretSyncsEvent {
 interface GetSecretSyncEvent {
   type: EventType.GET_SECRET_SYNC;
   metadata: {
+    destination: SecretSync;
     syncId: string;
   };
 }
 
 interface CreateSecretSyncEvent {
   type: EventType.CREATE_SECRET_SYNC;
-  metadata: TCreateSecretSyncDTO;
+  metadata: TCreateSecretSyncDTO & { syncId: string };
 }
 
 interface UpdateSecretSyncEvent {
@@ -1943,6 +1946,7 @@ interface DeleteSecretSyncEvent {
   type: EventType.DELETE_SECRET_SYNC;
   metadata: {
     syncId: string;
+    destination: SecretSync;
   };
 }
 
@@ -1950,6 +1954,7 @@ interface ManualTriggerSecretSyncEvent {
   type: EventType.MANUAL_TRIGGER_SECRET_SYNC;
   metadata: {
     syncId: string;
+    destination: SecretSync;
   };
 }
 

@@ -1657,7 +1657,10 @@ export const SecretSyncs = {
     const syncName = SECRET_SYNC_NAME_MAP[sync];
     return {
       name: `The name of the ${syncName} Sync to create. Must be slug-friendly.`,
-      description: `An optional description for the ${syncName} Sync.`
+      description: `An optional description for the ${syncName} Sync.`,
+      secretPath: `The path to sync secrets from.`,
+      envId: `The ID of the project environment to create the ${syncName} Sync for.`,
+      connectionId: `The ${SECRET_S}`
     };
   },
   UPDATE: (sync: SecretSync) => {

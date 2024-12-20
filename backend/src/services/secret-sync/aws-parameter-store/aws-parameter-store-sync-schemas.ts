@@ -2,7 +2,10 @@ import { z } from "zod";
 
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
-import { BaseSecretSyncSchema } from "@app/services/secret-sync/secret-sync-schemas";
+import {
+  BaseSecretSyncSchema,
+  GenericCreateSecretSyncFieldsSchema
+} from "@app/services/secret-sync/secret-sync-schemas";
 
 export const AwsParameterStoreSyncSchema = BaseSecretSyncSchema.extend({
   destinationConfig: z.object({
@@ -14,7 +17,9 @@ export const AwsParameterStoreSyncSchema = BaseSecretSyncSchema.extend({
   })
 });
 
-export const CreateAwsParameterStoreSyncSchema = BaseSecretSyncSchema.extend({});
+export const CreateAwsParameterStoreSyncSchema = GenericCreateSecretSyncFieldsSchema(
+  SecretSync.AWSParameterStore
+).extend({});
 
 export const AwsParameterStoreSyncListItemSchema = z.object({
   name: z.literal("AWS Parameter Store"),

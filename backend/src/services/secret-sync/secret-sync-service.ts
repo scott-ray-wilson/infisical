@@ -2,15 +2,16 @@ import { ForbiddenError } from "@casl/ability";
 
 import { ProjectType } from "@app/db/schemas";
 import { TLicenseServiceFactory } from "@app/ee/services/license/license-service";
+import { OrgPermissionActions, OrgPermissionSubjects } from "@app/ee/services/permission/org-permission";
 import { TPermissionServiceFactory } from "@app/ee/services/permission/permission-service";
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/ee/services/permission/project-permission";
 import { BadRequestError, InternalServerError, NotFoundError } from "@app/lib/errors";
 import { OrgServiceActor } from "@app/lib/types";
-import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import { APP_CONNECTION_NAME_MAP } from "@app/services/app-connection/app-connection-maps";
 import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
 import { TAppConnection } from "@app/services/app-connection/app-connection-types";
 import { TProjectEnvDALFactory } from "@app/services/project-env/project-env-dal";
+import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-folder-dal";
 import { listSecretSyncOptions } from "@app/services/secret-sync/secret-sync-fns";
 import {
   TCreateSecretSyncDTO,
@@ -24,22 +25,18 @@ import {
 
 import { TSecretSyncDALFactory } from "./secret-sync-dal";
 import { SecretSync } from "./secret-sync-enums";
-import { SECRET_SYNC_NAME_MAP } from "./secret-sync-maps";
+import { SECRET_SYNC_CONNECTION_MAP, SECRET_SYNC_NAME_MAP } from "./secret-sync-maps";
 
 type TSecretSyncServiceFactoryDep = {
   secretSyncDAL: TSecretSyncDALFactory;
   appConnectionService: Pick<TAppConnectionServiceFactory, "utilizeAppConnectionById">;
-  permissionService: Pick<TPermissionServiceFactory, "getProjectPermission">;
+  permissionService: Pick<TPermissionServiceFactory, "getProjectPermission" | "getOrgPermission">;
   projectEnvDAL: Pick<TProjectEnvDALFactory, "find" | "findOne">;
+  folderDAL: Pick<TSecretFolderDALFactory, "findBySecretPath">;
   licenseService: Pick<TLicenseServiceFactory, "getPlan">; // TODO: remove once launched
 };
 
 export type TSecretSyncServiceFactory = ReturnType<typeof secretSyncServiceFactory>;
-
-const SECRET_SYNC_CONNECTION_MAP: Record<SecretSync, AppConnection> = {
-  [SecretSync.AWSParameterStore]: AppConnection.AWS,
-  [SecretSync.GitHub]: AppConnection.GitHub
-};
 
 const BadRequestOnInvalidConnectionForSync = (syncTo: SecretSync, appConnection: TAppConnection) => {
   const app = SECRET_SYNC_CONNECTION_MAP[syncTo];
@@ -57,9 +54,18 @@ const BadRequestOnInvalidConnectionForSync = (syncTo: SecretSync, appConnection:
     });
 };
 
+const BadRequestOnInvalidSyncDestination = (secretSync: TSecretSync, syncDestination: SecretSync) => {
+  if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[syncDestination])
+    // TODO: further differentiate for sub-services like aws
+    throw new BadRequestError({
+      message: `Secret sync with ID ${secretSync.id} is not configured for ${SECRET_SYNC_NAME_MAP[syncDestination]}`
+    });
+};
+
 export const secretSyncServiceFactory = ({
   secretSyncDAL,
   projectEnvDAL,
+  folderDAL,
   licenseService,
   permissionService,
   appConnectionService
@@ -119,11 +125,7 @@ export const secretSyncServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSync);
 
-    if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[syncDestination])
-      // TODO: further differentiate for sub-services
-      throw new BadRequestError({
-        message: `Secret sync with ID ${syncId} is not configured for ${SECRET_SYNC_NAME_MAP[syncDestination]}`
-      });
+    BadRequestOnInvalidSyncDestination(secretSync as TSecretSync, syncDestination);
 
     return secretSync as TSecretSync;
   };
@@ -161,11 +163,7 @@ export const secretSyncServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSync);
 
-    if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[syncDestination])
-      // TODO: further differentiate for sub-services
-      throw new BadRequestError({
-        message: `Secret sync with name ${syncName} is not configured for ${SECRET_SYNC_NAME_MAP[syncDestination]}`
-      });
+    BadRequestOnInvalidSyncDestination(secretSync as TSecretSync, syncDestination);
 
     return secretSync as TSecretSync;
   };
@@ -179,7 +177,7 @@ export const secretSyncServiceFactory = ({
 
     if (!environment) throw new BadRequestError({ message: `Could not find Environment with ID ${params.envId}` });
 
-    const { permission, ForbidOnInvalidProjectType } = await permissionService.getProjectPermission(
+    const { permission: projectPermission, ForbidOnInvalidProjectType } = await permissionService.getProjectPermission(
       actor.type,
       actor.id,
       environment.projectId,
@@ -189,11 +187,31 @@ export const secretSyncServiceFactory = ({
 
     ForbidOnInvalidProjectType(ProjectType.SecretManager);
 
-    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Create, ProjectPermissionSub.SecretSync);
+    ForbiddenError.from(projectPermission).throwUnlessCan(
+      ProjectPermissionActions.Create,
+      ProjectPermissionSub.SecretSync
+    );
 
     const appConnection = await appConnectionService.utilizeAppConnectionById(params.connectionId);
 
+    const { permission: orgPermission } = await permissionService.getOrgPermission(
+      actor.type,
+      actor.id,
+      appConnection.orgId,
+      actor.authMethod,
+      actor.orgId
+    );
+
+    ForbiddenError.from(orgPermission).throwUnlessCan(OrgPermissionActions.Read, OrgPermissionSubjects.AppConnections);
+
     BadRequestOnInvalidConnectionForSync(syncDestination, appConnection);
+
+    const folder = await folderDAL.findBySecretPath(environment.projectId, environment.slug, params.secretPath);
+
+    if (!folder)
+      throw new BadRequestError({
+        message: `Secret path "${params.secretPath}" does not exist for project with ID ${environment.projectId}`
+      });
 
     const projectEnvironments = await projectEnvDAL.find({
       projectId: environment.projectId
@@ -240,11 +258,6 @@ export const secretSyncServiceFactory = ({
         message: `Could not find ${SECRET_SYNC_NAME_MAP[syncDestination]} Sync with ID ${syncId}`
       });
 
-    if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[syncDestination])
-      throw new BadRequestError({
-        message: `Secret sync with ID ${syncId} is not configured for ${SECRET_SYNC_NAME_MAP[syncDestination]}`
-      });
-
     const { permission, ForbidOnInvalidProjectType } = await permissionService.getProjectPermission(
       actor.type,
       actor.id,
@@ -256,6 +269,8 @@ export const secretSyncServiceFactory = ({
     ForbidOnInvalidProjectType(ProjectType.SecretManager);
 
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Edit, ProjectPermissionSub.SecretSync);
+
+    BadRequestOnInvalidSyncDestination(secretSync as TSecretSync, syncDestination);
 
     const updatedSecretSync = await secretSyncDAL.transaction(async (tx) => {
       if (params.name && secretSync.name !== params.name) {
@@ -280,6 +295,19 @@ export const secretSyncServiceFactory = ({
         if (isConflictingName)
           throw new BadRequestError({
             message: `A Secret Sync with the name "${params.name}" already exists the project with ID ${secretSync.projectId}`
+          });
+      }
+
+      if (params.secretPath) {
+        const folder = await folderDAL.findBySecretPath(
+          secretSync.projectId,
+          secretSync.environment.slug,
+          params.secretPath
+        );
+
+        if (!folder)
+          throw new BadRequestError({
+            message: `Secret path "${params.secretPath}" does not exist for project with ID ${secretSync.projectId}`
           });
       }
 
@@ -313,12 +341,7 @@ export const secretSyncServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Delete, ProjectPermissionSub.SecretSync);
 
-    if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[syncDestination])
-      throw new BadRequestError({
-        message: `Secret sync with ID ${syncId} is not configured for ${SECRET_SYNC_NAME_MAP[syncDestination]}`
-      });
-
-    // TODO: specify delete error message if due to existing dependencies
+    BadRequestOnInvalidSyncDestination(secretSync as TSecretSync, syncDestination);
 
     const deletedSecretSync = await secretSyncDAL.deleteById(syncId);
 

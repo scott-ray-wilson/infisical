@@ -2,7 +2,9 @@ import { z } from "zod";
 
 import { SecretSyncsSchema } from "@app/db/schemas/secret-syncs";
 import { SecretSyncs } from "@app/lib/api-docs";
+import { removeTrailingSlash } from "@app/lib/fn";
 import { slugSchema } from "@app/server/lib/schemas";
+import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 
 export const BaseSecretSyncSchema = SecretSyncsSchema.omit({
@@ -11,7 +13,11 @@ export const BaseSecretSyncSchema = SecretSyncsSchema.omit({
 }).extend({
   syncConfig: z.object({
     // TODO
-  })
+  }),
+  // join properties
+  projectId: z.string(),
+  connection: z.object({ app: z.nativeEnum(AppConnection), name: z.string(), id: z.string().uuid() }),
+  environment: z.object({ slug: z.string(), name: z.string(), id: z.string().uuid() })
 });
 
 export const GenericCreateSecretSyncFieldsSchema = (sync: SecretSync) =>
@@ -22,7 +28,17 @@ export const GenericCreateSecretSyncFieldsSchema = (sync: SecretSync) =>
       .trim()
       .max(256, "Description cannot exceed 256 characters")
       .nullish()
-      .describe(SecretSyncs.CREATE(sync).description)
+      .describe(SecretSyncs.CREATE(sync).description),
+    connectionId: z.string().uuid().describe(SecretSyncs.CREATE(sync).connectionId),
+    envId: z.string().uuid().describe(SecretSyncs.CREATE(sync).envId),
+    secretPath: z
+      .string()
+      .trim()
+      .min(1, "Secret path required")
+      .transform(removeTrailingSlash)
+      .optional()
+      .default("/")
+      .describe(SecretSyncs.CREATE(sync).secretPath)
   });
 
 export const GenericUpdateSecretSyncFieldsSchema = (sync: SecretSync) =>

@@ -45,9 +45,16 @@ export const registerSecretSyncRouter = async (server: FastifyZodProvider) => {
     },
     schema: {
       description: "List all the Secret Syncs for the specified project.",
-      params: z.object({
-        projectId: z.string().min(1, { message: "Project ID required" }).describe(SecretSyncs.LIST.projectId)
-      }),
+      params: z
+        .object({
+          projectId: z.string().trim().optional().describe(SecretSyncs.LIST.projectId),
+          envId: z.string().trim().optional().describe(SecretSyncs.LIST.envId)
+        })
+        .superRefine(({ projectId, envId }, ctx) => {
+          if (!projectId && !envId) {
+            ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Project ID or Environment ID required" });
+          }
+        }),
       response: {
         200: z.object({ secretSyncs: SecretSyncSchema.array() })
       }
@@ -55,9 +62,10 @@ export const registerSecretSyncRouter = async (server: FastifyZodProvider) => {
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
       const {
-        params: { projectId },
+        params: { projectId, envId },
         permission
       } = req;
+
       const secretSyncs = await server.services.secretSync.listSecretSyncsByProjectId({ projectId }, permission);
 
       await server.services.auditLog.createAuditLog({

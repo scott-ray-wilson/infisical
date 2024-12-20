@@ -4,11 +4,15 @@ import { TDbClient } from "@app/db";
 import { TableName } from "@app/db/schemas";
 import { TSecretSyncs } from "@app/db/schemas/secret-syncs";
 import { DatabaseError } from "@app/lib/errors";
-import { ormify, selectAllTableCols } from "@app/lib/knex";
+import { buildFindFilter, ormify, selectAllTableCols } from "@app/lib/knex";
 
 export type TSecretSyncDALFactory = ReturnType<typeof secretSyncDALFactory>;
 
-const baseSecretSyncQuery = (db: TDbClient, whereClause?: Partial<TSecretSyncs> | null, tx?: Knex) => {
+const baseSecretSyncQuery = (
+  db: TDbClient,
+  whereClause?: Parameters<typeof buildFindFilter<TSecretSyncs>>[0] | null,
+  tx?: Knex
+) => {
   const query = (tx || db.replicaNode())(TableName.SecretSync)
     .join(TableName.Environment, `${TableName.SecretSync}.envId`, `${TableName.Environment}.id`)
     .join(TableName.AppConnection, `${TableName.SecretSync}.connectionId`, `${TableName.AppConnection}.id`)
@@ -17,12 +21,14 @@ const baseSecretSyncQuery = (db: TDbClient, whereClause?: Partial<TSecretSyncs> 
       db.ref("name").withSchema(TableName.Environment).as("envName"),
       db.ref("id").withSchema(TableName.Environment).as("envId"),
       db.ref("slug").withSchema(TableName.Environment).as("envSlug"),
+      db.ref("projectId").withSchema(TableName.Environment),
       db.ref("name").withSchema(TableName.AppConnection).as("connectionName"),
       db.ref("app").withSchema(TableName.AppConnection)
     );
 
   if (whereClause) {
-    void query.where(whereClause);
+    /* eslint-disable @typescript-eslint/no-misused-promises */
+    void query.where(buildFindFilter(whereClause));
   }
 
   return query;
@@ -50,7 +56,7 @@ export const secretSyncDALFactory = (db: TDbClient) => {
     }
   };
 
-  const findOne = async (filter: Partial<TSecretSyncs>, tx?: Knex) => {
+  const findOne = async (filter: Parameters<(typeof secretSyncOrm)["findOne"]>[0], tx?: Knex) => {
     try {
       const secretSync = await baseSecretSyncQuery(db, filter, tx).first();
 
@@ -69,7 +75,7 @@ export const secretSyncDALFactory = (db: TDbClient) => {
     }
   };
 
-  const find = async (filter: Partial<TSecretSyncs>, tx?: Knex) => {
+  const find = async (filter: Parameters<(typeof secretSyncOrm)["find"]>[0], tx?: Knex) => {
     try {
       const secretSyncs = await baseSecretSyncQuery(db, filter, tx);
 

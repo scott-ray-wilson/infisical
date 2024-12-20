@@ -8,6 +8,7 @@ export async function up(knex: Knex): Promise<void> {
     await knex.schema.createTable(TableName.SecretSync, (t) => {
       t.uuid("id", { primaryKey: true }).defaultTo(knex.fn.uuid());
       t.string("name", 32).notNullable();
+      t.string("description");
       t.boolean("isActive").notNullable().defaultTo(true);
       t.integer("version").defaultTo(1).notNullable();
       t.enum("syncState", ["pending", "complete", "failed"]).notNullable().defaultTo("pending");
@@ -15,19 +16,17 @@ export async function up(knex: Knex): Promise<void> {
       t.jsonb("syncConfig").notNullable();
       t.string("secretPath").notNullable();
       t.uuid("envId").notNullable();
-      t.foreign("envId").references("id").inTable(TableName.Environment);
+      t.foreign("envId").references("id").inTable(TableName.Environment).onDelete("CASCADE");
       t.uuid("connectionId").notNullable();
       t.foreign("connectionId").references("id").inTable(TableName.AppConnection);
-      t.string("projectId").notNullable();
-      t.foreign("projectId").references("id").inTable(TableName.Project).onDelete("CASCADE");
       t.string("lastSyncJobId");
       t.string("lastSyncMessage");
       t.datetime("lastSyncedAt");
       t.timestamps(true, true, true);
     });
-  }
 
-  await createOnUpdateTrigger(knex, TableName.SecretSync);
+    await createOnUpdateTrigger(knex, TableName.SecretSync);
+  }
 }
 
 export async function down(knex: Knex): Promise<void> {

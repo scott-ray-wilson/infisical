@@ -25,7 +25,7 @@ export type TFindSecretSyncByNameDTO = {
 
 export type TCreateSecretSyncDTO = Pick<
   TSecretSync,
-  "syncConfig" | "destinationConfig" | "secretPath" | "envId" | "name" | "projectId" | "connectionId"
+  "syncConfig" | "destinationConfig" | "secretPath" | "envId" | "name" | "connectionId"
 > & { syncDestination: SecretSync };
 
 export type TUpdateSecretSyncDTO = Partial<Omit<TCreateSecretSyncDTO, "connectionId">> & {

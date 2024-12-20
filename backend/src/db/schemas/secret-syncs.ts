@@ -10,6 +10,7 @@ import { TImmutableDBKeys } from "./models";
 export const SecretSyncsSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
+  description: z.string().nullable().optional(),
   isActive: z.boolean().default(true),
   version: z.number().default(1),
   syncState: z.string().default("pending"),
@@ -18,7 +19,6 @@ export const SecretSyncsSchema = z.object({
   secretPath: z.string(),
   envId: z.string().uuid(),
   connectionId: z.string().uuid(),
-  projectId: z.string(),
   lastSyncJobId: z.string().nullable().optional(),
   lastSyncMessage: z.string().nullable().optional(),
   lastSyncedAt: z.date().nullable().optional(),

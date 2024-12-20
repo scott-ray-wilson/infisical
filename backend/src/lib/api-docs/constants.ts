@@ -1,5 +1,7 @@
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import { APP_CONNECTION_NAME_MAP } from "@app/services/app-connection/app-connection-maps";
+import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
+import { SECRET_SYNC_NAME_MAP } from "@app/services/secret-sync/secret-sync-maps";
 
 export const GROUPS = {
   CREATE: {
@@ -1636,12 +1638,37 @@ export const AppConnections = {
     };
   },
   DELETE: (app: AppConnection) => ({
-    connectionId: `The ID of the ${APP_CONNECTION_NAME_MAP[app]} connection to be deleted.`
+    connectionId: `The ID of the ${APP_CONNECTION_NAME_MAP[app]} Connection to be deleted.`
   })
 };
 
 export const SecretSyncs = {
   LIST: {
-    projectId: "The ID of the project to list secret syncs from."
-  }
+    projectId: "The ID of the project to list Secret Syncs from.",
+    envId: "The ID of the environment to list Secret Syncs from."
+  },
+  GET_BY_ID: (sync: SecretSync) => ({
+    connectionId: `The ID of the ${SECRET_SYNC_NAME_MAP[sync]} Sync to retrieve.`
+  }),
+  GET_BY_NAME: (sync: SecretSync) => ({
+    connectionName: `The name of the ${SECRET_SYNC_NAME_MAP[sync]} Sync to retrieve.`
+  }),
+  CREATE: (sync: SecretSync) => {
+    const syncName = SECRET_SYNC_NAME_MAP[sync];
+    return {
+      name: `The name of the ${syncName} Sync to create. Must be slug-friendly.`,
+      description: `An optional description for the ${syncName} Sync.`
+    };
+  },
+  UPDATE: (sync: SecretSync) => {
+    const syncName = SECRET_SYNC_NAME_MAP[sync];
+    return {
+      syncId: `The ID of the ${syncName} Sync to be updated.`,
+      name: `The updated name of the ${syncName} Sync. Must be slug-friendly.`,
+      description: `The updated description of the ${syncName} Sync.`
+    };
+  },
+  DELETE: (sync: SecretSync) => ({
+    connectionId: `The ID of the ${SECRET_SYNC_NAME_MAP[sync]} Sync to be deleted.`
+  })
 };

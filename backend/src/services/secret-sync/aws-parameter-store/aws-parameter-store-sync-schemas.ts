@@ -14,6 +14,8 @@ export const AwsParameterStoreSyncSchema = BaseSecretSyncSchema.extend({
   })
 });
 
+export const CreateAwsParameterStoreSyncSchema = BaseSecretSyncSchema.extend({});
+
 export const AwsParameterStoreSyncListItemSchema = z.object({
   name: z.literal("AWS Parameter Store"),
   app: z.literal(AppConnection.AWS),

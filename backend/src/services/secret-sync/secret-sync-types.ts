@@ -1,3 +1,5 @@
+import { TSecretSyncs } from "@app/db/schemas/secret-syncs";
+import { OrgServiceActor } from "@app/lib/types";
 import { TGitHubSync, TGitHubSyncInput, TGitHubSyncListItem } from "@app/services/secret-sync/github";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 
@@ -42,4 +44,19 @@ export type TUpdateSecretSyncDTO = Partial<Omit<TCreateSecretSyncDTO, "connectio
 export type TDeleteSecretSyncDTO = {
   destination: SecretSync;
   syncId: string;
+};
+
+export type TTriggerSecretSyncDTO = {
+  destination: SecretSync;
+  syncId: string;
+};
+
+export type TManualTriggerSecretSyncDTO = {
+  secretSync: TSecretSyncs;
+  actor: OrgServiceActor;
+};
+
+export type TTriggerSecretSyncsDTO = {
+  secretPath: string;
+  environmentId: string;
 };

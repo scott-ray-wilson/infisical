@@ -12,9 +12,11 @@ export const BaseSecretSyncSchema = SecretSyncsSchema.omit({
   destinationConfig: true,
   syncOptions: true
 }).extend({
-  syncOptions: z.object({
-    // TODO
-  }),
+  syncOptions: z
+    .object({
+      // TODO
+    })
+    .nullish(),
   // join properties
   projectId: z.string(),
   connection: z.object({ app: z.nativeEnum(AppConnection), name: z.string(), id: z.string().uuid() }),
@@ -37,7 +39,8 @@ export const GenericCreateSecretSyncFieldsSchema = (sync: SecretSync) =>
       .trim()
       .min(1, "Secret path required")
       .transform(removeTrailingSlash)
-      .describe(SecretSyncs.CREATE(sync).secretPath)
+      .describe(SecretSyncs.CREATE(sync).secretPath),
+    isEnabled: z.boolean().default(true).describe(SecretSyncs.CREATE(sync).isEnabled)
   });
 
 export const GenericUpdateSecretSyncFieldsSchema = (sync: SecretSync) =>
@@ -48,5 +51,13 @@ export const GenericUpdateSecretSyncFieldsSchema = (sync: SecretSync) =>
       .trim()
       .max(256, "Description cannot exceed 256 characters")
       .nullish()
-      .describe(SecretSyncs.UPDATE(sync).description)
+      .describe(SecretSyncs.UPDATE(sync).description),
+    envId: z.string().uuid().describe(SecretSyncs.UPDATE(sync).envId),
+    secretPath: z
+      .string()
+      .trim()
+      .min(1, "Secret path required")
+      .transform(removeTrailingSlash)
+      .describe(SecretSyncs.UPDATE(sync).secretPath),
+    isEnabled: z.boolean().default(true).describe(SecretSyncs.UPDATE(sync).isEnabled)
   });

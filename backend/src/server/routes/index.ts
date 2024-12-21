@@ -196,6 +196,7 @@ import { secretImportServiceFactory } from "@app/services/secret-import/secret-i
 import { secretSharingDALFactory } from "@app/services/secret-sharing/secret-sharing-dal";
 import { secretSharingServiceFactory } from "@app/services/secret-sharing/secret-sharing-service";
 import { secretSyncDALFactory } from "@app/services/secret-sync/secret-sync-dal";
+import { secretSyncQueueFactory } from "@app/services/secret-sync/secret-sync-queue";
 import { secretSyncServiceFactory } from "@app/services/secret-sync/secret-sync-service";
 import { secretTagDALFactory } from "@app/services/secret-tag/secret-tag-dal";
 import { secretTagServiceFactory } from "@app/services/secret-tag/secret-tag-service";
@@ -1365,13 +1366,20 @@ export const registerRoutes = async (
     licenseService
   });
 
+  const secretSyncQueue = secretSyncQueueFactory({
+    queueService,
+    secretSyncDAL
+  });
+
   const secretSyncService = secretSyncServiceFactory({
     secretSyncDAL,
     permissionService,
     appConnectionService,
     licenseService,
     folderDAL,
-    projectEnvDAL
+    projectEnvDAL,
+    secretSyncQueue,
+    projectBotService
   });
 
   await superAdminService.initServerCfg();

@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import { AppConnection } from "@app/services/app-connection/app-connection-enums";
+import { appendTrailingSlash } from "@app/lib/fn";
+import { AppConnection, AWSRegion } from "@app/services/app-connection/app-connection-enums";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 import {
   BaseSecretSyncSchema,
@@ -10,8 +11,8 @@ import {
 
 const AwsParameterStoreSyncDestinationConfigSchema = z.object({
   // TODO describes
-  region: z.string(),
-  path: z.string()
+  region: z.nativeEnum(AWSRegion),
+  path: z.string().min(1, "AWS Parameter Store Path Required").transform(appendTrailingSlash)
   // TODO additional options
 });
 
@@ -24,14 +25,14 @@ export const CreateAwsParameterStoreSyncSchema = GenericCreateSecretSyncFieldsSc
   SecretSync.AWSParameterStore
 ).extend({
   destinationConfig: AwsParameterStoreSyncDestinationConfigSchema,
-  syncOptions: z.object({}) // TODO
+  syncOptions: z.object({}).nullish() // TODO
 });
 
 export const UpdateAwsParameterStoreSyncSchema = GenericUpdateSecretSyncFieldsSchema(
   SecretSync.AWSParameterStore
 ).extend({
   destinationConfig: AwsParameterStoreSyncDestinationConfigSchema.optional(),
-  syncOptions: z.object({}).optional() // TODO
+  syncOptions: z.object({}).nullish() // TODO
 });
 
 export const AwsParameterStoreSyncListItemSchema = z.object({

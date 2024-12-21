@@ -25,7 +25,7 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     secretPath: string;
     connectionId: string;
     destinationConfig: I["destinationConfig"];
-    syncOptions: I["syncOptions"];
+    syncOptions?: I["syncOptions"] | null;
     description?: string | null;
   }>;
   updateSchema: z.ZodType<{
@@ -33,7 +33,7 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     envId?: string;
     secretPath?: string;
     destinationConfig?: I["destinationConfig"];
-    syncOptions?: I["syncOptions"];
+    syncOptions?: I["syncOptions"] | null;
     description?: string | null;
   }>;
   responseSchema: z.ZodTypeAny;
@@ -285,6 +285,46 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
           metadata: {
             destination,
             syncId
+          }
+        }
+      });
+
+      return { secretSync };
+    }
+  });
+
+  server.route({
+    method: "POST",
+    url: "/:syncId/sync",
+    config: {
+      rateLimit: writeLimit
+    },
+    schema: {
+      description: `Trigger the specified ${destinationName} Sync.`,
+      params: z.object({
+        syncId: z.string().uuid().describe(SecretSyncs.TRIGGER(destination).syncId)
+      }),
+      response: {
+        200: z.object({ secretSync: responseSchema })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
+    handler: async (req) => {
+      const { syncId } = req.params;
+
+      const secretSync = (await server.services.secretSync.triggerSecretSync(
+        { syncId, destination },
+        req.permission
+      )) as T;
+
+      await server.services.auditLog.createAuditLog({
+        ...req.auditLogInfo,
+        projectId: secretSync.projectId,
+        event: {
+          type: EventType.MANUALLY_TRIGGER_SECRET_SYNC,
+          metadata: {
+            syncId: secretSync.id,
+            destination
           }
         }
       });

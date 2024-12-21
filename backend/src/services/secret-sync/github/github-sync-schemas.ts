@@ -17,12 +17,12 @@ const GitHubSyncDestinationConfigSchema = z.object({
 export const CreateGitHubSyncSchema = GenericCreateSecretSyncFieldsSchema(SecretSync.GitHub).extend({
   destination: z.literal(SecretSync.GitHub),
   destinationConfig: GitHubSyncDestinationConfigSchema,
-  syncOptions: z.object({}) // TODO
+  syncOptions: z.object({}).nullish() // TODO
 });
 
 export const UpdateGitHubSyncSchema = GenericUpdateSecretSyncFieldsSchema(SecretSync.AWSParameterStore).extend({
   destinationConfig: GitHubSyncDestinationConfigSchema.optional(),
-  syncOptions: z.object({}).optional() // TODO
+  syncOptions: z.object({}).nullish() // TODO
 });
 
 export const GitHubSyncSchema = BaseSecretSyncSchema.extend({

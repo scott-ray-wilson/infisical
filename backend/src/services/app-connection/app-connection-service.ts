@@ -1,4 +1,4 @@
-import { ForbiddenError } from "@casl/ability";
+import { ForbiddenError, subject } from "@casl/ability";
 
 import { TLicenseServiceFactory } from "@app/ee/services/license/license-service";
 import { OrgPermissionAppConnectionActions, OrgPermissionSubjects } from "@app/ee/services/permission/org-permission";
@@ -366,11 +366,23 @@ export const appConnectionServiceFactory = ({
     } as TAppConnection;
   };
 
-  // for internal use only, ie secret sync
-  const utilizeAppConnectionById = async (connectionId: string) => {
+  const connectAppConnectionById = async (connectionId: string, actor: OrgServiceActor) => {
     const appConnection = await appConnectionDAL.findById(connectionId);
 
     if (!appConnection) throw new NotFoundError({ message: `Could not find App Connection with ID ${connectionId}` });
+
+    const { permission: orgPermission } = await permissionService.getOrgPermission(
+      actor.type,
+      actor.id,
+      appConnection.orgId,
+      actor.authMethod,
+      actor.orgId
+    );
+
+    ForbiddenError.from(orgPermission).throwUnlessCan(
+      OrgPermissionAppConnectionActions.Connect,
+      subject(OrgPermissionSubjects.AppConnections, { connectionId: appConnection.id })
+    );
 
     return {
       ...appConnection,
@@ -390,6 +402,6 @@ export const appConnectionServiceFactory = ({
     createAppConnection,
     updateAppConnection,
     deleteAppConnection,
-    utilizeAppConnectionById
+    connectAppConnectionById
   };
 };

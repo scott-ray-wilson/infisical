@@ -2,7 +2,6 @@ import { ForbiddenError } from "@casl/ability";
 
 import { ProjectType } from "@app/db/schemas";
 import { TLicenseServiceFactory } from "@app/ee/services/license/license-service";
-import { OrgPermissionAppConnectionActions, OrgPermissionSubjects } from "@app/ee/services/permission/org-permission";
 import { TPermissionServiceFactory } from "@app/ee/services/permission/permission-service";
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/ee/services/permission/project-permission";
 import { BadRequestError, InternalServerError, NotFoundError } from "@app/lib/errors";
@@ -10,6 +9,7 @@ import { OrgServiceActor } from "@app/lib/types";
 import { APP_CONNECTION_NAME_MAP } from "@app/services/app-connection/app-connection-maps";
 import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
 import { TAppConnection } from "@app/services/app-connection/app-connection-types";
+import { TProjectBotServiceFactory } from "@app/services/project-bot/project-bot-service";
 import { TProjectEnvDALFactory } from "@app/services/project-env/project-env-dal";
 import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-folder-dal";
 import { listSecretSyncOptions } from "@app/services/secret-sync/secret-sync-fns";
@@ -20,19 +20,23 @@ import {
   TFindSecretSyncByNameDTO,
   TListSecretSyncsByProjectId,
   TSecretSync,
+  TTriggerSecretSyncDTO,
   TUpdateSecretSyncDTO
 } from "@app/services/secret-sync/secret-sync-types";
 
 import { TSecretSyncDALFactory } from "./secret-sync-dal";
 import { SecretSync } from "./secret-sync-enums";
 import { SECRET_SYNC_CONNECTION_MAP, SECRET_SYNC_NAME_MAP } from "./secret-sync-maps";
+import { TSecretSyncQueueFactory } from "./secret-sync-queue";
 
 type TSecretSyncServiceFactoryDep = {
   secretSyncDAL: TSecretSyncDALFactory;
-  appConnectionService: Pick<TAppConnectionServiceFactory, "utilizeAppConnectionById">;
+  appConnectionService: Pick<TAppConnectionServiceFactory, "connectAppConnectionById">;
   permissionService: Pick<TPermissionServiceFactory, "getProjectPermission" | "getOrgPermission">;
   projectEnvDAL: Pick<TProjectEnvDALFactory, "find" | "findById">;
+  projectBotService: Pick<TProjectBotServiceFactory, "getBotKey">;
   folderDAL: Pick<TSecretFolderDALFactory, "findBySecretPath">;
+  secretSyncQueue: Pick<TSecretSyncQueueFactory, "triggerSecretSync">;
   licenseService: Pick<TLicenseServiceFactory, "getPlan">; // TODO: remove once launched
 };
 
@@ -67,7 +71,9 @@ export const secretSyncServiceFactory = ({
   folderDAL,
   licenseService,
   permissionService,
-  appConnectionService
+  appConnectionService,
+  projectBotService,
+  secretSyncQueue
 }: TSecretSyncServiceFactoryDep) => {
   // app connections are disabled for public until launch
   const checkSecretSyncAvailability = async (orgId: string) => {
@@ -186,6 +192,11 @@ export const secretSyncServiceFactory = ({
       actor.orgId
     );
 
+    const { shouldUseSecretV2Bridge } = await projectBotService.getBotKey(environment.projectId);
+
+    if (!shouldUseSecretV2Bridge)
+      throw new BadRequestError({ message: "Project version does not support secret syncs" });
+
     ForbidOnInvalidProjectType(ProjectType.SecretManager);
 
     ForbiddenError.from(projectPermission).throwUnlessCan(
@@ -193,20 +204,7 @@ export const secretSyncServiceFactory = ({
       ProjectPermissionSub.SecretSync
     );
 
-    const appConnection = await appConnectionService.utilizeAppConnectionById(params.connectionId);
-
-    const { permission: orgPermission } = await permissionService.getOrgPermission(
-      actor.type,
-      actor.id,
-      appConnection.orgId,
-      actor.authMethod,
-      actor.orgId
-    );
-
-    ForbiddenError.from(orgPermission).throwUnlessCan(
-      OrgPermissionAppConnectionActions.Connect,
-      OrgPermissionSubjects.AppConnections
-    );
+    const appConnection = await appConnectionService.connectAppConnectionById(params.connectionId, actor);
 
     BadRequestOnInvalidConnectionForSync(params.destination, appConnection);
 
@@ -279,7 +277,7 @@ export const secretSyncServiceFactory = ({
 
         if (!environment) throw new BadRequestError({ message: `Could not find Environment with ID ${params.envId}` });
 
-        // TODO(scott): I don't think there's a reason we can't support moving projects but not supporting this at launch
+        // TODO(scott): I don't think there's a reason we can't support moving projects but not supporting this initially
         if (environment.projectId !== secretSync.projectId)
           throw new BadRequestError({ message: `Could not find Environment with ID ${params.envId}` });
       }
@@ -359,6 +357,35 @@ export const secretSyncServiceFactory = ({
     return deletedSecretSync as TSecretSync;
   };
 
+  const triggerSecretSync = async ({ syncId, destination }: TTriggerSecretSyncDTO, actor: OrgServiceActor) => {
+    await checkSecretSyncAvailability(actor.orgId);
+
+    const secretSync = await secretSyncDAL.findById(syncId);
+
+    if (!secretSync)
+      throw new NotFoundError({
+        message: `Could not find ${SECRET_SYNC_NAME_MAP[destination]} Sync with ID ${syncId}`
+      });
+
+    const { permission, ForbidOnInvalidProjectType } = await permissionService.getProjectPermission(
+      actor.type,
+      actor.id,
+      secretSync.projectId,
+      actor.authMethod,
+      actor.orgId
+    );
+
+    ForbidOnInvalidProjectType(ProjectType.SecretManager);
+
+    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSync);
+
+    BadRequestOnInvalidDestination(secretSync as TSecretSync, destination);
+
+    await secretSyncQueue.triggerSecretSync({ secretSync, actor });
+
+    return secretSync as TSecretSync;
+  };
+
   return {
     listSecretSyncOptions,
     listSecretSyncsByProjectId,
@@ -366,6 +393,7 @@ export const secretSyncServiceFactory = ({
     findSecretSyncByName,
     createSecretSync,
     updateSecretSync,
-    deleteSecretSync
+    deleteSecretSync,
+    triggerSecretSync
   };
 };

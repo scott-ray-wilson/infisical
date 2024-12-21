@@ -237,7 +237,7 @@ export enum EventType {
   CREATE_SECRET_SYNC = "create-secret-sync",
   UPDATE_SECRET_SYNC = "update-secret-sync",
   DELETE_SECRET_SYNC = "delete-secret-sync",
-  MANUAL_TRIGGER_SECRET_SYNC = "manual-trigger-secret-sync"
+  MANUALLY_TRIGGER_SECRET_SYNC = "manually-trigger-secret-sync"
 }
 
 interface UserActorMetadata {
@@ -1951,7 +1951,7 @@ interface DeleteSecretSyncEvent {
 }
 
 interface ManualTriggerSecretSyncEvent {
-  type: EventType.MANUAL_TRIGGER_SECRET_SYNC;
+  type: EventType.MANUALLY_TRIGGER_SECRET_SYNC;
   metadata: {
     syncId: string;
     destination: SecretSync;

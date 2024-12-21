@@ -27,7 +27,8 @@ const baseSecretSyncQuery = ({
       db.ref("slug").withSchema(TableName.Environment).as("envSlug"),
       db.ref("projectId").withSchema(TableName.Environment),
       db.ref("name").withSchema(TableName.AppConnection).as("connectionName"),
-      db.ref("app").withSchema(TableName.AppConnection)
+      db.ref("app").withSchema(TableName.AppConnection),
+      db.ref("encryptedCredentials").withSchema(TableName.AppConnection)
     );
 
   if (filter) {

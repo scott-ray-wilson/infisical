@@ -33,7 +33,16 @@ const baseSecretSyncQuery = ({
 
   if (filter) {
     /* eslint-disable @typescript-eslint/no-misused-promises */
-    void query.where(buildFindFilter(filter));
+    void query.where(
+      buildFindFilter(
+        Object.fromEntries(
+          Object.entries(filter).map(([key, value]) => [
+            key.startsWith("$") ? key : `${TableName.SecretSync}.${key}`,
+            value
+          ])
+        )
+      )
+    );
   }
 
   return query;
@@ -62,6 +71,41 @@ export const secretSyncDALFactory = (db: TDbClient) => {
       }
     } catch (error) {
       throw new DatabaseError({ error, name: "Find by ID" });
+    }
+  };
+
+  const create = async (data: Parameters<(typeof secretSyncOrm)["create"]>[0]) => {
+    try {
+      const secretSync = await secretSyncOrm.transaction(async (tx) => {
+        const sync = await secretSyncOrm.create(data, tx);
+
+        return tx(TableName.SecretSync)
+          .where({ [`${TableName.SecretSync}.id` as "id"]: sync.id })
+          .join(TableName.Environment, `${TableName.SecretSync}.envId`, `${TableName.Environment}.id`)
+          .join(TableName.AppConnection, `${TableName.SecretSync}.connectionId`, `${TableName.AppConnection}.id`)
+          .select(selectAllTableCols(TableName.SecretSync))
+          .select(
+            db.ref("name").withSchema(TableName.Environment).as("envName"),
+            db.ref("id").withSchema(TableName.Environment).as("envId"),
+            db.ref("slug").withSchema(TableName.Environment).as("envSlug"),
+            db.ref("projectId").withSchema(TableName.Environment),
+            db.ref("name").withSchema(TableName.AppConnection).as("connectionName"),
+            db.ref("app").withSchema(TableName.AppConnection),
+            db.ref("encryptedCredentials").withSchema(TableName.AppConnection)
+          )
+          .first();
+      });
+
+      const { envId, envName, envSlug, app, connectionName, connectionId, ...el } = secretSync!;
+      return {
+        ...el,
+        envId,
+        connectionId,
+        environment: { id: envId, name: envName, slug: envSlug },
+        connection: { app, id: connectionId, name: connectionName }
+      };
+    } catch (error) {
+      throw new DatabaseError({ error, name: "Create" });
     }
   };
 
@@ -100,5 +144,5 @@ export const secretSyncDALFactory = (db: TDbClient) => {
     }
   };
 
-  return { ...secretSyncOrm, findById, findOne, find };
+  return { ...secretSyncOrm, findById, findOne, find, create };
 };

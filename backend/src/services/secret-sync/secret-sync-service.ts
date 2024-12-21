@@ -236,7 +236,7 @@ export const secretSyncServiceFactory = ({
 
       if (isConflictingName)
         throw new BadRequestError({
-          message: `A Secret Sync with the name "${params.name}" already exists the project with ID ${environment.projectId}`
+          message: `A Secret Sync with the name "${params.name}" already exists for project with ID ${environment.projectId}`
         });
 
       const sync = await secretSyncDAL.create(params);
@@ -303,7 +303,7 @@ export const secretSyncServiceFactory = ({
 
         if (isConflictingName)
           throw new BadRequestError({
-            message: `A Secret Sync with the name "${params.name}" already exists the project with ID ${secretSync.projectId}`
+            message: `A Secret Sync with the name "${params.name}" already exists for project with ID ${secretSync.projectId}`
           });
       }
 

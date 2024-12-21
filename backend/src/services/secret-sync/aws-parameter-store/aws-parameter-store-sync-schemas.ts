@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { appendTrailingSlash } from "@app/lib/fn";
+import { wrapWithSlashes } from "@app/lib/fn";
 import { AppConnection, AWSRegion } from "@app/services/app-connection/app-connection-enums";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 import {
@@ -12,7 +12,7 @@ import {
 const AwsParameterStoreSyncDestinationConfigSchema = z.object({
   // TODO describes
   region: z.nativeEnum(AWSRegion),
-  path: z.string().min(1, "AWS Parameter Store Path Required").transform(appendTrailingSlash)
+  path: z.string().min(1, "AWS Parameter Store Path Required").transform(wrapWithSlashes)
   // TODO additional options
 });
 

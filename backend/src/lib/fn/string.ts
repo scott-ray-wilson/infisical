@@ -17,6 +17,6 @@ export const prefixWithSlash = (str: string) => {
 
 export const startsWithVowel = (str: string) => /^[aeiou]/i.test(str);
 
-export const appendTrailingSlash = (str: string) => {
-  return str.endsWith("/") ? str : `${str}/`;
+export const wrapWithSlashes = (str: string) => {
+  return `${str.startsWith("/") ? "" : "/"}${str}${str.endsWith("/") ? "" : `/`}`;
 };

@@ -33,16 +33,7 @@ const baseSecretSyncQuery = ({
 
   if (filter) {
     /* eslint-disable @typescript-eslint/no-misused-promises */
-    void query.where(
-      buildFindFilter(
-        Object.fromEntries(
-          Object.entries(filter).map(([key, value]) => [
-            key.startsWith("$") ? key : `${TableName.SecretSync}.${key}`,
-            value
-          ])
-        )
-      )
-    );
+    void query.where(buildFindFilter(filter));
   }
 
   return query;
@@ -79,21 +70,11 @@ export const secretSyncDALFactory = (db: TDbClient) => {
       const secretSync = await secretSyncOrm.transaction(async (tx) => {
         const sync = await secretSyncOrm.create(data, tx);
 
-        return tx(TableName.SecretSync)
-          .where({ [`${TableName.SecretSync}.id` as "id"]: sync.id })
-          .join(TableName.Environment, `${TableName.SecretSync}.envId`, `${TableName.Environment}.id`)
-          .join(TableName.AppConnection, `${TableName.SecretSync}.connectionId`, `${TableName.AppConnection}.id`)
-          .select(selectAllTableCols(TableName.SecretSync))
-          .select(
-            db.ref("name").withSchema(TableName.Environment).as("envName"),
-            db.ref("id").withSchema(TableName.Environment).as("envId"),
-            db.ref("slug").withSchema(TableName.Environment).as("envSlug"),
-            db.ref("projectId").withSchema(TableName.Environment),
-            db.ref("name").withSchema(TableName.AppConnection).as("connectionName"),
-            db.ref("app").withSchema(TableName.AppConnection),
-            db.ref("encryptedCredentials").withSchema(TableName.AppConnection)
-          )
-          .first();
+        return baseSecretSyncQuery({
+          filter: { [`${TableName.SecretSync}.id` as "id"]: sync.id },
+          db,
+          tx
+        }).first();
       });
 
       const { envId, envName, envSlug, app, connectionName, connectionId, ...el } = secretSync!;

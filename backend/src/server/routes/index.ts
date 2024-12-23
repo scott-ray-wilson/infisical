@@ -1368,7 +1368,12 @@ export const registerRoutes = async (
 
   const secretSyncQueue = secretSyncQueueFactory({
     queueService,
-    secretSyncDAL
+    secretSyncDAL,
+    folderDAL,
+    secretImportDAL,
+    secretV2BridgeDAL,
+    kmsService,
+    keyStore
   });
 
   const secretSyncService = secretSyncServiceFactory({

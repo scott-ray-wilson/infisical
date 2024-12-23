@@ -86,7 +86,7 @@ export const GitHubConnectionListItemSchema = z.object({
   name: z.literal("GitHub"),
   app: z.literal(AppConnection.GitHub),
   // the below is preferable but currently breaks mintlify
-  // methods: z.tuple([z.literal(GitHubConnectionMethod.GitHubApp), z.literal(GitHubConnectionMethod.OAuth)]),
+  // methods: z.tuple([z.literal(GitHubConnectionMethod.App), z.literal(GitHubConnectionMethod.OAuth)]),
   methods: z.nativeEnum(GitHubConnectionMethod).array(),
   oauthClientId: z.string().optional(),
   appClientSlug: z.string().optional()

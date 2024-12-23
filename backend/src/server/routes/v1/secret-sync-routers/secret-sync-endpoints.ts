@@ -132,11 +132,9 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     schema: {
       description: `Get the specified ${destinationName} Sync by name and project ID.`,
       params: z.object({
-        syncName: z
-          .string()
-          .trim()
-          .min(1, "Sync name required")
-          .describe(SecretSyncs.GET_BY_NAME(destination).syncName),
+        syncName: z.string().trim().min(1, "Sync name required").describe(SecretSyncs.GET_BY_NAME(destination).syncName)
+      }),
+      querystring: z.object({
         projectId: z
           .string()
           .trim()
@@ -149,7 +147,8 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
-      const { syncName, projectId } = req.params;
+      const { syncName } = req.params;
+      const { projectId } = req.query;
 
       const secretSync = (await server.services.secretSync.findSecretSyncByName(
         { syncName, projectId, destination },

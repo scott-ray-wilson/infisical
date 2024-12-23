@@ -15,7 +15,7 @@ import {
   TIntegrationSyncPayload,
   TSyncSecretsDTO
 } from "@app/services/secret/secret-types";
-import { TManualTriggerSecretSyncDTO, TTriggerSecretSyncsDTO } from "@app/services/secret-sync/secret-sync-types";
+import { TSecretSyncPushSecretsDTO, TTriggerSecretSyncsDTO } from "@app/services/secret-sync/secret-sync-types";
 
 export enum QueueName {
   SecretRotation = "secret-rotation",
@@ -65,7 +65,8 @@ export enum QueueJobs {
   ServiceTokenStatusUpdate = "service-token-status-update",
   ImportSecretsFromExternalSource = "import-secrets-from-external-source",
   AppConnectionTriggerSecretSync = "app-connection-trigger-secret-sync",
-  AppConnectionTriggerSecretSyncs = "app-connection-trigger-secret-syncs"
+  AppConnectionTriggerSecretSyncs = "app-connection-trigger-secret-syncs",
+  AppConnectionSendSecretSyncFailedEmails = "app-connection-send-secret-sync-failed-emails"
 }
 
 export type TQueueJobTypes = {
@@ -191,10 +192,14 @@ export type TQueueJobTypes = {
   [QueueName.AppConnectionSecretSync]:
     | {
         name: QueueJobs.AppConnectionTriggerSecretSync;
-        payload: TManualTriggerSecretSyncDTO;
+        payload: TSecretSyncPushSecretsDTO;
       }
     | {
         name: QueueJobs.AppConnectionTriggerSecretSyncs;
+        payload: TTriggerSecretSyncsDTO;
+      }
+    | {
+        name: QueueJobs.AppConnectionSendSecretSyncFailedEmails;
         payload: TTriggerSecretSyncsDTO;
       };
 };

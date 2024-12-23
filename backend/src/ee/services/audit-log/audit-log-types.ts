@@ -237,6 +237,7 @@ export enum EventType {
   CREATE_SECRET_SYNC = "create-secret-sync",
   UPDATE_SECRET_SYNC = "update-secret-sync",
   DELETE_SECRET_SYNC = "delete-secret-sync",
+  SECRET_SYNC_SYNCED = "secret-sync-synced",
   MANUALLY_TRIGGER_SECRET_SYNC = "manually-trigger-secret-sync"
 }
 

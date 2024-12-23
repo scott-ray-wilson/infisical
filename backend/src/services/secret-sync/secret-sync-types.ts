@@ -51,7 +51,7 @@ export type TTriggerSecretSyncDTO = {
 };
 
 export type TSecretSyncPushSecretsDTO = {
-  secretSync: TSecretSync;
+  syncId: string;
   actor?: OrgServiceActor;
 };
 
@@ -59,3 +59,8 @@ export type TTriggerSecretSyncsDTO = {
   secretPath: string;
   environmentId: string;
 };
+
+export type TSecretMap = Record<
+  string,
+  { value: string; comment?: string; skipMultilineEncoding?: boolean | null | undefined }
+>;

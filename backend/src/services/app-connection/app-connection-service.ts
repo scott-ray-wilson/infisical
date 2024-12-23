@@ -7,7 +7,7 @@ import { BadRequestError, NotFoundError } from "@app/lib/errors";
 import { DiscriminativePick, OrgServiceActor } from "@app/lib/types";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import {
-  decryptAppConnectionCredentials,
+  decryptAppConnection,
   encryptAppConnectionCredentials,
   getAppConnectionMethodName,
   listAppConnectionOptions,
@@ -81,18 +81,7 @@ export const appConnectionServiceFactory = ({
     return Promise.all(
       appConnections
         .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))
-        .map(async ({ encryptedCredentials, ...connection }) => {
-          const credentials = await decryptAppConnectionCredentials({
-            encryptedCredentials,
-            kmsService,
-            orgId: connection.orgId
-          });
-
-          return {
-            ...connection,
-            credentials
-          } as TAppConnection;
-        })
+        .map((appConnection) => decryptAppConnection(appConnection, kmsService))
     );
   };
 
@@ -119,14 +108,7 @@ export const appConnectionServiceFactory = ({
     if (appConnection.app !== app)
       throw new BadRequestError({ message: `App Connection with ID ${connectionId} is not for App "${app}"` });
 
-    return {
-      ...appConnection,
-      credentials: await decryptAppConnectionCredentials({
-        encryptedCredentials: appConnection.encryptedCredentials,
-        orgId: appConnection.orgId,
-        kmsService
-      })
-    } as TAppConnection;
+    return decryptAppConnection(appConnection, kmsService);
   };
 
   const findAppConnectionByName = async (app: AppConnection, connectionName: string, actor: OrgServiceActor) => {
@@ -153,14 +135,7 @@ export const appConnectionServiceFactory = ({
     if (appConnection.app !== app)
       throw new BadRequestError({ message: `App Connection with name ${connectionName} is not for App "${app}"` });
 
-    return {
-      ...appConnection,
-      credentials: await decryptAppConnectionCredentials({
-        encryptedCredentials: appConnection.encryptedCredentials,
-        orgId: appConnection.orgId,
-        kmsService
-      })
-    } as TAppConnection;
+    return decryptAppConnection(appConnection, kmsService);
   };
 
   const createAppConnection = async (
@@ -319,14 +294,7 @@ export const appConnectionServiceFactory = ({
       return updatedConnection;
     });
 
-    return {
-      ...updatedAppConnection,
-      credentials: await decryptAppConnectionCredentials({
-        encryptedCredentials: updatedAppConnection.encryptedCredentials,
-        orgId: updatedAppConnection.orgId,
-        kmsService
-      })
-    } as TAppConnection;
+    return decryptAppConnection(updatedAppConnection, kmsService);
   };
 
   const deleteAppConnection = async (app: AppConnection, connectionId: string, actor: OrgServiceActor) => {
@@ -356,14 +324,7 @@ export const appConnectionServiceFactory = ({
 
     const deletedAppConnection = await appConnectionDAL.deleteById(connectionId);
 
-    return {
-      ...deletedAppConnection,
-      credentials: await decryptAppConnectionCredentials({
-        encryptedCredentials: deletedAppConnection.encryptedCredentials,
-        orgId: deletedAppConnection.orgId,
-        kmsService
-      })
-    } as TAppConnection;
+    return decryptAppConnection(deletedAppConnection, kmsService);
   };
 
   const connectAppConnectionById = async (connectionId: string, actor: OrgServiceActor) => {
@@ -384,14 +345,7 @@ export const appConnectionServiceFactory = ({
       subject(OrgPermissionSubjects.AppConnections, { connectionId: appConnection.id })
     );
 
-    return {
-      ...appConnection,
-      credentials: await decryptAppConnectionCredentials({
-        encryptedCredentials: appConnection.encryptedCredentials,
-        orgId: appConnection.orgId,
-        kmsService
-      })
-    } as TAppConnection;
+    return decryptAppConnection(appConnection, kmsService);
   };
 
   return {

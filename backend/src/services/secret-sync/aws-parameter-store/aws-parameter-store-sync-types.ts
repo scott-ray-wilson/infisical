@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
-
 import {
   AwsParameterStoreSyncListItemSchema,
   AwsParameterStoreSyncSchema,
@@ -10,8 +8,6 @@ import {
 
 export type TAwsParameterStoreSync = z.infer<typeof AwsParameterStoreSyncSchema>;
 
-export type TAwsParameterStoreSyncInput = z.infer<typeof CreateAwsParameterStoreSyncSchema> & {
-  syncDestination: SecretSync.AWSParameterStore;
-};
+export type TAwsParameterStoreSyncInput = z.infer<typeof CreateAwsParameterStoreSyncSchema>;
 
 export type TAwsParameterStoreSyncListItem = z.infer<typeof AwsParameterStoreSyncListItemSchema>;

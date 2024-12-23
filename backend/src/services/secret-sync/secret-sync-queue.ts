@@ -1,13 +1,17 @@
+import { TAppConnections } from "@app/db/schemas/app-connections";
 import { TKeyStoreFactory } from "@app/keystore/keystore";
 import { InternalServerError } from "@app/lib/errors";
 import { QueueJobs, QueueName, TQueueServiceFactory } from "@app/queue";
+import { decryptAppConnection } from "@app/services/app-connection/app-connection-fns";
 import { TKmsServiceFactory } from "@app/services/kms/kms-service";
 import { KmsDataKey } from "@app/services/kms/kms-types";
 import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-folder-dal";
 import { TSecretImportDALFactory } from "@app/services/secret-import/secret-import-dal";
 import { fnSecretsV2FromImports } from "@app/services/secret-import/secret-import-fns";
 import { TSecretSyncDALFactory } from "@app/services/secret-sync/secret-sync-dal";
-import { TSecretSyncPushSecretsDTO } from "@app/services/secret-sync/secret-sync-types";
+import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
+import { SECRET_SYNC_PUSH_SECRETS_MAP } from "@app/services/secret-sync/secret-sync-maps";
+import { TSecretMap, TSecretSyncPushSecretsDTO } from "@app/services/secret-sync/secret-sync-types";
 import { TSecretV2BridgeDALFactory } from "@app/services/secret-v2-bridge/secret-v2-bridge-dal";
 import { expandSecretReferencesFactory } from "@app/services/secret-v2-bridge/secret-v2-bridge-fns";
 
@@ -15,18 +19,13 @@ export type TSecretSyncQueueFactory = ReturnType<typeof secretSyncQueueFactory>;
 
 type TSecretSyncQueueFactoryDep = {
   queueService: TQueueServiceFactory;
-  secretSyncDAL: TSecretSyncDALFactory;
   kmsService: TKmsServiceFactory;
   keyStore: Pick<TKeyStoreFactory, "acquireLock" | "setItemWithExpiry" | "getItem">;
   folderDAL: Pick<TSecretFolderDALFactory, "findBySecretPath" | "findByManySecretPath">;
   secretV2BridgeDAL: Pick<TSecretV2BridgeDALFactory, "findByFolderId" | "find">;
   secretImportDAL: Pick<TSecretImportDALFactory, "find" | "findByFolderIds">;
+  secretSyncDAL: Pick<TSecretSyncDALFactory, "findById">;
 };
-
-type TSecretMap = Record<
-  string,
-  { value: string; comment?: string; skipMultilineEncoding?: boolean | null | undefined }
->;
 
 export const secretSyncQueueFactory = ({
   queueService,
@@ -34,7 +33,8 @@ export const secretSyncQueueFactory = ({
   // keyStore,
   folderDAL,
   secretV2BridgeDAL,
-  secretImportDAL
+  secretImportDAL,
+  secretSyncDAL
 }: TSecretSyncQueueFactoryDep) => {
   // TODO: telemetry
   // const integrationMeter = opentelemetry.metrics.getMeter("Integrations");
@@ -58,7 +58,6 @@ export const secretSyncQueueFactory = ({
   }) => {
     const secretMap: TSecretMap = {};
 
-    console.log("1");
     const { decryptor: secretManagerDecryptor } = await kmsService.createCipherPairWithDataKey({
       type: KmsDataKey.SecretManager,
       projectId
@@ -71,7 +70,6 @@ export const secretSyncQueueFactory = ({
     if (!folder) {
       throw new Error(`Secret path not found for environment "${environmentSlug}" in project with ID "${projectId}"`);
     }
-    console.log("2");
 
     const { expandSecretReferences } = expandSecretReferencesFactory({
       decryptSecretValue,
@@ -84,7 +82,6 @@ export const secretSyncQueueFactory = ({
     // process secrets in current folder
     const secrets = await secretV2BridgeDAL.findByFolderId(folder.id);
 
-    console.log("3");
     await Promise.allSettled(
       secrets.map(async (secret) => {
         const secretKey = secret.key;
@@ -105,7 +102,6 @@ export const secretSyncQueueFactory = ({
         secretMap[secretKey].skipMultilineEncoding = Boolean(secret.skipMultilineEncoding);
       })
     );
-    console.log("4");
 
     // check if current folder has any imports from other folders
     const secretImports = await secretImportDAL.find({ folderId: folder.id, isReplication: false });
@@ -138,14 +134,28 @@ export const secretSyncQueueFactory = ({
     return secretMap;
   };
 
-  const syncSecrets = async ({ secretSync }: TSecretSyncPushSecretsDTO) => {
-    const { projectId, environment, secretPath } = secretSync;
+  const syncSecrets = async ({ syncId }: TSecretSyncPushSecretsDTO) => {
+    const secretSync = await secretSyncDAL.findById(syncId);
 
-    console.log("getting secrets...");
+    if (!secretSync) throw new Error(`Cannot find secret sync with ID ${syncId}`);
+
+    const { projectId, environment, secretPath } = secretSync;
 
     const secrets = await getSecrets({ projectId, environmentSlug: environment.slug, secretPath });
 
-    console.log("secrets", secrets);
+    const appConnection = await decryptAppConnection({ ...secretSync.connection } as TAppConnections, kmsService);
+
+    console.log("here 2");
+    try {
+      const response = await SECRET_SYNC_PUSH_SECRETS_MAP[secretSync.destination as SecretSync](
+        secretSync,
+        appConnection,
+        secrets
+      );
+      console.log("resp", response);
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   queueService.start(QueueName.AppConnectionSecretSync, async (job) => {

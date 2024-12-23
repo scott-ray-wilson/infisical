@@ -1,3 +1,4 @@
+import { TAppConnections } from "@app/db/schemas/app-connections";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import { TAppConnectionServiceFactoryDep } from "@app/services/app-connection/app-connection-service";
 import { TAppConnection, TAppConnectionConfig } from "@app/services/app-connection/app-connection-types";
@@ -47,14 +48,17 @@ export const decryptAppConnectionCredentials = async ({
   encryptedCredentials: Buffer;
   kmsService: TAppConnectionServiceFactoryDep["kmsService"];
 }) => {
+  console.log("1");
   const { decryptor } = await kmsService.createCipherPairWithDataKey({
     type: KmsDataKey.Organization,
     orgId
   });
+  console.log("2", encryptedCredentials);
 
   const decryptedPlainTextBlob = decryptor({
     cipherTextBlob: encryptedCredentials
   });
+  console.log("3");
 
   return JSON.parse(decryptedPlainTextBlob.toString()) as TAppConnection["credentials"];
 };
@@ -89,4 +93,18 @@ export const getAppConnectionMethodName = (method: TAppConnection["method"]) => 
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       throw new Error(`Unhandled App Connection Method: ${method}`);
   }
+};
+
+export const decryptAppConnection = async (
+  appConnection: TAppConnections,
+  kmsService: TAppConnectionServiceFactoryDep["kmsService"]
+) => {
+  return {
+    ...appConnection,
+    credentials: await decryptAppConnectionCredentials({
+      encryptedCredentials: appConnection.encryptedCredentials,
+      orgId: appConnection.orgId,
+      kmsService
+    })
+  } as TAppConnection;
 };

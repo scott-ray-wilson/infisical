@@ -381,7 +381,7 @@ export const secretSyncServiceFactory = ({
 
     BadRequestOnInvalidDestination(secretSync as TSecretSync, destination);
 
-    await secretSyncQueue.triggerSecretSync({ secretSync, actor });
+    await secretSyncQueue.triggerSecretSync({ syncId, actor });
 
     return secretSync as TSecretSync;
   };

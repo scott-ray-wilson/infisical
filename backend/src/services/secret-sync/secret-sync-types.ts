@@ -1,14 +1,22 @@
 import { OrgServiceActor } from "@app/lib/types";
-import { TGitHubSync, TGitHubSyncInput, TGitHubSyncListItem } from "@app/services/secret-sync/github";
+import {
+  TGitHubSync,
+  TGitHubSyncInput,
+  TGitHubSyncListItem,
+  TGitHubSyncWithConnection
+} from "@app/services/secret-sync/github";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 
 import {
   TAwsParameterStoreSync,
   TAwsParameterStoreSyncInput,
-  TAwsParameterStoreSyncListItem
+  TAwsParameterStoreSyncListItem,
+  TAwsParameterStoreSyncWithConnection
 } from "./aws-parameter-store";
 
 export type TSecretSync = TAwsParameterStoreSync | TGitHubSync;
+
+export type TSecretSyncWithConnection = TAwsParameterStoreSyncWithConnection | TGitHubSyncWithConnection;
 
 export type TSecretSyncInput = TAwsParameterStoreSyncInput | TGitHubSyncInput;
 
@@ -50,14 +58,15 @@ export type TTriggerSecretSyncDTO = {
   syncId: string;
 };
 
-export type TSecretSyncPushSecretsDTO = {
+export type TSecretSyncPushById = {
   syncId: string;
   actor?: OrgServiceActor;
 };
 
-export type TTriggerSecretSyncsDTO = {
+export type TSecretSyncsPushByPathDTO = {
   secretPath: string;
-  environmentId: string;
+  environmentSlug: string;
+  projectId: string;
 };
 
 export type TSecretMap = Record<

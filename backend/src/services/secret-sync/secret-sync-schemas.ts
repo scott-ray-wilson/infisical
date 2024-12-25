@@ -7,21 +7,22 @@ import { slugSchema } from "@app/server/lib/schemas";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 
-export const BaseSecretSyncSchema = SecretSyncsSchema.omit({
-  destination: true,
-  destinationConfig: true,
-  syncOptions: true
-}).extend({
-  syncOptions: z
-    .object({
-      // TODO
-    })
-    .nullish(),
-  // join properties
-  projectId: z.string(),
-  connection: z.object({ app: z.nativeEnum(AppConnection), name: z.string(), id: z.string().uuid() }),
-  environment: z.object({ slug: z.string(), name: z.string(), id: z.string().uuid() })
-});
+export const BaseSecretSyncSchema = (app: AppConnection) =>
+  SecretSyncsSchema.omit({
+    destination: true,
+    destinationConfig: true,
+    syncOptions: true
+  }).extend({
+    syncOptions: z
+      .object({
+        // TODO
+      })
+      .nullish(),
+    // join properties
+    projectId: z.string(),
+    connection: z.object({ app: z.literal(app), name: z.string(), id: z.string().uuid() }),
+    environment: z.object({ slug: z.string(), name: z.string(), id: z.string().uuid() })
+  });
 
 export const GenericCreateSecretSyncFieldsSchema = (sync: SecretSync) =>
   z.object({

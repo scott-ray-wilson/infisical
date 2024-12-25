@@ -48,17 +48,14 @@ export const decryptAppConnectionCredentials = async ({
   encryptedCredentials: Buffer;
   kmsService: TAppConnectionServiceFactoryDep["kmsService"];
 }) => {
-  console.log("1");
   const { decryptor } = await kmsService.createCipherPairWithDataKey({
     type: KmsDataKey.Organization,
     orgId
   });
-  console.log("2", encryptedCredentials);
 
   const decryptedPlainTextBlob = decryptor({
     cipherTextBlob: encryptedCredentials
   });
-  console.log("3");
 
   return JSON.parse(decryptedPlainTextBlob.toString()) as TAppConnection["credentials"];
 };
@@ -68,9 +65,8 @@ export const validateAppConnectionCredentials = async (
 ): Promise<TAppConnection["credentials"]> => {
   const { app } = appConnection;
   switch (app) {
-    case AppConnection.AWS: {
+    case AppConnection.AWS:
       return validateAwsConnectionCredentials(appConnection);
-    }
     case AppConnection.GitHub:
       return validateGitHubConnectionCredentials(appConnection);
     default:

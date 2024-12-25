@@ -1,17 +1,21 @@
-import { TAppConnections } from "@app/db/schemas/app-connections";
 import { TKeyStoreFactory } from "@app/keystore/keystore";
 import { InternalServerError } from "@app/lib/errors";
 import { QueueJobs, QueueName, TQueueServiceFactory } from "@app/queue";
-import { decryptAppConnection } from "@app/services/app-connection/app-connection-fns";
+import { decryptAppConnectionCredentials } from "@app/services/app-connection/app-connection-fns";
 import { TKmsServiceFactory } from "@app/services/kms/kms-service";
 import { KmsDataKey } from "@app/services/kms/kms-types";
+import { TProjectEnvDALFactory } from "@app/services/project-env/project-env-dal";
 import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-folder-dal";
 import { TSecretImportDALFactory } from "@app/services/secret-import/secret-import-dal";
 import { fnSecretsV2FromImports } from "@app/services/secret-import/secret-import-fns";
 import { TSecretSyncDALFactory } from "@app/services/secret-sync/secret-sync-dal";
-import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
-import { SECRET_SYNC_PUSH_SECRETS_MAP } from "@app/services/secret-sync/secret-sync-maps";
-import { TSecretMap, TSecretSyncPushSecretsDTO } from "@app/services/secret-sync/secret-sync-types";
+import { secretSyncPushSecrets } from "@app/services/secret-sync/secret-sync-fns";
+import {
+  TSecretMap,
+  TSecretSyncPushById,
+  TSecretSyncsPushByPathDTO,
+  TSecretSyncWithConnection
+} from "@app/services/secret-sync/secret-sync-types";
 import { TSecretV2BridgeDALFactory } from "@app/services/secret-v2-bridge/secret-v2-bridge-dal";
 import { expandSecretReferencesFactory } from "@app/services/secret-v2-bridge/secret-v2-bridge-fns";
 
@@ -24,7 +28,8 @@ type TSecretSyncQueueFactoryDep = {
   folderDAL: Pick<TSecretFolderDALFactory, "findBySecretPath" | "findByManySecretPath">;
   secretV2BridgeDAL: Pick<TSecretV2BridgeDALFactory, "findByFolderId" | "find">;
   secretImportDAL: Pick<TSecretImportDALFactory, "find" | "findByFolderIds">;
-  secretSyncDAL: Pick<TSecretSyncDALFactory, "findById">;
+  secretSyncDAL: Pick<TSecretSyncDALFactory, "findById" | "find">;
+  projectEnvDAL: Pick<TProjectEnvDALFactory, "findOne">;
 };
 
 export const secretSyncQueueFactory = ({
@@ -34,7 +39,8 @@ export const secretSyncQueueFactory = ({
   folderDAL,
   secretV2BridgeDAL,
   secretImportDAL,
-  secretSyncDAL
+  secretSyncDAL,
+  projectEnvDAL
 }: TSecretSyncQueueFactoryDep) => {
   // TODO: telemetry
   // const integrationMeter = opentelemetry.metrics.getMeter("Integrations");
@@ -134,7 +140,37 @@ export const secretSyncQueueFactory = ({
     return secretMap;
   };
 
-  const syncSecrets = async ({ syncId }: TSecretSyncPushSecretsDTO) => {
+  const pushSecrets = async (
+    secretSync: NonNullable<Awaited<ReturnType<typeof secretSyncDAL.findById>>>,
+    secrets: TSecretMap
+  ) => {
+    const {
+      connection: { orgId, encryptedCredentials }
+    } = secretSync;
+
+    const credentials = await decryptAppConnectionCredentials({
+      orgId,
+      encryptedCredentials,
+      kmsService
+    });
+
+    try {
+      const response = await secretSyncPushSecrets(
+        {
+          ...secretSync,
+          connection: {
+            ...secretSync.connection,
+            credentials
+          }
+        } as TSecretSyncWithConnection,
+        secrets
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const pushSecretsBySyncId = async ({ syncId }: TSecretSyncPushById) => {
     const secretSync = await secretSyncDAL.findById(syncId);
 
     if (!secretSync) throw new Error(`Cannot find secret sync with ID ${syncId}`);
@@ -143,41 +179,27 @@ export const secretSyncQueueFactory = ({
 
     const secrets = await getSecrets({ projectId, environmentSlug: environment.slug, secretPath });
 
-    const appConnection = await decryptAppConnection({ ...secretSync.connection } as TAppConnections, kmsService);
+    await pushSecrets(secretSync, secrets);
+  };
 
-    console.log("here 2");
-    try {
-      const response = await SECRET_SYNC_PUSH_SECRETS_MAP[secretSync.destination as SecretSync](
-        secretSync,
-        appConnection,
-        secrets
-      );
-      console.log("resp", response);
-    } catch (e) {
-      console.error(e);
+  const pushSecretsBySecretPath = async ({ secretPath, projectId, environmentSlug }: TSecretSyncsPushByPathDTO) => {
+    const secrets = await getSecrets({ projectId, environmentSlug, secretPath });
+
+    const environment = await projectEnvDAL.findOne({ slug: environmentSlug, projectId });
+
+    if (!environment)
+      throw new Error(`Cannot find environment with slug "${environmentSlug}" for project with ID "${projectId}"`);
+
+    const secretSyncs = await secretSyncDAL.find({ envId: environment.id, secretPath });
+
+    for await (const secretSync of secretSyncs) {
+      await pushSecrets(secretSync, secrets);
     }
   };
 
-  queueService.start(QueueName.AppConnectionSecretSync, async (job) => {
-    switch (job.name) {
-      case QueueJobs.AppConnectionTriggerSecretSync:
-        await syncSecrets(job.data as TSecretSyncPushSecretsDTO);
-        break;
-      case QueueJobs.AppConnectionTriggerSecretSyncs:
-        // TODO
-        break;
-      case QueueJobs.AppConnectionSendSecretSyncFailedEmails:
-        // TODO
-        break;
-      default:
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        throw new InternalServerError({ message: `Unhandled App Connection Secret Synce Queue Job ${job.name}` });
-    }
-  });
-
-  const triggerSecretSync = async (params: TSecretSyncPushSecretsDTO) => {
+  const triggerPushSecretsBySyncId = async (params: TSecretSyncPushById) => {
     await queueService.queue(QueueName.AppConnectionSecretSync, QueueJobs.AppConnectionTriggerSecretSync, params, {
-      attempts: 1,
+      attempts: 5,
       delay: 1000,
       backoff: {
         type: "exponential",
@@ -188,7 +210,22 @@ export const secretSyncQueueFactory = ({
     });
   };
 
-  return {
-    triggerSecretSync
-  };
+  queueService.start(QueueName.AppConnectionSecretSync, async (job) => {
+    switch (job.name) {
+      case QueueJobs.AppConnectionTriggerSecretSync:
+        await pushSecretsBySyncId(job.data as TSecretSyncPushById);
+        break;
+      case QueueJobs.AppConnectionTriggerSecretSyncs:
+        await pushSecretsBySecretPath(job.data as TSecretSyncsPushByPathDTO);
+        break;
+      case QueueJobs.AppConnectionSendSecretSyncFailedEmails:
+        // TODO
+        break;
+      default:
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        throw new InternalServerError({ message: `Unhandled App Connection Secret Synce Queue Job ${job.name}` });
+    }
+  });
+
+  return { triggerPushSecretsBySyncId };
 };

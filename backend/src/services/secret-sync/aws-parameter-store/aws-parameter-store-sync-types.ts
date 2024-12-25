@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { TAwsConnection } from "@app/services/app-connection/aws";
+
 import {
   AwsParameterStoreSyncListItemSchema,
   AwsParameterStoreSyncSchema,
@@ -11,3 +13,7 @@ export type TAwsParameterStoreSync = z.infer<typeof AwsParameterStoreSyncSchema>
 export type TAwsParameterStoreSyncInput = z.infer<typeof CreateAwsParameterStoreSyncSchema>;
 
 export type TAwsParameterStoreSyncListItem = z.infer<typeof AwsParameterStoreSyncListItemSchema>;
+
+export type TAwsParameterStoreSyncWithConnection = Omit<TAwsParameterStoreSync, "connection"> & {
+  connection: TAwsConnection;
+};

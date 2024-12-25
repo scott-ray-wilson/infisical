@@ -10,13 +10,12 @@ import {
 } from "@app/services/secret-sync/secret-sync-schemas";
 
 const AwsParameterStoreSyncDestinationConfigSchema = z.object({
-  // TODO describes
   region: z.nativeEnum(AWSRegion),
-  path: z.string().min(1, "AWS Parameter Store Path Required").transform(wrapWithSlashes)
-  // TODO additional options
+  path: z.string().min(1, "AWS Parameter Store Path Required").transform(wrapWithSlashes),
+  keyId: z.string().optional()
 });
 
-export const AwsParameterStoreSyncSchema = BaseSecretSyncSchema.extend({
+export const AwsParameterStoreSyncSchema = BaseSecretSyncSchema(AppConnection.AWS).extend({
   destination: z.literal(SecretSync.AWSParameterStore),
   destinationConfig: AwsParameterStoreSyncDestinationConfigSchema
 });

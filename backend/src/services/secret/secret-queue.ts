@@ -619,6 +619,27 @@ export const secretQueueFactory = ({
         }
       }
     );
+
+    await queueService.queue(
+      QueueName.AppConnectionSecretSync,
+      QueueJobs.AppConnectionTriggerSecretSyncs,
+      {
+        secretPath,
+        environmentSlug: environment,
+        projectId
+      },
+      {
+        attempts: 5,
+        delay: 1000,
+        backoff: {
+          type: "exponential",
+          delay: 3000
+        },
+        removeOnComplete: true,
+        removeOnFail: true
+      }
+    );
+
     await syncIntegrations({ secretPath, projectId, environment, deDupeQueue, isManual: false });
     if (!excludeReplication) {
       await replicateSecrets({

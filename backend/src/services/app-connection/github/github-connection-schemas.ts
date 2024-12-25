@@ -57,7 +57,7 @@ export const UpdateGitHubConnectionSchema = z
 
 const BaseGitHubConnectionSchema = BaseAppConnectionSchema.extend({ app: z.literal(AppConnection.GitHub) });
 
-export const GitHubAppConnectionSchema = z.intersection(
+export const GitHubConnectionSchema = z.intersection(
   BaseGitHubConnectionSchema,
   z.discriminatedUnion("method", [
     z.object({

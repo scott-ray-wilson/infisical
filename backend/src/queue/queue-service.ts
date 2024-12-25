@@ -15,7 +15,7 @@ import {
   TIntegrationSyncPayload,
   TSyncSecretsDTO
 } from "@app/services/secret/secret-types";
-import { TSecretSyncPushSecretsDTO, TTriggerSecretSyncsDTO } from "@app/services/secret-sync/secret-sync-types";
+import { TSecretSyncPushById, TSecretSyncsPushByPathDTO } from "@app/services/secret-sync/secret-sync-types";
 
 export enum QueueName {
   SecretRotation = "secret-rotation",
@@ -192,15 +192,15 @@ export type TQueueJobTypes = {
   [QueueName.AppConnectionSecretSync]:
     | {
         name: QueueJobs.AppConnectionTriggerSecretSync;
-        payload: TSecretSyncPushSecretsDTO;
+        payload: TSecretSyncPushById;
       }
     | {
         name: QueueJobs.AppConnectionTriggerSecretSyncs;
-        payload: TTriggerSecretSyncsDTO;
+        payload: TSecretSyncsPushByPathDTO;
       }
     | {
         name: QueueJobs.AppConnectionSendSecretSyncFailedEmails;
-        payload: TTriggerSecretSyncsDTO;
+        payload: TSecretSyncsPushByPathDTO;
       };
 };
 

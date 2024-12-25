@@ -26,11 +26,16 @@ const baseSecretSyncQuery = ({
       db.ref("id").withSchema(TableName.Environment).as("envId"),
       db.ref("slug").withSchema(TableName.Environment).as("envSlug"),
       db.ref("projectId").withSchema(TableName.Environment),
+      // entire connection
       db.ref("name").withSchema(TableName.AppConnection).as("connectionName"),
       db.ref("method").withSchema(TableName.AppConnection).as("connectionMethod"),
-      db.ref("app").withSchema(TableName.AppConnection),
-      db.ref("orgId").withSchema(TableName.AppConnection),
-      db.ref("encryptedCredentials").withSchema(TableName.AppConnection)
+      db.ref("app").withSchema(TableName.AppConnection).as("connectionApp"),
+      db.ref("orgId").withSchema(TableName.AppConnection).as("connectionOrgId"),
+      db.ref("encryptedCredentials").withSchema(TableName.AppConnection).as("connectionEncryptedCredentials"),
+      db.ref("description").withSchema(TableName.AppConnection).as("connectionDescription"),
+      db.ref("version").withSchema(TableName.AppConnection).as("connectionVersion"),
+      db.ref("createdAt").withSchema(TableName.AppConnection).as("connectionCreatedAt"),
+      db.ref("updatedAt").withSchema(TableName.AppConnection).as("connectionUpdatedAt")
     );
 
   if (filter) {
@@ -46,12 +51,16 @@ const expandSecretSync = (secretSync: Awaited<ReturnType<typeof baseSecretSyncQu
     envId,
     envName,
     envSlug,
-    app,
+    connectionApp,
     connectionName,
     connectionId,
-    orgId,
-    encryptedCredentials,
+    connectionOrgId,
+    connectionEncryptedCredentials,
     connectionMethod,
+    connectionDescription,
+    connectionCreatedAt,
+    connectionUpdatedAt,
+    connectionVersion,
     ...el
   } = secretSync;
   return {
@@ -59,7 +68,18 @@ const expandSecretSync = (secretSync: Awaited<ReturnType<typeof baseSecretSyncQu
     envId,
     connectionId,
     environment: { id: envId, name: envName, slug: envSlug },
-    connection: { app, id: connectionId, name: connectionName, orgId, encryptedCredentials, method: connectionMethod }
+    connection: {
+      app: connectionApp,
+      id: connectionId,
+      name: connectionName,
+      orgId: connectionOrgId,
+      encryptedCredentials: connectionEncryptedCredentials,
+      method: connectionMethod,
+      description: connectionDescription,
+      createdAt: connectionCreatedAt,
+      updatedAt: connectionUpdatedAt,
+      version: connectionVersion
+    }
   };
 };
 

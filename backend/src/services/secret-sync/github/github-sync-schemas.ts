@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
+import { GitHubConnectionSchema } from "@app/services/app-connection/github";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 import {
   BaseSecretSyncSchema,
@@ -14,9 +15,10 @@ const GitHubSyncDestinationConfigSchema = z.object({
   // TODO additional options
 });
 
-export const GitHubSyncSchema = BaseSecretSyncSchema.extend({
+export const GitHubSyncSchema = BaseSecretSyncSchema(AppConnection.GitHub).extend({
   destination: z.literal(SecretSync.GitHub),
-  destinationConfig: GitHubSyncDestinationConfigSchema
+  destinationConfig: GitHubSyncDestinationConfigSchema,
+  connection: GitHubConnectionSchema
 });
 
 export const CreateGitHubSyncSchema = GenericCreateSecretSyncFieldsSchema(SecretSync.GitHub).extend({

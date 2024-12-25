@@ -36,7 +36,7 @@ type TSecretSyncServiceFactoryDep = {
   projectEnvDAL: Pick<TProjectEnvDALFactory, "find" | "findById">;
   projectBotService: Pick<TProjectBotServiceFactory, "getBotKey">;
   folderDAL: Pick<TSecretFolderDALFactory, "findBySecretPath">;
-  secretSyncQueue: Pick<TSecretSyncQueueFactory, "triggerSecretSync">;
+  secretSyncQueue: Pick<TSecretSyncQueueFactory, "triggerPushSecretsBySyncId">;
   licenseService: Pick<TLicenseServiceFactory, "getPlan">; // TODO: remove once launched
 };
 
@@ -55,13 +55,6 @@ const BadRequestOnInvalidConnectionForSync = (syncTo: SecretSync, appConnection:
       message: `Invalid App Connection: cannot sync to ${SECRET_SYNC_NAME_MAP[syncTo]} using ${
         APP_CONNECTION_NAME_MAP[appConnection.app]
       } Connections`
-    });
-};
-
-const BadRequestOnInvalidDestination = (secretSync: TSecretSync, destination: SecretSync) => {
-  if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[destination])
-    throw new BadRequestError({
-      message: `Secret sync with ID ${secretSync.id} is not configured for ${SECRET_SYNC_NAME_MAP[destination]}`
     });
 };
 
@@ -134,7 +127,10 @@ export const secretSyncServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSync);
 
-    BadRequestOnInvalidDestination(secretSync as TSecretSync, destination);
+    if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[destination])
+      throw new BadRequestError({
+        message: `Secret sync with ID ${secretSync.id} is not configured for ${SECRET_SYNC_NAME_MAP[destination]}`
+      });
 
     return secretSync as TSecretSync;
   };
@@ -172,7 +168,10 @@ export const secretSyncServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSync);
 
-    BadRequestOnInvalidDestination(secretSync as TSecretSync, destination);
+    if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[destination])
+      throw new BadRequestError({
+        message: `Secret sync with ID ${secretSync.id} is not configured for ${SECRET_SYNC_NAME_MAP[destination]}`
+      });
 
     return secretSync as TSecretSync;
   };
@@ -269,7 +268,10 @@ export const secretSyncServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Edit, ProjectPermissionSub.SecretSync);
 
-    BadRequestOnInvalidDestination(secretSync as TSecretSync, destination);
+    if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[destination])
+      throw new BadRequestError({
+        message: `Secret sync with ID ${secretSync.id} is not configured for ${SECRET_SYNC_NAME_MAP[destination]}`
+      });
 
     const updatedSecretSync = await secretSyncDAL.transaction(async (tx) => {
       if (params.envId && secretSync.envId === params.envId) {
@@ -350,7 +352,10 @@ export const secretSyncServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Delete, ProjectPermissionSub.SecretSync);
 
-    BadRequestOnInvalidDestination(secretSync as TSecretSync, destination);
+    if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[destination])
+      throw new BadRequestError({
+        message: `Secret sync with ID ${secretSync.id} is not configured for ${SECRET_SYNC_NAME_MAP[destination]}`
+      });
 
     const deletedSecretSync = await secretSyncDAL.deleteById(syncId);
 
@@ -379,9 +384,12 @@ export const secretSyncServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSync);
 
-    BadRequestOnInvalidDestination(secretSync as TSecretSync, destination);
+    if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[destination])
+      throw new BadRequestError({
+        message: `Secret sync with ID ${secretSync.id} is not configured for ${SECRET_SYNC_NAME_MAP[destination]}`
+      });
 
-    await secretSyncQueue.triggerSecretSync({ syncId, actor });
+    await secretSyncQueue.triggerPushSecretsBySyncId({ syncId, actor });
 
     return secretSync as TSecretSync;
   };

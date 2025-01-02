@@ -1,4 +1,4 @@
-import AWS, { AWSError } from "aws-sdk";
+import AWS from "aws-sdk";
 
 import { getAwsConnectionConfig } from "@app/services/app-connection/aws/aws-connection-fns";
 import { TAwsParameterStoreSyncWithConnection } from "@app/services/secret-sync/aws-parameter-store/aws-parameter-store-sync-types";
@@ -36,6 +36,8 @@ const getParametersByPath = async (
     return awsParameterStoreSecretsRecord;
   }
 
+  // TODO: sleep
+
   return getParametersByPath(ssm, path, awsParameterStoreSecretsRecord, resp.NextToken);
 };
 
@@ -43,7 +45,7 @@ export const awsParameterStoreSyncPushSecrets = async (
   secretSync: TAwsParameterStoreSyncWithConnection,
   secrets: TSecretMap
 ) => {
-  const { destinationConfig, projectId, secretPath, environment, connection } = secretSync;
+  const { destinationConfig, connection } = secretSync;
 
   // TODO(scott): KMS Key ID, Tags
 
@@ -56,62 +58,40 @@ export const awsParameterStoreSyncPushSecrets = async (
 
   ssm.config.update(config);
 
-  try {
-    const awsParameterStoreSecretsRecord = await getParametersByPath(ssm, destinationConfig.path);
+  const awsParameterStoreSecretsRecord = await getParametersByPath(ssm, destinationConfig.path);
 
-    for await (const entry of Object.entries(secrets)) {
-      const [key, { value }] = entry;
+  for await (const entry of Object.entries(secrets)) {
+    const [key, { value }] = entry;
 
-      if (key in awsParameterStoreSecretsRecord && awsParameterStoreSecretsRecord[key].Value === value) {
-        break;
-      }
-
-      await ssm
-        .putParameter({
-          Name: `${destinationConfig.path}${key}`,
-          Type: "SecureString",
-          Value: value,
-          Overwrite: true
-        })
-        .promise();
+    if (key in awsParameterStoreSecretsRecord && awsParameterStoreSecretsRecord[key].Value === value) {
+      break;
     }
-  } catch (err) {
-    return {
-      isSynced: false,
-      message: (err as AWSError)?.message
-    };
+
+    const resp = await ssm
+      .putParameter({
+        Name: `${destinationConfig.path}${key}`,
+        Type: "SecureString",
+        Value: value,
+        Overwrite: true
+      })
+      .promise();
+
+    console.log("resp", resp);
   }
 
-  return { isSynced: true, message: null };
+  // TODO: option to skip delete
 
-  // if (!metadata.shouldDisableDelete) {
-  //   logger.info(
-  //     `getIntegrationSecrets: inside of shouldDisableDelete AWS SSM [projectId=${projectId}] [environment=${integration.environment.slug}]  [secretPath=${integration.secretPath}] [step=1]`
-  //   );
-  //   for (const key in awsParameterStoreSecretsObj) {
-  //     if (Object.hasOwn(awsParameterStoreSecretsObj, key)) {
-  //       logger.info(
-  //         `getIntegrationSecrets: inside of shouldDisableDelete AWS SSM [projectId=${projectId}] [environment=${integration.environment.slug}]  [secretPath=${integration.secretPath}] [step=2]`
-  //       );
-  //       if (!(key in secrets) || !secrets[key].value) {
-  //         logger.info(
-  //           `getIntegrationSecrets: inside of shouldDisableDelete AWS SSM [projectId=${projectId}] [environment=${integration.environment.slug}]  [secretPath=${integration.secretPath}] [step=3]`
-  //         );
-  //         // case:
-  //         // -> delete secret
-  //         await ssm
-  //           .deleteParameter({
-  //             Name: awsParameterStoreSecretsObj[key].Name as string
-  //           })
-  //           .promise();
-  //         logger.info(
-  //           `getIntegrationSecrets: inside of shouldDisableDelete AWS SSM [projectId=${projectId}] [environment=${integration.environment.slug}]  [secretPath=${integration.secretPath}] [step=4]`
-  //         );
-  //       }
-  //       await new Promise((resolve) => {
-  //         setTimeout(resolve, 50);
-  //       });
-  //     }
-  //   }
-  // }
+  for await (const parameterKey of Object.keys(awsParameterStoreSecretsRecord).filter(
+    (key) => !(key in secrets) || !secrets[key].value
+  )) {
+    await ssm
+      .deleteParameter({
+        Name: awsParameterStoreSecretsRecord[parameterKey].Name as string
+      })
+      .promise();
+
+    // TODO: sleep
+  }
+
+  return { isSynced: true, syncMessage: null };
 };

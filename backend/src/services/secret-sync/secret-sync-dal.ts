@@ -98,7 +98,7 @@ export const secretSyncDALFactory = (db: TDbClient) => {
         return expandSecretSync(secretSync);
       }
     } catch (error) {
-      throw new DatabaseError({ error, name: "Find by ID" });
+      throw new DatabaseError({ error, name: "Find by ID - Secret Sync" });
     }
   };
 
@@ -116,11 +116,27 @@ export const secretSyncDALFactory = (db: TDbClient) => {
 
       return expandSecretSync(secretSync!);
     } catch (error) {
-      throw new DatabaseError({ error, name: "Create" });
+      throw new DatabaseError({ error, name: "Create - Secret Sync" });
     }
   };
 
-  // TODO: update
+  const updateById = async (syncId: string, data: Parameters<(typeof secretSyncOrm)["updateById"]>[1]) => {
+    try {
+      const secretSync = await secretSyncOrm.transaction(async (tx) => {
+        const sync = await secretSyncOrm.updateById(syncId, data, tx);
+
+        return baseSecretSyncQuery({
+          filter: { [`${TableName.SecretSync}.id` as "id"]: sync.id },
+          db,
+          tx
+        }).first();
+      });
+
+      return expandSecretSync(secretSync!);
+    } catch (error) {
+      throw new DatabaseError({ error, name: "Update by ID - Secret Sync" });
+    }
+  };
 
   const findOne = async (filter: Parameters<(typeof secretSyncOrm)["findOne"]>[0], tx?: Knex) => {
     try {
@@ -130,7 +146,7 @@ export const secretSyncDALFactory = (db: TDbClient) => {
         return expandSecretSync(secretSync);
       }
     } catch (error) {
-      throw new DatabaseError({ error, name: "Find One" });
+      throw new DatabaseError({ error, name: "Find One - Secret Sync" });
     }
   };
 
@@ -140,9 +156,9 @@ export const secretSyncDALFactory = (db: TDbClient) => {
 
       return secretSyncs.map(expandSecretSync);
     } catch (error) {
-      throw new DatabaseError({ error, name: "Find" });
+      throw new DatabaseError({ error, name: "Find - Secret Sync" });
     }
   };
 
-  return { ...secretSyncOrm, findById, findOne, find, create };
+  return { ...secretSyncOrm, findById, findOne, find, create, updateById };
 };

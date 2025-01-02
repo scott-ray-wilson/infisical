@@ -12,7 +12,7 @@ export async function up(knex: Knex): Promise<void> {
       t.string("destination").notNullable();
       t.boolean("isEnabled").notNullable().defaultTo(true);
       t.integer("version").defaultTo(1).notNullable();
-      t.enum("syncState", ["pending", "complete", "failed"]).notNullable().defaultTo("pending");
+      t.boolean("isSynced");
       t.jsonb("destinationConfig").notNullable();
       t.jsonb("syncOptions");
       t.string("secretPath").notNullable();

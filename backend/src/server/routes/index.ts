@@ -825,6 +825,21 @@ export const registerRoutes = async (
     kmsService
   });
 
+  const secretSyncQueue = secretSyncQueueFactory({
+    queueService,
+    secretSyncDAL,
+    folderDAL,
+    secretImportDAL,
+    secretV2BridgeDAL,
+    kmsService,
+    keyStore,
+    projectEnvDAL,
+    auditLogService,
+    smtpService,
+    projectDAL,
+    projectMembershipDAL
+  });
+
   const secretQueueService = secretQueueFactory({
     keyStore,
     queueService,
@@ -858,7 +873,8 @@ export const registerRoutes = async (
     secretApprovalRequestDAL,
     projectKeyDAL,
     projectUserMembershipRoleDAL,
-    orgService
+    orgService,
+    secretSyncQueue
   });
 
   const projectService = projectServiceFactory({
@@ -1364,16 +1380,6 @@ export const registerRoutes = async (
     permissionService,
     kmsService,
     licenseService
-  });
-
-  const secretSyncQueue = secretSyncQueueFactory({
-    queueService,
-    secretSyncDAL,
-    folderDAL,
-    secretImportDAL,
-    secretV2BridgeDAL,
-    kmsService,
-    keyStore
   });
 
   const secretSyncService = secretSyncServiceFactory({

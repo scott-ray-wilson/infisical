@@ -5,7 +5,7 @@ import { SecretSyncs } from "@app/lib/api-docs";
 import { startsWithVowel } from "@app/lib/fn";
 import { readLimit, writeLimit } from "@app/server/config/rateLimiter";
 import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
-import { AuthMode } from "@app/services/auth/auth-type";
+import { ActorType, AuthMode } from "@app/services/auth/auth-type";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 import { SECRET_SYNC_NAME_MAP } from "@app/services/secret-sync/secret-sync-maps";
 import { TSecretSync, TSecretSyncInput } from "@app/services/secret-sync/secret-sync-types";
@@ -312,7 +312,12 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
       const { syncId } = req.params;
 
       const secretSync = (await server.services.secretSync.triggerSecretSync(
-        { syncId, destination },
+        {
+          syncId,
+          destination,
+          auditLogInfo: req.auditLogInfo,
+          triggeredByUserId: req.permission.type === ActorType.USER ? req.permission.id : undefined
+        },
         req.permission
       )) as T;
 
@@ -320,7 +325,7 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
         ...req.auditLogInfo,
         projectId: secretSync.projectId,
         event: {
-          type: EventType.MANUALLY_TRIGGER_SECRET_SYNC,
+          type: EventType.MANUAL_SECRET_SYNC_PUSH,
           metadata: {
             syncId: secretSync.id,
             destination

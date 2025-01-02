@@ -1,10 +1,14 @@
-import { OrgServiceActor } from "@app/lib/types";
+import { Job } from "bullmq";
+
+import { TCreateAuditLogDTO } from "@app/ee/services/audit-log/audit-log-types";
+import { QueueJobs } from "@app/queue";
 import {
   TGitHubSync,
   TGitHubSyncInput,
   TGitHubSyncListItem,
   TGitHubSyncWithConnection
 } from "@app/services/secret-sync/github";
+import { TSecretSyncDALFactory } from "@app/services/secret-sync/secret-sync-dal";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 
 import {
@@ -53,21 +57,44 @@ export type TDeleteSecretSyncDTO = {
   syncId: string;
 };
 
+type AuditLogInfo = Pick<TCreateAuditLogDTO, "userAgent" | "userAgentType" | "ipAddress" | "actor">;
+
+export type TTriggerSyncSecretByIdDTO = {
+  syncId: string;
+  auditLogInfo: AuditLogInfo;
+  triggeredByUserId?: string;
+};
+
 export type TTriggerSecretSyncDTO = {
   destination: SecretSync;
-  syncId: string;
-};
+} & TTriggerSyncSecretByIdDTO;
 
-export type TSecretSyncPushById = {
-  syncId: string;
-  actor?: OrgServiceActor;
-};
-
-export type TSecretSyncsPushByPathDTO = {
+export type TTriggerSecretSyncsByPathDTO = {
   secretPath: string;
   environmentSlug: string;
   projectId: string;
 };
+
+type TSecretSyncRaw = NonNullable<Awaited<ReturnType<TSecretSyncDALFactory["findById"]>>>;
+
+export type TQueueSecretSyncPayload = {
+  secretSync: TSecretSyncRaw;
+  auditLogInfo?: AuditLogInfo;
+  triggeredByUserId?: string;
+};
+
+export type TQueueSendSecretSyncFailedNotificationsPayload = {
+  secretSync: TSecretSyncRaw;
+  triggeredByUserId?: string;
+};
+
+export type TSyncSecretsJobDTO = Job<TQueueSecretSyncPayload, void, QueueJobs.AppConnectionSyncSecrets>;
+
+export type TSendSecretSyncFailedNotificationsJobDTO = Job<
+  TQueueSendSecretSyncFailedNotificationsPayload,
+  void,
+  QueueJobs.AppConnectionSendSecretSyncFailedNotifications
+>;
 
 export type TSecretMap = Record<
   string,

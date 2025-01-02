@@ -36,7 +36,7 @@ type TSecretSyncServiceFactoryDep = {
   projectEnvDAL: Pick<TProjectEnvDALFactory, "find" | "findById">;
   projectBotService: Pick<TProjectBotServiceFactory, "getBotKey">;
   folderDAL: Pick<TSecretFolderDALFactory, "findBySecretPath">;
-  secretSyncQueue: Pick<TSecretSyncQueueFactory, "triggerPushSecretsBySyncId">;
+  secretSyncQueue: Pick<TSecretSyncQueueFactory, "triggerSecretSyncById">;
   licenseService: Pick<TLicenseServiceFactory, "getPlan">; // TODO: remove once launched
 };
 
@@ -362,7 +362,10 @@ export const secretSyncServiceFactory = ({
     return deletedSecretSync as TSecretSync;
   };
 
-  const triggerSecretSync = async ({ syncId, destination }: TTriggerSecretSyncDTO, actor: OrgServiceActor) => {
+  const triggerSecretSync = async (
+    { syncId, destination, auditLogInfo, triggeredByUserId }: TTriggerSecretSyncDTO,
+    actor: OrgServiceActor
+  ) => {
     await checkSecretSyncAvailability(actor.orgId);
 
     const secretSync = await secretSyncDAL.findById(syncId);
@@ -389,7 +392,7 @@ export const secretSyncServiceFactory = ({
         message: `Secret sync with ID ${secretSync.id} is not configured for ${SECRET_SYNC_NAME_MAP[destination]}`
       });
 
-    await secretSyncQueue.triggerPushSecretsBySyncId({ syncId, actor });
+    await secretSyncQueue.triggerSecretSyncById({ syncId, auditLogInfo, triggeredByUserId });
 
     return secretSync as TSecretSync;
   };

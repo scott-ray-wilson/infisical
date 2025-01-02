@@ -1,3 +1,4 @@
+import { TSecretSyncs } from "@app/db/schemas/secret-syncs";
 import {
   TCreateProjectTemplateDTO,
   TUpdateProjectTemplateDTO
@@ -237,8 +238,8 @@ export enum EventType {
   CREATE_SECRET_SYNC = "create-secret-sync",
   UPDATE_SECRET_SYNC = "update-secret-sync",
   DELETE_SECRET_SYNC = "delete-secret-sync",
-  SECRET_SYNC_SYNCED = "secret-sync-synced",
-  MANUALLY_TRIGGER_SECRET_SYNC = "manually-trigger-secret-sync"
+  SECRET_SYNC_PUSH = "secret-sync-push",
+  MANUAL_SECRET_SYNC_PUSH = "manual-secret-sync-push"
 }
 
 interface UserActorMetadata {
@@ -1952,10 +1953,23 @@ interface DeleteSecretSyncEvent {
 }
 
 interface ManualTriggerSecretSyncEvent {
-  type: EventType.MANUALLY_TRIGGER_SECRET_SYNC;
+  type: EventType.MANUAL_SECRET_SYNC_PUSH;
   metadata: {
     syncId: string;
     destination: SecretSync;
+  };
+}
+
+interface SecretSyncPushEvent {
+  type: EventType.SECRET_SYNC_PUSH;
+  metadata: Pick<
+    TSecretSyncs,
+    "syncOptions" | "destinationConfig" | "destination" | "isSynced" | "envId" | "secretPath" | "connectionId"
+  > & {
+    syncId: string;
+    syncMessage: string | null;
+    jobId: string;
+    jobRanAt: Date;
   };
 }
 
@@ -2141,4 +2155,5 @@ export type Event =
   | CreateSecretSyncEvent
   | UpdateSecretSyncEvent
   | DeleteSecretSyncEvent
-  | ManualTriggerSecretSyncEvent;
+  | ManualTriggerSecretSyncEvent
+  | SecretSyncPushEvent;

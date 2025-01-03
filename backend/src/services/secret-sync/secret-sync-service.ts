@@ -96,7 +96,7 @@ export const secretSyncServiceFactory = ({
     const environments = await projectEnvDAL.find({ projectId });
 
     const secretSyncs = await secretSyncDAL.find({
-      destination,
+      ...(destination && { destination }),
       $in: {
         envId: environments.map((env) => env.id)
       }

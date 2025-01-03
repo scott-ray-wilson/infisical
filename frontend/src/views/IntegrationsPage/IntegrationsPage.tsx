@@ -12,6 +12,7 @@ import {
   useGetWorkspaceAuthorizations,
   useGetWorkspaceIntegrations
 } from "@app/hooks/api";
+import { useListSecretSyncs } from "@app/hooks/api/secretSyncs";
 import { IntegrationAuth } from "@app/hooks/api/types";
 
 import { CloudIntegrationSection } from "./components/CloudIntegrationSection";
@@ -40,10 +41,14 @@ export const IntegrationsPage = withProjectPermission(
     const { currentWorkspace } = useWorkspace();
     const workspaceId = currentWorkspace?.id || "";
     const environments = currentWorkspace?.environments || [];
-    const [view, setView] = useState<IntegrationView>(IntegrationView.New);
+    const [view, setView] = useState<IntegrationView>(IntegrationView.List);
 
     const { data: cloudIntegrations, isLoading: isCloudIntegrationsLoading } =
       useGetCloudIntegrations();
+
+    const { data: secretSyncs, isLoading: isSecretSyncsLoading } = useListSecretSyncs(workspaceId, {
+      enabled: Boolean(workspaceId)
+    });
 
     const {
       data: integrationAuths,
@@ -64,8 +69,7 @@ export const IntegrationsPage = withProjectPermission(
     const {
       data: integrations,
       isLoading: isIntegrationLoading,
-      isFetching: isIntegrationFetching,
-      isFetched: isIntegrationsFetched
+      isFetching: isIntegrationFetching
     } = useGetWorkspaceIntegrations(workspaceId);
 
     const { mutateAsync: deleteIntegration } = useDeleteIntegration();
@@ -97,10 +101,6 @@ export const IntegrationsPage = withProjectPermission(
       isIntegrationsAuthorizedEmpty,
       isIntegrationsEmpty
     ]);
-
-    useEffect(() => {
-      setView(integrations?.length ? IntegrationView.List : IntegrationView.New);
-    }, [isIntegrationsFetched]);
 
     const handleProviderIntegration = async (provider: string) => {
       const selectedCloudIntegration = cloudIntegrations?.find(({ slug }) => provider === slug);
@@ -163,7 +163,7 @@ export const IntegrationsPage = withProjectPermission(
       }
     };
 
-    if (isIntegrationLoading || isCloudIntegrationsLoading)
+    if (isIntegrationLoading || isCloudIntegrationsLoading || isSecretSyncsLoading)
       return (
         <div className="flex flex-col items-center gap-2">
           <ContentLoader text={["Loading integrations..."]} />
@@ -187,6 +187,7 @@ export const IntegrationsPage = withProjectPermission(
                 onAddIntegration={() => setView(IntegrationView.New)}
                 isLoading={isIntegrationLoading}
                 integrations={integrations}
+                secretSyncs={secretSyncs}
                 environments={environments}
                 onIntegrationDelete={handleIntegrationDelete}
                 workspaceId={workspaceId}

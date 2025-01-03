@@ -45,7 +45,7 @@ export const registerSecretSyncRouter = async (server: FastifyZodProvider) => {
     },
     schema: {
       description: "List all the Secret Syncs for the specified project.",
-      params: z.object({
+      querystring: z.object({
         projectId: z.string().trim().min(1, "Project ID required").describe(SecretSyncs.LIST().projectId)
       }),
       response: {
@@ -55,7 +55,7 @@ export const registerSecretSyncRouter = async (server: FastifyZodProvider) => {
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
       const {
-        params: { projectId },
+        query: { projectId },
         permission
       } = req;
 

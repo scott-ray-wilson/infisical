@@ -48,7 +48,7 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     },
     schema: {
       description: `List the ${destinationName} Syncs for the specified project.`,
-      params: z.object({
+      querystring: z.object({
         projectId: z.string().trim().min(1, "Project ID required").describe(SecretSyncs.LIST(destination).projectId)
       }),
       response: {
@@ -58,7 +58,7 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
       const {
-        params: { projectId }
+        query: { projectId }
       } = req;
 
       const secretSyncs = (await server.services.secretSync.listSecretSyncsByProjectId(

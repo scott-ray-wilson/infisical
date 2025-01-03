@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { faCheckCircle } from "@fortawesome/free-regular-svg-icons";
 import {
   faArrowDown,
+  faArrowRightArrowLeft,
   faArrowUp,
   faCheck,
   faClock,
   faFilter,
   faMagnifyingGlass,
-  faPlug,
   faSearch,
   faWarning
 } from "@fortawesome/free-solid-svg-icons";
@@ -439,7 +439,7 @@ export const IntegrationsTable = ({
                 ? "No integrations match search..."
                 : "This project has no integrations configured"
             }
-            icon={integrations.length ? faSearch : faPlug}
+            icon={integrations.length ? faSearch : faArrowRightArrowLeft}
           />
         )}
       </TableContainer>

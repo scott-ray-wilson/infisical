@@ -11,4 +11,6 @@ export const isValidPath = (val: string): boolean => {
   // Check for valid characters and no consecutive slashes
   const validPathRegex = /^[a-zA-Z0-9-_.:]+(?:\/[a-zA-Z0-9-_.:]+)*$/;
   return validPathRegex.test(val);
-}
+};
+
+export const startsWithVowel = (str: string) => /^[aeiou]/i.test(str);

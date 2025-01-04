@@ -1663,7 +1663,8 @@ export const SecretSyncs = {
       connectionId: `The ID of the ${
         APP_CONNECTION_NAME_MAP[SECRET_SYNC_CONNECTION_MAP[destination]]
       } Connection to use for syncing.`,
-      isEnabled: `Whether secrets should be synced via the ${destinationName} Sync or not.`
+      isEnabled: `Whether secrets should be synced via the ${destinationName} Sync or not.`,
+      syncOptions: "Optional parameters to modify how secrets are synced."
     };
   },
   UPDATE: (destination: SecretSync) => {
@@ -1674,7 +1675,8 @@ export const SecretSyncs = {
       envId: `The updated project environment ID to sync secrets from.`,
       secretPath: `The updated path to sync secrets from.`,
       description: `The updated description of the ${destinationName} Sync.`,
-      isEnabled: `Whether secrets should be synced via the ${destinationName} Sync or not.`
+      isEnabled: `Whether secrets should be synced via the ${destinationName} Sync or not.`,
+      syncOptions: "Optional parameters to modify how secrets are synced."
     };
   },
   DELETE: (destination: SecretSync) => ({

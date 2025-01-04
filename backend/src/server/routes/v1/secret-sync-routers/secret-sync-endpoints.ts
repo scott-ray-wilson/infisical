@@ -25,7 +25,7 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     secretPath: string;
     connectionId: string;
     destinationConfig: I["destinationConfig"];
-    syncOptions?: I["syncOptions"] | null;
+    syncOptions?: I["syncOptions"];
     description?: string | null;
   }>;
   updateSchema: z.ZodType<{
@@ -33,7 +33,7 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     envId?: string;
     secretPath?: string;
     destinationConfig?: I["destinationConfig"];
-    syncOptions?: I["syncOptions"] | null;
+    syncOptions?: I["syncOptions"];
     description?: string | null;
   }>;
   responseSchema: z.ZodTypeAny;
@@ -188,8 +188,10 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
+      const syncOptions = req.body.syncOptions ?? {};
+
       const secretSync = (await server.services.secretSync.createSecretSync(
-        { ...req.body, destination },
+        { ...req.body, destination, syncOptions },
         req.permission
       )) as T;
 
@@ -201,7 +203,8 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
           metadata: {
             syncId: secretSync.id,
             destination,
-            ...req.body
+            ...req.body,
+            syncOptions
           }
         }
       });
@@ -325,7 +328,7 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
         ...req.auditLogInfo,
         projectId: secretSync.projectId,
         event: {
-          type: EventType.MANUAL_SECRET_SYNC_PUSH,
+          type: EventType.MANUALLY_SYNC_SECRET_SYNC,
           metadata: {
             syncId: secretSync.id,
             destination

@@ -11,8 +11,8 @@ import {
 
 const AwsParameterStoreSyncDestinationConfigSchema = z.object({
   region: z.nativeEnum(AWSRegion),
-  path: z.string().min(1, "AWS Parameter Store Path Required").transform(wrapWithSlashes),
-  keyId: z.string().optional()
+  path: z.string().min(1, "AWS Parameter Store Path Required").transform(wrapWithSlashes)
+  // keyId: z.string().optional()
 });
 
 export const AwsParameterStoreSyncSchema = BaseSecretSyncSchema(AppConnection.AWS).extend({
@@ -23,19 +23,17 @@ export const AwsParameterStoreSyncSchema = BaseSecretSyncSchema(AppConnection.AW
 export const CreateAwsParameterStoreSyncSchema = GenericCreateSecretSyncFieldsSchema(
   SecretSync.AWSParameterStore
 ).extend({
-  destinationConfig: AwsParameterStoreSyncDestinationConfigSchema,
-  syncOptions: z.object({}).nullish() // TODO
+  destinationConfig: AwsParameterStoreSyncDestinationConfigSchema
 });
 
 export const UpdateAwsParameterStoreSyncSchema = GenericUpdateSecretSyncFieldsSchema(
   SecretSync.AWSParameterStore
 ).extend({
-  destinationConfig: AwsParameterStoreSyncDestinationConfigSchema.optional(),
-  syncOptions: z.object({}).nullish() // TODO
+  destinationConfig: AwsParameterStoreSyncDestinationConfigSchema.optional()
 });
 
 export const AwsParameterStoreSyncListItemSchema = z.object({
   name: z.literal("AWS Parameter Store"),
-  app: z.literal(AppConnection.AWS),
-  slug: z.literal(SecretSync.AWSParameterStore)
+  connection: z.literal(AppConnection.AWS),
+  destination: z.literal(SecretSync.AWSParameterStore)
 });

@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
-import { GitHubConnectionSchema } from "@app/services/app-connection/github";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 import {
   BaseSecretSyncSchema,
@@ -17,23 +16,20 @@ const GitHubSyncDestinationConfigSchema = z.object({
 
 export const GitHubSyncSchema = BaseSecretSyncSchema(AppConnection.GitHub).extend({
   destination: z.literal(SecretSync.GitHub),
-  destinationConfig: GitHubSyncDestinationConfigSchema,
-  connection: GitHubConnectionSchema
+  destinationConfig: GitHubSyncDestinationConfigSchema
 });
 
 export const CreateGitHubSyncSchema = GenericCreateSecretSyncFieldsSchema(SecretSync.GitHub).extend({
   destination: z.literal(SecretSync.GitHub),
-  destinationConfig: GitHubSyncDestinationConfigSchema,
-  syncOptions: z.object({}).nullish() // TODO
+  destinationConfig: GitHubSyncDestinationConfigSchema
 });
 
 export const UpdateGitHubSyncSchema = GenericUpdateSecretSyncFieldsSchema(SecretSync.AWSParameterStore).extend({
-  destinationConfig: GitHubSyncDestinationConfigSchema.optional(),
-  syncOptions: z.object({}).nullish() // TODO
+  destinationConfig: GitHubSyncDestinationConfigSchema.optional()
 });
 
 export const GitHubSyncListItemSchema = z.object({
   name: z.literal("GitHub"),
-  app: z.literal(AppConnection.GitHub),
-  slug: z.literal(SecretSync.GitHub)
+  connection: z.literal(AppConnection.GitHub),
+  destination: z.literal(SecretSync.GitHub)
 });

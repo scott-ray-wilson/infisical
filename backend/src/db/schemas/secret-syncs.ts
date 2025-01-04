@@ -16,7 +16,7 @@ export const SecretSyncsSchema = z.object({
   version: z.number().default(1),
   isSynced: z.boolean().nullable().optional(),
   destinationConfig: z.unknown(),
-  syncOptions: z.unknown().nullable().optional(),
+  syncOptions: z.unknown(),
   secretPath: z.string(),
   envId: z.string().uuid(),
   connectionId: z.string().uuid(),

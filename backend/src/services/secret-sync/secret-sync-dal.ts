@@ -8,15 +8,9 @@ import { buildFindFilter, ormify, selectAllTableCols } from "@app/lib/knex";
 
 export type TSecretSyncDALFactory = ReturnType<typeof secretSyncDALFactory>;
 
-const baseSecretSyncQuery = ({
-  filter,
-  db,
-  tx
-}: {
-  db: TDbClient;
-  filter?: Parameters<typeof buildFindFilter<TSecretSyncs>>[0];
-  tx?: Knex;
-}) => {
+type SecretSyncFindFilter = Parameters<typeof buildFindFilter<TSecretSyncs>>[0];
+
+const baseSecretSyncQuery = ({ filter, db, tx }: { db: TDbClient; filter?: SecretSyncFindFilter; tx?: Knex }) => {
   const query = (tx || db.replicaNode())(TableName.SecretSync)
     .join(TableName.Environment, `${TableName.SecretSync}.envId`, `${TableName.Environment}.id`)
     .join(TableName.AppConnection, `${TableName.SecretSync}.connectionId`, `${TableName.AppConnection}.id`)
@@ -38,9 +32,16 @@ const baseSecretSyncQuery = ({
       db.ref("updatedAt").withSchema(TableName.AppConnection).as("connectionUpdatedAt")
     );
 
+  const appendTableName = (filterObj: object): SecretSyncFindFilter =>
+    Object.fromEntries(
+      Object.entries(filterObj).map(([key, value]) =>
+        key.startsWith("$") ? [key, appendTableName(value as object)] : [`${TableName.SecretSync}.${key}`, value]
+      )
+    );
+
   if (filter) {
     /* eslint-disable @typescript-eslint/no-misused-promises */
-    void query.where(buildFindFilter(filter));
+    void query.where(buildFindFilter(appendTableName(filter)));
   }
 
   return query;
@@ -89,7 +90,7 @@ export const secretSyncDALFactory = (db: TDbClient) => {
   const findById = async (id: string, tx?: Knex) => {
     try {
       const secretSync = await baseSecretSyncQuery({
-        filter: { [`${TableName.SecretSync}.id` as "id"]: id },
+        filter: { id },
         db,
         tx
       }).first();
@@ -108,7 +109,7 @@ export const secretSyncDALFactory = (db: TDbClient) => {
         const sync = await secretSyncOrm.create(data, tx);
 
         return baseSecretSyncQuery({
-          filter: { [`${TableName.SecretSync}.id` as "id"]: sync.id },
+          filter: { id: sync.id },
           db,
           tx
         }).first();
@@ -126,7 +127,7 @@ export const secretSyncDALFactory = (db: TDbClient) => {
         const sync = await secretSyncOrm.updateById(syncId, data, tx);
 
         return baseSecretSyncQuery({
-          filter: { [`${TableName.SecretSync}.id` as "id"]: sync.id },
+          filter: { id: sync.id },
           db,
           tx
         }).first();

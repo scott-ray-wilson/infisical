@@ -6,9 +6,18 @@ export type TRootSecretSync = {
   description?: string | null;
   version: number;
   envId: string;
+  connectionId: string;
   secretPath: string;
   createdAt: string;
   updatedAt: string;
+  isSynced: boolean | null;
+  lastSyncJobId: string | null;
+  lastSyncedAt: Date | null;
+  lastSyncMessage: string | null;
+  syncOptions: {
+    prependPrefix?: string;
+    appendSuffix?: string;
+  };
   connection: {
     app: AppConnection;
     id: string;

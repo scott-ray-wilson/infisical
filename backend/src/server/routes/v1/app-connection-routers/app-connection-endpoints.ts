@@ -65,6 +65,44 @@ export const registerAppConnectionEndpoints = <T extends TAppConnection, I exten
 
   server.route({
     method: "GET",
+    url: "/available",
+    config: {
+      rateLimit: readLimit
+    },
+    schema: {
+      description: `List the available ${appName} Connections the current user has permission to connect to.`,
+      response: {
+        200: z.object({
+          appConnections: z.object({ app: z.literal(app), name: z.string(), id: z.string().uuid() }).array()
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
+    handler: async (req) => {
+      const appConnections = await server.services.appConnection.listAvailableAppConnectionsForUser(
+        app,
+        req.permission
+      );
+
+      await server.services.auditLog.createAuditLog({
+        ...req.auditLogInfo,
+        orgId: req.permission.orgId,
+        event: {
+          type: EventType.GET_AVAILABLE_APP_CONNECTIONS,
+          metadata: {
+            app,
+            count: appConnections.length,
+            connectionIds: appConnections.map((connection) => connection.id)
+          }
+        }
+      });
+
+      return { appConnections };
+    }
+  });
+
+  server.route({
+    method: "GET",
     url: "/:connectionId",
     config: {
       rateLimit: readLimit

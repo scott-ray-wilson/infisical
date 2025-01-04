@@ -35,6 +35,8 @@ import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { TSecretSync } from "@app/hooks/api/secretSyncs";
 import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
 
+import { SecretSyncRow } from "./SecretSyncRow";
+
 // import { DeleteAppConnectionModal } from "./DeleteAppConnectionModal";
 // import { EditAppConnectionCredentialsModal } from "./EditAppConnectionCredentialsModal";
 // import { EditAppConnectionDetailsModal } from "./EditAppConnectionDetailsModal";
@@ -256,15 +258,15 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
             </Tr>
           </THead>
           <TBody>
-            {/* {filteredAppConnections.slice(offset, perPage * page).map((connection) => ( */}
-            {/*  <AppConnectionRow */}
-            {/*    appConnection={connection} */}
-            {/*    key={connection.id} */}
-            {/*    onDelete={handleDelete} */}
-            {/*    onEditCredentials={handleEditCredentials} */}
-            {/*    onEditDetails={handleEditDetails} */}
-            {/*  /> */}
-            {/* ))} */}
+            {filteredSecretSyncs.slice(offset, perPage * page).map((secretSync) => (
+              <SecretSyncRow
+                key={secretSync.id}
+                secretSync={secretSync}
+                // onDelete={handleDelete}
+                // onEditCredentials={handleEditCredentials}
+                // onEditDetails={handleEditDetails}
+              />
+            ))}
           </TBody>
         </Table>
         {Boolean(filteredSecretSyncs.length) && (

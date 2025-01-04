@@ -4,6 +4,6 @@ import { TSecretSyncListItem } from "@app/services/secret-sync/secret-sync-types
 
 export const AWS_PARAMETER_STORE_SYNC_LIST_OPTION: TSecretSyncListItem = {
   name: "AWS Parameter Store",
-  slug: SecretSync.AWSParameterStore,
-  app: AppConnection.AWS
+  destination: SecretSync.AWSParameterStore,
+  connection: AppConnection.AWS
 };

@@ -4,6 +4,6 @@ import { TSecretSyncListItem } from "@app/services/secret-sync/secret-sync-types
 
 export const GITHUB_SYNC_LIST_OPTION: TSecretSyncListItem = {
   name: "GitHub",
-  slug: SecretSync.GitHub,
-  app: AppConnection.GitHub
+  destination: SecretSync.GitHub,
+  connection: AppConnection.GitHub
 };

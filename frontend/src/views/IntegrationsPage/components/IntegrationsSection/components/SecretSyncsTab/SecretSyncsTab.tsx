@@ -3,9 +3,10 @@ import { faArrowUpRightFromSquare, faBookOpen, faPlus } from "@fortawesome/free-
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { Button } from "@app/components/v2";
-import { usePopUp, useToggle } from "@app/hooks";
+import { usePopUp } from "@app/hooks";
 import { TSecretSync } from "@app/hooks/api/secretSyncs";
 
+import { CreateSecretSyncModal } from "./CreateSecretSyncModal";
 import { SecretSyncsTable } from "./SecretSyncsTable";
 
 type Props = {
@@ -14,11 +15,8 @@ type Props = {
 
 export const SecretSyncsTab = ({ secretSyncs }: Props) => {
   const { popUp, handlePopUpOpen, handlePopUpClose, handlePopUpToggle } = usePopUp([
-    "deleteConfirmation",
-    "deleteSecretsConfirmation"
+    "addSync"
   ] as const);
-
-  const [shouldDeleteSecrets, setShouldDeleteSecrets] = useToggle(false);
 
   return (
     <>
@@ -49,24 +47,17 @@ export const SecretSyncsTab = ({ secretSyncs }: Props) => {
             colorSchema="secondary"
             type="submit"
             leftIcon={<FontAwesomeIcon icon={faPlus} />}
-            // onClick={onAddIntegration}
+            onClick={() => handlePopUpOpen("addSync")}
           >
             Add Sync
           </Button>
         </div>
         <SecretSyncsTable secretSyncs={secretSyncs} />
-        {/* <IntegrationsTable
-          cloudIntegrations={cloudIntegrations}
-          integrations={integrations}
-          isLoading={isLoading}
-          workspaceId={workspaceId}
-          environments={environments}
-          onDeleteIntegration={(integration) => {
-            setShouldDeleteSecrets.off();
-            handlePopUpOpen("deleteConfirmation", integration);
-          }}
-        /> */}
       </div>
+      <CreateSecretSyncModal
+        isOpen={popUp.addSync.isOpen}
+        onOpenChange={(isOpen) => handlePopUpToggle("addSync", isOpen)}
+      />
       {/* <DeleteActionModal
         isOpen={popUp.deleteConfirmation.isOpen}
         title={`Are you sure want to remove ${

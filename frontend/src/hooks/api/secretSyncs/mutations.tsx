@@ -1,58 +1,58 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { apiRequest } from "@app/config/request";
-import { appConnectionKeys } from "@app/hooks/api/appConnections/queries";
+import { secretSyncKeys } from "@app/hooks/api/secretSyncs/queries";
 import {
-  TAppConnectionResponse,
-  TCreateAppConnectionDTO,
-  TDeleteAppConnectionDTO,
-  TUpdateAppConnectionDTO
-} from "@app/hooks/api/appConnections/types";
+  TCreateSecretSyncDTO,
+  TDeleteSecretSyncDTO,
+  TSecretSyncResponse,
+  TUpdateSecretSyncDTO
+} from "@app/hooks/api/secretSyncs/types";
 
-export const useCreateAppConnection = () => {
+export const useCreateSecretSync = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ app, ...params }: TCreateAppConnectionDTO) => {
-      const { data } = await apiRequest.post<TAppConnectionResponse>(
-        `/api/v1/app-connections/${app}`,
+    mutationFn: async ({ destination, ...params }: TCreateSecretSyncDTO) => {
+      const { data } = await apiRequest.post<TSecretSyncResponse>(
+        `/api/v1/secret-syncs/${destination}`,
         params
       );
 
-      return data.appConnection;
+      return data.secretSync;
     },
-    onSuccess: () => queryClient.invalidateQueries(appConnectionKeys.list())
+    onSuccess: () => queryClient.invalidateQueries(secretSyncKeys.list())
   });
 };
 
-export const useUpdateAppConnection = () => {
+export const useUpdateSecretSync = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ connectionId, app, ...params }: TUpdateAppConnectionDTO) => {
-      const { data } = await apiRequest.patch<TAppConnectionResponse>(
-        `/api/v1/app-connections/${app}/${connectionId}`,
+    mutationFn: async ({ syncId, destination, ...params }: TUpdateSecretSyncDTO) => {
+      const { data } = await apiRequest.patch<TSecretSyncResponse>(
+        `/api/v1/secret-syncs/${destination}/${syncId}`,
         params
       );
 
-      return data.appConnection;
+      return data.secretSync;
     },
-    onSuccess: (_, { connectionId, app }) => {
-      queryClient.invalidateQueries(appConnectionKeys.list());
-      queryClient.invalidateQueries(appConnectionKeys.byId(app, connectionId));
+    onSuccess: (_, { syncId, destination }) => {
+      queryClient.invalidateQueries(secretSyncKeys.list());
+      queryClient.invalidateQueries(secretSyncKeys.byId(destination, syncId));
     }
   });
 };
 
-export const useDeleteAppConnection = () => {
+export const useDeleteSecretSync = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ connectionId, app }: TDeleteAppConnectionDTO) => {
-      const { data } = await apiRequest.delete(`/api/v1/app-connections/${app}/${connectionId}`);
+    mutationFn: async ({ syncId, destination }: TDeleteSecretSyncDTO) => {
+      const { data } = await apiRequest.delete(`/api/v1/secret-syncs/${destination}/${syncId}`);
 
       return data;
     },
-    onSuccess: (_, { connectionId, app }) => {
-      queryClient.invalidateQueries(appConnectionKeys.list());
-      queryClient.invalidateQueries(appConnectionKeys.byId(app, connectionId));
+    onSuccess: (_, { syncId, destination }) => {
+      queryClient.invalidateQueries(secretSyncKeys.list());
+      queryClient.invalidateQueries(secretSyncKeys.byId(destination, syncId));
     }
   });
 };

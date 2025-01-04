@@ -6,13 +6,13 @@ export type TSecretSyncOptionBase = {
 };
 
 export type TAwsParameterStoreSyncOption = TSecretSyncOptionBase & {
-  app: AppConnection.AWS;
-  slug: SecretSync.AWSParameterStore;
+  connection: AppConnection.AWS;
+  destination: SecretSync.AWSParameterStore;
 };
 
 export type TGitHubSyncOption = TSecretSyncOptionBase & {
-  app: AppConnection.GitHub;
-  slug: SecretSync.GitHub;
+  connection: AppConnection.GitHub;
+  destination: SecretSync.GitHub;
 };
 
 export type TSecretSyncOption = TAwsParameterStoreSyncOption | TGitHubSyncOption;

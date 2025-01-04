@@ -7,17 +7,26 @@ import { slugSchema } from "@app/server/lib/schemas";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 
+const SyncOptionsSchema = z.object({
+  prependPrefix: z
+    .string()
+    .trim()
+    .transform((str) => str.toUpperCase())
+    .optional(),
+  appendSuffix: z
+    .string()
+    .trim()
+    .transform((str) => str.toUpperCase())
+    .optional()
+});
+
 export const BaseSecretSyncSchema = (app: AppConnection) =>
   SecretSyncsSchema.omit({
     destination: true,
     destinationConfig: true,
     syncOptions: true
   }).extend({
-    syncOptions: z
-      .object({
-        // TODO
-      })
-      .nullish(),
+    syncOptions: SyncOptionsSchema,
     // join properties
     projectId: z.string(),
     connection: z.object({ app: z.literal(app), name: z.string(), id: z.string().uuid() }),
@@ -41,7 +50,8 @@ export const GenericCreateSecretSyncFieldsSchema = (sync: SecretSync) =>
       .min(1, "Secret path required")
       .transform(removeTrailingSlash)
       .describe(SecretSyncs.CREATE(sync).secretPath),
-    isEnabled: z.boolean().default(true).describe(SecretSyncs.CREATE(sync).isEnabled)
+    isEnabled: z.boolean().default(true).describe(SecretSyncs.CREATE(sync).isEnabled),
+    syncOptions: SyncOptionsSchema.optional().default({}).describe(SecretSyncs.CREATE(sync).syncOptions)
   });
 
 export const GenericUpdateSecretSyncFieldsSchema = (sync: SecretSync) =>
@@ -53,12 +63,14 @@ export const GenericUpdateSecretSyncFieldsSchema = (sync: SecretSync) =>
       .max(256, "Description cannot exceed 256 characters")
       .nullish()
       .describe(SecretSyncs.UPDATE(sync).description),
-    envId: z.string().uuid().describe(SecretSyncs.UPDATE(sync).envId),
+    envId: z.string().uuid().optional().describe(SecretSyncs.UPDATE(sync).envId),
     secretPath: z
       .string()
       .trim()
       .min(1, "Secret path required")
       .transform(removeTrailingSlash)
+      .optional()
       .describe(SecretSyncs.UPDATE(sync).secretPath),
-    isEnabled: z.boolean().default(true).describe(SecretSyncs.UPDATE(sync).isEnabled)
+    isEnabled: z.boolean().optional().describe(SecretSyncs.UPDATE(sync).isEnabled),
+    syncOptions: SyncOptionsSchema.optional().describe(SecretSyncs.UPDATE(sync).syncOptions)
   });

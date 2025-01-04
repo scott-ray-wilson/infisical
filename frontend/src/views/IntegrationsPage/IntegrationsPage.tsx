@@ -203,9 +203,7 @@ export const IntegrationsPage = withProjectPermission(
               className="w-full"
             >
               <CloudIntegrationSection
-                onViewActiveIntegrations={
-                  integrations?.length ? () => setView(IntegrationView.List) : undefined
-                }
+                onViewActiveIntegrations={() => setView(IntegrationView.List)}
                 isLoading={isCloudIntegrationsLoading || isIntegrationAuthLoading}
                 cloudIntegrations={cloudIntegrations}
                 integrationAuths={integrationAuths}

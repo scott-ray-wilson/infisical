@@ -348,6 +348,29 @@ export const appConnectionServiceFactory = ({
     return decryptAppConnection(appConnection, kmsService);
   };
 
+  const listAvailableAppConnectionsForUser = async (app: AppConnection, actor: OrgServiceActor) => {
+    await checkAppServicesAvailability(actor.orgId);
+
+    const { permission: orgPermission } = await permissionService.getOrgPermission(
+      actor.type,
+      actor.id,
+      actor.orgId,
+      actor.authMethod,
+      actor.orgId
+    );
+
+    const appConnections = await appConnectionDAL.find({ app, orgId: actor.orgId });
+
+    const availableConnections = appConnections.filter((connection) =>
+      orgPermission.can(
+        OrgPermissionAppConnectionActions.Connect,
+        subject(OrgPermissionSubjects.AppConnections, { connectionId: connection.id })
+      )
+    );
+
+    return availableConnections as Omit<TAppConnection, "credentials">[];
+  };
+
   return {
     listAppConnectionOptions,
     listAppConnectionsByOrg,
@@ -356,6 +379,7 @@ export const appConnectionServiceFactory = ({
     createAppConnection,
     updateAppConnection,
     deleteAppConnection,
-    connectAppConnectionById
+    connectAppConnectionById,
+    listAvailableAppConnectionsForUser
   };
 };

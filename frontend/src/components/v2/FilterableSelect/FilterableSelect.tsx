@@ -6,12 +6,14 @@ import { ClearIndicator, DropdownIndicator, MultiValueRemove, Option } from "../
 export const FilterableSelect = <T,>({
   isMulti,
   closeMenuOnSelect,
+  blurInputOnSelect,
   tabSelectsValue = false,
   ...props
 }: Props<T>) => (
   <Select
     isMulti={isMulti}
     closeMenuOnSelect={closeMenuOnSelect ?? !isMulti}
+    blurInputOnSelect={blurInputOnSelect ?? !isMulti}
     hideSelectedOptions={false}
     unstyled
     styles={{

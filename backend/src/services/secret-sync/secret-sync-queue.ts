@@ -96,8 +96,9 @@ export const secretSyncQueueFactory = ({
       QueueJobs.AppConnectionSendSecretSyncFailedNotifications,
       payload,
       {
+        jobId: `secret-sync-${payload.secretSync.id}-failed-notifications`,
         attempts: 5,
-        delay: 1000,
+        delay: 1000 * 60,
         backoff: {
           type: "exponential",
           delay: 3000
@@ -137,10 +138,9 @@ export const secretSyncQueueFactory = ({
       secretDAL: secretV2BridgeDAL,
       folderDAL,
       projectId,
-      // on secre syncs we expand all secrets
       canExpandValue: () => true
     });
-    // process secrets in current folder
+
     const secrets = await secretV2BridgeDAL.findByFolderId(folder.id);
 
     await Promise.allSettled(
@@ -164,30 +164,29 @@ export const secretSyncQueueFactory = ({
       })
     );
 
-    // check if current folder has any imports from other folders
     const secretImports = await secretImportDAL.find({ folderId: folder.id, isReplication: false });
 
-    // if no imports then return secrets in the current folder
-    if (!secretImports.length) return secretMap;
-    const importedSecrets = await fnSecretsV2FromImports({
-      decryptor: decryptSecretValue,
-      folderDAL,
-      secretDAL: secretV2BridgeDAL,
-      expandSecretReferences,
-      secretImportDAL,
-      secretImports,
-      hasSecretAccess: () => true
-    });
+    if (secretImports.length) {
+      const importedSecrets = await fnSecretsV2FromImports({
+        decryptor: decryptSecretValue,
+        folderDAL,
+        secretDAL: secretV2BridgeDAL,
+        expandSecretReferences,
+        secretImportDAL,
+        secretImports,
+        hasSecretAccess: () => true
+      });
 
-    for (let i = importedSecrets.length - 1; i >= 0; i -= 1) {
-      for (let j = 0; j < importedSecrets[i].secrets.length; j += 1) {
-        const importedSecret = importedSecrets[i].secrets[j];
-        if (!secretMap[importedSecret.key]) {
-          secretMap[importedSecret.key] = {
-            skipMultilineEncoding: importedSecret.skipMultilineEncoding,
-            comment: importedSecret.secretComment,
-            value: importedSecret.secretValue || ""
-          };
+      for (let i = importedSecrets.length - 1; i >= 0; i -= 1) {
+        for (let j = 0; j < importedSecrets[i].secrets.length; j += 1) {
+          const importedSecret = importedSecrets[i].secrets[j];
+          if (!secretMap[importedSecret.key]) {
+            secretMap[importedSecret.key] = {
+              skipMultilineEncoding: importedSecret.skipMultilineEncoding,
+              comment: importedSecret.secretComment,
+              value: importedSecret.secretValue || ""
+            };
+          }
         }
       }
     }
@@ -230,13 +229,11 @@ export const secretSyncQueueFactory = ({
     try {
       const lastSyncAt = await keyStore.getItem(KeyStorePrefixes.SecretSyncLastRunTimestamp(secretSync.id));
 
-      // check whether the integration should wait or not
       if (lastSyncAt) {
         const SYNC_INTERVAL = 2000;
 
         const timeSinceLastSync = getTimeDifferenceInSeconds(lockAcquiredTime.toISOString(), lastSyncAt);
 
-        // give some time for integration to breath
         if (timeSinceLastSync < SYNC_INTERVAL)
           await new Promise((resolve) => {
             setTimeout(resolve, SYNC_INTERVAL);
@@ -303,7 +300,7 @@ export const secretSyncQueueFactory = ({
           }
         }),
         event: {
-          type: EventType.SECRET_SYNC_PUSH,
+          type: EventType.SYNC_SECRET_SYNC,
           metadata: {
             syncId: secretSync.id,
             syncOptions: secretSync.syncOptions,

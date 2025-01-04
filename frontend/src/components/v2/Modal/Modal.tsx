@@ -7,7 +7,7 @@ import { twMerge } from "tailwind-merge";
 import { Card, CardBody, CardFooter, CardTitle } from "../Card";
 import { IconButton } from "../IconButton";
 
-export type ModalContentProps = DialogPrimitive.DialogContentProps & {
+export type ModalContentProps = Omit<DialogPrimitive.DialogContentProps, "title"> & {
   title?: ReactNode;
   subTitle?: ReactNode;
   footerContent?: ReactNode;
@@ -72,7 +72,7 @@ ModalContent.displayName = "ModalContent";
 
 export type ModalProps = Omit<DialogPrimitive.DialogProps, "open"> & { isOpen?: boolean };
 export const Modal = ({ isOpen, ...props }: ModalProps) => (
-  <DialogPrimitive.Root open={isOpen} {...props} modal/>
+  <DialogPrimitive.Root open={isOpen} {...props} modal />
 );
 
 export const ModalTrigger = DialogPrimitive.Trigger;

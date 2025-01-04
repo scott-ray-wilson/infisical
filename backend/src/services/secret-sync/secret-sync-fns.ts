@@ -19,10 +19,21 @@ export const listSecretSyncOptions = () => {
   return Object.values(SECRET_SYNC_LIST_OPTIONS).sort((a, b) => a.name.localeCompare(b.name));
 };
 
-export const secretSyncPushSecrets = (secretSync: TSecretSyncWithConnection, secrets: TSecretMap) => {
+export const secretSyncPushSecrets = (secretSync: TSecretSyncWithConnection, unprocessedSecretMap: TSecretMap) => {
+  let secretMap = { ...unprocessedSecretMap };
+
+  const { appendSuffix, prependPrefix } = secretSync.syncOptions;
+
+  if (appendSuffix || prependPrefix) {
+    secretMap = {};
+    Object.entries(unprocessedSecretMap).forEach(([key, value]) => {
+      secretMap[`${prependPrefix || ""}${key}${appendSuffix || ""}`] = value;
+    });
+  }
+
   switch (secretSync.destination) {
     case SecretSync.AWSParameterStore:
-      return awsParameterStoreSyncPushSecrets(secretSync, secrets);
+      return awsParameterStoreSyncPushSecrets(secretSync, secretMap);
     default:
       throw new Error(`Unhandled sync destination ${secretSync.destination}`);
   }

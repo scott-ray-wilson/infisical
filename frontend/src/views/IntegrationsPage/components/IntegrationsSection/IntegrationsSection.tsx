@@ -77,7 +77,7 @@ export const IntegrationsSection = ({
                 >
                   {tab.name}
                   {tab.key === "secret-syncs" && (
-                    <Badge variant="primary" className="ml-1 text-xs">
+                    <Badge variant="primary" className="ml-1 cursor-pointer text-xs">
                       New
                     </Badge>
                   )}

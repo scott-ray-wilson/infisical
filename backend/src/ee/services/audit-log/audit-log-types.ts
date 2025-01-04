@@ -229,6 +229,7 @@ export enum EventType {
   DELETE_PROJECT_TEMPLATE = "delete-project-template",
   APPLY_PROJECT_TEMPLATE = "apply-project-template",
   GET_APP_CONNECTIONS = "get-app-connections",
+  GET_AVAILABLE_APP_CONNECTIONS = "get-available-app-connections",
   GET_APP_CONNECTION = "get-app-connection",
   CREATE_APP_CONNECTION = "create-app-connection",
   UPDATE_APP_CONNECTION = "update-app-connection",
@@ -238,8 +239,8 @@ export enum EventType {
   CREATE_SECRET_SYNC = "create-secret-sync",
   UPDATE_SECRET_SYNC = "update-secret-sync",
   DELETE_SECRET_SYNC = "delete-secret-sync",
-  SECRET_SYNC_PUSH = "secret-sync-push",
-  MANUAL_SECRET_SYNC_PUSH = "manual-secret-sync-push"
+  SYNC_SECRET_SYNC = "sync-secret-sync",
+  MANUALLY_SYNC_SECRET_SYNC = "manually-sync-secret-sync"
 }
 
 interface UserActorMetadata {
@@ -1893,6 +1894,15 @@ interface GetAppConnectionsEvent {
   };
 }
 
+interface GetAvailableAppConnectionsEvent {
+  type: EventType.GET_AVAILABLE_APP_CONNECTIONS;
+  metadata: {
+    app?: AppConnection;
+    count: number;
+    connectionIds: string[];
+  };
+}
+
 interface GetAppConnectionEvent {
   type: EventType.GET_APP_CONNECTION;
   metadata: {
@@ -1953,15 +1963,15 @@ interface DeleteSecretSyncEvent {
 }
 
 interface ManualTriggerSecretSyncEvent {
-  type: EventType.MANUAL_SECRET_SYNC_PUSH;
+  type: EventType.MANUALLY_SYNC_SECRET_SYNC;
   metadata: {
     syncId: string;
     destination: SecretSync;
   };
 }
 
-interface SecretSyncPushEvent {
-  type: EventType.SECRET_SYNC_PUSH;
+interface SecretSyncSyncEvent {
+  type: EventType.SYNC_SECRET_SYNC;
   metadata: Pick<
     TSecretSyncs,
     "syncOptions" | "destinationConfig" | "destination" | "isSynced" | "envId" | "secretPath" | "connectionId"
@@ -2146,6 +2156,7 @@ export type Event =
   | DeleteProjectTemplateEvent
   | ApplyProjectTemplateEvent
   | GetAppConnectionsEvent
+  | GetAvailableAppConnectionsEvent
   | GetAppConnectionEvent
   | CreateAppConnectionEvent
   | UpdateAppConnectionEvent
@@ -2156,4 +2167,4 @@ export type Event =
   | UpdateSecretSyncEvent
   | DeleteSecretSyncEvent
   | ManualTriggerSecretSyncEvent
-  | SecretSyncPushEvent;
+  | SecretSyncSyncEvent;

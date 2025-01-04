@@ -4,6 +4,10 @@ import { TRootSecretSync } from "@app/hooks/api/secretSyncs/types/root-connectio
 
 export type TAwsParameterStoreSync = TRootSecretSync & {
   destination: SecretSync.AWSParameterStore;
+  destinationConfig: {
+    path: string;
+    region: string;
+  };
   connection: {
     app: AppConnection.AWS;
     name: string;

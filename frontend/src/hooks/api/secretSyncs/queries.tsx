@@ -1,7 +1,7 @@
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 
 import { apiRequest } from "@app/config/request";
-import { AppConnection } from "@app/hooks/api/appConnections/enums";
+import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
 import {
   TListSecretSyncOptions,
   TListSecretSyncs,
@@ -13,9 +13,8 @@ export const secretSyncKeys = {
   all: ["secret-sync"] as const,
   options: () => [...secretSyncKeys.all, "options"] as const,
   list: () => [...secretSyncKeys.all, "list"] as const,
-  listByApp: (app: AppConnection) => [...secretSyncKeys.list(), app],
-  byId: (app: AppConnection, templateId: string) =>
-    [...secretSyncKeys.all, app, "by-id", templateId] as const
+  byId: (destination: SecretSync, syncId: string) =>
+    [...secretSyncKeys.all, destination, "by-id", syncId] as const
 };
 
 export const useSecretSyncOptions = (

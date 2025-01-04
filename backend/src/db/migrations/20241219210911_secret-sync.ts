@@ -14,7 +14,7 @@ export async function up(knex: Knex): Promise<void> {
       t.integer("version").defaultTo(1).notNullable();
       t.boolean("isSynced");
       t.jsonb("destinationConfig").notNullable();
-      t.jsonb("syncOptions");
+      t.jsonb("syncOptions").notNullable();
       t.string("secretPath").notNullable();
       t.uuid("envId").notNullable();
       t.foreign("envId").references("id").inTable(TableName.Environment).onDelete("CASCADE");

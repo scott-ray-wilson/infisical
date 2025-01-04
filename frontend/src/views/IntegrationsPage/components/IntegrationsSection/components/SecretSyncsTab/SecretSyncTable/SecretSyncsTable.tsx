@@ -30,10 +30,10 @@ import {
 } from "@app/components/v2";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import { usePagination, usePopUp, useResetPageHelper } from "@app/hooks";
-import { TAppConnection } from "@app/hooks/api/appConnections";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { TSecretSync } from "@app/hooks/api/secretSyncs";
 import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
+import { DeleteSecretSyncModal } from "@app/views/IntegrationsPage/components/IntegrationsSection/components/SecretSyncsTab/DeleteSecretSyncModal";
 
 import { SecretSyncRow } from "./SecretSyncRow";
 
@@ -43,6 +43,9 @@ import { SecretSyncRow } from "./SecretSyncRow";
 
 enum SecretSyncsOrderBy {
   Destination = "destination",
+  Sync = "sync",
+  Environment = "environment",
+  Source = "source",
   Name = "name",
   Connection = "connection",
   Status = "status"
@@ -82,7 +85,7 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
     () =>
       secretSyncs
         .filter((secretSync) => {
-          const { destination, name, connection } = secretSync;
+          const { destination, name, connection, secretPath, environment } = secretSync;
 
           if (filters.destinations.length && !filters.destinations.includes(destination))
             return false;
@@ -94,6 +97,8 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
           return (
             SECRET_SYNC_MAP[destination].name.toLowerCase().includes(searchValue) ||
             name.toLowerCase().includes(searchValue) ||
+            secretPath.toLowerCase().includes(searchValue) ||
+            environment.name.toLowerCase().includes(searchValue) ||
             connection.name.toLowerCase().includes(searchValue)
           );
         })
@@ -103,11 +108,19 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
           switch (orderBy) {
             case SecretSyncsOrderBy.Name:
               return syncOne.name.toLowerCase().localeCompare(syncTwo.name.toLowerCase());
+            case SecretSyncsOrderBy.Source:
+              return syncOne.secretPath
+                .toLowerCase()
+                .localeCompare(syncTwo.secretPath.toLowerCase());
+            case SecretSyncsOrderBy.Environment:
+              return syncOne.environment.name
+                .toLowerCase()
+                .localeCompare(syncTwo.environment.name.toLowerCase());
             case SecretSyncsOrderBy.Connection:
               return syncOne.connection.name
                 .toLowerCase()
                 .localeCompare(syncTwo.connection.name.toLowerCase());
-            case SecretSyncsOrderBy.Destination:
+            case SecretSyncsOrderBy.Sync:
             default:
               return SECRET_SYNC_MAP[syncOne.destination].name
                 .toLowerCase()
@@ -141,8 +154,7 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
 
   const isTableFiltered = Boolean(filters.destinations.length);
 
-  const handleDelete = (appConnection: TAppConnection) =>
-    handlePopUpOpen("deleteSync", appConnection);
+  const handleDelete = (secretSync: TSecretSync) => handlePopUpOpen("deleteSync", secretSync);
 
   return (
     <div>
@@ -214,20 +226,8 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
         <Table>
           <THead>
             <Tr>
+              <Th className="w-2" />
               <Th className="w-1/4">
-                <div className="flex items-center">
-                  Sync
-                  <IconButton
-                    variant="plain"
-                    className={getClassName(SecretSyncsOrderBy.Destination)}
-                    ariaLabel="sort"
-                    onClick={() => handleSort(SecretSyncsOrderBy.Destination)}
-                  >
-                    <FontAwesomeIcon icon={getColSortIcon(SecretSyncsOrderBy.Destination)} />
-                  </IconButton>
-                </div>
-              </Th>
-              <Th className="w-1/3">
                 <div className="flex items-center">
                   Name
                   <IconButton
@@ -240,20 +240,45 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
                   </IconButton>
                 </div>
               </Th>
-              <Th>
+              <Th className="w-1/3">
                 <div className="flex items-center">
-                  Connection
+                  Source
                   <IconButton
                     variant="plain"
-                    className={getClassName(SecretSyncsOrderBy.Connection)}
+                    className={getClassName(SecretSyncsOrderBy.Source)}
                     ariaLabel="sort"
-                    onClick={() => handleSort(SecretSyncsOrderBy.Connection)}
+                    onClick={() => handleSort(SecretSyncsOrderBy.Source)}
                   >
-                    <FontAwesomeIcon icon={getColSortIcon(SecretSyncsOrderBy.Connection)} />
+                    <FontAwesomeIcon icon={getColSortIcon(SecretSyncsOrderBy.Source)} />
                   </IconButton>
                 </div>
               </Th>
-
+              <Th className="w-full">
+                <div className="flex items-center">
+                  Destination
+                  <IconButton
+                    variant="plain"
+                    className={getClassName(SecretSyncsOrderBy.Destination)}
+                    ariaLabel="sort"
+                    onClick={() => handleSort(SecretSyncsOrderBy.Destination)}
+                  >
+                    <FontAwesomeIcon icon={getColSortIcon(SecretSyncsOrderBy.Destination)} />
+                  </IconButton>
+                </div>
+              </Th>
+              <Th>
+                <div className="flex items-center">
+                  Status
+                  <IconButton
+                    variant="plain"
+                    className={getClassName(SecretSyncsOrderBy.Status)}
+                    ariaLabel="sort"
+                    onClick={() => handleSort(SecretSyncsOrderBy.Status)}
+                  >
+                    <FontAwesomeIcon icon={getColSortIcon(SecretSyncsOrderBy.Status)} />
+                  </IconButton>
+                </div>
+              </Th>
               <Th className="w-5" />
             </Tr>
           </THead>
@@ -262,7 +287,7 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
               <SecretSyncRow
                 key={secretSync.id}
                 secretSync={secretSync}
-                // onDelete={handleDelete}
+                onDelete={handleDelete}
                 // onEditCredentials={handleEditCredentials}
                 // onEditDetails={handleEditDetails}
               />
@@ -289,6 +314,11 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
           />
         )}
       </TableContainer>
+      <DeleteSecretSyncModal
+        onOpenChange={(isOpen) => handlePopUpToggle("deleteSync", isOpen)}
+        isOpen={popUp.deleteSync.isOpen}
+        secretSync={popUp.deleteSync.data}
+      />
       {/* <DeleteAppConnectionModal
         isOpen={popUp.deleteSync.isOpen}
         onOpenChange={(isOpen) => handlePopUpToggle("deleteSync", isOpen)}

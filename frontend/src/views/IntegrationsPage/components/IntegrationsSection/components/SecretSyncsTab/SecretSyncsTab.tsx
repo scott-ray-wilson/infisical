@@ -7,16 +7,14 @@ import { usePopUp } from "@app/hooks";
 import { TSecretSync } from "@app/hooks/api/secretSyncs";
 
 import { CreateSecretSyncModal } from "./CreateSecretSyncModal";
-import { SecretSyncsTable } from "./SecretSyncsTable";
+import { SecretSyncsTable } from "./SecretSyncTable";
 
 type Props = {
   secretSyncs: TSecretSync[];
 };
 
 export const SecretSyncsTab = ({ secretSyncs }: Props) => {
-  const { popUp, handlePopUpOpen, handlePopUpClose, handlePopUpToggle } = usePopUp([
-    "addSync"
-  ] as const);
+  const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp(["addSync"] as const);
 
   return (
     <>
@@ -58,70 +56,6 @@ export const SecretSyncsTab = ({ secretSyncs }: Props) => {
         isOpen={popUp.addSync.isOpen}
         onOpenChange={(isOpen) => handlePopUpToggle("addSync", isOpen)}
       />
-      {/* <DeleteActionModal
-        isOpen={popUp.deleteConfirmation.isOpen}
-        title={`Are you sure want to remove ${
-          (popUp?.deleteConfirmation.data as TIntegration)?.integration || " "
-        } integration for ${
-          (popUp?.deleteConfirmation.data as TIntegration)?.app || "this project"
-        }?`}
-        onChange={(isOpen) => handlePopUpToggle("deleteConfirmation", isOpen)}
-        deleteKey={
-          ((popUp?.deleteConfirmation?.data as TIntegration)?.integration ===
-            "azure-app-configuration" &&
-            (popUp?.deleteConfirmation?.data as TIntegration)?.app
-              ?.split("//")[1]
-              ?.split(".")[0]) ||
-          (popUp?.deleteConfirmation?.data as TIntegration)?.app ||
-          (popUp?.deleteConfirmation?.data as TIntegration)?.owner ||
-          (popUp?.deleteConfirmation?.data as TIntegration)?.path ||
-          (popUp?.deleteConfirmation?.data as TIntegration)?.integration ||
-          ""
-        }
-        onDeleteApproved={async () => {
-          if (shouldDeleteSecrets) {
-            handlePopUpOpen("deleteSecretsConfirmation");
-            return;
-          }
-
-          await onIntegrationDelete(
-            (popUp?.deleteConfirmation.data as TIntegration).id,
-            false,
-            () => handlePopUpClose("deleteConfirmation")
-          );
-        }}
-      >
-        {(popUp?.deleteConfirmation?.data as TIntegration)?.integration === "github" && (
-          <div className="mt-4">
-            <Checkbox
-              id="delete-integration-secrets"
-              checkIndicatorBg="text-white"
-              onCheckedChange={() => setShouldDeleteSecrets.toggle()}
-            >
-              Delete previously synced secrets from the destination
-            </Checkbox>
-          </div>
-        )}
-      </DeleteActionModal> */}
-      {/* <DeleteActionModal
-        isOpen={popUp.deleteSecretsConfirmation.isOpen}
-        title={`Are you sure you also want to delete secrets on ${
-          (popUp?.deleteConfirmation.data as TIntegration)?.integration
-        }?`}
-        subTitle="By confirming, you acknowledge that all secrets managed by this integration will be removed from the destination. This action is irreversible."
-        onChange={(isOpen) => handlePopUpToggle("deleteSecretsConfirmation", isOpen)}
-        deleteKey="confirm"
-        onDeleteApproved={async () => {
-          await onIntegrationDelete(
-            (popUp?.deleteConfirmation.data as TIntegration).id,
-            true,
-            () => {
-              handlePopUpClose("deleteSecretsConfirmation");
-              handlePopUpClose("deleteConfirmation");
-            }
-          );
-        }}
-      /> */}
     </>
   );
 };

@@ -91,7 +91,7 @@ export const secretSyncServiceFactory = ({
 
     ForbidOnInvalidProjectType(ProjectType.SecretManager);
 
-    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSync);
+    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSyncs);
 
     const environments = await projectEnvDAL.find({ projectId });
 
@@ -125,7 +125,7 @@ export const secretSyncServiceFactory = ({
 
     ForbidOnInvalidProjectType(ProjectType.SecretManager);
 
-    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSync);
+    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSyncs);
 
     if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[destination])
       throw new BadRequestError({
@@ -166,7 +166,7 @@ export const secretSyncServiceFactory = ({
 
     ForbidOnInvalidProjectType(ProjectType.SecretManager);
 
-    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSync);
+    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSyncs);
 
     if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[destination])
       throw new BadRequestError({
@@ -200,7 +200,7 @@ export const secretSyncServiceFactory = ({
 
     ForbiddenError.from(projectPermission).throwUnlessCan(
       ProjectPermissionActions.Create,
-      ProjectPermissionSub.SecretSync
+      ProjectPermissionSub.SecretSyncs
     );
 
     const appConnection = await appConnectionService.connectAppConnectionById(params.connectionId, actor);
@@ -266,7 +266,7 @@ export const secretSyncServiceFactory = ({
 
     ForbidOnInvalidProjectType(ProjectType.SecretManager);
 
-    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Edit, ProjectPermissionSub.SecretSync);
+    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Edit, ProjectPermissionSub.SecretSyncs);
 
     if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[destination])
       throw new BadRequestError({
@@ -350,16 +350,16 @@ export const secretSyncServiceFactory = ({
 
     ForbidOnInvalidProjectType(ProjectType.SecretManager);
 
-    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Delete, ProjectPermissionSub.SecretSync);
+    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Delete, ProjectPermissionSub.SecretSyncs);
 
     if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[destination])
       throw new BadRequestError({
         message: `Secret sync with ID ${secretSync.id} is not configured for ${SECRET_SYNC_NAME_MAP[destination]}`
       });
 
-    const deletedSecretSync = await secretSyncDAL.deleteById(syncId);
+    await secretSyncDAL.deleteById(syncId);
 
-    return deletedSecretSync as TSecretSync;
+    return secretSync as TSecretSync;
   };
 
   const triggerSecretSync = async (
@@ -385,7 +385,7 @@ export const secretSyncServiceFactory = ({
 
     ForbidOnInvalidProjectType(ProjectType.SecretManager);
 
-    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSync);
+    ForbiddenError.from(permission).throwUnlessCan(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSyncs);
 
     if (secretSync.connection.app !== SECRET_SYNC_CONNECTION_MAP[destination])
       throw new BadRequestError({

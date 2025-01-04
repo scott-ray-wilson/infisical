@@ -95,7 +95,6 @@ export const CreateSecretSyncForm = ({ destination, onComplete, onCancel }: Prop
   const isTabEnabled = async (index: number) => {
     let isEnabled = true;
     for (let i = index - 1; i >= 0; i -= 1) {
-      console.log("i", i);
       // eslint-disable-next-line no-await-in-loop
       isEnabled = isEnabled && (await isStepValid(i));
     }

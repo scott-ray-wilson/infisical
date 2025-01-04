@@ -65,7 +65,7 @@ export enum ProjectPermissionSub {
   PkiCollections = "pki-collections",
   Kms = "kms",
   Cmek = "cmek",
-  SecretSync = "secret-sync"
+  SecretSyncs = "secret-syncs"
 }
 
 export type SecretSubjectFields = {
@@ -145,7 +145,7 @@ export type ProjectPermissionSet =
   | [ProjectPermissionActions, ProjectPermissionSub.SshCertificateTemplates]
   | [ProjectPermissionActions, ProjectPermissionSub.PkiAlerts]
   | [ProjectPermissionActions, ProjectPermissionSub.PkiCollections]
-  | [ProjectPermissionActions, ProjectPermissionSub.SecretSync]
+  | [ProjectPermissionActions, ProjectPermissionSub.SecretSyncs]
   | [ProjectPermissionCmekActions, ProjectPermissionSub.Cmek]
   | [ProjectPermissionActions.Delete, ProjectPermissionSub.Project]
   | [ProjectPermissionActions.Edit, ProjectPermissionSub.Project]
@@ -396,7 +396,7 @@ const GeneralPermissionSchema = [
     )
   }),
   z.object({
-    subject: z.literal(ProjectPermissionSub.SecretSync).describe("The entity this permission pertains to."),
+    subject: z.literal(ProjectPermissionSub.SecretSyncs).describe("The entity this permission pertains to."),
     inverted: z.boolean().optional().describe("Whether rule allows or forbids."),
     action: CASL_ACTION_SCHEMA_NATIVE_ENUM(ProjectPermissionCmekActions).describe(
       "Describe what action an entity can take."
@@ -517,7 +517,7 @@ const buildAdminPermissionRules = () => {
     ProjectPermissionSub.SshCertificateAuthorities,
     ProjectPermissionSub.SshCertificates,
     ProjectPermissionSub.SshCertificateTemplates,
-    ProjectPermissionSub.SecretSync
+    ProjectPermissionSub.SecretSyncs
   ].forEach((el) => {
     can(
       [
@@ -726,7 +726,7 @@ const buildMemberPermissionRules = () => {
       ProjectPermissionActions.Create,
       ProjectPermissionActions.Delete
     ],
-    ProjectPermissionSub.SecretSync
+    ProjectPermissionSub.SecretSyncs
   );
 
   return rules;
@@ -762,7 +762,7 @@ const buildViewerPermissionRules = () => {
   can(ProjectPermissionActions.Read, ProjectPermissionSub.SshCertificateAuthorities);
   can(ProjectPermissionActions.Read, ProjectPermissionSub.SshCertificates);
   can(ProjectPermissionActions.Read, ProjectPermissionSub.SshCertificateTemplates);
-  can(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSync);
+  can(ProjectPermissionActions.Read, ProjectPermissionSub.SecretSyncs);
 
   return rules;
 };

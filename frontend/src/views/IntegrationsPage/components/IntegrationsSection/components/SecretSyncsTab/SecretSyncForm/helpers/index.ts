@@ -1,7 +1,7 @@
 import { TSecretSync } from "@app/hooks/api/secretSyncs";
 import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
 
-import { TSecretSyncForm } from "../schemas";
+import { TCreateSecretSyncForm } from "../schemas";
 
 export const parseFormData = ({
   destination,
@@ -9,7 +9,7 @@ export const parseFormData = ({
   environment,
   destinationConfig,
   ...data
-}: TSecretSyncForm) => {
+}: TCreateSecretSyncForm) => {
   let parsedConfig: TSecretSync["destinationConfig"];
 
   switch (destination) {

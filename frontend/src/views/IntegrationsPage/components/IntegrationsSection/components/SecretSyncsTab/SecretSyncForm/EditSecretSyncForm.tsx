@@ -6,33 +6,33 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createNotification } from "@app/components/notifications";
 import { Button } from "@app/components/v2";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
-import { TSecretSync, useCreateSecretSync } from "@app/hooks/api/secretSyncs";
-import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
-import { parseFormData } from "@app/views/IntegrationsPage/components/IntegrationsSection/components/SecretSyncsTab/SecretSyncForm/helpers";
-import { SecretSyncDetailsFields } from "@app/views/IntegrationsPage/components/IntegrationsSection/components/SecretSyncsTab/SecretSyncForm/SecretSyncDetailsFields";
-import { SecretSyncOptionsFields } from "@app/views/IntegrationsPage/components/IntegrationsSection/components/SecretSyncsTab/SecretSyncForm/SecretSyncOptionsFields";
+import { TSecretSync, useUpdateSecretSync } from "@app/hooks/api/secretSyncs";
 
 import { DestinationConfigFields } from "./DestinationConfigFields";
+import { parseFormData } from "./helpers";
 import { CreateSecretSyncFormSchema, TCreateSecretSyncForm } from "./schemas";
 import { SecretSyncConnectionField } from "./SecretSyncConnectionField";
+import { SecretSyncDetailsFields } from "./SecretSyncDetailsFields";
+import { SecretSyncOptionsFields } from "./SecretSyncOptionsFields";
 import { SecretSyncSourceFields } from "./SecretSyncSourceFields";
+
+export enum SecretSyncEditFields {
+  Details = "details",
+  Options = "options",
+  Source = "source",
+  Destination = "destination"
+}
 
 type Props = {
   onComplete: (secretSync: TSecretSync) => void;
-  destination: SecretSync;
+  secretSync: TSecretSync;
+  fields: SecretSyncEditFields;
   onCancel: () => void;
 };
 
-const FORM_TABS: { name: string; key: string; fields: (keyof TCreateSecretSyncForm)[] }[] = [
-  { name: "Source", key: "source", fields: ["environment", "secretPath"] },
-  { name: "Destination", key: "destination", fields: ["connection", "destinationConfig"] },
-  { name: "Options", key: "options", fields: ["syncOptions"] },
-  { name: "Details", key: "details", fields: ["name", "description"] }
-];
-
-export const CreateSecretSyncForm = ({ destination, onComplete, onCancel }: Props) => {
-  const createSecretSync = useCreateSecretSync();
-  const { name: destinationName } = SECRET_SYNC_MAP[destination];
+export const EditSecretSyncForm = ({ secretSync, fields, onComplete, onCancel }: Props) => {
+  const updateSecretSync = useUpdateSecretSync();
+  const { name: destinationName } = SECRET_SYNC_MAP[secretSync.destination];
 
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
 
@@ -47,7 +47,7 @@ export const CreateSecretSyncForm = ({ destination, onComplete, onCancel }: Prop
 
   const onSubmit = async (formData: TCreateSecretSyncForm) => {
     try {
-      const secretSync = await createSecretSync.mutateAsync(parseFormData(formData));
+      const secretSync = await updateSecretSync.mutateAsync(parseFormData(formData));
 
       createNotification({
         text: `Successfully added ${destinationName} Sync`,

@@ -34,7 +34,7 @@ export type TDeleteSecretSyncDTO = {
   syncId: string;
 };
 
-// export type TAppConnectionMap = {
-//   [AppConnection.AWS]: TAwsConnection;
-//   [AppConnection.GitHub]: TGitHubConnection;
-// };
+export type TTriggerSecretSyncDTO = {
+  destination: SecretSync;
+  syncId: string;
+};

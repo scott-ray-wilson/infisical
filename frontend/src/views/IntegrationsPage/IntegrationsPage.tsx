@@ -47,7 +47,8 @@ export const IntegrationsPage = withProjectPermission(
       useGetCloudIntegrations();
 
     const { data: secretSyncs, isLoading: isSecretSyncsLoading } = useListSecretSyncs(workspaceId, {
-      enabled: Boolean(workspaceId)
+      enabled: Boolean(workspaceId),
+      refetchInterval: 4000
     });
 
     const {

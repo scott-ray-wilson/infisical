@@ -2,10 +2,10 @@ import { Controller, useFormContext } from "react-hook-form";
 
 import { FormControl, Input } from "@app/components/v2";
 
-import { TSecretSyncForm } from "./schemas";
+import { TCreateSecretSyncForm } from "./schemas";
 
 export const SecretSyncOptionsFields = () => {
-  const { control } = useFormContext<TSecretSyncForm>();
+  const { control } = useFormContext<TCreateSecretSyncForm>();
 
   return (
     <>

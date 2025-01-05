@@ -6,6 +6,7 @@ import {
   TCreateSecretSyncDTO,
   TDeleteSecretSyncDTO,
   TSecretSyncResponse,
+  TTriggerSecretSyncDTO,
   TUpdateSecretSyncDTO
 } from "@app/hooks/api/secretSyncs/types";
 
@@ -47,6 +48,21 @@ export const useDeleteSecretSync = () => {
   return useMutation({
     mutationFn: async ({ syncId, destination }: TDeleteSecretSyncDTO) => {
       const { data } = await apiRequest.delete(`/api/v1/secret-syncs/${destination}/${syncId}`);
+
+      return data;
+    },
+    onSuccess: (_, { syncId, destination }) => {
+      queryClient.invalidateQueries(secretSyncKeys.list());
+      queryClient.invalidateQueries(secretSyncKeys.byId(destination, syncId));
+    }
+  });
+};
+
+export const useTriggerSecretSync = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ syncId, destination }: TTriggerSecretSyncDTO) => {
+      const { data } = await apiRequest.post(`/api/v1/secret-syncs/${destination}/${syncId}/sync`);
 
       return data;
     },

@@ -4,10 +4,10 @@ import { FilterableSelect, FormControl } from "@app/components/v2";
 import { SecretPathInput } from "@app/components/v2/SecretPathInput";
 import { useWorkspace } from "@app/context";
 
-import { TSecretSyncForm } from "./schemas";
+import { TCreateSecretSyncForm } from "./schemas";
 
 export const SecretSyncSourceFields = () => {
-  const { control, watch } = useFormContext<TSecretSyncForm>();
+  const { control, watch } = useFormContext<TCreateSecretSyncForm>();
 
   const { currentWorkspace } = useWorkspace();
 

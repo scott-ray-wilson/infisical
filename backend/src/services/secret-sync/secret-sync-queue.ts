@@ -196,8 +196,12 @@ export const secretSyncQueueFactory = ({
 
   const $syncSecrets = async (job: TSyncSecretsJobDTO) => {
     const {
-      data: { secretSync, auditLogInfo, triggeredByUserId }
+      data: { syncId, auditLogInfo, triggeredByUserId }
     } = job;
+
+    const secretSync = await secretSyncDAL.findById(syncId);
+
+    if (!secretSync) throw new Error(`Cannot find secret sync with ID ${syncId}`);
 
     logger.info(
       `Secret Sync Push [syncId=${secretSync.id}] [destination=${secretSync.destination}] [projectId=${secretSync.projectId}] [secretPath=${secretSync.secretPath}] [envId=${secretSync.envId}] [connectionId=${secretSync.connectionId}]`
@@ -218,14 +222,18 @@ export const secretSyncQueueFactory = ({
     const isFinalAttempt = job.attemptsStarted === job.opts.attempts;
     let syncError: unknown = null;
 
+    logger.info("here 1");
+
     const lock = await keyStore.acquireLock([KeyStorePrefixes.SecretSyncLock(secretSync.id)], 60000, {
       retryCount: 10,
       retryDelay: 3000,
       retryJitter: 500
     });
+    logger.info("here 2");
 
     const lockAcquiredTime = new Date();
 
+    logger.info("here 3");
     try {
       const lastSyncAt = await keyStore.getItem(KeyStorePrefixes.SecretSyncLastRunTimestamp(secretSync.id));
 
@@ -393,15 +401,11 @@ export const secretSyncQueueFactory = ({
 
     const secretSyncs = await secretSyncDAL.find({ envId: environment.id, secretPath });
 
-    await Promise.all(secretSyncs.map((secretSync) => $queueSecretSync({ secretSync })));
+    await Promise.all(secretSyncs.map((secretSync) => $queueSecretSync({ syncId: secretSync.id })));
   };
 
   const triggerSecretSyncById = async ({ syncId, auditLogInfo }: TTriggerSyncSecretByIdDTO) => {
-    const secretSync = await secretSyncDAL.findById(syncId);
-
-    if (!secretSync) throw new Error(`Cannot find secret sync with ID ${syncId}`);
-
-    await $queueSecretSync({ secretSync, auditLogInfo });
+    await $queueSecretSync({ syncId, auditLogInfo });
   };
 
   queueService.start(QueueName.AppConnectionSecretSync, async (job) => {

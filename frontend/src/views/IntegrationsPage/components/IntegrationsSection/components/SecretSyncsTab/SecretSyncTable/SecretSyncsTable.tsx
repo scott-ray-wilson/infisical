@@ -1,16 +1,17 @@
 import { useMemo, useState } from "react";
 import {
   faArrowDown,
-  faArrowRightArrowLeft,
   faArrowUp,
   faCheckCircle,
   faFilter,
   faMagnifyingGlass,
+  faRotate,
   faSearch
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { twMerge } from "tailwind-merge";
 
+import { createNotification } from "@app/components/notifications";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +32,7 @@ import {
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import { usePagination, usePopUp, useResetPageHelper } from "@app/hooks";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
-import { TSecretSync } from "@app/hooks/api/secretSyncs";
+import { TSecretSync, useTriggerSecretSync } from "@app/hooks/api/secretSyncs";
 import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
 import { DeleteSecretSyncModal } from "@app/views/IntegrationsPage/components/IntegrationsSection/components/SecretSyncsTab/DeleteSecretSyncModal";
 
@@ -61,6 +62,8 @@ type Props = {
 
 export const SecretSyncsTable = ({ secretSyncs }: Props) => {
   const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp(["deleteSync"] as const);
+
+  const triggerSync = useTriggerSecretSync();
 
   const [filters, setFilters] = useState<SecretSyncFilters>({
     destinations: []
@@ -92,7 +95,7 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
 
           const searchValue = search.trim().toLowerCase();
 
-          // TODO: destination
+          // TODO: rest
 
           return (
             SECRET_SYNC_MAP[destination].name.toLowerCase().includes(searchValue) ||
@@ -155,6 +158,27 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
   const isTableFiltered = Boolean(filters.destinations.length);
 
   const handleDelete = (secretSync: TSecretSync) => handlePopUpOpen("deleteSync", secretSync);
+
+  const handleTriggerSync = async (secretSync: TSecretSync) => {
+    const destinationName = SECRET_SYNC_MAP[secretSync.destination].name;
+
+    try {
+      await triggerSync.mutateAsync({
+        syncId: secretSync.id,
+        destination: secretSync.destination
+      });
+
+      createNotification({
+        text: `Successfully triggered ${destinationName} Sync`,
+        type: "success"
+      });
+    } catch (error) {
+      createNotification({
+        text: `Failed to trigger ${destinationName} Sync`,
+        type: "error"
+      });
+    }
+  };
 
   return (
     <div>
@@ -288,8 +312,7 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
                 key={secretSync.id}
                 secretSync={secretSync}
                 onDelete={handleDelete}
-                // onEditCredentials={handleEditCredentials}
-                // onEditDetails={handleEditDetails}
+                onTriggerSync={handleTriggerSync}
               />
             ))}
           </TBody>
@@ -310,7 +333,7 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
                 ? "No syncs match search..."
                 : "This project has no syncs configured"
             }
-            icon={secretSyncs.length ? faSearch : faArrowRightArrowLeft}
+            icon={secretSyncs.length ? faSearch : faRotate}
           />
         )}
       </TableContainer>

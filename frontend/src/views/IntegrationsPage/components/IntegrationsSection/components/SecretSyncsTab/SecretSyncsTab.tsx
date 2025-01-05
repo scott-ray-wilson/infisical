@@ -2,7 +2,9 @@ import Link from "next/link";
 import { faArrowUpRightFromSquare, faBookOpen, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
+import { ProjectPermissionCan } from "@app/components/permissions";
 import { Button } from "@app/components/v2";
+import { ProjectPermissionActions, ProjectPermissionSub } from "@app/context";
 import { usePopUp } from "@app/hooks";
 import { TSecretSync } from "@app/hooks/api/secretSyncs";
 
@@ -41,14 +43,22 @@ export const SecretSyncsTab = ({ secretSyncs }: Props) => {
               Use App Connections to sync secrets to third-party providers.
             </p>
           </div>
-          <Button
-            colorSchema="secondary"
-            type="submit"
-            leftIcon={<FontAwesomeIcon icon={faPlus} />}
-            onClick={() => handlePopUpOpen("addSync")}
+          <ProjectPermissionCan
+            I={ProjectPermissionActions.Create}
+            a={ProjectPermissionSub.SecretSyncs}
           >
-            Add Sync
-          </Button>
+            {(isAllowed) => (
+              <Button
+                colorSchema="secondary"
+                type="submit"
+                leftIcon={<FontAwesomeIcon icon={faPlus} />}
+                onClick={() => handlePopUpOpen("addSync")}
+                isDisabled={!isAllowed}
+              >
+                Add Sync
+              </Button>
+            )}
+          </ProjectPermissionCan>
         </div>
         <SecretSyncsTable secretSyncs={secretSyncs} />
       </div>

@@ -2,11 +2,11 @@ import { useFormContext } from "react-hook-form";
 
 import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
 
-import { TSecretSyncForm } from "../schemas";
+import { TCreateSecretSyncForm } from "../schemas";
 import { AwsParameterStoreConfigFields } from "./AwsParameterStoreConfigFields";
 
 export const DestinationConfigFields = () => {
-  const { watch } = useFormContext<TSecretSyncForm>();
+  const { watch } = useFormContext<TCreateSecretSyncForm>();
 
   const destination = watch("destination");
 

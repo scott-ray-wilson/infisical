@@ -61,7 +61,7 @@ type AuditLogInfo = Pick<TCreateAuditLogDTO, "userAgent" | "userAgentType" | "ip
 
 export type TTriggerSyncSecretByIdDTO = {
   syncId: string;
-  auditLogInfo: AuditLogInfo;
+  auditLogInfo?: AuditLogInfo;
   triggeredByUserId?: string;
 };
 
@@ -78,7 +78,7 @@ export type TTriggerSecretSyncsByPathDTO = {
 type TSecretSyncRaw = NonNullable<Awaited<ReturnType<TSecretSyncDALFactory["findById"]>>>;
 
 export type TQueueSecretSyncPayload = {
-  secretSync: TSecretSyncRaw;
+  syncId: string;
   auditLogInfo?: AuditLogInfo;
   triggeredByUserId?: string;
 };

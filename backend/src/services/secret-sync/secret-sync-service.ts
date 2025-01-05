@@ -243,6 +243,8 @@ export const secretSyncServiceFactory = ({
       return sync;
     });
 
+    await secretSyncQueue.triggerSecretSyncById({ syncId: secretSync.id });
+
     return secretSync as TSecretSync;
   };
 
@@ -394,7 +396,11 @@ export const secretSyncServiceFactory = ({
 
     await secretSyncQueue.triggerSecretSyncById({ syncId, auditLogInfo, triggeredByUserId });
 
-    return secretSync as TSecretSync;
+    const updatedSecretSync = await secretSyncDAL.updateById(syncId, {
+      isSynced: null
+    });
+
+    return updatedSecretSync as TSecretSync;
   };
 
   return {

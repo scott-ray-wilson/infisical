@@ -6,11 +6,11 @@ import { APP_CONNECTION_MAP } from "@app/helpers/appConnections";
 import { SECRET_SYNC_CONNECTION_MAP } from "@app/helpers/secretSyncs";
 import { useListAvailableAppConnections } from "@app/hooks/api/appConnections";
 
-import { TSecretSyncForm } from "./schemas";
+import { TCreateSecretSyncForm } from "./schemas";
 
 export const SecretSyncConnectionField = () => {
   const { permission } = useOrgPermission();
-  const { control, watch } = useFormContext<TSecretSyncForm>();
+  const { control, watch } = useFormContext<TCreateSecretSyncForm>();
 
   const destination = watch("destination");
   const app = SECRET_SYNC_CONNECTION_MAP[destination];

@@ -1,5 +1,6 @@
 import AWS from "aws-sdk";
 
+import { logger } from "@app/lib/logger";
 import { getAwsConnectionConfig } from "@app/services/app-connection/aws/aws-connection-fns";
 import { TAwsParameterStoreSyncWithConnection } from "@app/services/secret-sync/aws-parameter-store/aws-parameter-store-sync-types";
 import { TSecretMap } from "@app/services/secret-sync/secret-sync-types";
@@ -63,8 +64,9 @@ export const awsParameterStoreSyncPushSecrets = async (
   for await (const entry of Object.entries(secrets)) {
     const [key, { value }] = entry;
 
-    if (key in awsParameterStoreSecretsRecord && awsParameterStoreSecretsRecord[key].Value === value) {
-      break;
+    if (!value || (key in awsParameterStoreSecretsRecord && awsParameterStoreSecretsRecord[key].Value === value)) {
+      // eslint-disable-next-line no-continue
+      continue;
     }
 
     const resp = await ssm
@@ -76,7 +78,9 @@ export const awsParameterStoreSyncPushSecrets = async (
       })
       .promise();
 
-    console.log("resp", resp);
+    // TODO: sleep
+
+    logger.info(resp, "resp");
   }
 
   // TODO: option to skip delete

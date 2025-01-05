@@ -3,9 +3,9 @@ import { useRouter } from "next/router";
 import {
   faCalendarCheck,
   faCheck,
-  faClock,
   faInfoCircle,
   faRefresh,
+  faRotate,
   faTrash,
   faWarning,
   faXmark
@@ -26,9 +26,10 @@ import { SecretSyncTableCell } from "./SecretSyncTableCell";
 type Props = {
   secretSync: TSecretSync;
   onDelete: (secretSync: TSecretSync) => void;
+  onTriggerSync: (secretSync: TSecretSync) => void;
 };
 
-export const SecretSyncRow = ({ secretSync, onDelete }: Props) => {
+export const SecretSyncRow = ({ secretSync, onDelete, onTriggerSync }: Props) => {
   const router = useRouter();
 
   const {
@@ -63,7 +64,7 @@ export const SecretSyncRow = ({ secretSync, onDelete }: Props) => {
 
   return (
     <Tr
-      onClick={() => router.push(`/integrations/secret-syncs/${id}`)}
+      onClick={() => router.push(`/integrations/secret-syncs/${destination}/${id}`)}
       className={twMerge(
         "group h-10 cursor-pointer transition-colors duration-100 hover:bg-mineshaft-700",
         isSynced === false && "bg-red/5 hover:bg-red/10"
@@ -103,8 +104,8 @@ export const SecretSyncRow = ({ secretSync, onDelete }: Props) => {
         {typeof isSynced !== "boolean" ? (
           <Badge variant="primary">
             <div className="flex items-center space-x-1">
-              <FontAwesomeIcon icon={faClock} />
-              <div>Pending</div>
+              <FontAwesomeIcon icon={faRotate} />
+              <div>Syncing</div>
             </div>
           </Badge>
         ) : (
@@ -112,7 +113,7 @@ export const SecretSyncRow = ({ secretSync, onDelete }: Props) => {
             position="left"
             className="max-w-sm"
             content={
-              <div className="flex flex-col gap-2 py-1">
+              <div className="flex flex-col gap-2 whitespace-normal py-1">
                 {lastSyncedAt && (
                   <div>
                     <div
@@ -158,7 +159,7 @@ export const SecretSyncRow = ({ secretSync, onDelete }: Props) => {
             <IconButton
               onClick={(e) => {
                 e.stopPropagation();
-                // onManualSyncIntegration();
+                onTriggerSync(secretSync);
               }}
               ariaLabel="sync"
               colorSchema="secondary"

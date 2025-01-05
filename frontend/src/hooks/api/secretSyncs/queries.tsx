@@ -5,7 +5,8 @@ import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
 import {
   TListSecretSyncOptions,
   TListSecretSyncs,
-  TSecretSync
+  TSecretSync,
+  TSecretSyncResponse
 } from "@app/hooks/api/secretSyncs/types";
 import { TSecretSyncOption } from "@app/hooks/api/secretSyncs/types/sync-options";
 
@@ -66,6 +67,27 @@ export const useListSecretSyncs = (
       });
 
       return data.secretSyncs;
+    },
+    ...options
+  });
+};
+
+export const useGetSecretSync = (
+  destination: SecretSync,
+  syncId: string,
+  options?: Omit<
+    UseQueryOptions<TSecretSync, unknown, TSecretSync, ReturnType<typeof secretSyncKeys.byId>>,
+    "queryKey" | "queryFn"
+  >
+) => {
+  return useQuery({
+    queryKey: secretSyncKeys.byId(destination, syncId),
+    queryFn: async () => {
+      const { data } = await apiRequest.get<TSecretSyncResponse>(
+        `/api/v1/secret-syncs/${destination}/${syncId}`
+      );
+
+      return data.secretSync;
     },
     ...options
   });

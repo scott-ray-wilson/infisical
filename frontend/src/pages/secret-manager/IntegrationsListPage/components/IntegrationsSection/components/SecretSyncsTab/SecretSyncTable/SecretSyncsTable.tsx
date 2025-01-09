@@ -2,16 +2,24 @@ import { useMemo, useState } from "react";
 import {
   faArrowDown,
   faArrowUp,
+  faBan,
+  faCheck,
   faCheckCircle,
   faFilter,
   faMagnifyingGlass,
   faRotate,
-  faSearch
+  faSearch,
+  faWarning
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { twMerge } from "tailwind-merge";
 
 import { createNotification } from "@app/components/notifications";
+import {
+  DeleteSecretSyncModal,
+  SecretSyncEraseModal,
+  SecretSyncImportModal
+} from "@app/components/secret-syncs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,45 +37,65 @@ import {
   THead,
   Tr
 } from "@app/components/v2";
+import { useWorkspace } from "@app/context";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import { usePagination, usePopUp, useResetPageHelper } from "@app/hooks";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
-import { TSecretSync, useTriggerSecretSync } from "@app/hooks/api/secretSyncs";
+import { TSecretSync, useTriggerSecretSync, useUpdateSecretSync } from "@app/hooks/api/secretSyncs";
 import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
 
-import { DeleteSecretSyncModal } from "../DeleteSecretSyncModal";
+import { getSecretSyncDestinationColValues } from "./helpers";
 import { SecretSyncRow } from "./SecretSyncRow";
-
-// import { DeleteAppConnectionModal } from "./DeleteAppConnectionModal";
-// import { EditAppConnectionCredentialsModal } from "./EditAppConnectionCredentialsModal";
-// import { EditAppConnectionDetailsModal } from "./EditAppConnectionDetailsModal";
 
 enum SecretSyncsOrderBy {
   Destination = "destination",
-  Sync = "sync",
-  Environment = "environment",
   Source = "source",
   Name = "name",
-  Connection = "connection",
   Status = "status"
 }
 
 type SecretSyncFilters = {
   destinations: SecretSync[];
+  status: SecretSyncStatusCol[];
+  environmentIds: string[];
 };
+
+enum SecretSyncStatusCol {
+  Pending = "pending",
+  Success = "success",
+  Failed = "failed",
+  Disabled = "disabled"
+}
 
 type Props = {
   secretSyncs: TSecretSync[];
 };
 
+const STATUS_ICON_MAP = {
+  [SecretSyncStatusCol.Success]: { icon: faCheck, className: "text-green", name: "Synced" },
+  [SecretSyncStatusCol.Failed]: { icon: faWarning, className: "text-red", name: "Not Synced" },
+  [SecretSyncStatusCol.Pending]: { icon: faRotate, className: "text-yellow", name: "Syncing" },
+  [SecretSyncStatusCol.Disabled]: { icon: faBan, className: "text-mineshaft-400", name: "Disabled" }
+};
+
 export const SecretSyncsTable = ({ secretSyncs }: Props) => {
-  const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp(["deleteSync"] as const);
+  const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp([
+    "deleteSync",
+    "importSecrets",
+    "eraseSecrets",
+    "disableSync"
+  ] as const);
 
   const triggerSync = useTriggerSecretSync();
+  const updateSync = useUpdateSecretSync();
 
   const [filters, setFilters] = useState<SecretSyncFilters>({
-    destinations: []
+    destinations: [],
+    status: [],
+    environmentIds: []
   });
+
+  const { currentWorkspace } = useWorkspace();
 
   const {
     search,
@@ -82,52 +110,65 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
     orderBy,
     setOrderDirection,
     setOrderBy
-  } = usePagination<SecretSyncsOrderBy>(SecretSyncsOrderBy.Destination, { initPerPage: 20 });
+  } = usePagination<SecretSyncsOrderBy>(SecretSyncsOrderBy.Name, { initPerPage: 20 });
 
   const filteredSecretSyncs = useMemo(
     () =>
       secretSyncs
         .filter((secretSync) => {
-          const { destination, name, connection, folder, environment } = secretSync;
+          const { destination, name, connection, folder, environment, syncStatus, isEnabled } =
+            secretSync;
 
           if (filters.destinations.length && !filters.destinations.includes(destination))
             return false;
 
+          if (filters.environmentIds.length && !filters.environmentIds.includes(environment.id))
+            return false;
+
+          const status = isEnabled ? syncStatus : SecretSyncStatusCol.Disabled;
+
+          if (
+            filters.status.length &&
+            (!status || !filters.status.includes(status as SecretSyncStatusCol))
+          ) {
+            return false;
+          }
+
           const searchValue = search.trim().toLowerCase();
 
-          // TODO: rest
+          const destinationValues = getSecretSyncDestinationColValues(secretSync);
 
           return (
             SECRET_SYNC_MAP[destination].name.toLowerCase().includes(searchValue) ||
             name.toLowerCase().includes(searchValue) ||
             folder.path.toLowerCase().includes(searchValue) ||
             environment.name.toLowerCase().includes(searchValue) ||
-            connection.name.toLowerCase().includes(searchValue)
+            connection.name.toLowerCase().includes(searchValue) ||
+            destinationValues.primaryText.toLowerCase().includes(searchValue) ||
+            destinationValues.secondaryText.toLowerCase().includes(searchValue)
           );
         })
         .sort((a, b) => {
           const [syncOne, syncTwo] = orderDirection === OrderByDirection.ASC ? [a, b] : [b, a];
 
           switch (orderBy) {
-            case SecretSyncsOrderBy.Name:
-              return syncOne.name.toLowerCase().localeCompare(syncTwo.name.toLowerCase());
             case SecretSyncsOrderBy.Source:
               return syncOne.folder.path
                 .toLowerCase()
                 .localeCompare(syncTwo.folder.path.toLowerCase());
-            case SecretSyncsOrderBy.Environment:
-              return syncOne.environment.name
-                .toLowerCase()
-                .localeCompare(syncTwo.environment.name.toLowerCase());
-            case SecretSyncsOrderBy.Connection:
+            case SecretSyncsOrderBy.Destination:
+              return getSecretSyncDestinationColValues(syncOne)
+                .primaryText.toLowerCase()
+                .localeCompare(
+                  getSecretSyncDestinationColValues(syncTwo).primaryText.toLowerCase()
+                );
+            case SecretSyncsOrderBy.Status:
               return syncOne.connection.name
                 .toLowerCase()
                 .localeCompare(syncTwo.connection.name.toLowerCase());
-            case SecretSyncsOrderBy.Sync:
+            case SecretSyncsOrderBy.Name:
             default:
-              return SECRET_SYNC_MAP[syncOne.destination].name
-                .toLowerCase()
-                .localeCompare(SECRET_SYNC_MAP[syncTwo.destination].name.toLowerCase());
+              return syncOne.name.toLowerCase().localeCompare(syncTwo.name.toLowerCase());
           }
         }),
     [secretSyncs, orderDirection, search, orderBy, filters]
@@ -158,6 +199,36 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
   const isTableFiltered = Boolean(filters.destinations.length);
 
   const handleDelete = (secretSync: TSecretSync) => handlePopUpOpen("deleteSync", secretSync);
+
+  const handleTriggerImport = (secretSync: TSecretSync) =>
+    handlePopUpOpen("importSecrets", secretSync);
+
+  const handleTriggerErase = (secretSync: TSecretSync) =>
+    handlePopUpOpen("eraseSecrets", secretSync);
+
+  const handleToggleEnableSync = async (secretSync: TSecretSync) => {
+    const destinationName = SECRET_SYNC_MAP[secretSync.destination].name;
+
+    const isEnabled = !secretSync.isEnabled;
+
+    try {
+      await updateSync.mutateAsync({
+        syncId: secretSync.id,
+        destination: secretSync.destination,
+        isEnabled
+      });
+
+      createNotification({
+        text: `Successfully ${isEnabled ? "enabled" : "disabled"} ${destinationName} Sync`,
+        type: "success"
+      });
+    } catch {
+      createNotification({
+        text: `Failed to ${isEnabled ? "enable" : "disable"} ${destinationName} Sync`,
+        type: "error"
+      });
+    }
+  };
 
   const handleTriggerSync = async (secretSync: TSecretSync) => {
     const destinationName = SECRET_SYNC_MAP[secretSync.destination].name;
@@ -205,7 +276,36 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
             </IconButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="thin-scrollbar max-h-[70vh] overflow-y-auto" align="end">
-            <DropdownMenuLabel>Filter by Secret Syncs</DropdownMenuLabel>
+            <DropdownMenuLabel>Status</DropdownMenuLabel>
+            {Object.values(SecretSyncStatusCol).map((status) => (
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  setFilters((prev) => ({
+                    ...prev,
+                    status: prev.status.includes(status)
+                      ? prev.status.filter((s) => s !== status)
+                      : [...prev.status, status]
+                  }));
+                }}
+                key={status}
+                icon={
+                  filters.status.includes(status) && (
+                    <FontAwesomeIcon className="text-primary" icon={faCheckCircle} />
+                  )
+                }
+                iconPos="right"
+              >
+                <div className="flex items-center gap-2">
+                  <FontAwesomeIcon
+                    icon={STATUS_ICON_MAP[status].icon}
+                    className={STATUS_ICON_MAP[status].className}
+                  />
+                  <span className="capitalize">{STATUS_ICON_MAP[status].name}</span>
+                </div>
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuLabel>Service</DropdownMenuLabel>
             {secretSyncs.length ? (
               [...new Set(secretSyncs.map(({ destination }) => destination))].map((destination) => {
                 const { name, image } = SECRET_SYNC_MAP[destination];
@@ -243,6 +343,30 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
             ) : (
               <DropdownMenuItem isDisabled>No Secret Syncs Configured</DropdownMenuItem>
             )}
+
+            <DropdownMenuLabel>Environment</DropdownMenuLabel>
+            {currentWorkspace.environments.map((env) => (
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  setFilters((prev) => ({
+                    ...prev,
+                    environmentIds: prev.environmentIds.includes(env.id)
+                      ? prev.environmentIds.filter((i) => i !== env.id)
+                      : [...prev.environmentIds, env.id]
+                  }));
+                }}
+                key={env.id}
+                icon={
+                  filters.environmentIds.includes(env.id) && (
+                    <FontAwesomeIcon className="text-primary" icon={faCheckCircle} />
+                  )
+                }
+                iconPos="right"
+              >
+                <span className="capitalize">{env.name}</span>
+              </DropdownMenuItem>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -277,7 +401,7 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
                   </IconButton>
                 </div>
               </Th>
-              <Th className="w-full">
+              <Th className="w-1/3">
                 <div className="flex items-center">
                   Destination
                   <IconButton
@@ -290,7 +414,7 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
                   </IconButton>
                 </div>
               </Th>
-              <Th>
+              <Th className="min-w-[7.5rem]">
                 <div className="flex items-center">
                   Status
                   <IconButton
@@ -313,6 +437,9 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
                 secretSync={secretSync}
                 onDelete={handleDelete}
                 onTriggerSync={handleTriggerSync}
+                onTriggerImport={handleTriggerImport}
+                onTriggerErase={handleTriggerErase}
+                onToggleEnable={handleToggleEnableSync}
               />
             ))}
           </TBody>
@@ -342,21 +469,16 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
         isOpen={popUp.deleteSync.isOpen}
         secretSync={popUp.deleteSync.data}
       />
-      {/* <DeleteAppConnectionModal
-        isOpen={popUp.deleteSync.isOpen}
-        onOpenChange={(isOpen) => handlePopUpToggle("deleteSync", isOpen)}
-        appConnection={popUp.deleteSync.data}
+      <SecretSyncImportModal
+        onOpenChange={(isOpen) => handlePopUpToggle("importSecrets", isOpen)}
+        isOpen={popUp.importSecrets.isOpen}
+        secretSync={popUp.importSecrets.data}
       />
-      <EditAppConnectionCredentialsModal
-        isOpen={popUp.editCredentials.isOpen}
-        onOpenChange={(isOpen) => handlePopUpToggle("editCredentials", isOpen)}
-        appConnection={popUp.editCredentials.data}
+      <SecretSyncEraseModal
+        onOpenChange={(isOpen) => handlePopUpToggle("eraseSecrets", isOpen)}
+        isOpen={popUp.eraseSecrets.isOpen}
+        secretSync={popUp.eraseSecrets.data}
       />
-      <EditAppConnectionDetailsModal
-        isOpen={popUp.editDetails.isOpen}
-        onOpenChange={(isOpen) => handlePopUpToggle("editDetails", isOpen)}
-        appConnection={popUp.editDetails.data}
-      /> */}
     </div>
   );
 };

@@ -1,23 +1,41 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
+  faBan,
   faCalendarCheck,
   faCheck,
+  faCopy,
+  faDownload,
+  faEllipsisV,
+  faEraser,
   faInfoCircle,
-  faRefresh,
   faRotate,
+  faToggleOff,
+  faToggleOn,
   faTrash,
-  faWarning,
   faXmark
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { format } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
+import { createNotification } from "@app/components/notifications";
 import { ProjectPermissionCan } from "@app/components/permissions";
-import { Badge, IconButton, Td, Tooltip, Tr } from "@app/components/v2";
+import { SecretSyncStatusBadge } from "@app/components/secret-syncs/SecretSyncStatusBadge";
+import {
+  Badge,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  IconButton,
+  Td,
+  Tooltip,
+  Tr
+} from "@app/components/v2";
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/context";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
-import { TSecretSync } from "@app/hooks/api/secretSyncs";
+import { useToggle } from "@app/hooks";
+import { SecretSyncStatus, TSecretSync } from "@app/hooks/api/secretSyncs";
 
 import { getSecretSyncDestinationColValues } from "./helpers";
 import { SecretSyncTableCell } from "./SecretSyncTableCell";
@@ -26,23 +44,53 @@ type Props = {
   secretSync: TSecretSync;
   onDelete: (secretSync: TSecretSync) => void;
   onTriggerSync: (secretSync: TSecretSync) => void;
+  onTriggerImport: (secretSync: TSecretSync) => void;
+  onTriggerErase: (secretSync: TSecretSync) => void;
+  onToggleEnable: (secretSync: TSecretSync) => void;
 };
 
-export const SecretSyncRow = ({ secretSync, onDelete, onTriggerSync }: Props) => {
+export const SecretSyncRow = ({
+  secretSync,
+  onDelete,
+  onTriggerSync,
+  onTriggerImport,
+  onTriggerErase,
+  onToggleEnable
+}: Props) => {
   const {
     id,
     folder: { path: secretPath },
     lastSyncMessage,
-    isSynced,
     destination,
     lastSyncedAt,
     environment,
     name,
-    description
+    description,
+    syncStatus,
+    isEnabled
   } = secretSync;
 
+  const destinationName = SECRET_SYNC_MAP[destination].name;
+
+  const [isIdCopied, setIsIdCopied] = useToggle(false);
+
+  const handleCopyId = useCallback(() => {
+    setIsIdCopied.on();
+    navigator.clipboard.writeText(id);
+
+    createNotification({
+      text: "Connection ID copied to clipboard",
+      type: "info"
+    });
+
+    const timer = setTimeout(() => setIsIdCopied.off(), 2000);
+
+    // eslint-disable-next-line consistent-return
+    return () => clearTimeout(timer);
+  }, [isIdCopied]);
+
   const failureMessage = useMemo(() => {
-    if (isSynced === false) {
+    if (syncStatus === SecretSyncStatus.Failed) {
       if (lastSyncMessage)
         try {
           return JSON.stringify(JSON.parse(lastSyncMessage), null, 2);
@@ -53,7 +101,7 @@ export const SecretSyncRow = ({ secretSync, onDelete, onTriggerSync }: Props) =>
       return "An Unknown Error Occurred.";
     }
     return null;
-  }, [isSynced, lastSyncMessage]);
+  }, [syncStatus, lastSyncMessage]);
 
   const destinationDetails = SECRET_SYNC_MAP[destination];
 
@@ -64,7 +112,8 @@ export const SecretSyncRow = ({ secretSync, onDelete, onTriggerSync }: Props) =>
       // onClick={() => router.push(`/integrations/secret-syncs/${destination}/${id}`)}
       className={twMerge(
         "group h-10 cursor-pointer transition-colors duration-100 hover:bg-mineshaft-700",
-        isSynced === false && "bg-red/5 hover:bg-red/10"
+        syncStatus === SecretSyncStatus.Failed && "bg-red/5 hover:bg-red/10",
+        !isEnabled && "bg-mineshaft-400/15 opacity-50"
       )}
       key={`integration-${id}`}
     >
@@ -97,96 +146,168 @@ export const SecretSyncRow = ({ secretSync, onDelete, onTriggerSync }: Props) =>
         primaryText={destinationValues.primaryText}
         secondaryText={destinationValues.secondaryText}
       />
-      <Td className="whitespace-nowrap">
-        {typeof isSynced !== "boolean" ? (
-          <Badge variant="primary">
-            <div className="flex items-center space-x-1">
-              <FontAwesomeIcon icon={faRotate} />
-              <div>Syncing</div>
-            </div>
-          </Badge>
+      <Td>
+        {isEnabled ? (
+          syncStatus && (
+            <Tooltip
+              position="left"
+              className="max-w-sm"
+              content={
+                syncStatus !== SecretSyncStatus.Pending ? (
+                  <div className="flex flex-col gap-2 whitespace-normal py-1">
+                    {lastSyncedAt && (
+                      <div>
+                        <div
+                          className={`mb-2 flex self-start ${syncStatus === SecretSyncStatus.Failed ? "text-yellow" : "text-green"}`}
+                        >
+                          <FontAwesomeIcon
+                            icon={faCalendarCheck}
+                            className="ml-1 pr-1.5 pt-0.5 text-sm"
+                          />
+                          <div className="text-xs">Last Synced</div>
+                        </div>
+                        <div className="rounded bg-mineshaft-600 p-2 text-xs">
+                          {format(new Date(lastSyncedAt), "yyyy-MM-dd, hh:mm aaa")}
+                        </div>
+                      </div>
+                    )}
+                    {failureMessage && (
+                      <div>
+                        <div className="mb-2 flex self-start text-red">
+                          <FontAwesomeIcon icon={faXmark} className="ml-1 pr-1.5 pt-0.5 text-sm" />
+                          <div className="text-xs">Failure Reason</div>
+                        </div>
+                        <div className="rounded bg-mineshaft-600 p-2 text-xs">{failureMessage}</div>
+                      </div>
+                    )}
+                  </div>
+                ) : undefined
+              }
+            >
+              <SecretSyncStatusBadge status={syncStatus} />
+            </Tooltip>
+          )
         ) : (
-          <Tooltip
-            position="left"
-            className="max-w-sm"
-            content={
-              <div className="flex flex-col gap-2 whitespace-normal py-1">
-                {lastSyncedAt && (
-                  <div>
-                    <div
-                      className={`mb-2 flex self-start ${!isSynced ? "text-yellow" : "text-green"}`}
-                    >
-                      <FontAwesomeIcon
-                        icon={faCalendarCheck}
-                        className="ml-1 pr-1.5 pt-0.5 text-sm"
-                      />
-                      <div className="text-xs">Last Synced</div>
-                    </div>
-                    <div className="rounded bg-mineshaft-600 p-2 text-xs">
-                      {format(new Date(lastSyncedAt), "yyyy-MM-dd, hh:mm aaa")}
-                    </div>
-                  </div>
-                )}
-                {failureMessage && (
-                  <div>
-                    <div className="mb-2 flex self-start text-red">
-                      <FontAwesomeIcon icon={faXmark} className="ml-1 pr-1.5 pt-0.5 text-sm" />
-                      <div className="text-xs">Failure Reason</div>
-                    </div>
-                    <div className="rounded bg-mineshaft-600 p-2 text-xs">{failureMessage}</div>
-                  </div>
-                )}
-              </div>
-            }
-          >
-            <div className="w-min whitespace-nowrap">
-              <Badge variant={isSynced ? "success" : "danger"}>
-                <div className="flex items-center space-x-1">
-                  <FontAwesomeIcon icon={isSynced ? faCheck : faWarning} />
-                  <div>{isSynced ? "Synced" : "Not Synced"}</div>
-                </div>
-              </Badge>
-            </div>
-          </Tooltip>
+          <Badge className="flex items-center gap-1.5 bg-mineshaft-400/20 text-mineshaft-200">
+            <FontAwesomeIcon icon={faBan} />
+            <span>Disabled</span>
+          </Badge>
         )}
       </Td>
       <Td>
-        <div className="flex gap-2 whitespace-nowrap">
-          <Tooltip className="max-w-sm text-center" content="Manually Sync">
-            <IconButton
-              onClick={(e) => {
-                e.stopPropagation();
-                onTriggerSync(secretSync);
-              }}
-              ariaLabel="sync"
-              colorSchema="secondary"
-              variant="plain"
-            >
-              <FontAwesomeIcon icon={faRefresh} />
-            </IconButton>
-          </Tooltip>
-          <ProjectPermissionCan
-            I={ProjectPermissionActions.Delete}
-            a={ProjectPermissionSub.SecretSyncs}
-          >
-            {(isAllowed: boolean) => (
-              <Tooltip content="Remove Sync">
-                <IconButton
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(secretSync);
-                  }}
-                  ariaLabel="delete"
-                  isDisabled={!isAllowed}
-                  colorSchema="danger"
-                  variant="plain"
+        <Tooltip className="max-w-sm text-center" content="Options">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                ariaLabel="Options"
+                colorSchema="secondary"
+                className="w-6"
+                variant="plain"
+              >
+                <FontAwesomeIcon icon={faEllipsisV} />
+              </IconButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                icon={<FontAwesomeIcon icon={isIdCopied ? faCheck : faCopy} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyId();
+                }}
+              >
+                Copy Sync ID
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                icon={<FontAwesomeIcon icon={faRotate} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTriggerSync(secretSync);
+                }}
+              >
+                <Tooltip
+                  position="left"
+                  sideOffset={42}
+                  content={`Manually trigger a sync for this ${destinationName} destination.`}
                 >
-                  <FontAwesomeIcon icon={faTrash} className="px-1" />
-                </IconButton>
-              </Tooltip>
-            )}
-          </ProjectPermissionCan>
-        </div>
+                  <div className="flex h-full w-full items-center justify-between gap-1">
+                    <span> Trigger Sync</span>
+                    <FontAwesomeIcon className="text-bunker-300" size="sm" icon={faInfoCircle} />
+                  </div>
+                </Tooltip>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                icon={<FontAwesomeIcon icon={faDownload} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTriggerImport(secretSync);
+                }}
+              >
+                <Tooltip
+                  position="left"
+                  sideOffset={42}
+                  content={`Import secrets from this ${destinationName} destination into Infisical.`}
+                >
+                  <div className="flex h-full w-full items-center justify-between gap-1">
+                    <span>Import Secrets</span>
+                    <FontAwesomeIcon className="text-bunker-300" size="sm" icon={faInfoCircle} />
+                  </div>
+                </Tooltip>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                icon={<FontAwesomeIcon icon={faEraser} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTriggerErase(secretSync);
+                }}
+              >
+                <Tooltip
+                  position="left"
+                  sideOffset={42}
+                  content={`Erase secrets synced by Infisical from this ${destinationName} destination.`}
+                >
+                  <div className="flex h-full w-full items-center justify-between gap-1">
+                    <span>Erase Secrets</span>
+                    <FontAwesomeIcon className="text-bunker-300" size="sm" icon={faInfoCircle} />
+                  </div>
+                </Tooltip>
+              </DropdownMenuItem>
+              <ProjectPermissionCan
+                I={ProjectPermissionActions.Edit}
+                a={ProjectPermissionSub.SecretSyncs}
+              >
+                {(isAllowed: boolean) => (
+                  <DropdownMenuItem
+                    isDisabled={!isAllowed}
+                    icon={<FontAwesomeIcon icon={isEnabled ? faToggleOff : faToggleOn} />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleEnable(secretSync);
+                    }}
+                  >
+                    {isEnabled ? "Disable" : "Enable"} Sync
+                  </DropdownMenuItem>
+                )}
+              </ProjectPermissionCan>
+              <ProjectPermissionCan
+                I={ProjectPermissionActions.Delete}
+                a={ProjectPermissionSub.SecretSyncs}
+              >
+                {(isAllowed: boolean) => (
+                  <DropdownMenuItem
+                    isDisabled={!isAllowed}
+                    icon={<FontAwesomeIcon icon={faTrash} />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(secretSync);
+                    }}
+                  >
+                    Delete Sync
+                  </DropdownMenuItem>
+                )}
+              </ProjectPermissionCan>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </Tooltip>
       </Td>
     </Tr>
   );

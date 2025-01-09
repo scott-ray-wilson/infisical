@@ -179,6 +179,7 @@ const Page = () => {
             className="w-full"
           >
             <IntegrationsSection
+              secretSyncs={secretSyncs}
               cloudIntegrations={cloudIntegrations}
               onAddIntegration={() => setView(IntegrationView.New)}
               isLoading={isIntegrationLoading}
@@ -198,9 +199,7 @@ const Page = () => {
             className="w-full"
           >
             <CloudIntegrationSection
-              onViewActiveIntegrations={
-                integrations?.length ? () => setView(IntegrationView.List) : undefined
-              }
+              onViewActiveIntegrations={() => setView(IntegrationView.List)}
               isLoading={isCloudIntegrationsLoading || isIntegrationAuthLoading}
               cloudIntegrations={cloudIntegrations}
               integrationAuths={integrationAuths}

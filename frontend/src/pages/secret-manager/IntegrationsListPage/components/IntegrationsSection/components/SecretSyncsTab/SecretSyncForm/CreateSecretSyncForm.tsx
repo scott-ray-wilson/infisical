@@ -24,7 +24,7 @@ type Props = {
 };
 
 const FORM_TABS: { name: string; key: string; fields: (keyof TCreateSecretSyncForm)[] }[] = [
-  { name: "Source", key: "source", fields: ["folder", "secretPath"] },
+  { name: "Source", key: "source", fields: ["folder"] },
   { name: "Destination", key: "destination", fields: ["connection", "destinationConfig"] },
   { name: "Options", key: "options", fields: ["syncOptions"] },
   { name: "Details", key: "details", fields: ["name", "description"] }
@@ -39,8 +39,7 @@ export const CreateSecretSyncForm = ({ destination, onComplete, onCancel }: Prop
   const formMethods = useForm<TCreateSecretSyncForm>({
     resolver: zodResolver(CreateSecretSyncFormSchema),
     defaultValues: {
-      destination,
-      secretPath: "/"
+      destination
     },
     reValidateMode: "onChange"
   });

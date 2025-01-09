@@ -1,6 +1,6 @@
 import { createNotification } from "@app/components/notifications";
 import { DeleteActionModal } from "@app/components/v2";
-import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
+import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs.ts";
 import { TSecretSync, useDeleteSecretSync } from "@app/hooks/api/secretSyncs";
 
 type Props = {

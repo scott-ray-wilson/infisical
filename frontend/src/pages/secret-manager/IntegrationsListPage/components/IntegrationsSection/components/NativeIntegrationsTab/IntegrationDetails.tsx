@@ -1,6 +1,6 @@
 import { FormLabel } from "@app/components/v2";
-import { CircleCiScope } from "@app/hooks/api/integrationAuth/types";
-import { IntegrationMappingBehavior, TIntegration } from "@app/hooks/api/integrations/types";
+import { CircleCiScope } from "@app/hooks/api/integrationAuth/types.ts";
+import { IntegrationMappingBehavior, TIntegration } from "@app/hooks/api/integrations/types.ts";
 
 type Props = {
   integration: TIntegration;

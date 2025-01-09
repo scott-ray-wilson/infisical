@@ -15,6 +15,7 @@ import {
   useGetWorkspaceAuthorizations,
   useGetWorkspaceIntegrations
 } from "@app/hooks/api";
+import { useListSecretSyncs } from "@app/hooks/api/secretSyncs";
 import { IntegrationAuth } from "@app/hooks/api/types";
 
 import { CloudIntegrationSection } from "./components/CloudIntegrationSection";
@@ -32,7 +33,7 @@ const Page = () => {
   const { currentWorkspace } = useWorkspace();
   const navigate = useNavigate();
   const { environments, id: workspaceId } = currentWorkspace;
-  const [view, setView] = useState<IntegrationView>(IntegrationView.New);
+  const [view, setView] = useState<IntegrationView>(IntegrationView.List);
 
   const { data: cloudIntegrations, isPending: isCloudIntegrationsLoading } =
     useGetCloudIntegrations();
@@ -56,9 +57,12 @@ const Page = () => {
   const {
     data: integrations,
     isPending: isIntegrationLoading,
-    isFetching: isIntegrationFetching,
-    isFetched: isIntegrationsFetched
+    isFetching: isIntegrationFetching
   } = useGetWorkspaceIntegrations(workspaceId);
+
+  const { data: secretSyncs, isPending: isSecretSyncsPending } = useListSecretSyncs(workspaceId, {
+    refetchInterval: 2000
+  });
 
   const { mutateAsync: deleteIntegration } = useDeleteIntegration();
   const {
@@ -90,9 +94,9 @@ const Page = () => {
     isIntegrationsEmpty
   ]);
 
-  useEffect(() => {
-    setView(integrations?.length ? IntegrationView.List : IntegrationView.New);
-  }, [isIntegrationsFetched]);
+  // useEffect(() => {
+  //   setView(integrations?.length ? IntegrationView.List : IntegrationView.New);
+  // }, [isIntegrationsFetched]);
 
   const handleProviderIntegration = async (provider: string) => {
     const selectedCloudIntegration = cloudIntegrations?.find(({ slug }) => provider === slug);
@@ -155,7 +159,7 @@ const Page = () => {
     }
   };
 
-  if (isIntegrationLoading || isCloudIntegrationsLoading)
+  if (isIntegrationLoading || isCloudIntegrationsLoading || isSecretSyncsPending)
     return (
       <div className="flex flex-col items-center gap-2">
         <ContentLoader text={["Loading integrations..."]} />

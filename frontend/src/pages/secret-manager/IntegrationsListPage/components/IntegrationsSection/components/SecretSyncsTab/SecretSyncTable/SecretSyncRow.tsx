@@ -4,68 +4,64 @@ import {
   faCheck,
   faInfoCircle,
   faRefresh,
+  faRotate,
   faTrash,
   faWarning,
   faXmark
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
 import { Badge, IconButton, Td, Tooltip, Tr } from "@app/components/v2";
-import { ProjectPermissionActions, ProjectPermissionSub, useWorkspace } from "@app/context";
-import { TCloudIntegration } from "@app/hooks/api/integrations/types";
-import { TIntegration } from "@app/hooks/api/types";
+import { ProjectPermissionActions, ProjectPermissionSub } from "@app/context";
+import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
+import { TSecretSync } from "@app/hooks/api/secretSyncs";
 
-import { getIntegrationDestination, IntegrationDetails } from "./IntegrationDetails";
+import { getSecretSyncDestinationColValues } from "./helpers";
+import { SecretSyncTableCell } from "./SecretSyncTableCell";
 
-type IProps = {
-  integration: TIntegration;
-  environment?: { name: string; slug: string; id: string };
-  onRemoveIntegration: VoidFunction;
-  onManualSyncIntegration: VoidFunction;
-  cloudIntegration: TCloudIntegration;
+type Props = {
+  secretSync: TSecretSync;
+  onDelete: (secretSync: TSecretSync) => void;
+  onTriggerSync: (secretSync: TSecretSync) => void;
 };
 
-export const IntegrationRow = ({
-  integration,
-  environment,
-  onRemoveIntegration,
-  onManualSyncIntegration,
-  cloudIntegration
-}: IProps) => {
-  const navigate = useNavigate();
-  const { currentWorkspace } = useWorkspace();
-
-  const { id, secretPath, syncMessage, isSynced } = integration;
+export const SecretSyncRow = ({ secretSync, onDelete, onTriggerSync }: Props) => {
+  const {
+    id,
+    folder: { path: secretPath },
+    lastSyncMessage,
+    isSynced,
+    destination,
+    lastSyncedAt,
+    environment,
+    name,
+    description
+  } = secretSync;
 
   const failureMessage = useMemo(() => {
     if (isSynced === false) {
-      if (syncMessage)
+      if (lastSyncMessage)
         try {
-          return JSON.stringify(JSON.parse(syncMessage), null, 2);
+          return JSON.stringify(JSON.parse(lastSyncMessage), null, 2);
         } catch {
-          return syncMessage;
+          return lastSyncMessage;
         }
 
       return "An Unknown Error Occurred.";
     }
     return null;
-  }, [isSynced, syncMessage]);
+  }, [isSynced, lastSyncMessage]);
+
+  const destinationDetails = SECRET_SYNC_MAP[destination];
+
+  const destinationValues = getSecretSyncDestinationColValues(secretSync);
 
   return (
     <Tr
-      onClick={() =>
-        navigate({
-          to: "/secret-manager/$projectId/integrations/$integrationId",
-          params: {
-            integrationId: integration.id,
-            projectId: currentWorkspace.id
-          }
-        })
-      }
+      // onClick={() => router.push(`/integrations/secret-syncs/${destination}/${id}`)}
       className={twMerge(
         "group h-10 cursor-pointer transition-colors duration-100 hover:bg-mineshaft-700",
         isSynced === false && "bg-red/5 hover:bg-red/10"
@@ -73,46 +69,49 @@ export const IntegrationRow = ({
       key={`integration-${id}`}
     >
       <Td>
-        <div className="flex items-center gap-2">
-          <img
-            alt={`${cloudIntegration?.name} integration`}
-            src={`/images/integrations/${cloudIntegration?.image}`}
-            className="h-5 w-5"
-          />
-          <span className="hidden lg:inline">{cloudIntegration?.name}</span>
-        </div>
+        <img
+          alt={`${destinationDetails.name} sync`}
+          src={`/images/integrations/${destinationDetails.image}`}
+          className="min-w-[1.5rem]"
+        />
       </Td>
       <Td className="!min-w-[8rem] max-w-0">
-        <Tooltip side="top" className="max-w-2xl break-words" content={secretPath}>
-          <p className="truncate">{secretPath}</p>
-        </Tooltip>{" "}
-      </Td>
-      <Td>{environment?.name ?? "-"}</Td>
-      <Td className="!min-w-[5rem] max-w-0">
-        <div className="flex items-center gap-2">
-          <p className="truncate">{getIntegrationDestination(integration)}</p>
-          <Tooltip
-            position="left"
-            className="min-w-[20rem] max-w-lg"
-            content={<IntegrationDetails integration={integration} />}
-          >
-            <FontAwesomeIcon icon={faInfoCircle} className="text-mineshaft-400" />
-          </Tooltip>
+        <div>
+          <div className="flex w-full items-center">
+            <p className="truncate">{name}</p>
+            {description && (
+              <Tooltip content={description}>
+                <FontAwesomeIcon
+                  icon={faInfoCircle}
+                  size="xs"
+                  className="ml-1 text-mineshaft-400"
+                />
+              </Tooltip>
+            )}
+          </div>
+          <p className="truncate text-xs leading-3 text-bunker-300">{destinationDetails.name}</p>
         </div>
       </Td>
-      <Td>
-        {" "}
-        {typeof integration.isSynced !== "boolean" ? (
-          <Badge variant="primary" key={integration.id}>
-            Pending Sync
+      <SecretSyncTableCell primaryText={secretPath} secondaryText={environment.name} />
+      <SecretSyncTableCell
+        primaryText={destinationValues.primaryText}
+        secondaryText={destinationValues.secondaryText}
+      />
+      <Td className="whitespace-nowrap">
+        {typeof isSynced !== "boolean" ? (
+          <Badge variant="primary">
+            <div className="flex items-center space-x-1">
+              <FontAwesomeIcon icon={faRotate} />
+              <div>Syncing</div>
+            </div>
           </Badge>
         ) : (
           <Tooltip
             position="left"
             className="max-w-sm"
             content={
-              <div className="flex flex-col gap-2 py-1">
-                {integration.lastUsed && (
+              <div className="flex flex-col gap-2 whitespace-normal py-1">
+                {lastSyncedAt && (
                   <div>
                     <div
                       className={`mb-2 flex self-start ${!isSynced ? "text-yellow" : "text-green"}`}
@@ -124,7 +123,7 @@ export const IntegrationRow = ({
                       <div className="text-xs">Last Synced</div>
                     </div>
                     <div className="rounded bg-mineshaft-600 p-2 text-xs">
-                      {format(new Date(integration.lastUsed!), "yyyy-MM-dd, hh:mm aaa")}
+                      {format(new Date(lastSyncedAt), "yyyy-MM-dd, hh:mm aaa")}
                     </div>
                   </div>
                 )}
@@ -141,10 +140,10 @@ export const IntegrationRow = ({
             }
           >
             <div className="w-min whitespace-nowrap">
-              <Badge variant={integration.isSynced ? "success" : "danger"} key={integration.id}>
+              <Badge variant={isSynced ? "success" : "danger"}>
                 <div className="flex items-center space-x-1">
-                  <FontAwesomeIcon icon={integration.isSynced ? faCheck : faWarning} />
-                  <div>{integration.isSynced ? "Synced" : "Not Synced"}</div>
+                  <FontAwesomeIcon icon={isSynced ? faCheck : faWarning} />
+                  <div>{isSynced ? "Synced" : "Not Synced"}</div>
                 </div>
               </Badge>
             </div>
@@ -157,7 +156,7 @@ export const IntegrationRow = ({
             <IconButton
               onClick={(e) => {
                 e.stopPropagation();
-                onManualSyncIntegration();
+                onTriggerSync(secretSync);
               }}
               ariaLabel="sync"
               colorSchema="secondary"
@@ -168,14 +167,14 @@ export const IntegrationRow = ({
           </Tooltip>
           <ProjectPermissionCan
             I={ProjectPermissionActions.Delete}
-            a={ProjectPermissionSub.Integrations}
+            a={ProjectPermissionSub.SecretSyncs}
           >
             {(isAllowed: boolean) => (
-              <Tooltip content="Remove Integration">
+              <Tooltip content="Remove Sync">
                 <IconButton
                   onClick={(e) => {
                     e.stopPropagation();
-                    onRemoveIntegration();
+                    onDelete(secretSync);
                   }}
                   ariaLabel="delete"
                   isDisabled={!isAllowed}

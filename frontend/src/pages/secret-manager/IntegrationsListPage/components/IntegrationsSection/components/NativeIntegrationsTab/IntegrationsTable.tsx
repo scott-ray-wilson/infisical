@@ -7,7 +7,7 @@ import {
   faClock,
   faFilter,
   faMagnifyingGlass,
-  faPlug,
+  faRotate,
   faSearch,
   faWarning
 } from "@fortawesome/free-solid-svg-icons";
@@ -439,7 +439,7 @@ export const IntegrationsTable = ({
                 ? "No integrations match search..."
                 : "This project has no integrations configured"
             }
-            icon={integrations.length ? faSearch : faPlug}
+            icon={integrations.length ? faSearch : faRotate}
           />
         )}
       </TableContainer>

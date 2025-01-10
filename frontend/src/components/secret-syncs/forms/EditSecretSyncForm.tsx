@@ -8,7 +8,6 @@ import { Button, ModalClose } from "@app/components/v2";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import { TSecretSync, useUpdateSecretSync } from "@app/hooks/api/secretSyncs";
 
-import { formatFormData, parseFormData } from "./helpers";
 import { SecretSyncFormSchema, TSecretSyncForm } from "./schemas";
 import { SecretSyncDestinationFields } from "./SecretSyncDestinationFields";
 import { SecretSyncDetailsFields } from "./SecretSyncDetailsFields";
@@ -27,15 +26,19 @@ export const EditSecretSyncForm = ({ secretSync, fields, onComplete }: Props) =>
 
   const formMethods = useForm<TSecretSyncForm>({
     resolver: zodResolver(SecretSyncFormSchema),
-    defaultValues: formatFormData(secretSync),
+    defaultValues: {
+      ...secretSync,
+      description: secretSync.description ?? ""
+    },
     reValidateMode: "onChange"
   });
 
-  const onSubmit = async (formData: TSecretSyncForm) => {
+  const onSubmit = async ({ environment, ...formData }: TSecretSyncForm) => {
     try {
       const updatedSecretSync = await updateSecretSync.mutateAsync({
         syncId: secretSync.id,
-        ...parseFormData(formData)
+        ...formData,
+        environment: environment.slug
       });
 
       createNotification({

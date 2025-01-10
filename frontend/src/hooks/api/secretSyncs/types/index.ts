@@ -18,13 +18,12 @@ export type TCreateSecretSyncDTO = Pick<
   | "description"
   | "connectionId"
   | "syncOptions"
-  | "folderId"
   | "destination"
   | "isEnabled"
->;
+> & { environment: string; secretPath: string; projectId: string };
 
 export type TUpdateSecretSyncDTO = Partial<
-  Omit<TCreateSecretSyncDTO, "connectionId" | "destination">
+  Omit<TCreateSecretSyncDTO, "connectionId" | "destination" | "projectId">
 > & {
   destination: SecretSync;
   syncId: string;

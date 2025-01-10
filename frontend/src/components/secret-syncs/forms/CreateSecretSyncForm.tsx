@@ -5,11 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { createNotification } from "@app/components/notifications";
 import { Button } from "@app/components/v2";
+import { useWorkspace } from "@app/context";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import { TSecretSync, useCreateSecretSync } from "@app/hooks/api/secretSyncs";
 import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
 
-import { parseFormData } from "./helpers";
 import { SecretSyncFormSchema, TSecretSyncForm } from "./schemas";
 import { SecretSyncConnectionField } from "./SecretSyncConnectionField";
 import { SecretSyncDestinationFields } from "./SecretSyncDestinationFields";
@@ -24,7 +24,7 @@ type Props = {
 };
 
 const FORM_TABS: { name: string; key: string; fields: (keyof TSecretSyncForm)[] }[] = [
-  { name: "Source", key: "source", fields: ["folder"] },
+  { name: "Source", key: "source", fields: ["secretPath", "environment"] },
   { name: "Destination", key: "destination", fields: ["connection", "destinationConfig"] },
   { name: "Options", key: "options", fields: ["syncOptions"] },
   { name: "Details", key: "details", fields: ["name", "description"] }
@@ -32,6 +32,7 @@ const FORM_TABS: { name: string; key: string; fields: (keyof TSecretSyncForm)[] 
 
 export const CreateSecretSyncForm = ({ destination, onComplete, onCancel }: Props) => {
   const createSecretSync = useCreateSecretSync();
+  const { currentWorkspace } = useWorkspace();
   const { name: destinationName } = SECRET_SYNC_MAP[destination];
 
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
@@ -44,9 +45,14 @@ export const CreateSecretSyncForm = ({ destination, onComplete, onCancel }: Prop
     reValidateMode: "onChange"
   });
 
-  const onSubmit = async (formData: TSecretSyncForm) => {
+  const onSubmit = async ({ environment, connection, ...formData }: TSecretSyncForm) => {
     try {
-      const secretSync = await createSecretSync.mutateAsync(parseFormData(formData));
+      const secretSync = await createSecretSync.mutateAsync({
+        ...formData,
+        connectionId: connection.id,
+        environment: environment.slug,
+        projectId: currentWorkspace.id
+      });
 
       createNotification({
         text: `Successfully added ${destinationName} Sync`,

@@ -8,7 +8,8 @@ const BaseSecretSyncSchema = z.object({
   name: slugSchema({ field: "Name" }),
   description: z.string().trim().optional(),
   connection: z.object({ name: z.string(), id: z.string().uuid() }),
-  folder: z.object({ path: z.string(), id: z.string() }),
+  environment: z.object({ slug: z.string(), id: z.string(), name: z.string() }),
+  secretPath: z.string().min(1, "Secret path required"),
   syncOptions: z.object({
     prependPrefix: z
       .string()

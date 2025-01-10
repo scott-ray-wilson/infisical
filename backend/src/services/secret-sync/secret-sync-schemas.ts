@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { SecretSyncsSchema } from "@app/db/schemas/secret-syncs";
 import { SecretSyncs } from "@app/lib/api-docs";
+import { removeTrailingSlash } from "@app/lib/fn";
 import { slugSchema } from "@app/server/lib/schemas";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
@@ -38,6 +39,7 @@ export const BaseSecretSyncSchema = (app: AppConnection) =>
 export const GenericCreateSecretSyncFieldsSchema = (sync: SecretSync) =>
   z.object({
     name: slugSchema({ field: "name" }).describe(SecretSyncs.CREATE(sync).name),
+    projectId: z.string().trim().min(1, "Project ID required").describe(SecretSyncs.CREATE(sync).projectId),
     description: z
       .string()
       .trim()
@@ -45,7 +47,14 @@ export const GenericCreateSecretSyncFieldsSchema = (sync: SecretSync) =>
       .nullish()
       .describe(SecretSyncs.CREATE(sync).description),
     connectionId: z.string().uuid().describe(SecretSyncs.CREATE(sync).connectionId),
-    folderId: z.string().uuid().describe(SecretSyncs.CREATE(sync).folderId),
+    environment: slugSchema({ field: "environment", max: 64 }).describe(SecretSyncs.CREATE(sync).environment),
+    secretPath: z
+      .string()
+      .trim()
+      .min(1, "Secret path required")
+      .default("/")
+      .transform(removeTrailingSlash)
+      .describe(SecretSyncs.CREATE(sync).secretPath),
     isEnabled: z.boolean().default(true).describe(SecretSyncs.CREATE(sync).isEnabled),
     syncOptions: SyncOptionsSchema.optional().default({}).describe(SecretSyncs.CREATE(sync).syncOptions)
   });
@@ -59,7 +68,16 @@ export const GenericUpdateSecretSyncFieldsSchema = (sync: SecretSync) =>
       .max(256, "Description cannot exceed 256 characters")
       .nullish()
       .describe(SecretSyncs.UPDATE(sync).description),
-    folderId: z.string().uuid().optional().describe(SecretSyncs.UPDATE(sync).folderId),
+    environment: slugSchema({ field: "environment", max: 64 })
+      .optional()
+      .describe(SecretSyncs.UPDATE(sync).environment),
+    secretPath: z
+      .string()
+      .trim()
+      .min(1, "Invalid secret path")
+      .transform(removeTrailingSlash)
+      .optional()
+      .describe(SecretSyncs.UPDATE(sync).secretPath),
     isEnabled: z.boolean().optional().describe(SecretSyncs.UPDATE(sync).isEnabled),
     syncOptions: SyncOptionsSchema.optional().describe(SecretSyncs.UPDATE(sync).syncOptions)
   });

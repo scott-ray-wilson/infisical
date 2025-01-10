@@ -82,8 +82,7 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
   const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp([
     "deleteSync",
     "importSecrets",
-    "eraseSecrets",
-    "disableSync"
+    "eraseSecrets"
   ] as const);
 
   const triggerSync = useTriggerSecretSync();

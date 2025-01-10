@@ -1951,7 +1951,7 @@ interface GetSecretSyncEvent {
 
 interface CreateSecretSyncEvent {
   type: EventType.CREATE_SECRET_SYNC;
-  metadata: TCreateSecretSyncDTO & { syncId: string };
+  metadata: Omit<TCreateSecretSyncDTO, "projectId"> & { syncId: string };
 }
 
 interface UpdateSecretSyncEvent {
@@ -1968,7 +1968,7 @@ interface SyncSecretSyncEvent {
   type: EventType.SYNC_SECRET_SYNC;
   metadata: Pick<
     TSecretSyncRaw,
-    "syncOptions" | "destinationConfig" | "destination" | "syncStatus" | "environment" | "connectionId" | "folderId"
+    "syncOptions" | "destinationConfig" | "destination" | "syncStatus" | "connectionId" | "folderId"
   > & {
     syncId: string;
     syncMessage: string | null;
@@ -1981,7 +1981,7 @@ interface ImportSecretSyncEvent {
   type: EventType.IMPORT_SECRET_SYNC;
   metadata: Pick<
     TSecretSyncRaw,
-    "syncOptions" | "destinationConfig" | "destination" | "importStatus" | "environment" | "connectionId" | "folderId"
+    "syncOptions" | "destinationConfig" | "destination" | "importStatus" | "connectionId" | "folderId"
   > & {
     syncId: string;
     importMessage: string | null;
@@ -1994,7 +1994,7 @@ interface EraseSecretSyncEvent {
   type: EventType.ERASE_SECRET_SYNC;
   metadata: Pick<
     TSecretSyncRaw,
-    "syncOptions" | "destinationConfig" | "destination" | "eraseStatus" | "environment" | "connectionId" | "folderId"
+    "syncOptions" | "destinationConfig" | "destination" | "eraseStatus" | "connectionId" | "folderId"
   > & {
     syncId: string;
     eraseMessage: string | null;

@@ -15,9 +15,11 @@ import { useSyncIntegration } from "@app/hooks/api/integrations/queries";
 import { useGetSecretSync } from "@app/hooks/api/secretSyncs";
 import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
 import { SecretSyncAuditLogsSection } from "@app/pages/secret-manager/SecretSyncDetailsByIDPage/components/SecretSyncAuditLogsSection";
+import { SecretSyncDestinationSection } from "@app/pages/secret-manager/SecretSyncDetailsByIDPage/components/SecretSyncDestinatonSection";
 import { IntegrationsListPageTabs } from "@app/types/integrations";
 
 import {
+  SecretSyncActionTriggers,
   SecretSyncDetailsSection,
   SecretSyncOptionsSection,
   SecretSyncSourceSection
@@ -69,6 +71,8 @@ const PageContent = () => {
 
   const handleEditOptions = () => handlePopUpOpen("editSync", SecretSyncEditFields.Options);
 
+  const handleEditDestination = () => handlePopUpOpen("editSync", SecretSyncEditFields.Destination);
+
   return (
     <>
       <div className="container mx-auto flex flex-col justify-between bg-bunker-800 font-inter text-white">
@@ -96,12 +100,13 @@ const PageContent = () => {
             <img
               alt={`${destinationDetails.name} sync`}
               src={`/images/integrations/${destinationDetails.image}`}
-              className="ml-1 mt-3 w-11"
+              className="ml-1 mt-3 w-16"
             />
             <div>
               <p className="text-3xl font-semibold text-white">{secretSync.name}</p>
               <p className="leading-3 text-bunker-300">{destinationDetails.name} Sync</p>
             </div>
+            <SecretSyncActionTriggers secretSync={secretSync} />
           </div>
           <div className="flex justify-center">
             <div className="mr-4 flex w-72 flex-col gap-4">
@@ -109,7 +114,11 @@ const PageContent = () => {
               <SecretSyncSourceSection secretSync={secretSync} onEditSource={handleEditSource} />
               <SecretSyncOptionsSection secretSync={secretSync} onEditOptions={handleEditOptions} />
             </div>
-            <div className="flex-1">
+            <div className="flex flex-1 flex-col gap-4">
+              <SecretSyncDestinationSection
+                secretSync={secretSync}
+                onEditDestination={handleEditDestination}
+              />
               <SecretSyncAuditLogsSection secretSync={secretSync} />
             </div>
           </div>

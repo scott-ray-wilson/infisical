@@ -380,7 +380,6 @@ export const secretSyncQueueFactory = ({
           metadata: {
             syncId: secretSync.id,
             syncOptions: secretSync.syncOptions,
-            environment: secretSync.environment,
             destination: secretSync.destination,
             destinationConfig: secretSync.destinationConfig,
             folderId: secretSync.folderId,
@@ -541,7 +540,6 @@ export const secretSyncQueueFactory = ({
           metadata: {
             syncId: secretSync.id,
             syncOptions: secretSync.syncOptions,
-            environment: secretSync.environment,
             destination: secretSync.destination,
             destinationConfig: secretSync.destinationConfig,
             folderId: secretSync.folderId,
@@ -665,7 +663,6 @@ export const secretSyncQueueFactory = ({
           metadata: {
             syncId: secretSync.id,
             syncOptions: secretSync.syncOptions,
-            environment: secretSync.environment,
             destination: secretSync.destination,
             destinationConfig: secretSync.destinationConfig,
             folderId: secretSync.folderId,

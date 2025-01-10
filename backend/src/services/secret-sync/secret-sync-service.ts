@@ -1,4 +1,4 @@
-import { ForbiddenError } from "@casl/ability";
+import { ForbiddenError, subject } from "@casl/ability";
 
 import { ProjectType } from "@app/db/schemas";
 import { TLicenseServiceFactory } from "@app/ee/services/license/license-service";
@@ -35,7 +35,7 @@ type TSecretSyncServiceFactoryDep = {
   appConnectionService: Pick<TAppConnectionServiceFactory, "connectAppConnectionById">;
   permissionService: Pick<TPermissionServiceFactory, "getProjectPermission" | "getOrgPermission">;
   projectBotService: Pick<TProjectBotServiceFactory, "getBotKey">;
-  folderDAL: Pick<TSecretFolderDALFactory, "findByProjectId" | "findById">;
+  folderDAL: Pick<TSecretFolderDALFactory, "findByProjectId" | "findById" | "findBySecretPath">;
   keyStore: Pick<TKeyStoreFactory, "getItem">;
   secretSyncQueue: Pick<
     TSecretSyncQueueFactory,
@@ -164,22 +164,21 @@ export const secretSyncServiceFactory = ({
     return secretSync as TSecretSync;
   };
 
-  const createSecretSync = async (params: TCreateSecretSyncDTO, actor: OrgServiceActor) => {
+  const createSecretSync = async (
+    { projectId, secretPath, environment, ...params }: TCreateSecretSyncDTO,
+    actor: OrgServiceActor
+  ) => {
     await checkSecretSyncAvailability(actor.orgId);
-
-    const folder = await folderDAL.findById(params.folderId);
-
-    if (!folder) throw new BadRequestError({ message: `Could not find Folder with ID "${params.folderId}"` });
 
     const { permission: projectPermission, ForbidOnInvalidProjectType } = await permissionService.getProjectPermission(
       actor.type,
       actor.id,
-      folder.projectId,
+      projectId,
       actor.authMethod,
       actor.orgId
     );
 
-    const { shouldUseSecretV2Bridge } = await projectBotService.getBotKey(folder.projectId);
+    const { shouldUseSecretV2Bridge } = await projectBotService.getBotKey(projectId);
 
     if (!shouldUseSecretV2Bridge)
       throw new BadRequestError({ message: "Project version does not support Secret Syncs" });
@@ -190,6 +189,21 @@ export const secretSyncServiceFactory = ({
       ProjectPermissionActions.Create,
       ProjectPermissionSub.SecretSyncs
     );
+
+    ForbiddenError.from(projectPermission).throwUnlessCan(
+      ProjectPermissionActions.Read,
+      subject(ProjectPermissionSub.Secrets, {
+        environment,
+        secretPath
+      })
+    );
+
+    const folder = await folderDAL.findBySecretPath(projectId, environment, secretPath);
+
+    if (!folder)
+      throw new BadRequestError({
+        message: `Could not find folder with path "${secretPath}" in environment "${environment}" for project with ID "${projectId}"`
+      });
 
     const appConnection = await appConnectionService.connectAppConnectionById(params.connectionId, actor);
 
@@ -226,7 +240,7 @@ export const secretSyncServiceFactory = ({
           message: `A Secret Sync with the name "${params.name}" already exists for the project with ID "${folder.projectId}"`
         });
 
-      const sync = await secretSyncDAL.create(params);
+      const sync = await secretSyncDAL.create({ folderId: folder.id, ...params });
 
       return sync;
     });
@@ -236,7 +250,10 @@ export const secretSyncServiceFactory = ({
     return secretSync as TSecretSync;
   };
 
-  const updateSecretSync = async ({ destination, syncId, ...params }: TUpdateSecretSyncDTO, actor: OrgServiceActor) => {
+  const updateSecretSync = async (
+    { destination, syncId, secretPath, environment, ...params }: TUpdateSecretSyncDTO,
+    actor: OrgServiceActor
+  ) => {
     await checkSecretSyncAvailability(actor.orgId);
 
     const secretSync = await secretSyncDAL.findById(syncId);
@@ -264,16 +281,26 @@ export const secretSyncServiceFactory = ({
       });
 
     const updatedSecretSync = await secretSyncDAL.transaction(async (tx) => {
-      if (params.folderId) {
-        const newFolder = await folderDAL.findById(params.folderId);
+      if (
+        (secretPath && secretPath !== secretSync.folder.path) ||
+        (environment && environment !== secretSync.environment.slug)
+      ) {
+        const updatedEnvironment = environment ?? secretSync.environment.slug;
+        const updatedSecretPath = secretPath ?? secretSync.folder.path;
 
-        if (!newFolder) throw new BadRequestError({ message: `Could not find folder with ID "${params.folderId}"` });
+        ForbiddenError.from(permission).throwUnlessCan(
+          ProjectPermissionActions.Read,
+          subject(ProjectPermissionSub.Secrets, {
+            environment: updatedEnvironment,
+            secretPath: updatedSecretPath
+          })
+        );
 
-        // TODO (scott): I don't think there's a reason we can't allow moving syncs across projects
-        //  but not supporting this initially
-        if (newFolder.projectId !== secretSync.projectId)
+        const newFolder = await folderDAL.findBySecretPath(secretSync.projectId, updatedEnvironment, updatedSecretPath);
+
+        if (!newFolder)
           throw new BadRequestError({
-            message: `Cannot move Secret Sync to different project`
+            message: `Could not find folder with path "${secretPath}" in environment "${environment}" for project with ID "${secretSync.projectId}"`
           });
       }
 

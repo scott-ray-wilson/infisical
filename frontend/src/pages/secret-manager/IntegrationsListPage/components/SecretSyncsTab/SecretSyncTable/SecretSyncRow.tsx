@@ -83,7 +83,7 @@ export const SecretSyncRow = ({
     navigator.clipboard.writeText(id);
 
     createNotification({
-      text: "Connection ID copied to clipboard",
+      text: "Secret Sync ID copied to clipboard",
       type: "info"
     });
 

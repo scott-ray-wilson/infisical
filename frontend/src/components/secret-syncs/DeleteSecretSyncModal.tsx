@@ -1,15 +1,16 @@
 import { createNotification } from "@app/components/notifications";
 import { DeleteActionModal } from "@app/components/v2";
-import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs.ts";
+import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import { TSecretSync, useDeleteSecretSync } from "@app/hooks/api/secretSyncs";
 
 type Props = {
   secretSync?: TSecretSync;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  onComplete?: () => void;
 };
 
-export const DeleteSecretSyncModal = ({ isOpen, onOpenChange, secretSync }: Props) => {
+export const DeleteSecretSyncModal = ({ isOpen, onOpenChange, secretSync, onComplete }: Props) => {
   const deleteSync = useDeleteSecretSync();
 
   if (!secretSync) return null;
@@ -30,6 +31,7 @@ export const DeleteSecretSyncModal = ({ isOpen, onOpenChange, secretSync }: Prop
         type: "success"
       });
 
+      if (onComplete) onComplete();
       onOpenChange(false);
     } catch (err) {
       console.error(err);

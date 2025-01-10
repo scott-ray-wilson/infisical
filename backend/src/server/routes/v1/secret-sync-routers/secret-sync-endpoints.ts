@@ -21,7 +21,9 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
   server: FastifyZodProvider;
   createSchema: z.ZodType<{
     name: string;
-    folderId: string;
+    environment: string;
+    secretPath?: string;
+    projectId: string;
     connectionId: string;
     destinationConfig: I["destinationConfig"];
     syncOptions?: I["syncOptions"];
@@ -29,7 +31,8 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
   }>;
   updateSchema: z.ZodType<{
     name?: string;
-    folderId?: string;
+    environment?: string;
+    secretPath?: string;
     destinationConfig?: I["destinationConfig"];
     syncOptions?: I["syncOptions"];
     description?: string | null;
@@ -186,10 +189,10 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
-      const syncOptions = req.body.syncOptions ?? {};
+      const { syncOptions = {}, secretPath = "/" } = req.body;
 
       const secretSync = (await server.services.secretSync.createSecretSync(
-        { ...req.body, destination, syncOptions },
+        { ...req.body, destination, syncOptions, secretPath },
         req.permission
       )) as T;
 
@@ -202,7 +205,8 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
             syncId: secretSync.id,
             destination,
             ...req.body,
-            syncOptions
+            syncOptions,
+            secretPath
           }
         }
       });

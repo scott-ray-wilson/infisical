@@ -36,12 +36,14 @@ export type TFindSecretSyncByNameDTO = {
   destination: SecretSync;
 };
 
-export type TCreateSecretSyncDTO = Pick<
-  TSecretSync,
-  "syncOptions" | "destinationConfig" | "folderId" | "name" | "connectionId"
-> & { destination: SecretSync };
+export type TCreateSecretSyncDTO = Pick<TSecretSync, "syncOptions" | "destinationConfig" | "name" | "connectionId"> & {
+  destination: SecretSync;
+  projectId: string;
+  secretPath: string;
+  environment: string;
+};
 
-export type TUpdateSecretSyncDTO = Partial<Omit<TCreateSecretSyncDTO, "connectionId">> & {
+export type TUpdateSecretSyncDTO = Partial<Omit<TCreateSecretSyncDTO, "connectionId" | "projectId">> & {
   syncId: string;
   destination: SecretSync;
 };

@@ -17,6 +17,7 @@ export const SecretSyncStatusBadge = ({ status }: Props) => {
   let variant: BadgeProps["variant"];
   let text: string;
   let icon: IconDefinition;
+
   switch (status) {
     case SecretSyncStatus.Failed:
       variant = "danger";

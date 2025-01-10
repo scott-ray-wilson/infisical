@@ -10,14 +10,4 @@ export type TAwsParameterStoreSyncOption = TSecretSyncOptionBase & {
   destination: SecretSync.AWSParameterStore;
 };
 
-export type TGitHubSyncOption = TSecretSyncOptionBase & {
-  connection: AppConnection.GitHub;
-  destination: SecretSync.GitHub;
-};
-
-export type TSecretSyncOption = TAwsParameterStoreSyncOption | TGitHubSyncOption;
-
-export type TAppConnectionOptionMap = {
-  [AppConnection.AWS]: TAwsParameterStoreSyncOption;
-  [AppConnection.GitHub]: TGitHubSyncOption;
-};
+export type TSecretSyncOption = TAwsParameterStoreSyncOption;

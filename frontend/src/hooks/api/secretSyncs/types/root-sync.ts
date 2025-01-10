@@ -13,6 +13,7 @@ export type TRootSecretSync = {
   updatedAt: string;
   syncStatus: SecretSyncStatus | null;
   isEnabled: boolean;
+  projectId: string;
   lastSyncJobId: string | null;
   lastSyncedAt: Date | null;
   lastSyncMessage: string | null;

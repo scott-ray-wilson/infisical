@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { Helmet } from "react-helmet";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "@tanstack/react-router";
-import { motion } from "framer-motion";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 
 import { createNotification } from "@app/components/notifications";
 import { ProjectPermissionCan } from "@app/components/permissions";
-import { ContentLoader } from "@app/components/v2";
+import { Badge, ContentLoader, Tab, TabList, TabPanel, Tabs } from "@app/components/v2";
+import { ROUTE_PATHS } from "@app/const/routes.ts";
 import { ProjectPermissionActions, ProjectPermissionSub, useWorkspace } from "@app/context";
 import {
   useDeleteIntegration,
@@ -17,23 +17,23 @@ import {
 } from "@app/hooks/api";
 import { useListSecretSyncs } from "@app/hooks/api/secretSyncs";
 import { IntegrationAuth } from "@app/hooks/api/types";
+import { FrameworkIntegrationTab } from "@app/pages/secret-manager/IntegrationsListPage/components/FrameworkIntegrationTab";
+import { InfrastructureIntegrationTab } from "@app/pages/secret-manager/IntegrationsListPage/components/InfrastructureIntegrationTab";
+import {
+  NativeIntegrationsTab,
+  SecretSyncsTab
+} from "@app/pages/secret-manager/IntegrationsListPage/components/IntegrationsTabs/components";
+import { IntegrationsListPageTabs } from "@app/types/integrations.ts";
 
-import { CloudIntegrationSection } from "./components/CloudIntegrationSection";
-import { FrameworkIntegrationSection } from "./components/FrameworkIntegrationSection";
-import { InfrastructureIntegrationSection } from "./components/InfrastructureIntegrationSection/InfrastructureIntegrationSection";
-import { IntegrationsSection } from "./components/IntegrationsSection";
 import { redirectForProviderAuth } from "./IntegrationsListPage.utils";
-
-enum IntegrationView {
-  List = "list",
-  New = "new"
-}
 
 const Page = () => {
   const { currentWorkspace } = useWorkspace();
   const navigate = useNavigate();
+  const { selectedTab } = useSearch({
+    from: ROUTE_PATHS.SecretManager.IntegrationsListPage.id
+  });
   const { environments, id: workspaceId } = currentWorkspace;
-  const [view, setView] = useState<IntegrationView>(IntegrationView.List);
 
   const { data: cloudIntegrations, isPending: isCloudIntegrationsLoading } =
     useGetCloudIntegrations();
@@ -60,9 +60,12 @@ const Page = () => {
     isFetching: isIntegrationFetching
   } = useGetWorkspaceIntegrations(workspaceId);
 
-  const { data: secretSyncs, isPending: isSecretSyncsPending } = useListSecretSyncs(workspaceId, {
-    refetchInterval: 2000
-  });
+  const { data: secretSyncs = [], isPending: isSecretSyncsPending } = useListSecretSyncs(
+    workspaceId,
+    {
+      refetchInterval: 2000
+    }
+  );
 
   const { mutateAsync: deleteIntegration } = useDeleteIntegration();
   const {
@@ -166,50 +169,63 @@ const Page = () => {
       </div>
     );
 
+  const updateSelectedTab = (tab: string) => {
+    navigate({
+      to: ROUTE_PATHS.SecretManager.IntegrationsListPage.path,
+      search: (prev) => ({ ...prev, selectedTab: tab }),
+      params: {
+        projectId: workspaceId
+      }
+    });
+  };
+
   return (
     <div className="container relative mx-auto max-w-7xl pb-12 text-white">
-      <div className="relative">
-        {view === IntegrationView.List ? (
-          <motion.div
-            key="view-integrations"
-            transition={{ duration: 0.3 }}
-            initial={{ opacity: 0, translateX: 30 }}
-            animate={{ opacity: 1, translateX: 0 }}
-            exit={{ opacity: 0, translateX: 30 }}
-            className="w-full"
-          >
-            <IntegrationsSection
-              secretSyncs={secretSyncs}
+      <div className="mx-6 mb-8">
+        <div className="mb-4 mt-6 flex flex-col items-start justify-between px-2 text-xl">
+          <h1 className="text-3xl font-semibold">Integrations</h1>
+          <p className="text-base text-bunker-300">
+            Manage integrations with third-party services.
+          </p>
+        </div>
+        <Tabs value={selectedTab} onValueChange={updateSelectedTab}>
+          <TabList>
+            <Tab value={IntegrationsListPageTabs.SecretSyncs}>
+              Secret Syncs
+              <Badge variant="primary" className="ml-1 cursor-pointer text-xs">
+                New
+              </Badge>
+            </Tab>
+            <Tab value={IntegrationsListPageTabs.NativeIntegrations}>Native Integrations</Tab>
+            <Tab value={IntegrationsListPageTabs.FrameworkIntegrations}>Framework Integrations</Tab>
+            <Tab value={IntegrationsListPageTabs.InfrastructureIntegrations}>
+              Infrastructure Integrations
+            </Tab>
+          </TabList>
+          <TabPanel value={IntegrationsListPageTabs.SecretSyncs}>
+            <SecretSyncsTab secretSyncs={secretSyncs} />
+          </TabPanel>
+          <TabPanel value={IntegrationsListPageTabs.NativeIntegrations}>
+            <NativeIntegrationsTab
               cloudIntegrations={cloudIntegrations}
-              onAddIntegration={() => setView(IntegrationView.New)}
               isLoading={isIntegrationLoading}
               integrations={integrations}
               environments={environments}
               onIntegrationDelete={handleIntegrationDelete}
               workspaceId={workspaceId}
-            />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="add-integration"
-            transition={{ duration: 0.3 }}
-            initial={{ opacity: 0, translateX: 30 }}
-            animate={{ opacity: 1, translateX: 0 }}
-            exit={{ opacity: 0, translateX: 30 }}
-            className="w-full"
-          >
-            <CloudIntegrationSection
-              onViewActiveIntegrations={() => setView(IntegrationView.List)}
-              isLoading={isCloudIntegrationsLoading || isIntegrationAuthLoading}
-              cloudIntegrations={cloudIntegrations}
+              isAuthLoading={isIntegrationAuthLoading || isCloudIntegrationsLoading}
               integrationAuths={integrationAuths}
               onIntegrationStart={handleProviderIntegrationStart}
               onIntegrationRevoke={handleIntegrationAuthRevoke}
             />
-            <FrameworkIntegrationSection />
-            <InfrastructureIntegrationSection />
-          </motion.div>
-        )}
+          </TabPanel>
+          <TabPanel value={IntegrationsListPageTabs.FrameworkIntegrations}>
+            <FrameworkIntegrationTab />
+          </TabPanel>
+          <TabPanel value={IntegrationsListPageTabs.InfrastructureIntegrations}>
+            <InfrastructureIntegrationTab />
+          </TabPanel>
+        </Tabs>
       </div>
     </div>
   );

@@ -94,5 +94,8 @@ export enum EventType {
   GET_CERTIFICATE_TEMPLATE_EST_CONFIG = "get-certificate-template-est-config",
   UPDATE_PROJECT_SLACK_CONFIG = "update-project-slack-config",
   GET_PROJECT_SLACK_CONFIG = "get-project-slack-config",
-  INTEGRATION_SYNCED = "integration-synced"
+  INTEGRATION_SYNCED = "integration-synced",
+  SYNC_SECRET_SYNC = "sync-secret-sync",
+  IMPORT_SECRET_SYNC = "import-secret-sync",
+  ERASE_SECRET_SYNC = "erase-secret-sync"
 }

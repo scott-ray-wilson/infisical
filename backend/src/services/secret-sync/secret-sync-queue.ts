@@ -25,7 +25,11 @@ import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-fold
 import { TSecretImportDALFactory } from "@app/services/secret-import/secret-import-dal";
 import { fnSecretsV2FromImports } from "@app/services/secret-import/secret-import-fns";
 import { TSecretSyncDALFactory } from "@app/services/secret-sync/secret-sync-dal";
-import { SecretSync, SecretSyncImportBehavior } from "@app/services/secret-sync/secret-sync-enums";
+import {
+  SecretSync,
+  SecretSyncImportBehavior,
+  SecretSyncInitialSyncBehavior
+} from "@app/services/secret-sync/secret-sync-enums";
 import { SecretSyncFns } from "@app/services/secret-sync/secret-sync-fns";
 import { SECRET_SYNC_NAME_MAP } from "@app/services/secret-sync/secret-sync-maps";
 import {
@@ -41,7 +45,7 @@ import {
   TSecretSyncRaw,
   TSecretSyncRemoveSecretsDTO,
   TSecretSyncSyncSecretsDTO,
-  TSecretSyncWithConnection,
+  TSecretSyncWithCredentials,
   TSendSecretSyncFailedNotificationsJobDTO
 } from "@app/services/secret-sync/secret-sync-types";
 import { TSecretTagDALFactory } from "@app/services/secret-tag/secret-tag-dal";
@@ -151,7 +155,7 @@ export const secretSyncQueueFactory = ({
     secretVersionTagV2BridgeDAL
   });
 
-  const $getSecrets = async (secretSync: TSecretSyncRaw, includeImports = true) => {
+  const $getSecrets = async (secretSync: TSecretSyncRaw | TSecretSyncWithCredentials, includeImports = true) => {
     const {
       projectId,
       folderId,
@@ -289,7 +293,53 @@ export const secretSyncQueueFactory = ({
     );
   };
 
-  const $syncSecrets = async (job: TSecretSyncSyncSecretsDTO) => {
+  const $importSecrets = async (secretSync: TSecretSyncWithCredentials, importBehavior: SecretSyncImportBehavior) => {
+    const { projectId, environment } = secretSync;
+
+    const importedSecrets = await SecretSyncFns.importSecrets(secretSync);
+
+    if (Object.keys(importedSecrets).length) {
+      const secretMap = await $getSecrets(secretSync, false);
+
+      const secretsToCreate: Parameters<typeof $createManySecretsRawFn>[0]["secrets"] = [];
+      const secretsToUpdate: Parameters<typeof $updateManySecretsRawFn>[0]["secrets"] = [];
+
+      Object.entries(importedSecrets).forEach(([key, { value }]) => {
+        const secret = {
+          secretName: key,
+          secretValue: value,
+          type: SecretType.Shared,
+          secretComment: ""
+        };
+
+        if (Object.hasOwn(secretMap, key)) {
+          secretsToUpdate.push(secret);
+        } else {
+          secretsToCreate.push(secret);
+        }
+      });
+
+      if (secretsToCreate.length) {
+        await $createManySecretsRawFn({
+          projectId,
+          path: secretSync.folder.path,
+          environment: environment.slug,
+          secrets: secretsToCreate
+        });
+      }
+
+      if (importBehavior === SecretSyncImportBehavior.PrioritizeDestination && secretsToUpdate.length) {
+        await $updateManySecretsRawFn({
+          projectId,
+          path: secretSync.folder.path,
+          environment: environment.slug,
+          secrets: secretsToUpdate
+        });
+      }
+    }
+  };
+
+  const $handleSyncSecretsJob = async (job: TSecretSyncSyncSecretsDTO) => {
     const {
       data: { syncId, auditLogInfo }
     } = job;
@@ -321,18 +371,31 @@ export const secretSyncQueueFactory = ({
         kmsService
       });
 
+      const secretSyncWithCredentials = {
+        ...secretSync,
+        connection: {
+          ...secretSync.connection,
+          credentials
+        }
+      } as TSecretSyncWithCredentials;
+
+      const {
+        lastSyncedAt,
+        syncOptions: { initialSyncBehavior }
+      } = secretSyncWithCredentials;
+
+      if (!lastSyncedAt && initialSyncBehavior !== SecretSyncInitialSyncBehavior.OverwriteDestination) {
+        await $importSecrets(
+          secretSyncWithCredentials,
+          initialSyncBehavior === SecretSyncInitialSyncBehavior.ImportPrioritizeSource
+            ? SecretSyncImportBehavior.PrioritizeSource
+            : SecretSyncImportBehavior.PrioritizeDestination
+        );
+      }
+
       const secretMap = await $getSecrets(secretSync);
 
-      await SecretSyncFns.syncSecrets(
-        {
-          ...secretSync,
-          connection: {
-            ...secretSync.connection,
-            credentials
-          }
-        } as TSecretSyncWithConnection,
-        secretMap
-      );
+      await SecretSyncFns.syncSecrets(secretSyncWithCredentials, secretMap);
 
       isSynced = true;
     } catch (err) {
@@ -412,7 +475,7 @@ export const secretSyncQueueFactory = ({
     logger.info("SecretSync Sync Job with ID %s Completed", job.id);
   };
 
-  const $importSecrets = async (job: TSecretSyncImportSecretsDTO) => {
+  const $handleImportSecretsJob = async (job: TSecretSyncImportSecretsDTO) => {
     const {
       data: { syncId, auditLogInfo, importBehavior }
     } = job;
@@ -435,9 +498,7 @@ export const secretSyncQueueFactory = ({
 
     try {
       const {
-        connection: { orgId, encryptedCredentials },
-        projectId,
-        environment
+        connection: { orgId, encryptedCredentials }
       } = secretSync;
 
       const credentials = await decryptAppConnectionCredentials({
@@ -446,53 +507,16 @@ export const secretSyncQueueFactory = ({
         kmsService
       });
 
-      const importedSecrets = await SecretSyncFns.importSecrets({
-        ...secretSync,
-        connection: {
-          ...secretSync.connection,
-          credentials
-        }
-      } as TSecretSyncWithConnection);
-
-      if (Object.keys(importedSecrets).length) {
-        const secretMap = await $getSecrets(secretSync, false);
-
-        const secretsToCreate: Parameters<typeof $createManySecretsRawFn>[0]["secrets"] = [];
-        const secretsToUpdate: Parameters<typeof $updateManySecretsRawFn>[0]["secrets"] = [];
-
-        Object.entries(importedSecrets).forEach(([key, { value }]) => {
-          const secret = {
-            secretName: key,
-            secretValue: value,
-            type: SecretType.Shared,
-            secretComment: ""
-          };
-
-          if (Object.hasOwn(secretMap, key)) {
-            secretsToUpdate.push(secret);
-          } else {
-            secretsToCreate.push(secret);
+      await $importSecrets(
+        {
+          ...secretSync,
+          connection: {
+            ...secretSync.connection,
+            credentials
           }
-        });
-
-        if (secretsToCreate.length) {
-          await $createManySecretsRawFn({
-            projectId,
-            path: secretSync.folder.path,
-            environment: environment.slug,
-            secrets: secretsToCreate
-          });
-        }
-
-        if (importBehavior === SecretSyncImportBehavior.PrioritizeDestination && secretsToUpdate.length) {
-          await $updateManySecretsRawFn({
-            projectId,
-            path: secretSync.folder.path,
-            environment: environment.slug,
-            secrets: secretsToUpdate
-          });
-        }
-      }
+        } as TSecretSyncWithCredentials,
+        importBehavior
+      );
 
       isSuccess = true;
     } catch (err) {
@@ -573,7 +597,7 @@ export const secretSyncQueueFactory = ({
     logger.info("SecretSync Import Job with ID %s Completed", job.id);
   };
 
-  const $removeSecrets = async (job: TSecretSyncRemoveSecretsDTO) => {
+  const $handleRemoveSecretsJob = async (job: TSecretSyncRemoveSecretsDTO) => {
     const {
       data: { syncId, auditLogInfo }
     } = job;
@@ -614,7 +638,7 @@ export const secretSyncQueueFactory = ({
             ...secretSync.connection,
             credentials
           }
-        } as TSecretSyncWithConnection,
+        } as TSecretSyncWithCredentials,
         secretMap
       );
 
@@ -801,13 +825,13 @@ export const secretSyncQueueFactory = ({
     try {
       switch (job.name) {
         case QueueJobs.SecretSyncSyncSecrets:
-          await $syncSecrets(job as TSecretSyncSyncSecretsDTO);
+          await $handleSyncSecretsJob(job as TSecretSyncSyncSecretsDTO);
           break;
         case QueueJobs.SecretSyncImportSecrets:
-          await $importSecrets(job as TSecretSyncImportSecretsDTO);
+          await $handleImportSecretsJob(job as TSecretSyncImportSecretsDTO);
           break;
         case QueueJobs.SecretSyncRemoveSecrets:
-          await $removeSecrets(job as TSecretSyncRemoveSecretsDTO);
+          await $handleRemoveSecretsJob(job as TSecretSyncRemoveSecretsDTO);
           break;
         default:
           throw new InternalServerError({

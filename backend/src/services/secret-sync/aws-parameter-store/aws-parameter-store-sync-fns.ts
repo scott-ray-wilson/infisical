@@ -1,16 +1,16 @@
 import AWS, { AWSError } from "aws-sdk";
 
 import { getAwsConnectionConfig } from "@app/services/app-connection/aws/aws-connection-fns";
-import { TSecretMap, TSecretSyncWithConnection } from "@app/services/secret-sync/secret-sync-types";
+import { TSecretMap, TSecretSyncWithCredentials } from "@app/services/secret-sync/secret-sync-types";
 
-import { TAwsParameterStoreSyncWithConnection } from "./aws-parameter-store-sync-types";
+import { TAwsParameterStoreSyncWithCredentials } from "./aws-parameter-store-sync-types";
 
 type TAWSParameterStoreRecord = Record<string, AWS.SSM.Parameter>;
 
 const MAX_RETRIES = 5;
 const BATCH_SIZE = 10;
 
-const getSSM = async (secretSync: TSecretSyncWithConnection) => {
+const getSSM = async (secretSync: TSecretSyncWithCredentials) => {
   const { destinationConfig, connection } = secretSync;
 
   const config = await getAwsConnectionConfig(connection, destinationConfig.region);
@@ -127,7 +127,7 @@ const deleteParametersBatch = async (
 };
 
 export const AwsParameterStoreSyncFns = {
-  syncSecrets: async (secretSync: TAwsParameterStoreSyncWithConnection, secrets: TSecretMap) => {
+  syncSecrets: async (secretSync: TAwsParameterStoreSyncWithCredentials, secrets: TSecretMap) => {
     const { destinationConfig } = secretSync;
 
     const ssm = await getSSM(secretSync);
@@ -165,7 +165,7 @@ export const AwsParameterStoreSyncFns = {
 
     await deleteParametersBatch(ssm, parametersToDelete);
   },
-  importSecrets: async (secretSync: TAwsParameterStoreSyncWithConnection): Promise<TSecretMap> => {
+  importSecrets: async (secretSync: TAwsParameterStoreSyncWithCredentials): Promise<TSecretMap> => {
     const { destinationConfig } = secretSync;
 
     const ssm = await getSSM(secretSync);
@@ -176,7 +176,7 @@ export const AwsParameterStoreSyncFns = {
       Object.entries(awsParameterStoreSecretsRecord).map(([key, value]) => [key, { value: value.Value ?? "" }])
     );
   },
-  removeSecrets: async (secretSync: TAwsParameterStoreSyncWithConnection, secrets: TSecretMap) => {
+  removeSecrets: async (secretSync: TAwsParameterStoreSyncWithCredentials, secrets: TSecretMap) => {
     const { destinationConfig } = secretSync;
 
     const ssm = await getSSM(secretSync);

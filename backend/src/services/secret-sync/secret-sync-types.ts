@@ -9,12 +9,12 @@ import {
   TAwsParameterStoreSync,
   TAwsParameterStoreSyncInput,
   TAwsParameterStoreSyncListItem,
-  TAwsParameterStoreSyncWithConnection
+  TAwsParameterStoreSyncWithCredentials
 } from "./aws-parameter-store";
 
 export type TSecretSync = TAwsParameterStoreSync;
 
-export type TSecretSyncWithConnection = TAwsParameterStoreSyncWithConnection;
+export type TSecretSyncWithCredentials = TAwsParameterStoreSyncWithCredentials;
 
 export type TSecretSyncInput = TAwsParameterStoreSyncInput;
 

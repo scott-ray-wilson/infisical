@@ -14,6 +14,6 @@ export type TAwsParameterStoreSyncInput = z.infer<typeof CreateAwsParameterStore
 
 export type TAwsParameterStoreSyncListItem = z.infer<typeof AwsParameterStoreSyncListItemSchema>;
 
-export type TAwsParameterStoreSyncWithConnection = Omit<TAwsParameterStoreSync, "connection"> & {
+export type TAwsParameterStoreSyncWithCredentials = Omit<TAwsParameterStoreSync, "connection"> & {
   connection: TAwsConnection;
 };

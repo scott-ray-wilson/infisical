@@ -8,7 +8,7 @@ import { SECRET_SYNC_NAME_MAP } from "@app/services/secret-sync/secret-sync-maps
 import {
   TSecretMap,
   TSecretSyncListItem,
-  TSecretSyncWithConnection
+  TSecretSyncWithCredentials
 } from "@app/services/secret-sync/secret-sync-types";
 
 const SECRET_SYNC_LIST_OPTIONS: Record<SecretSync, TSecretSyncListItem> = {
@@ -19,7 +19,7 @@ export const listSecretSyncOptions = () => {
   return Object.values(SECRET_SYNC_LIST_OPTIONS).sort((a, b) => a.name.localeCompare(b.name));
 };
 
-const addAffixes = (secretSync: TSecretSyncWithConnection, unprocessedSecretMap: TSecretMap) => {
+const addAffixes = (secretSync: TSecretSyncWithCredentials, unprocessedSecretMap: TSecretMap) => {
   let secretMap = { ...unprocessedSecretMap };
 
   const { appendSuffix, prependPrefix } = secretSync.syncOptions;
@@ -34,7 +34,7 @@ const addAffixes = (secretSync: TSecretSyncWithConnection, unprocessedSecretMap:
   return secretMap;
 };
 
-const stripAffixes = (secretSync: TSecretSyncWithConnection, unprocessedSecretMap: TSecretMap) => {
+const stripAffixes = (secretSync: TSecretSyncWithCredentials, unprocessedSecretMap: TSecretMap) => {
   let secretMap = { ...unprocessedSecretMap };
 
   const { appendSuffix, prependPrefix } = secretSync.syncOptions;
@@ -60,7 +60,7 @@ const stripAffixes = (secretSync: TSecretSyncWithConnection, unprocessedSecretMa
 };
 
 export const SecretSyncFns = {
-  syncSecrets: (secretSync: TSecretSyncWithConnection, unprocessedSecretMap: TSecretMap): Promise<void> => {
+  syncSecrets: (secretSync: TSecretSyncWithCredentials, unprocessedSecretMap: TSecretMap): Promise<void> => {
     const secretMap = addAffixes(secretSync, unprocessedSecretMap);
 
     switch (secretSync.destination) {
@@ -71,7 +71,7 @@ export const SecretSyncFns = {
         throw new Error(`Unhandled sync destination for push secrets: ${secretSync.destination}`);
     }
   },
-  importSecrets: async (secretSync: TSecretSyncWithConnection): Promise<TSecretMap> => {
+  importSecrets: async (secretSync: TSecretSyncWithCredentials): Promise<TSecretMap> => {
     let secretMap: TSecretMap;
     switch (secretSync.destination) {
       case SecretSync.AWSParameterStore:
@@ -85,7 +85,7 @@ export const SecretSyncFns = {
 
     return stripAffixes(secretSync, secretMap);
   },
-  removeSecrets: (secretSync: TSecretSyncWithConnection, unprocessedSecretMap: TSecretMap): Promise<void> => {
+  removeSecrets: (secretSync: TSecretSyncWithCredentials, unprocessedSecretMap: TSecretMap): Promise<void> => {
     const secretMap = addAffixes(secretSync, unprocessedSecretMap);
 
     switch (secretSync.destination) {

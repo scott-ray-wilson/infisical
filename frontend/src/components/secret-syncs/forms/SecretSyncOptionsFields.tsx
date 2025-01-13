@@ -1,17 +1,72 @@
 import { Controller, useFormContext } from "react-hook-form";
 
-import { FormControl, Input } from "@app/components/v2";
+import { FormControl, Input, Select, SelectItem } from "@app/components/v2";
+import { SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP, SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 
 import { TSecretSyncForm } from "./schemas";
 
 export const SecretSyncOptionsFields = () => {
-  const { control } = useFormContext<TSecretSyncForm>();
+  const { control, watch } = useFormContext<TSecretSyncForm>();
+
+  const destination = watch("destination");
+
+  const destinationName = SECRET_SYNC_MAP[destination].name;
 
   return (
     <>
-      <p className="mb-4 text-sm text-bunker-300">
-        Configure optional parameters to modify how secrets are synced.
-      </p>
+      <p className="mb-4 text-sm text-bunker-300">Configure how secrets should be synced.</p>
+      <Controller
+        name="syncOptions.initialSyncBehavior"
+        control={control}
+        render={({ field: { value, onChange }, fieldState: { error } }) => (
+          <FormControl
+            tooltipClassName="max-w-lg py-3"
+            tooltipText={
+              <div className="flex flex-col gap-3">
+                <p>
+                  Specify how Infisical should resolve the initial sync to {destinationName}. The
+                  following options are available:
+                </p>
+                <ul className="flex list-disc flex-col gap-3 pl-4">
+                  {Object.values(SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP).map((details) => {
+                    const { name, description } = details(destinationName);
+
+                    return (
+                      <li key={name}>
+                        <p className="text-mineshaft-300">
+                          <span className="font-medium text-bunker-200">{name}</span>: {description}
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            }
+            errorText={error?.message}
+            isError={Boolean(error?.message)}
+            label="Initial Sync Behavior"
+          >
+            <Select
+              value={value}
+              onValueChange={(val) => onChange(val)}
+              className="w-full border border-mineshaft-500"
+              position="popper"
+              placeholder="Select an option..."
+              dropdownContainerClassName="max-w-none"
+            >
+              {Object.entries(SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP).map(([key, details]) => {
+                const { name } = details(destinationName);
+
+                return (
+                  <SelectItem value={key} key={key}>
+                    {name}
+                  </SelectItem>
+                );
+              })}
+            </Select>
+          </FormControl>
+        )}
+      />
       <Controller
         render={({ field: { value, onChange }, fieldState: { error } }) => (
           <FormControl

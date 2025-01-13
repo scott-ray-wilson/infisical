@@ -18,8 +18,8 @@ import { createNotification } from "@app/components/notifications";
 import { ProjectPermissionCan } from "@app/components/permissions";
 import {
   DeleteSecretSyncModal,
-  SecretSyncEraseModal,
-  SecretSyncImportModal
+  SecretSyncImportSecretsModal,
+  SecretSyncRemoveSecretsModal
 } from "@app/components/secret-syncs";
 import {
   Button,
@@ -34,7 +34,11 @@ import { ROUTE_PATHS } from "@app/const/routes";
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/context";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import { usePopUp, useToggle } from "@app/hooks";
-import { TSecretSync, useTriggerSecretSync, useUpdateSecretSync } from "@app/hooks/api/secretSyncs";
+import {
+  TSecretSync,
+  useTriggerSecretSyncSyncSecrets,
+  useUpdateSecretSync
+} from "@app/hooks/api/secretSyncs";
 import { IntegrationsListPageTabs } from "@app/types/integrations";
 
 type Props = {
@@ -44,13 +48,13 @@ type Props = {
 export const SecretSyncActionTriggers = ({ secretSync }: Props) => {
   const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp([
     "importSecrets",
-    "eraseSecrets",
+    "removeSecrets",
     "deleteSync"
   ] as const);
 
   const navigate = useNavigate();
 
-  const triggerSync = useTriggerSecretSync();
+  const triggerSyncSecrets = useTriggerSecretSyncSyncSecrets();
   const updateSync = useUpdateSecretSync();
 
   const destinationName = SECRET_SYNC_MAP[secretSync.destination].name;
@@ -96,7 +100,7 @@ export const SecretSyncActionTriggers = ({ secretSync }: Props) => {
 
   const handleTriggerSync = async () => {
     try {
-      await triggerSync.mutateAsync({
+      await triggerSyncSecrets.mutateAsync({
         syncId: secretSync.id,
         destination: secretSync.destination
       });
@@ -161,7 +165,7 @@ export const SecretSyncActionTriggers = ({ secretSync }: Props) => {
             </DropdownMenuItem>
             <DropdownMenuItem
               icon={<FontAwesomeIcon icon={faEraser} />}
-              onClick={() => handlePopUpOpen("eraseSecrets")}
+              onClick={() => handlePopUpOpen("removeSecrets")}
             >
               <Tooltip
                 position="left"
@@ -206,15 +210,15 @@ export const SecretSyncActionTriggers = ({ secretSync }: Props) => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <SecretSyncImportModal
+      <SecretSyncImportSecretsModal
         onOpenChange={(isOpen) => handlePopUpToggle("importSecrets", isOpen)}
         isOpen={popUp.importSecrets.isOpen}
         secretSync={popUp.importSecrets.data}
       />
-      <SecretSyncEraseModal
-        onOpenChange={(isOpen) => handlePopUpToggle("eraseSecrets", isOpen)}
-        isOpen={popUp.eraseSecrets.isOpen}
-        secretSync={popUp.eraseSecrets.data}
+      <SecretSyncRemoveSecretsModal
+        onOpenChange={(isOpen) => handlePopUpToggle("removeSecrets", isOpen)}
+        isOpen={popUp.removeSecrets.isOpen}
+        secretSync={popUp.removeSecrets.data}
       />
       <DeleteSecretSyncModal
         onOpenChange={(isOpen) => handlePopUpToggle("deleteSync", isOpen)}

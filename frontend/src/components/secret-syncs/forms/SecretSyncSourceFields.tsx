@@ -16,7 +16,7 @@ export const SecretSyncSourceFields = () => {
   return (
     <>
       <p className="mb-4 text-sm text-bunker-300">
-        Specify the environment and path from Infisical where you would like to sync secrets from.
+        Specify the environment and path where you would like to sync secrets from.
       </p>
 
       <Controller
@@ -41,7 +41,7 @@ export const SecretSyncSourceFields = () => {
         render={({ field: { value, onChange }, fieldState: { error } }) => (
           <FormControl isError={Boolean(error)} errorText={error?.message} label="Secret Path">
             <SecretPathInput
-              environment={selectedEnvironment.slug}
+              environment={selectedEnvironment?.slug}
               value={value}
               onChange={onChange}
             />

@@ -1,1 +1,1 @@
-export { FrameworkIntegrationTab } from "./FrameworkIntegrationTab.tsx";
+export { FrameworkIntegrationTab } from "./FrameworkIntegrationTab";

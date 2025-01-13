@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
+import { SecretSync } from "@app/hooks/api/secretSyncs";
 
 export const AwsParameterStoreConfigSchema = z.object({
   destination: z.literal(SecretSync.AWSParameterStore),

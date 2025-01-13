@@ -16,9 +16,9 @@ import {
   TSyncSecretsDTO
 } from "@app/services/secret/secret-types";
 import {
-  TQueueSecretSyncByIdDTO,
-  TQueueSecretSyncEraseByIdDTO,
-  TQueueSecretSyncImportByIdDTO,
+  TQueueSecretSyncImportSecretsByIdDTO,
+  TQueueSecretSyncRemoveSecretsByIdDTO,
+  TQueueSecretSyncSyncSecretsByIdDTO,
   TQueueSendSecretSyncActionFailedNotificationsDTO
 } from "@app/services/secret-sync/secret-sync-types";
 
@@ -69,10 +69,10 @@ export enum QueueJobs {
   IdentityAccessTokenStatusUpdate = "identity-access-token-status-update",
   ServiceTokenStatusUpdate = "service-token-status-update",
   ImportSecretsFromExternalSource = "import-secrets-from-external-source",
-  AppConnectionSecretSync = "app-connection-secret-sync",
-  AppConnectionSecretSyncImport = "app-connection-secret-sync-import",
-  AppConnectionSecretSyncErase = "app-connection-secret-sync-erase",
-  AppConnectionSendSecretSyncActionFailedNotifications = "app-connection-send-secret-sync-action-failed-notifications"
+  SecretSyncSyncSecrets = "secret-sync-sync-secrets",
+  SecretSyncImportSecrets = "secret-sync-import-secrets",
+  SecretSyncRemoveSecrets = "secret-sync-remove-secrets",
+  SecretSyncSendActionFailedNotifications = "secret-sync-send-action-failed-notifications"
 }
 
 export type TQueueJobTypes = {
@@ -197,19 +197,19 @@ export type TQueueJobTypes = {
   };
   [QueueName.AppConnectionSecretSync]:
     | {
-        name: QueueJobs.AppConnectionSecretSync;
-        payload: TQueueSecretSyncByIdDTO;
+        name: QueueJobs.SecretSyncSyncSecrets;
+        payload: TQueueSecretSyncSyncSecretsByIdDTO;
       }
     | {
-        name: QueueJobs.AppConnectionSecretSyncImport;
-        payload: TQueueSecretSyncImportByIdDTO;
+        name: QueueJobs.SecretSyncImportSecrets;
+        payload: TQueueSecretSyncImportSecretsByIdDTO;
       }
     | {
-        name: QueueJobs.AppConnectionSecretSyncErase;
-        payload: TQueueSecretSyncEraseByIdDTO;
+        name: QueueJobs.SecretSyncRemoveSecrets;
+        payload: TQueueSecretSyncRemoveSecretsByIdDTO;
       }
     | {
-        name: QueueJobs.AppConnectionSendSecretSyncActionFailedNotifications;
+        name: QueueJobs.SecretSyncSendActionFailedNotifications;
         payload: TQueueSendSecretSyncActionFailedNotificationsDTO;
       };
 };

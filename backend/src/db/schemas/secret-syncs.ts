@@ -28,10 +28,10 @@ export const SecretSyncsSchema = z.object({
   lastImportJobId: z.string().nullable().optional(),
   lastImportMessage: z.string().nullable().optional(),
   lastImportedAt: z.date().nullable().optional(),
-  eraseStatus: z.string().nullable().optional(),
-  lastEraseJobId: z.string().nullable().optional(),
-  lastEraseMessage: z.string().nullable().optional(),
-  lastErasedAt: z.date().nullable().optional()
+  removeStatus: z.string().nullable().optional(),
+  lastRemoveJobId: z.string().nullable().optional(),
+  lastRemoveMessage: z.string().nullable().optional(),
+  lastRemovedAt: z.date().nullable().optional()
 });
 
 export type TSecretSyncs = z.infer<typeof SecretSyncsSchema>;

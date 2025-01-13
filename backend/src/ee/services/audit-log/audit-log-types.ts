@@ -13,7 +13,7 @@ import { CertKeyAlgorithm } from "@app/services/certificate/certificate-types";
 import { CaStatus } from "@app/services/certificate-authority/certificate-authority-types";
 import { TIdentityTrustedIp } from "@app/services/identity/identity-types";
 import { PkiItemType } from "@app/services/pki-collection/pki-collection-types";
-import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
+import { SecretSync, SecretSyncImportBehavior } from "@app/services/secret-sync/secret-sync-enums";
 import {
   TCreateSecretSyncDTO,
   TDeleteSecretSyncDTO,
@@ -243,9 +243,9 @@ export enum EventType {
   CREATE_SECRET_SYNC = "create-secret-sync",
   UPDATE_SECRET_SYNC = "update-secret-sync",
   DELETE_SECRET_SYNC = "delete-secret-sync",
-  SYNC_SECRET_SYNC = "sync-secret-sync",
-  IMPORT_SECRET_SYNC = "import-secret-sync",
-  ERASE_SECRET_SYNC = "erase-secret-sync"
+  SECRET_SYNC_SYNC_SECRETS = "secret-sync-sync-secrets",
+  SECRET_SYNC_IMPORT_SECRETS = "secret-sync-import-secrets",
+  SECRET_SYNC_REMOVE_SECRETS = "secret-sync-remove-secrets"
 }
 
 interface UserActorMetadata {
@@ -1964,8 +1964,8 @@ interface DeleteSecretSyncEvent {
   metadata: TDeleteSecretSyncDTO;
 }
 
-interface SyncSecretSyncEvent {
-  type: EventType.SYNC_SECRET_SYNC;
+interface SecretSyncSyncSecretsEvent {
+  type: EventType.SECRET_SYNC_SYNC_SECRETS;
   metadata: Pick<
     TSecretSyncRaw,
     "syncOptions" | "destinationConfig" | "destination" | "syncStatus" | "connectionId" | "folderId"
@@ -1977,8 +1977,8 @@ interface SyncSecretSyncEvent {
   };
 }
 
-interface ImportSecretSyncEvent {
-  type: EventType.IMPORT_SECRET_SYNC;
+interface SecretSyncImportSecretsEvent {
+  type: EventType.SECRET_SYNC_IMPORT_SECRETS;
   metadata: Pick<
     TSecretSyncRaw,
     "syncOptions" | "destinationConfig" | "destination" | "importStatus" | "connectionId" | "folderId"
@@ -1987,17 +1987,18 @@ interface ImportSecretSyncEvent {
     importMessage: string | null;
     jobId: string;
     jobRanAt: Date;
+    importBehavior: SecretSyncImportBehavior;
   };
 }
 
-interface EraseSecretSyncEvent {
-  type: EventType.ERASE_SECRET_SYNC;
+interface SecretSyncRemoveSecretsEvent {
+  type: EventType.SECRET_SYNC_REMOVE_SECRETS;
   metadata: Pick<
     TSecretSyncRaw,
-    "syncOptions" | "destinationConfig" | "destination" | "eraseStatus" | "connectionId" | "folderId"
+    "syncOptions" | "destinationConfig" | "destination" | "removeStatus" | "connectionId" | "folderId"
   > & {
     syncId: string;
-    eraseMessage: string | null;
+    removeMessage: string | null;
     jobId: string;
     jobRanAt: Date;
   };
@@ -2186,6 +2187,6 @@ export type Event =
   | CreateSecretSyncEvent
   | UpdateSecretSyncEvent
   | DeleteSecretSyncEvent
-  | SyncSecretSyncEvent
-  | ImportSecretSyncEvent
-  | EraseSecretSyncEvent;
+  | SecretSyncSyncSecretsEvent
+  | SecretSyncImportSecretsEvent
+  | SecretSyncRemoveSecretsEvent;

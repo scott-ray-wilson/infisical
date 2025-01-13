@@ -17,8 +17,8 @@ import { twMerge } from "tailwind-merge";
 import { createNotification } from "@app/components/notifications";
 import {
   DeleteSecretSyncModal,
-  SecretSyncEraseModal,
-  SecretSyncImportModal
+  SecretSyncImportSecretsModal,
+  SecretSyncRemoveSecretsModal
 } from "@app/components/secret-syncs";
 import {
   DropdownMenu,
@@ -41,8 +41,12 @@ import { useWorkspace } from "@app/context";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import { usePagination, usePopUp, useResetPageHelper } from "@app/hooks";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
-import { TSecretSync, useTriggerSecretSync, useUpdateSecretSync } from "@app/hooks/api/secretSyncs";
-import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
+import {
+  SecretSync,
+  TSecretSync,
+  useTriggerSecretSyncSyncSecrets,
+  useUpdateSecretSync
+} from "@app/hooks/api/secretSyncs";
 
 import { getSecretSyncDestinationColValues } from "./helpers";
 import { SecretSyncRow } from "./SecretSyncRow";
@@ -82,10 +86,10 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
   const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp([
     "deleteSync",
     "importSecrets",
-    "eraseSecrets"
+    "removeSecrets"
   ] as const);
 
-  const triggerSync = useTriggerSecretSync();
+  const triggerSync = useTriggerSecretSyncSyncSecrets();
   const updateSync = useUpdateSecretSync();
 
   const [filters, setFilters] = useState<SecretSyncFilters>({
@@ -199,11 +203,11 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
 
   const handleDelete = (secretSync: TSecretSync) => handlePopUpOpen("deleteSync", secretSync);
 
-  const handleTriggerImport = (secretSync: TSecretSync) =>
+  const handleTriggerImportSecrets = (secretSync: TSecretSync) =>
     handlePopUpOpen("importSecrets", secretSync);
 
-  const handleTriggerErase = (secretSync: TSecretSync) =>
-    handlePopUpOpen("eraseSecrets", secretSync);
+  const handleTriggerRemoveSecrets = (secretSync: TSecretSync) =>
+    handlePopUpOpen("removeSecrets", secretSync);
 
   const handleToggleEnableSync = async (secretSync: TSecretSync) => {
     const destinationName = SECRET_SYNC_MAP[secretSync.destination].name;
@@ -435,9 +439,9 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
                 key={secretSync.id}
                 secretSync={secretSync}
                 onDelete={handleDelete}
-                onTriggerSync={handleTriggerSync}
-                onTriggerImport={handleTriggerImport}
-                onTriggerErase={handleTriggerErase}
+                onTriggerSyncSecrets={handleTriggerSync}
+                onTriggerImportSecrets={handleTriggerImportSecrets}
+                onTriggerRemoveSecrets={handleTriggerRemoveSecrets}
                 onToggleEnable={handleToggleEnableSync}
               />
             ))}
@@ -468,15 +472,15 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
         isOpen={popUp.deleteSync.isOpen}
         secretSync={popUp.deleteSync.data}
       />
-      <SecretSyncImportModal
+      <SecretSyncImportSecretsModal
         onOpenChange={(isOpen) => handlePopUpToggle("importSecrets", isOpen)}
         isOpen={popUp.importSecrets.isOpen}
         secretSync={popUp.importSecrets.data}
       />
-      <SecretSyncEraseModal
-        onOpenChange={(isOpen) => handlePopUpToggle("eraseSecrets", isOpen)}
-        isOpen={popUp.eraseSecrets.isOpen}
-        secretSync={popUp.eraseSecrets.data}
+      <SecretSyncRemoveSecretsModal
+        onOpenChange={(isOpen) => handlePopUpToggle("removeSecrets", isOpen)}
+        isOpen={popUp.removeSecrets.isOpen}
+        secretSync={popUp.removeSecrets.data}
       />
     </div>
   );

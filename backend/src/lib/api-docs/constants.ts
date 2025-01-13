@@ -1683,19 +1683,23 @@ export const SecretSyncs = {
   DELETE: (destination: SecretSync) => ({
     syncId: `The ID of the ${SECRET_SYNC_NAME_MAP[destination]} Sync to be deleted.`
   }),
-  SYNC: (destination: SecretSync) => ({
+  SYNC_SECRETS: (destination: SecretSync) => ({
     syncId: `The ID of the ${SECRET_SYNC_NAME_MAP[destination]} Sync to trigger a sync for.`
   }),
-  IMPORT: (destination: SecretSync) => ({
-    syncId: `The ID of the ${SECRET_SYNC_NAME_MAP[destination]} Sync to trigger an import for.`,
-    shouldOverwrite: `Specify whether newly imported secrets should override existing secrets with matching names in Infisical.`
+  IMPORT_SECRETS: (destination: SecretSync) => ({
+    syncId: `The ID of the ${SECRET_SYNC_NAME_MAP[destination]} Sync to trigger importing secrets for.`,
+    importBehavior: `Specify whether Infisical should prioritize secret values from Infisical or ${SECRET_SYNC_NAME_MAP[destination]}.`
   }),
-  ERASE: (destination: SecretSync) => ({
-    syncId: `The ID of the ${SECRET_SYNC_NAME_MAP[destination]} Sync to trigger an erase for.`
+  REMOVE_SECRETS: (destination: SecretSync) => ({
+    syncId: `The ID of the ${SECRET_SYNC_NAME_MAP[destination]} Sync to trigger removing secrets for.`
   }),
-  SYNC_OPTIONS: {
-    PREPEND_PREFIX: "Optionally prepend a prefix to your secrets' keys when syncing.",
-    APPEND_SUFFIX: "Optionally append a suffix to your secrets' keys when syncing."
+  SYNC_OPTIONS: (destination: SecretSync) => {
+    const destinationName = SECRET_SYNC_NAME_MAP[destination];
+    return {
+      INITIAL_SYNC_BEHAVIOR: `Specify how Infisical should resolve the initial sync to the ${destinationName} destination.`,
+      PREPEND_PREFIX: `Optionally prepend a prefix to your secrets' keys when syncing to ${destinationName}.`,
+      APPEND_SUFFIX: `Optionally append a suffix to your secrets' keys when syncing to ${destinationName}.`
+    };
   },
   DESTINATION_CONFIG: {
     AWS_PARAMETER_STORE: {

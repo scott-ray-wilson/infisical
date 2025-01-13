@@ -3,6 +3,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { createNotification } from "@app/components/notifications";
+import { SecretSyncConnectionField } from "@app/components/secret-syncs/forms/SecretSyncConnectionField";
 import { SecretSyncEditFields } from "@app/components/secret-syncs/types";
 import { Button, ModalClose } from "@app/components/v2";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
@@ -28,6 +29,7 @@ export const EditSecretSyncForm = ({ secretSync, fields, onComplete }: Props) =>
     resolver: zodResolver(SecretSyncFormSchema),
     defaultValues: {
       ...secretSync,
+      secretPath: secretSync.folder.path,
       description: secretSync.description ?? ""
     },
     reValidateMode: "onChange"
@@ -60,7 +62,12 @@ export const EditSecretSyncForm = ({ secretSync, fields, onComplete }: Props) =>
 
   switch (fields) {
     case SecretSyncEditFields.Destination:
-      Component = <SecretSyncDestinationFields />;
+      Component = (
+        <>
+          <SecretSyncConnectionField isEditing />
+          <SecretSyncDestinationFields />
+        </>
+      );
       break;
     case SecretSyncEditFields.Options:
       Component = <SecretSyncOptionsFields />;
@@ -76,9 +83,10 @@ export const EditSecretSyncForm = ({ secretSync, fields, onComplete }: Props) =>
 
   const {
     handleSubmit,
-    formState: { isSubmitting, isDirty }
+    formState: { isSubmitting, isDirty, errors }
   } = formMethods;
 
+  console.log("errors", errors);
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <FormProvider {...formMethods}>{Component}</FormProvider>
@@ -90,7 +98,7 @@ export const EditSecretSyncForm = ({ secretSync, fields, onComplete }: Props) =>
         </ModalClose>
         <Button
           isLoading={isSubmitting}
-          isDisabled={!isDirty}
+          isDisabled={!isDirty || isSubmitting}
           type="submit"
           colorSchema="secondary"
         >

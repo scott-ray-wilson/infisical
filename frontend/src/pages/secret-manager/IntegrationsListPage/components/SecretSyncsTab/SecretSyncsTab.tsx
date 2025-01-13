@@ -2,20 +2,32 @@ import { faArrowUpRightFromSquare, faBookOpen, faPlus } from "@fortawesome/free-
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
-import { Button } from "@app/components/v2";
-import { ProjectPermissionActions, ProjectPermissionSub } from "@app/context";
+import { CreateSecretSyncModal } from "@app/components/secret-syncs";
+import { Button, Spinner } from "@app/components/v2";
+import { ProjectPermissionActions, ProjectPermissionSub, useWorkspace } from "@app/context";
 import { usePopUp } from "@app/hooks";
-import { TSecretSync } from "@app/hooks/api/secretSyncs";
+import { useListSecretSyncs } from "@app/hooks/api/secretSyncs";
 
-import { CreateSecretSyncModal } from "../../../../../components/secret-syncs/CreateSecretSyncModal.tsx";
 import { SecretSyncsTable } from "./SecretSyncTable";
 
-type Props = {
-  secretSyncs: TSecretSync[];
-};
-
-export const SecretSyncsTab = ({ secretSyncs }: Props) => {
+export const SecretSyncsTab = () => {
   const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp(["addSync"] as const);
+
+  const { currentWorkspace } = useWorkspace();
+
+  const { data: secretSyncs = [], isPending: isSecretSyncsPending } = useListSecretSyncs(
+    currentWorkspace.id,
+    {
+      refetchInterval: 2000
+    }
+  );
+
+  if (isSecretSyncsPending)
+    return (
+      <div className="flex h-[60vh] flex-col items-center justify-center gap-2">
+        <Spinner />
+      </div>
+    );
 
   return (
     <>

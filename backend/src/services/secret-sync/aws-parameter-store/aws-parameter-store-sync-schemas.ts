@@ -34,8 +34,7 @@ const AwsParameterStoreSyncDestinationConfigSchema = z.object({
     .describe(SecretSyncs.DESTINATION_CONFIG.AWS_PARAMETER_STORE.PATH)
 });
 
-export const AwsParameterStoreSyncSchema = BaseSecretSyncSchema(AppConnection.AWS).extend({
-  destination: z.literal(SecretSync.AWSParameterStore),
+export const AwsParameterStoreSyncSchema = BaseSecretSyncSchema(SecretSync.AWSParameterStore).extend({
   destinationConfig: AwsParameterStoreSyncDestinationConfigSchema
 });
 

@@ -1,7 +1,6 @@
-import { TSecretSync } from "@app/hooks/api/secretSyncs";
-import { SecretSync } from "@app/hooks/api/secretSyncs/enums.ts";
+import { SecretSync, TSecretSync } from "@app/hooks/api/secretSyncs";
 
-import { AwsParameterStoreDestinationCol } from "./AwsParameterStoreDestinationCol.tsx";
+import { AwsParameterStoreDestinationCol } from "./AwsParameterStoreDestinationCol";
 
 type Props = {
   secretSync: TSecretSync;

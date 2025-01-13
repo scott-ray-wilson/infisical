@@ -1,8 +1,8 @@
 import { faArrowUpRightFromSquare, faBookOpen } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs.ts";
-import { SecretSync } from "@app/hooks/api/secretSyncs/enums.ts";
+import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
+import { SecretSync } from "@app/hooks/api/secretSyncs";
 
 type Props = {
   destination: SecretSync;

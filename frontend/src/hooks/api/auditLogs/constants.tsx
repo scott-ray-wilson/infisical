@@ -108,9 +108,9 @@ export const eventToNameMap: { [K in EventType]: string } = {
   [EventType.CREATE_SECRET_SYNC]: "Create Secret Sync",
   [EventType.UPDATE_SECRET_SYNC]: "Update Secret Sync",
   [EventType.DELETE_SECRET_SYNC]: "Delete Secret Sync",
-  [EventType.SYNC_SECRET_SYNC]: "Secret Sync synced",
-  [EventType.IMPORT_SECRET_SYNC]: "Secret Sync import secrets",
-  [EventType.ERASE_SECRET_SYNC]: "Secret Sync erase secrets"
+  [EventType.SECRET_SYNC_SYNC_SECRETS]: "Secret Sync synced secrets",
+  [EventType.SECRET_SYNC_IMPORT_SECRETS]: "Secret Sync imported secrets",
+  [EventType.SECRET_SYNC_REMOVE_SECRETS]: "Secret Sync removed secrets"
 };
 
 export const userAgentTTypeoNameMap: { [K in UserAgentType]: string } = {

@@ -6,9 +6,9 @@ import {
   TCreateSecretSyncDTO,
   TDeleteSecretSyncDTO,
   TSecretSyncResponse,
-  TTriggerSecretSyncDTO,
-  TTriggerSecretSyncEraseDTO,
-  TTriggerSecretSyncImportDTO,
+  TTriggerSecretSyncImportSecretsDTO,
+  TTriggerSecretSyncRemoveSecretsDTO,
+  TTriggerSecretSyncSyncSecretsDTO,
   TUpdateSecretSyncDTO
 } from "@app/hooks/api/secretSyncs/types";
 
@@ -60,27 +60,12 @@ export const useDeleteSecretSync = () => {
   });
 };
 
-export const useTriggerSecretSync = () => {
+export const useTriggerSecretSyncSyncSecrets = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ syncId, destination }: TTriggerSecretSyncDTO) => {
-      const { data } = await apiRequest.post(`/api/v1/secret-syncs/${destination}/${syncId}/sync`);
-
-      return data;
-    },
-    onSuccess: (_, { syncId, destination }) => {
-      queryClient.invalidateQueries({ queryKey: secretSyncKeys.list() });
-      queryClient.invalidateQueries({ queryKey: secretSyncKeys.byId(destination, syncId) });
-    }
-  });
-};
-
-export const useTriggerSecretSyncImport = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({ syncId, destination, shouldOverwrite }: TTriggerSecretSyncImportDTO) => {
+    mutationFn: async ({ syncId, destination }: TTriggerSecretSyncSyncSecretsDTO) => {
       const { data } = await apiRequest.post(
-        `/api/v1/secret-syncs/${destination}/${syncId}/import?shouldOverwrite=${shouldOverwrite}`
+        `/api/v1/secret-syncs/${destination}/${syncId}/sync-secrets`
       );
 
       return data;
@@ -92,11 +77,34 @@ export const useTriggerSecretSyncImport = () => {
   });
 };
 
-export const useTriggerSecretSyncErase = () => {
+export const useTriggerSecretSyncImportSecrets = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ syncId, destination }: TTriggerSecretSyncEraseDTO) => {
-      const { data } = await apiRequest.post(`/api/v1/secret-syncs/${destination}/${syncId}/erase`);
+    mutationFn: async ({
+      syncId,
+      destination,
+      importBehavior
+    }: TTriggerSecretSyncImportSecretsDTO) => {
+      const { data } = await apiRequest.post(
+        `/api/v1/secret-syncs/${destination}/${syncId}/import-secrets?importBehavior=${importBehavior}`
+      );
+
+      return data;
+    },
+    onSuccess: (_, { syncId, destination }) => {
+      queryClient.invalidateQueries({ queryKey: secretSyncKeys.list() });
+      queryClient.invalidateQueries({ queryKey: secretSyncKeys.byId(destination, syncId) });
+    }
+  });
+};
+
+export const useTriggerSecretSyncRemoveSecrets = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ syncId, destination }: TTriggerSecretSyncRemoveSecretsDTO) => {
+      const { data } = await apiRequest.post(
+        `/api/v1/secret-syncs/${destination}/${syncId}/remove-secrets`
+      );
 
       return data;
     },

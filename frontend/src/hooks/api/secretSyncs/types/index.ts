@@ -1,8 +1,6 @@
-import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
+import { SecretSync, SecretSyncImportBehavior } from "@app/hooks/api/secretSyncs";
 import { TAwsParameterStoreSync } from "@app/hooks/api/secretSyncs/types/aws-parameter-store-sync";
 import { TSecretSyncOption } from "@app/hooks/api/secretSyncs/types/sync-options";
-
-export * from "./secret-sync-enums";
 
 export type TSecretSync = TAwsParameterStoreSync;
 
@@ -34,18 +32,18 @@ export type TDeleteSecretSyncDTO = {
   syncId: string;
 };
 
-export type TTriggerSecretSyncDTO = {
+export type TTriggerSecretSyncSyncSecretsDTO = {
   destination: SecretSync;
   syncId: string;
 };
 
-export type TTriggerSecretSyncImportDTO = {
+export type TTriggerSecretSyncImportSecretsDTO = {
   destination: SecretSync;
   syncId: string;
-  shouldOverwrite?: boolean;
+  importBehavior: SecretSyncImportBehavior;
 };
 
-export type TTriggerSecretSyncEraseDTO = {
+export type TTriggerSecretSyncRemoveSecretsDTO = {
   destination: SecretSync;
   syncId: string;
 };

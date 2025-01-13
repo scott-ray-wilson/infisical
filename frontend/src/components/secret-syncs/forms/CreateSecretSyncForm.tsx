@@ -1,20 +1,21 @@
 import { useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import { Tab } from "@headlessui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { twMerge } from "tailwind-merge";
 
 import { createNotification } from "@app/components/notifications";
-import { Button } from "@app/components/v2";
+import { Button, FormControl, Switch } from "@app/components/v2";
 import { useWorkspace } from "@app/context";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
-import { TSecretSync, useCreateSecretSync } from "@app/hooks/api/secretSyncs";
-import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
+import { SecretSync, TSecretSync, useCreateSecretSync } from "@app/hooks/api/secretSyncs";
 
 import { SecretSyncFormSchema, TSecretSyncForm } from "./schemas";
 import { SecretSyncConnectionField } from "./SecretSyncConnectionField";
 import { SecretSyncDestinationFields } from "./SecretSyncDestinationFields";
 import { SecretSyncDetailsFields } from "./SecretSyncDetailsFields";
 import { SecretSyncOptionsFields } from "./SecretSyncOptionsFields";
+import { SecretSyncReviewFields } from "./SecretSyncReviewFields";
 import { SecretSyncSourceFields } from "./SecretSyncSourceFields";
 
 type Props = {
@@ -27,7 +28,8 @@ const FORM_TABS: { name: string; key: string; fields: (keyof TSecretSyncForm)[] 
   { name: "Source", key: "source", fields: ["secretPath", "environment"] },
   { name: "Destination", key: "destination", fields: ["connection", "destinationConfig"] },
   { name: "Options", key: "options", fields: ["syncOptions"] },
-  { name: "Details", key: "details", fields: ["name", "description"] }
+  { name: "Details", key: "details", fields: ["name", "description"] },
+  { name: "Review", key: "review", fields: [] }
 ];
 
 export const CreateSecretSyncForm = ({ destination, onComplete, onCancel }: Props) => {
@@ -40,7 +42,8 @@ export const CreateSecretSyncForm = ({ destination, onComplete, onCancel }: Prop
   const formMethods = useForm<TSecretSyncForm>({
     resolver: zodResolver(SecretSyncFormSchema),
     defaultValues: {
-      destination
+      destination,
+      isEnabled: true
     },
     reValidateMode: "onChange"
   });
@@ -107,27 +110,30 @@ export const CreateSecretSyncForm = ({ destination, onComplete, onCancel }: Prop
     return isEnabled;
   };
 
+  const { control } = formMethods;
+
   return (
-    <form>
+    <form className={twMerge(isFinalStep && "max-h-[70vh] overflow-y-auto")}>
       <FormProvider {...formMethods}>
         <Tab.Group selectedIndex={selectedTabIndex} onChange={setSelectedTabIndex}>
           <Tab.List className="-pb-1 mb-6 w-full border-b-2 border-mineshaft-600">
             {FORM_TABS.map((tab, index) => (
               <Tab
-                onClick={async () => {
+                onClick={async (e) => {
+                  e.preventDefault();
                   const isEnabled = await isTabEnabled(index);
                   setSelectedTabIndex((prev) => (isEnabled ? index : prev));
                 }}
                 className={({ selected }) =>
-                  `w-30 -mb-[0.14rem] px-4 py-2 text-sm font-medium outline-none disabled:opacity-60 ${
+                  `w-30 -mb-[0.14rem] ${index > selectedTabIndex ? "opacity-30" : ""} px-4 py-2 text-sm font-medium outline-none disabled:opacity-60 ${
                     selected
-                      ? "border-b-2 border-mineshaft-300 text-mineshaft-300"
-                      : "text-mineshaft-400"
+                      ? "border-b-2 border-mineshaft-300 text-mineshaft-200"
+                      : "text-bunker-300"
                   }`
                 }
                 key={tab.key}
               >
-                {tab.name}
+                {index + 1}. {tab.name}
               </Tab>
             ))}
           </Tab.List>
@@ -141,9 +147,39 @@ export const CreateSecretSyncForm = ({ destination, onComplete, onCancel }: Prop
             </Tab.Panel>
             <Tab.Panel>
               <SecretSyncOptionsFields />
+              <Controller
+                control={control}
+                name="isEnabled"
+                render={({ field: { value, onChange }, fieldState: { error } }) => {
+                  return (
+                    <FormControl
+                      helperText={
+                        value
+                          ? "Secrets will automatically be synced when changes occur in the source location"
+                          : "Secrets will not be synced until enabled"
+                      }
+                      isError={Boolean(error)}
+                      errorText={error?.message}
+                    >
+                      <Switch
+                        className="bg-red/50 shadow-inner data-[state=checked]:bg-green/50"
+                        id="secret-sync-enabled"
+                        thumbClassName="bg-mineshaft-800"
+                        onCheckedChange={onChange}
+                        isChecked={value}
+                      >
+                        <p className="w-14">{value ? "Enabled" : "Disabled"}</p>
+                      </Switch>
+                    </FormControl>
+                  );
+                }}
+              />
             </Tab.Panel>
             <Tab.Panel>
               <SecretSyncDetailsFields />
+            </Tab.Panel>
+            <Tab.Panel>
+              <SecretSyncReviewFields />
             </Tab.Panel>
           </Tab.Panels>
         </Tab.Group>

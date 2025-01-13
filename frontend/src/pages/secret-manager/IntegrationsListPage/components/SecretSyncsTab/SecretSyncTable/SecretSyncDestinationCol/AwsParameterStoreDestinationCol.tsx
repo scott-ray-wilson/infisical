@@ -1,7 +1,7 @@
 import { Td, Tooltip } from "@app/components/v2";
-import { AWS_REGIONS } from "@app/helpers/appConnections.ts";
-import { removeTrailingSlash } from "@app/helpers/string.ts";
-import { TAwsParameterStoreSync } from "@app/hooks/api/secretSyncs/types/aws-parameter-store-sync.ts";
+import { AWS_REGIONS } from "@app/helpers/appConnections";
+import { removeTrailingSlash } from "@app/helpers/string";
+import { TAwsParameterStoreSync } from "@app/hooks/api/secretSyncs/types/aws-parameter-store-sync";
 
 type Props = {
   secretSync: TAwsParameterStoreSync;

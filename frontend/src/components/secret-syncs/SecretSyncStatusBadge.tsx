@@ -24,12 +24,12 @@ export const SecretSyncStatusBadge = ({ status }: Props) => {
       text = "Failed";
       icon = faExclamationTriangle;
       break;
-    case SecretSyncStatus.Success:
+    case SecretSyncStatus.Succeeded:
       variant = "success";
       text = "Synced";
       icon = faCheck;
       break;
-    case SecretSyncStatus.Pending:
+    case SecretSyncStatus.Running:
     default:
       variant = "primary";
       text = "Syncing";
@@ -38,7 +38,7 @@ export const SecretSyncStatusBadge = ({ status }: Props) => {
   }
 
   return (
-    <Badge className="flex items-center gap-1.5" variant={variant}>
+    <Badge className="flex w-min items-center gap-1.5" variant={variant}>
       <FontAwesomeIcon icon={icon} />
       <span>{text}</span>
     </Badge>

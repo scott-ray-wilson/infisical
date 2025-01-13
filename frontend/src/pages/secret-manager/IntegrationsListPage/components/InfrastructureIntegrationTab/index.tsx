@@ -1,1 +1,1 @@
-export { InfrastructureIntegrationTab } from "./InfrastructureIntegrationTab.tsx";
+export { InfrastructureIntegrationTab } from "./InfrastructureIntegrationTab";

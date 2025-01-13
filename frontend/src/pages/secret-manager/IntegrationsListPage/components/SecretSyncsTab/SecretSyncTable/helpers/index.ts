@@ -1,5 +1,4 @@
-import { TSecretSync } from "@app/hooks/api/secretSyncs";
-import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
+import { SecretSync, TSecretSync } from "@app/hooks/api/secretSyncs";
 
 export const getSecretSyncDestinationColValues = (secretSync: TSecretSync) => {
   let primaryText: string;

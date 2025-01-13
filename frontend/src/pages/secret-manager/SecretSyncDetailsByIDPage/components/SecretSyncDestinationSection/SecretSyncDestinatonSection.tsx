@@ -1,11 +1,14 @@
+import { ReactNode } from "react";
 import { faEdit } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
-import { Badge, IconButton } from "@app/components/v2";
+import { SecretSyncLabel } from "@app/components/secret-syncs";
+import { IconButton } from "@app/components/v2";
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/context";
-import { AWS_REGIONS } from "@app/helpers/appConnections";
-import { TSecretSync } from "@app/hooks/api/secretSyncs";
+import { APP_CONNECTION_MAP } from "@app/helpers/appConnections";
+import { SecretSync, TSecretSync } from "@app/hooks/api/secretSyncs";
+import { AwsParameterStoreSyncDestinationSection } from "@app/pages/secret-manager/SecretSyncDetailsByIDPage/components/SecretSyncDestinationSection/AwsParameterStoreSyncDestinationSection";
 
 type Props = {
   secretSync: TSecretSync;
@@ -13,10 +16,18 @@ type Props = {
 };
 
 export const SecretSyncDestinationSection = ({ secretSync, onEditDestination }: Props) => {
-  const { syncStatus, lastSyncMessage, lastSyncedAt, name, description, destinationConfig } =
-    secretSync;
+  const { destination, connection } = secretSync;
 
-  const region = AWS_REGIONS.find((r) => r.slug === destinationConfig.region);
+  const app = APP_CONNECTION_MAP[connection.app].name;
+
+  let DestinationComponents: ReactNode;
+  switch (secretSync.destination) {
+    case SecretSync.AWSParameterStore:
+      DestinationComponents = <AwsParameterStoreSyncDestinationSection secretSync={secretSync} />;
+      break;
+    default:
+      throw new Error(`Unhandled Destination Section components: ${destination}`);
+  }
 
   return (
     <div className="flex w-full flex-col gap-3 rounded-lg border border-mineshaft-600 bg-mineshaft-900 px-4 py-3">
@@ -31,7 +42,7 @@ export const SecretSyncDestinationSection = ({ secretSync, onEditDestination }: 
               variant="plain"
               colorSchema="secondary"
               isDisabled={!isAllowed}
-              ariaLabel="Edit sync details"
+              ariaLabel="Edit sync destination"
               onClick={onEditDestination}
             >
               <FontAwesomeIcon icon={faEdit} />
@@ -39,21 +50,9 @@ export const SecretSyncDestinationSection = ({ secretSync, onEditDestination }: 
           )}
         </ProjectPermissionCan>
       </div>
-
-      <div className="flex w-full gap-8">
-        <div>
-          <p className="text-xs font-medium text-mineshaft-400">Region</p>
-          <p className="text-sm text-mineshaft-100">
-            {region?.name}
-            <Badge className="ml-1" variant="success">
-              {region?.slug}{" "}
-            </Badge>
-          </p>
-        </div>
-        <div>
-          <p className="text-xs font-medium text-mineshaft-400">Path</p>
-          <p className="text-sm text-mineshaft-100">{destinationConfig.path}</p>
-        </div>
+      <div className="flex w-full flex-wrap gap-8">
+        <SecretSyncLabel label={`${app} Connection`}>{connection.name}</SecretSyncLabel>
+        {DestinationComponents}
       </div>
     </div>
   );

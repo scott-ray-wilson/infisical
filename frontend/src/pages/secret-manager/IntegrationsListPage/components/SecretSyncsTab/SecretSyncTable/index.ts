@@ -1,1 +1,1 @@
-export * from "./SecretSyncsTable.tsx";
+export * from "./SecretSyncsTable";

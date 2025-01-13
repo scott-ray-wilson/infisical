@@ -3,8 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { Spinner, Tooltip } from "@app/components/v2";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
-import { useSecretSyncOptions } from "@app/hooks/api/secretSyncs";
-import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
+import { SecretSync, useSecretSyncOptions } from "@app/hooks/api/secretSyncs";
 
 type Props = {
   onSelect: (destination: SecretSync) => void;

@@ -127,7 +127,7 @@ const deleteParametersBatch = async (
 };
 
 export const AwsParameterStoreSyncFns = {
-  sync: async (secretSync: TAwsParameterStoreSyncWithConnection, secrets: TSecretMap) => {
+  syncSecrets: async (secretSync: TAwsParameterStoreSyncWithConnection, secrets: TSecretMap) => {
     const { destinationConfig } = secretSync;
 
     const ssm = await getSSM(secretSync);
@@ -165,7 +165,7 @@ export const AwsParameterStoreSyncFns = {
 
     await deleteParametersBatch(ssm, parametersToDelete);
   },
-  import: async (secretSync: TAwsParameterStoreSyncWithConnection): Promise<TSecretMap> => {
+  importSecrets: async (secretSync: TAwsParameterStoreSyncWithConnection): Promise<TSecretMap> => {
     const { destinationConfig } = secretSync;
 
     const ssm = await getSSM(secretSync);
@@ -176,7 +176,7 @@ export const AwsParameterStoreSyncFns = {
       Object.entries(awsParameterStoreSecretsRecord).map(([key, value]) => [key, { value: value.Value ?? "" }])
     );
   },
-  erase: async (secretSync: TAwsParameterStoreSyncWithConnection, secrets: TSecretMap) => {
+  removeSecrets: async (secretSync: TAwsParameterStoreSyncWithConnection, secrets: TSecretMap) => {
     const { destinationConfig } = secretSync;
 
     const ssm = await getSSM(secretSync);

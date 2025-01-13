@@ -2,6 +2,7 @@ import { faEdit } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
+import { SecretSyncLabel } from "@app/components/secret-syncs";
 import { IconButton } from "@app/components/v2";
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/context";
 import { TSecretSync } from "@app/hooks/api/secretSyncs";
@@ -38,14 +39,8 @@ export const SecretSyncSourceSection = ({ secretSync, onEditSource }: Props) => 
         </div>
         <div>
           <div className="space-y-3">
-            <div>
-              <p className="text-xs font-medium text-mineshaft-400">Environment</p>
-              <p className="text-sm text-mineshaft-100">{environment.name}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-mineshaft-400">Path</p>
-              <p className="text-sm text-mineshaft-100">{folder.path}</p>
-            </div>
+            <SecretSyncLabel label="Environment">{environment.name}</SecretSyncLabel>
+            <SecretSyncLabel label="Path">{folder.path}</SecretSyncLabel>
           </div>
         </div>
       </div>

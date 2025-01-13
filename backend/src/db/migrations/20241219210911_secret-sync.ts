@@ -19,21 +19,21 @@ export async function up(knex: Knex): Promise<void> {
       t.uuid("connectionId").notNullable();
       t.foreign("connectionId").references("id").inTable(TableName.AppConnection);
       t.timestamps(true, true, true);
-      // sync
+      // sync secrets to destination
       t.string("syncStatus");
       t.string("lastSyncJobId");
       t.string("lastSyncMessage");
       t.datetime("lastSyncedAt");
-      // import
+      // import secrets from destination
       t.string("importStatus");
       t.string("lastImportJobId");
       t.string("lastImportMessage");
       t.datetime("lastImportedAt");
-      // erase
-      t.string("eraseStatus");
-      t.string("lastEraseJobId");
-      t.string("lastEraseMessage");
-      t.datetime("lastErasedAt");
+      // remove secrets from destination
+      t.string("removeStatus");
+      t.string("lastRemoveJobId");
+      t.string("lastRemoveMessage");
+      t.datetime("lastRemovedAt");
     });
 
     await createOnUpdateTrigger(knex, TableName.SecretSync);

@@ -1,10 +1,10 @@
-import { faEdit } from "@fortawesome/free-solid-svg-icons";
+import { faBan, faEdit } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { format } from "date-fns";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
-import { SecretSyncStatusBadge } from "@app/components/secret-syncs";
-import { IconButton } from "@app/components/v2";
+import { SecretSyncLabel, SecretSyncStatusBadge } from "@app/components/secret-syncs";
+import { Badge, IconButton } from "@app/components/v2";
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/context";
 import { SecretSyncStatus, TSecretSync } from "@app/hooks/api/secretSyncs";
 
@@ -14,7 +14,7 @@ type Props = {
 };
 
 export const SecretSyncDetailsSection = ({ secretSync, onEditDetails }: Props) => {
-  const { syncStatus, lastSyncMessage, lastSyncedAt, name, description } = secretSync;
+  const { syncStatus, lastSyncMessage, lastSyncedAt, name, description, isEnabled } = secretSync;
 
   return (
     <div className="flex w-full flex-col gap-3 rounded-lg border border-mineshaft-600 bg-mineshaft-900 px-4 py-3">
@@ -39,35 +39,27 @@ export const SecretSyncDetailsSection = ({ secretSync, onEditDetails }: Props) =
       </div>
       <div>
         <div className="space-y-3">
-          <div>
-            <p className="text-xs font-medium text-mineshaft-400">Name</p>
-            <p className="text-sm text-mineshaft-100">{name}</p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-mineshaft-400">Description</p>
-            <p className="text-sm text-mineshaft-100">{description || "-"}</p>
-          </div>
-          {syncStatus && (
-            <div>
-              <p className="text-xs font-medium text-mineshaft-400">Status</p>
-              <div className="mt-1 flex items-center">
-                <SecretSyncStatusBadge status={syncStatus} />
-              </div>
-            </div>
-          )}
+          <SecretSyncLabel label="Name">{name}</SecretSyncLabel>
+          <SecretSyncLabel label="Description">{description}</SecretSyncLabel>
+          <SecretSyncLabel label="Status">
+            {isEnabled ? (
+              syncStatus && <SecretSyncStatusBadge status={syncStatus} />
+            ) : (
+              <Badge className="flex w-min items-center gap-1.5">
+                <FontAwesomeIcon icon={faBan} />
+                <span>Disabled</span>
+              </Badge>
+            )}
+          </SecretSyncLabel>
           {lastSyncedAt && (
-            <div>
-              <p className="text-xs font-medium text-mineshaft-400">Last Synced</p>
-              <div className="flex items-center gap-2 text-sm text-mineshaft-100">
-                {format(new Date(lastSyncedAt), "yyyy-MM-dd, hh:mm aaa")}
-              </div>
-            </div>
+            <SecretSyncLabel label="Last Synced">
+              {format(new Date(lastSyncedAt), "yyyy-MM-dd, hh:mm aaa")}
+            </SecretSyncLabel>
           )}
           {syncStatus === SecretSyncStatus.Failed && lastSyncMessage && (
-            <div>
-              <p className="text-xs font-medium text-mineshaft-400">Latest Sync Error</p>
+            <SecretSyncLabel label="Last Sync Error">
               <p className="text-sm text-mineshaft-100">{lastSyncMessage}</p>
-            </div>
+            </SecretSyncLabel>
           )}
         </div>
       </div>

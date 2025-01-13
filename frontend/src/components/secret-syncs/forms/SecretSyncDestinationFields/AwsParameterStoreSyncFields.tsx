@@ -1,10 +1,10 @@
 import { Controller, useFormContext } from "react-hook-form";
-import { components, OptionProps } from "react-select";
+import { components, OptionProps, SingleValue } from "react-select";
 import { faCheckCircle } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { Badge, FilterableSelect, FormControl, Input } from "@app/components/v2";
-import { AWS_REGIONS } from "@app/helpers/appConnections.ts";
+import { AWS_REGIONS } from "@app/helpers/appConnections";
 
 import { TSecretSyncForm } from "../schemas";
 
@@ -33,8 +33,10 @@ export const AwsParameterStoreSyncFields = () => {
         render={({ field: { value, onChange }, fieldState: { error } }) => (
           <FormControl isError={Boolean(error)} errorText={error?.message} label="Region">
             <FilterableSelect
-              value={value}
-              onChange={onChange}
+              value={AWS_REGIONS.find((region) => region.slug === value)}
+              onChange={(option) =>
+                onChange((option as SingleValue<(typeof AWS_REGIONS)[number]>)?.slug)
+              }
               options={AWS_REGIONS}
               placeholder="Select region..."
               getOptionLabel={(option) => option.name}

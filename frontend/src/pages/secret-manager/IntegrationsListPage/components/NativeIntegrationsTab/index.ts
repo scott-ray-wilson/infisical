@@ -1,1 +1,1 @@
-export * from "./NativeIntegrationsTab.tsx";
+export * from "./NativeIntegrationsTab";

@@ -2,8 +2,10 @@ import { faEdit } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
+import { SecretSyncLabel } from "@app/components/secret-syncs";
 import { IconButton } from "@app/components/v2";
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/context";
+import { SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP } from "@app/helpers/secretSyncs";
 import { TSecretSync } from "@app/hooks/api/secretSyncs";
 
 type Props = {
@@ -13,7 +15,9 @@ type Props = {
 
 export const SecretSyncOptionsSection = ({ secretSync, onEditOptions }: Props) => {
   const {
-    syncOptions: { appendSuffix, prependPrefix }
+    destination,
+    syncOptions: { appendSuffix, prependPrefix, initialSyncBehavior },
+    lastSyncedAt
   } = secretSync;
 
   return (
@@ -40,14 +44,13 @@ export const SecretSyncOptionsSection = ({ secretSync, onEditOptions }: Props) =
         </div>
         <div>
           <div className="space-y-3">
-            <div>
-              <p className="text-xs font-medium text-mineshaft-400">Prefix</p>
-              <p className="text-sm text-mineshaft-100">{prependPrefix ?? "-"}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-mineshaft-400">Suffix</p>
-              <p className="text-sm text-mineshaft-100">{appendSuffix ?? "-"}</p>
-            </div>
+            {!lastSyncedAt && (
+              <SecretSyncLabel label="Initial Sync Behavior">
+                {SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP[initialSyncBehavior](destination).name}
+              </SecretSyncLabel>
+            )}
+            <SecretSyncLabel label="Prefix">{prependPrefix}</SecretSyncLabel>
+            <SecretSyncLabel label="Suffix">{appendSuffix}</SecretSyncLabel>
           </div>
         </div>
       </div>

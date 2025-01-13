@@ -1,6 +1,5 @@
 import { AppConnection } from "@app/hooks/api/appConnections/enums";
-
-import { SecretSyncStatus } from "./secret-sync-enums.ts";
+import { SecretSyncInitialSyncBehavior, SecretSyncStatus } from "@app/hooks/api/secretSyncs";
 
 export type TRootSecretSync = {
   id: string;
@@ -18,6 +17,7 @@ export type TRootSecretSync = {
   lastSyncedAt: Date | null;
   lastSyncMessage: string | null;
   syncOptions: {
+    initialSyncBehavior: SecretSyncInitialSyncBehavior;
     prependPrefix?: string;
     appendSuffix?: string;
   };

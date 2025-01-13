@@ -1,8 +1,7 @@
 import { useState } from "react";
 
 import { Modal, ModalContent } from "@app/components/v2";
-import { TSecretSync } from "@app/hooks/api/secretSyncs";
-import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
+import { SecretSync, TSecretSync } from "@app/hooks/api/secretSyncs";
 
 import { CreateSecretSyncForm } from "./forms";
 import { SecretSyncModalHeader } from "./SecretSyncModalHeader";

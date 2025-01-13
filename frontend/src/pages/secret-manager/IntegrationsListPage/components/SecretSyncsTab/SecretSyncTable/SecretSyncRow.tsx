@@ -45,18 +45,18 @@ import { SecretSyncTableCell } from "./SecretSyncTableCell";
 type Props = {
   secretSync: TSecretSync;
   onDelete: (secretSync: TSecretSync) => void;
-  onTriggerSync: (secretSync: TSecretSync) => void;
-  onTriggerImport: (secretSync: TSecretSync) => void;
-  onTriggerErase: (secretSync: TSecretSync) => void;
+  onTriggerSyncSecrets: (secretSync: TSecretSync) => void;
+  onTriggerImportSecrets: (secretSync: TSecretSync) => void;
+  onTriggerRemoveSecrets: (secretSync: TSecretSync) => void;
   onToggleEnable: (secretSync: TSecretSync) => void;
 };
 
 export const SecretSyncRow = ({
   secretSync,
   onDelete,
-  onTriggerSync,
-  onTriggerImport,
-  onTriggerErase,
+  onTriggerSyncSecrets,
+  onTriggerImportSecrets,
+  onTriggerRemoveSecrets,
   onToggleEnable
 }: Props) => {
   const navigate = useNavigate();
@@ -166,7 +166,7 @@ export const SecretSyncRow = ({
               position="left"
               className="max-w-sm"
               content={
-                syncStatus !== SecretSyncStatus.Pending ? (
+                [SecretSyncStatus.Succeeded, SecretSyncStatus.Failed].includes(syncStatus) ? (
                   <div className="flex flex-col gap-2 whitespace-normal py-1">
                     {lastSyncedAt && (
                       <div>
@@ -197,11 +197,13 @@ export const SecretSyncRow = ({
                 ) : undefined
               }
             >
-              <SecretSyncStatusBadge status={syncStatus} />
+              <div>
+                <SecretSyncStatusBadge status={syncStatus} />
+              </div>
             </Tooltip>
           )
         ) : (
-          <Badge className="flex items-center gap-1.5 bg-mineshaft-400/20 text-mineshaft-200">
+          <Badge className="flex items-center gap-1.5">
             <FontAwesomeIcon icon={faBan} />
             <span>Disabled</span>
           </Badge>
@@ -234,7 +236,7 @@ export const SecretSyncRow = ({
                 icon={<FontAwesomeIcon icon={faRotate} />}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onTriggerSync(secretSync);
+                  onTriggerSyncSecrets(secretSync);
                 }}
               >
                 <Tooltip
@@ -252,7 +254,7 @@ export const SecretSyncRow = ({
                 icon={<FontAwesomeIcon icon={faDownload} />}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onTriggerImport(secretSync);
+                  onTriggerImportSecrets(secretSync);
                 }}
               >
                 <Tooltip
@@ -270,16 +272,16 @@ export const SecretSyncRow = ({
                 icon={<FontAwesomeIcon icon={faEraser} />}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onTriggerErase(secretSync);
+                  onTriggerRemoveSecrets(secretSync);
                 }}
               >
                 <Tooltip
                   position="left"
                   sideOffset={42}
-                  content={`Erase secrets synced by Infisical from this ${destinationName} destination.`}
+                  content={`Remove secrets synced by Infisical from this ${destinationName} destination.`}
                 >
                   <div className="flex h-full w-full items-center justify-between gap-1">
-                    <span>Erase Secrets</span>
+                    <span>Remove Secrets</span>
                     <FontAwesomeIcon className="text-bunker-300" size="sm" icon={faInfoCircle} />
                   </div>
                 </Tooltip>

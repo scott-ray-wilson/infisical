@@ -9,7 +9,9 @@ export const SecretSyncDetailsFields = () => {
 
   return (
     <>
-      <p className="mb-4 text-sm text-bunker-300">Give your Secret Sync a name and description.</p>
+      <p className="mb-4 text-sm text-bunker-300">
+        Provide a name and description for this Secret Sync.
+      </p>
       <Controller
         render={({ field: { value, onChange }, fieldState: { error } }) => (
           <FormControl

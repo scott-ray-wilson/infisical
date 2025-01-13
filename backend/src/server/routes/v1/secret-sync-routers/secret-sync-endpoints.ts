@@ -6,7 +6,7 @@ import { startsWithVowel } from "@app/lib/fn";
 import { readLimit, writeLimit } from "@app/server/config/rateLimiter";
 import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
 import { AuthMode } from "@app/services/auth/auth-type";
-import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
+import { SecretSync, SecretSyncImportBehavior } from "@app/services/secret-sync/secret-sync-enums";
 import { SECRET_SYNC_NAME_MAP } from "@app/services/secret-sync/secret-sync-maps";
 import { TSecretSync, TSecretSyncInput } from "@app/services/secret-sync/secret-sync-types";
 
@@ -22,11 +22,11 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
   createSchema: z.ZodType<{
     name: string;
     environment: string;
-    secretPath?: string;
+    secretPath: string;
     projectId: string;
     connectionId: string;
     destinationConfig: I["destinationConfig"];
-    syncOptions?: I["syncOptions"];
+    syncOptions: I["syncOptions"];
     description?: string | null;
   }>;
   updateSchema: z.ZodType<{
@@ -189,10 +189,8 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
-      const { syncOptions = {}, secretPath = "/" } = req.body;
-
       const secretSync = (await server.services.secretSync.createSecretSync(
-        { ...req.body, destination, syncOptions, secretPath },
+        { ...req.body, destination },
         req.permission
       )) as T;
 
@@ -204,9 +202,7 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
           metadata: {
             syncId: secretSync.id,
             destination,
-            ...req.body,
-            syncOptions,
-            secretPath
+            ...req.body
           }
         }
       });
@@ -299,14 +295,14 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
 
   server.route({
     method: "POST",
-    url: "/:syncId/sync",
+    url: "/:syncId/sync-secrets",
     config: {
       rateLimit: writeLimit
     },
     schema: {
       description: `Trigger a sync for the specified ${destinationName} Sync.`,
       params: z.object({
-        syncId: z.string().uuid().describe(SecretSyncs.SYNC(destination).syncId)
+        syncId: z.string().uuid().describe(SecretSyncs.SYNC_SECRETS(destination).syncId)
       }),
       response: {
         200: z.object({ secretSync: responseSchema })
@@ -316,7 +312,7 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     handler: async (req) => {
       const { syncId } = req.params;
 
-      const secretSync = (await server.services.secretSync.triggerSecretSyncById(
+      const secretSync = (await server.services.secretSync.triggerSecretSyncSyncSecretsById(
         {
           syncId,
           destination,
@@ -331,21 +327,19 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
 
   server.route({
     method: "POST",
-    url: "/:syncId/import",
+    url: "/:syncId/import-secrets",
     config: {
       rateLimit: writeLimit
     },
     schema: {
       description: `Import secrets from the specified ${destinationName} Sync destination.`,
       params: z.object({
-        syncId: z.string().uuid().describe(SecretSyncs.IMPORT(destination).syncId)
+        syncId: z.string().uuid().describe(SecretSyncs.IMPORT_SECRETS(destination).syncId)
       }),
       querystring: z.object({
-        shouldOverwrite: z
-          .enum(["true", "false"])
-          .optional()
-          .transform((val) => val === "true")
-          .describe(SecretSyncs.IMPORT(destination).shouldOverwrite)
+        importBehavior: z
+          .nativeEnum(SecretSyncImportBehavior)
+          .describe(SecretSyncs.IMPORT_SECRETS(destination).importBehavior)
       }),
       response: {
         200: z.object({ secretSync: responseSchema })
@@ -354,13 +348,13 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
       const { syncId } = req.params;
-      const { shouldOverwrite } = req.query;
+      const { importBehavior } = req.query;
 
-      const secretSync = (await server.services.secretSync.triggerSecretSyncImportById(
+      const secretSync = (await server.services.secretSync.triggerSecretSyncImportSecretsById(
         {
           syncId,
           destination,
-          shouldOverwrite
+          importBehavior
         },
         req.permission
       )) as T;
@@ -371,14 +365,14 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
 
   server.route({
     method: "POST",
-    url: "/:syncId/erase",
+    url: "/:syncId/remove-secrets",
     config: {
       rateLimit: writeLimit
     },
     schema: {
-      description: `Erase synced secrets from the specified ${destinationName} Sync destination.`,
+      description: `Remove previously synced secrets from the specified ${destinationName} Sync destination.`,
       params: z.object({
-        syncId: z.string().uuid().describe(SecretSyncs.ERASE(destination).syncId)
+        syncId: z.string().uuid().describe(SecretSyncs.REMOVE_SECRETS(destination).syncId)
       }),
       response: {
         200: z.object({ secretSync: responseSchema })
@@ -388,7 +382,7 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     handler: async (req) => {
       const { syncId } = req.params;
 
-      const secretSync = (await server.services.secretSync.triggerSecretSyncEraseById(
+      const secretSync = (await server.services.secretSync.triggerSecretSyncRemoveSecretsById(
         {
           syncId,
           destination

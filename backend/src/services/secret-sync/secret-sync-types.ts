@@ -3,7 +3,7 @@ import { Job } from "bullmq";
 import { TCreateAuditLogDTO } from "@app/ee/services/audit-log/audit-log-types";
 import { QueueJobs } from "@app/queue";
 import { TSecretSyncDALFactory } from "@app/services/secret-sync/secret-sync-dal";
-import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
+import { SecretSync, SecretSyncImportBehavior } from "@app/services/secret-sync/secret-sync-enums";
 
 import {
   TAwsParameterStoreSync,
@@ -56,15 +56,16 @@ export type TDeleteSecretSyncDTO = {
 type AuditLogInfo = Pick<TCreateAuditLogDTO, "userAgent" | "userAgentType" | "ipAddress" | "actor">;
 
 export enum SecretSyncStatus {
-  Pending = "pending",
-  Success = "success",
+  Queued = "queued",
+  Running = "running",
+  Succeeded = "succeeded",
   Failed = "failed"
 }
 
 export enum SecretSyncAction {
-  Sync = "sync",
-  Import = "import",
-  Erase = "erase"
+  SyncSecrets = "sync-secrets",
+  ImportSecrets = "import-secrets",
+  RemoveSecrets = "remove-secrets"
 }
 
 export type TSecretSyncRaw = NonNullable<Awaited<ReturnType<TSecretSyncDALFactory["findById"]>>>;
@@ -75,33 +76,33 @@ export type TQueueSecretSyncsByPathDTO = {
   projectId: string;
 };
 
-export type TQueueSecretSyncByIdDTO = {
+export type TQueueSecretSyncSyncSecretsByIdDTO = {
   syncId: string;
   auditLogInfo?: AuditLogInfo;
 };
 
-export type TTriggerSecretSyncByIdDTO = {
+export type TTriggerSecretSyncSyncSecretsByIdDTO = {
   destination: SecretSync;
-} & TQueueSecretSyncByIdDTO;
+} & TQueueSecretSyncSyncSecretsByIdDTO;
 
-export type TQueueSecretSyncImportByIdDTO = {
+export type TQueueSecretSyncImportSecretsByIdDTO = {
   syncId: string;
-  shouldOverwrite: boolean;
+  importBehavior: SecretSyncImportBehavior;
   auditLogInfo?: AuditLogInfo;
 };
 
-export type TTriggerSecretSyncImportByIdDTO = {
+export type TTriggerSecretSyncImportSecretsByIdDTO = {
   destination: SecretSync;
-} & TQueueSecretSyncImportByIdDTO;
+} & TQueueSecretSyncImportSecretsByIdDTO;
 
-export type TQueueSecretSyncEraseByIdDTO = {
+export type TQueueSecretSyncRemoveSecretsByIdDTO = {
   syncId: string;
   auditLogInfo?: AuditLogInfo;
 };
 
-export type TTriggerSecretSyncEraseByIdDTO = {
+export type TTriggerSecretSyncRemoveSecretsByIdDTO = {
   destination: SecretSync;
-} & TQueueSecretSyncEraseByIdDTO;
+} & TQueueSecretSyncRemoveSecretsByIdDTO;
 
 export type TQueueSendSecretSyncActionFailedNotificationsDTO = {
   secretSync: TSecretSyncRaw;
@@ -109,25 +110,25 @@ export type TQueueSendSecretSyncActionFailedNotificationsDTO = {
   action: SecretSyncAction;
 };
 
-export type TSecretSyncDTO = Job<TQueueSecretSyncByIdDTO, void, QueueJobs.AppConnectionSecretSync>;
-export type TSecretSyncImportDTO = Job<TQueueSecretSyncImportByIdDTO, void, QueueJobs.AppConnectionSecretSync>;
-export type TSecretSyncEraseDTO = Job<TQueueSecretSyncEraseByIdDTO, void, QueueJobs.AppConnectionSecretSync>;
+export type TSecretSyncSyncSecretsDTO = Job<TQueueSecretSyncSyncSecretsByIdDTO, void, QueueJobs.SecretSyncSyncSecrets>;
+export type TSecretSyncImportSecretsDTO = Job<
+  TQueueSecretSyncImportSecretsByIdDTO,
+  void,
+  QueueJobs.SecretSyncSyncSecrets
+>;
+export type TSecretSyncRemoveSecretsDTO = Job<
+  TQueueSecretSyncRemoveSecretsByIdDTO,
+  void,
+  QueueJobs.SecretSyncSyncSecrets
+>;
 
 export type TSendSecretSyncFailedNotificationsJobDTO = Job<
   TQueueSendSecretSyncActionFailedNotificationsDTO,
   void,
-  QueueJobs.AppConnectionSendSecretSyncActionFailedNotifications
+  QueueJobs.SecretSyncSendActionFailedNotifications
 >;
 
 export type TSecretMap = Record<
   string,
   { value: string; comment?: string; skipMultilineEncoding?: boolean | null | undefined }
 >;
-
-export type TSecretSyncGetSecrets = {
-  projectId: string;
-  folderId: string;
-  secretPath: string;
-  environmentSlug: string;
-  includeImports?: boolean;
-};

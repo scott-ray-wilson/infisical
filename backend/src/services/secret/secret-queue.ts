@@ -105,7 +105,7 @@ type TSecretQueueFactoryDep = {
   auditLogService: Pick<TAuditLogServiceFactory, "createAuditLog">;
   orgService: Pick<TOrgServiceFactory, "addGhostUser">;
   projectUserMembershipRoleDAL: Pick<TProjectUserMembershipRoleDALFactory, "create">;
-  secretSyncQueue: Pick<TSecretSyncQueueFactory, "queueSecretSyncsByPath">;
+  secretSyncQueue: Pick<TSecretSyncQueueFactory, "queueSecretSyncsSyncSecretsByPath">;
 };
 
 export type TGetSecrets = {
@@ -623,7 +623,7 @@ export const secretQueueFactory = ({
       }
     );
 
-    await secretSyncQueue.queueSecretSyncsByPath({ projectId, environmentSlug: environment, secretPath });
+    await secretSyncQueue.queueSecretSyncsSyncSecretsByPath({ projectId, environmentSlug: environment, secretPath });
 
     await syncIntegrations({ secretPath, projectId, environment, deDupeQueue, isManual: false });
     if (!excludeReplication) {

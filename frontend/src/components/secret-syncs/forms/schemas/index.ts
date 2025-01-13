@@ -1,1 +1,1 @@
-export * from "./secret-sync-schema.ts";
+export * from "./secret-sync-schema";

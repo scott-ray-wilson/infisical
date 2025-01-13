@@ -1,5 +1,5 @@
 import { AppConnection } from "@app/hooks/api/appConnections/enums";
-import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
+import { SecretSync } from "@app/hooks/api/secretSyncs";
 
 export type TSecretSyncOptionBase = {
   name: string;

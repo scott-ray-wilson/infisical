@@ -1,6 +1,6 @@
 import { useFormContext } from "react-hook-form";
 
-import { SecretSync } from "@app/hooks/api/secretSyncs/enums.ts";
+import { SecretSync } from "@app/hooks/api/secretSyncs";
 
 import { TSecretSyncForm } from "../schemas";
 import { AwsParameterStoreSyncFields } from "./AwsParameterStoreSyncFields";

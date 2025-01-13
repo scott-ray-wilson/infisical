@@ -1,7 +1,7 @@
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 
 import { apiRequest } from "@app/config/request";
-import { SecretSync } from "@app/hooks/api/secretSyncs/enums";
+import { SecretSync } from "@app/hooks/api/secretSyncs";
 import {
   TListSecretSyncOptions,
   TListSecretSyncs,

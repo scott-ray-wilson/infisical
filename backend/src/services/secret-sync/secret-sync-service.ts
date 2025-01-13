@@ -20,9 +20,9 @@ import {
   TFindSecretSyncByNameDTO,
   TListSecretSyncsByProjectId,
   TSecretSync,
-  TTriggerSecretSyncByIdDTO,
-  TTriggerSecretSyncEraseByIdDTO,
-  TTriggerSecretSyncImportByIdDTO,
+  TTriggerSecretSyncImportSecretsByIdDTO,
+  TTriggerSecretSyncRemoveSecretsByIdDTO,
+  TTriggerSecretSyncSyncSecretsByIdDTO,
   TUpdateSecretSyncDTO
 } from "@app/services/secret-sync/secret-sync-types";
 
@@ -39,7 +39,7 @@ type TSecretSyncServiceFactoryDep = {
   keyStore: Pick<TKeyStoreFactory, "getItem">;
   secretSyncQueue: Pick<
     TSecretSyncQueueFactory,
-    "queueSecretSyncById" | "queueSecretSyncImportById" | "queueSecretSyncEraseById"
+    "queueSecretSyncSyncSecretsById" | "queueSecretSyncImportSecretsById" | "queueSecretSyncRemoveSecretsById"
   >;
   licenseService: Pick<TLicenseServiceFactory, "getPlan">; // TODO: remove once launched
 };
@@ -245,7 +245,7 @@ export const secretSyncServiceFactory = ({
       return sync;
     });
 
-    if (secretSync.isEnabled) await secretSyncQueue.queueSecretSyncById({ syncId: secretSync.id });
+    if (secretSync.isEnabled) await secretSyncQueue.queueSecretSyncSyncSecretsById({ syncId: secretSync.id });
 
     return secretSync as TSecretSync;
   };
@@ -332,7 +332,7 @@ export const secretSyncServiceFactory = ({
       return updatedSync;
     });
 
-    if (updatedSecretSync.isEnabled) await secretSyncQueue.queueSecretSyncById({ syncId: secretSync.id });
+    if (updatedSecretSync.isEnabled) await secretSyncQueue.queueSecretSyncSyncSecretsById({ syncId: secretSync.id });
 
     return updatedSecretSync as TSecretSync;
   };
@@ -369,8 +369,8 @@ export const secretSyncServiceFactory = ({
     return secretSync as TSecretSync;
   };
 
-  const triggerSecretSyncById = async (
-    { syncId, destination, ...params }: TTriggerSecretSyncByIdDTO,
+  const triggerSecretSyncSyncSecretsById = async (
+    { syncId, destination, ...params }: TTriggerSecretSyncSyncSecretsByIdDTO,
     actor: OrgServiceActor
   ) => {
     await checkSecretSyncAvailability(actor.orgId);
@@ -399,13 +399,13 @@ export const secretSyncServiceFactory = ({
         message: `Secret sync with ID "${secretSync.id}" is not configured for ${SECRET_SYNC_NAME_MAP[destination]}`
       });
 
-    await secretSyncQueue.queueSecretSyncById({ syncId, ...params });
+    await secretSyncQueue.queueSecretSyncSyncSecretsById({ syncId, ...params });
 
     return secretSync as TSecretSync;
   };
 
-  const triggerSecretSyncImportById = async (
-    { syncId, destination, ...params }: TTriggerSecretSyncImportByIdDTO,
+  const triggerSecretSyncImportSecretsById = async (
+    { syncId, destination, ...params }: TTriggerSecretSyncImportSecretsByIdDTO,
     actor: OrgServiceActor
   ) => {
     await checkSecretSyncAvailability(actor.orgId);
@@ -439,13 +439,13 @@ export const secretSyncServiceFactory = ({
     if (isSyncJobRunning)
       throw new BadRequestError({ message: `A job for this sync is already in progress. Please try again shortly.` });
 
-    await secretSyncQueue.queueSecretSyncImportById({ syncId, ...params });
+    await secretSyncQueue.queueSecretSyncImportSecretsById({ syncId, ...params });
 
     return secretSync as TSecretSync;
   };
 
-  const triggerSecretSyncEraseById = async (
-    { syncId, destination, ...params }: TTriggerSecretSyncEraseByIdDTO,
+  const triggerSecretSyncRemoveSecretsById = async (
+    { syncId, destination, ...params }: TTriggerSecretSyncRemoveSecretsByIdDTO,
     actor: OrgServiceActor
   ) => {
     await checkSecretSyncAvailability(actor.orgId);
@@ -479,7 +479,7 @@ export const secretSyncServiceFactory = ({
     if (isSyncJobRunning)
       throw new BadRequestError({ message: `A job for this sync is already in progress. Please try again shortly.` });
 
-    await secretSyncQueue.queueSecretSyncEraseById({ syncId, ...params });
+    await secretSyncQueue.queueSecretSyncRemoveSecretsById({ syncId, ...params });
 
     return secretSync as TSecretSync;
   };
@@ -492,8 +492,8 @@ export const secretSyncServiceFactory = ({
     createSecretSync,
     updateSecretSync,
     deleteSecretSync,
-    triggerSecretSyncById,
-    triggerSecretSyncImportById,
-    triggerSecretSyncEraseById
+    triggerSecretSyncSyncSecretsById,
+    triggerSecretSyncImportSecretsById,
+    triggerSecretSyncRemoveSecretsById
   };
 };

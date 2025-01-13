@@ -25,22 +25,22 @@ import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-fold
 import { TSecretImportDALFactory } from "@app/services/secret-import/secret-import-dal";
 import { fnSecretsV2FromImports } from "@app/services/secret-import/secret-import-fns";
 import { TSecretSyncDALFactory } from "@app/services/secret-sync/secret-sync-dal";
-import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
+import { SecretSync, SecretSyncImportBehavior } from "@app/services/secret-sync/secret-sync-enums";
 import { SecretSyncFns } from "@app/services/secret-sync/secret-sync-fns";
 import { SECRET_SYNC_NAME_MAP } from "@app/services/secret-sync/secret-sync-maps";
 import {
   SecretSyncAction,
   SecretSyncStatus,
-  TQueueSecretSyncByIdDTO,
-  TQueueSecretSyncEraseByIdDTO,
-  TQueueSecretSyncImportByIdDTO,
+  TQueueSecretSyncImportSecretsByIdDTO,
+  TQueueSecretSyncRemoveSecretsByIdDTO,
   TQueueSecretSyncsByPathDTO,
+  TQueueSecretSyncSyncSecretsByIdDTO,
   TQueueSendSecretSyncActionFailedNotificationsDTO,
   TSecretMap,
-  TSecretSyncDTO,
-  TSecretSyncEraseDTO,
-  TSecretSyncImportDTO,
+  TSecretSyncImportSecretsDTO,
   TSecretSyncRaw,
+  TSecretSyncRemoveSecretsDTO,
+  TSecretSyncSyncSecretsDTO,
   TSecretSyncWithConnection,
   TSendSecretSyncFailedNotificationsJobDTO
 } from "@app/services/secret-sync/secret-sync-types";
@@ -108,16 +108,16 @@ export const secretSyncQueueFactory = ({
   const appCfg = getConfig();
 
   const integrationMeter = opentelemetry.metrics.getMeter("SecretSyncs");
-  const syncErrorHistogram = integrationMeter.createHistogram("secret_sync_errors", {
-    description: "Secret Sync - sync errors",
+  const syncSecretsErrorHistogram = integrationMeter.createHistogram("secret_sync_sync_secrets_errors", {
+    description: "Secret Sync - sync secrets errors",
     unit: "1"
   });
-  const importErrorHistogram = integrationMeter.createHistogram("secret_sync_import_errors", {
-    description: "Secret Sync - import errors",
+  const importSecretsErrorHistogram = integrationMeter.createHistogram("secret_sync_import_secrets_errors", {
+    description: "Secret Sync - import secrets errors",
     unit: "1"
   });
-  const eraseErrorHistogram = integrationMeter.createHistogram("secret_sync_erase_errors", {
-    description: "Secret Sync - erase errors",
+  const removeSecretsErrorHistogram = integrationMeter.createHistogram("secret_sync_remove_secrets_errors", {
+    description: "Secret Sync - remove secrets errors",
     unit: "1"
   });
 
@@ -232,8 +232,8 @@ export const secretSyncQueueFactory = ({
     return secretMap;
   };
 
-  const queueSecretSyncById = async (payload: TQueueSecretSyncByIdDTO) =>
-    queueService.queue(QueueName.AppConnectionSecretSync, QueueJobs.AppConnectionSecretSync, payload, {
+  const queueSecretSyncSyncSecretsById = async (payload: TQueueSecretSyncSyncSecretsByIdDTO) =>
+    queueService.queue(QueueName.AppConnectionSecretSync, QueueJobs.SecretSyncSyncSecrets, payload, {
       attempts: 5,
       delay: 1000,
       backoff: {
@@ -244,8 +244,8 @@ export const secretSyncQueueFactory = ({
       removeOnFail: true
     });
 
-  const queueSecretSyncImportById = async (payload: TQueueSecretSyncImportByIdDTO) =>
-    queueService.queue(QueueName.AppConnectionSecretSync, QueueJobs.AppConnectionSecretSyncImport, payload, {
+  const queueSecretSyncImportSecretsById = async (payload: TQueueSecretSyncImportSecretsByIdDTO) =>
+    queueService.queue(QueueName.AppConnectionSecretSync, QueueJobs.SecretSyncImportSecrets, payload, {
       attempts: 5,
       delay: 1000,
       backoff: {
@@ -256,8 +256,8 @@ export const secretSyncQueueFactory = ({
       removeOnFail: true
     });
 
-  const queueSecretSyncEraseById = async (payload: TQueueSecretSyncEraseByIdDTO) =>
-    queueService.queue(QueueName.AppConnectionSecretSync, QueueJobs.AppConnectionSecretSyncErase, payload, {
+  const queueSecretSyncRemoveSecretsById = async (payload: TQueueSecretSyncRemoveSecretsByIdDTO) =>
+    queueService.queue(QueueName.AppConnectionSecretSync, QueueJobs.SecretSyncRemoveSecrets, payload, {
       attempts: 5,
       delay: 1000,
       backoff: {
@@ -273,7 +273,7 @@ export const secretSyncQueueFactory = ({
 
     await queueService.queue(
       QueueName.AppConnectionSecretSync,
-      QueueJobs.AppConnectionSendSecretSyncActionFailedNotifications,
+      QueueJobs.SecretSyncSendActionFailedNotifications,
       payload,
       {
         jobId: `secret-sync-${payload.secretSync.id}-failed-notifications`,
@@ -289,7 +289,7 @@ export const secretSyncQueueFactory = ({
     );
   };
 
-  const $syncSecrets = async (job: TSecretSyncDTO) => {
+  const $syncSecrets = async (job: TSecretSyncSyncSecretsDTO) => {
     const {
       data: { syncId, auditLogInfo }
     } = job;
@@ -299,7 +299,7 @@ export const secretSyncQueueFactory = ({
     if (!secretSync) throw new Error(`Cannot find secret sync with ID ${syncId}`);
 
     await secretSyncDAL.updateById(syncId, {
-      syncStatus: SecretSyncStatus.Pending
+      syncStatus: SecretSyncStatus.Running
     });
 
     logger.info(
@@ -323,7 +323,7 @@ export const secretSyncQueueFactory = ({
 
       const secretMap = await $getSecrets(secretSync);
 
-      await SecretSyncFns.sync(
+      await SecretSyncFns.syncSecrets(
         {
           ...secretSync,
           connection: {
@@ -342,7 +342,7 @@ export const secretSyncQueueFactory = ({
       );
 
       if (appCfg.OTEL_TELEMETRY_COLLECTION_ENABLED) {
-        syncErrorHistogram.record(1, {
+        syncSecretsErrorHistogram.record(1, {
           version: 1,
           destination: secretSync.destination,
           syncId: secretSync.id,
@@ -365,7 +365,7 @@ export const secretSyncQueueFactory = ({
       throw err;
     } finally {
       const ranAt = new Date();
-      const syncStatus = isSynced ? SecretSyncStatus.Success : SecretSyncStatus.Failed;
+      const syncStatus = isSynced ? SecretSyncStatus.Succeeded : SecretSyncStatus.Failed;
 
       await auditLogService.createAuditLog({
         projectId: secretSync.projectId,
@@ -376,7 +376,7 @@ export const secretSyncQueueFactory = ({
           }
         }),
         event: {
-          type: EventType.SYNC_SECRET_SYNC,
+          type: EventType.SECRET_SYNC_SYNC_SECRETS,
           metadata: {
             syncId: secretSync.id,
             syncOptions: secretSync.syncOptions,
@@ -403,7 +403,7 @@ export const secretSyncQueueFactory = ({
         if (!isSynced) {
           await $queueSendSecretSyncFailedNotifications({
             secretSync: updatedSecretSync,
-            action: SecretSyncAction.Sync
+            action: SecretSyncAction.SyncSecrets
           });
         }
       }
@@ -412,9 +412,9 @@ export const secretSyncQueueFactory = ({
     logger.info("SecretSync Sync Job with ID %s Completed", job.id);
   };
 
-  const $importSecrets = async (job: TSecretSyncImportDTO) => {
+  const $importSecrets = async (job: TSecretSyncImportSecretsDTO) => {
     const {
-      data: { syncId, auditLogInfo, shouldOverwrite }
+      data: { syncId, auditLogInfo, importBehavior }
     } = job;
 
     const secretSync = await secretSyncDAL.findById(syncId);
@@ -422,14 +422,14 @@ export const secretSyncQueueFactory = ({
     if (!secretSync) throw new Error(`Cannot find secret sync with ID ${syncId}`);
 
     await secretSyncDAL.updateById(syncId, {
-      importStatus: SecretSyncStatus.Pending
+      importStatus: SecretSyncStatus.Running
     });
 
     logger.info(
       `SecretSync Import [syncId=${secretSync.id}] [destination=${secretSync.destination}] [projectId=${secretSync.projectId}] [folderId=${secretSync.folderId}] [connectionId=${secretSync.connectionId}]`
     );
 
-    let isImported = false;
+    let isSuccess = false;
     let importMessage: string | null = null;
     const isFinalAttempt = job.attemptsStarted === job.opts.attempts;
 
@@ -446,7 +446,7 @@ export const secretSyncQueueFactory = ({
         kmsService
       });
 
-      const importedSecrets = await SecretSyncFns.import({
+      const importedSecrets = await SecretSyncFns.importSecrets({
         ...secretSync,
         connection: {
           ...secretSync.connection,
@@ -484,7 +484,7 @@ export const secretSyncQueueFactory = ({
           });
         }
 
-        if (shouldOverwrite && secretsToUpdate.length) {
+        if (importBehavior === SecretSyncImportBehavior.PrioritizeDestination && secretsToUpdate.length) {
           await $updateManySecretsRawFn({
             projectId,
             path: secretSync.folder.path,
@@ -494,7 +494,7 @@ export const secretSyncQueueFactory = ({
         }
       }
 
-      isImported = true;
+      isSuccess = true;
     } catch (err) {
       logger.error(
         err,
@@ -502,7 +502,7 @@ export const secretSyncQueueFactory = ({
       );
 
       if (appCfg.OTEL_TELEMETRY_COLLECTION_ENABLED) {
-        importErrorHistogram.record(1, {
+        importSecretsErrorHistogram.record(1, {
           version: 1,
           destination: secretSync.destination,
           syncId: secretSync.id,
@@ -525,7 +525,7 @@ export const secretSyncQueueFactory = ({
       throw err;
     } finally {
       const ranAt = new Date();
-      const importStatus = isImported ? SecretSyncStatus.Success : SecretSyncStatus.Failed;
+      const importStatus = isSuccess ? SecretSyncStatus.Succeeded : SecretSyncStatus.Failed;
 
       await auditLogService.createAuditLog({
         projectId: secretSync.projectId,
@@ -536,7 +536,7 @@ export const secretSyncQueueFactory = ({
           }
         }),
         event: {
-          type: EventType.IMPORT_SECRET_SYNC,
+          type: EventType.SECRET_SYNC_IMPORT_SECRETS,
           metadata: {
             syncId: secretSync.id,
             syncOptions: secretSync.syncOptions,
@@ -547,23 +547,24 @@ export const secretSyncQueueFactory = ({
             jobRanAt: ranAt,
             jobId: job.id!,
             importStatus,
-            importMessage
+            importMessage,
+            importBehavior
           }
         }
       });
 
-      if (isImported || isFinalAttempt) {
+      if (isSuccess || isFinalAttempt) {
         const updatedSecretSync = await secretSyncDAL.updateById(secretSync.id, {
           importStatus,
           lastImportJobId: job.id,
           lastImportMessage: importMessage,
-          lastImportedAt: isImported ? ranAt : undefined
+          lastImportedAt: isSuccess ? ranAt : undefined
         });
 
-        if (!isImported) {
+        if (!isSuccess) {
           await $queueSendSecretSyncFailedNotifications({
             secretSync: updatedSecretSync,
-            action: SecretSyncAction.Import
+            action: SecretSyncAction.ImportSecrets
           });
         }
       }
@@ -572,7 +573,7 @@ export const secretSyncQueueFactory = ({
     logger.info("SecretSync Import Job with ID %s Completed", job.id);
   };
 
-  const $eraseSecrets = async (job: TSecretSyncEraseDTO) => {
+  const $removeSecrets = async (job: TSecretSyncRemoveSecretsDTO) => {
     const {
       data: { syncId, auditLogInfo }
     } = job;
@@ -582,15 +583,15 @@ export const secretSyncQueueFactory = ({
     if (!secretSync) throw new Error(`Cannot find secret sync with ID ${syncId}`);
 
     await secretSyncDAL.updateById(syncId, {
-      eraseStatus: SecretSyncStatus.Pending
+      removeStatus: SecretSyncStatus.Running
     });
 
     logger.info(
-      `SecretSync Erase [syncId=${secretSync.id}] [destination=${secretSync.destination}] [projectId=${secretSync.projectId}] [folderId=${secretSync.folderId}] [connectionId=${secretSync.connectionId}]`
+      `SecretSync Remove [syncId=${secretSync.id}] [destination=${secretSync.destination}] [projectId=${secretSync.projectId}] [folderId=${secretSync.folderId}] [connectionId=${secretSync.connectionId}]`
     );
 
-    let isErased = false;
-    let eraseMessage: string | null = null;
+    let isSuccess = false;
+    let removeMessage: string | null = null;
     const isFinalAttempt = job.attemptsStarted === job.opts.attempts;
 
     try {
@@ -606,7 +607,7 @@ export const secretSyncQueueFactory = ({
 
       const secretMap = await $getSecrets(secretSync);
 
-      await SecretSyncFns.erase(
+      await SecretSyncFns.removeSecrets(
         {
           ...secretSync,
           connection: {
@@ -617,15 +618,15 @@ export const secretSyncQueueFactory = ({
         secretMap
       );
 
-      isErased = true;
+      isSuccess = true;
     } catch (err) {
       logger.error(
         err,
-        `SecretSync Erase Error [syncId=${secretSync.id}] [destination=${secretSync.destination}] [projectId=${secretSync.projectId}] [folderId=${secretSync.folderId}] [connectionId=${secretSync.connectionId}]`
+        `SecretSync Remove Error [syncId=${secretSync.id}] [destination=${secretSync.destination}] [projectId=${secretSync.projectId}] [folderId=${secretSync.folderId}] [connectionId=${secretSync.connectionId}]`
       );
 
       if (appCfg.OTEL_TELEMETRY_COLLECTION_ENABLED) {
-        eraseErrorHistogram.record(1, {
+        removeSecretsErrorHistogram.record(1, {
           version: 1,
           destination: secretSync.destination,
           syncId: secretSync.id,
@@ -636,7 +637,7 @@ export const secretSyncQueueFactory = ({
         });
       }
 
-      eraseMessage =
+      removeMessage =
         // eslint-disable-next-line no-nested-ternary
         (err instanceof AxiosError
           ? err?.response?.data
@@ -648,7 +649,7 @@ export const secretSyncQueueFactory = ({
       throw err;
     } finally {
       const ranAt = new Date();
-      const eraseStatus = isErased ? SecretSyncStatus.Success : SecretSyncStatus.Failed;
+      const removeStatus = isSuccess ? SecretSyncStatus.Succeeded : SecretSyncStatus.Failed;
 
       await auditLogService.createAuditLog({
         projectId: secretSync.projectId,
@@ -659,7 +660,7 @@ export const secretSyncQueueFactory = ({
           }
         }),
         event: {
-          type: EventType.ERASE_SECRET_SYNC,
+          type: EventType.SECRET_SYNC_REMOVE_SECRETS,
           metadata: {
             syncId: secretSync.id,
             syncOptions: secretSync.syncOptions,
@@ -669,30 +670,30 @@ export const secretSyncQueueFactory = ({
             connectionId: secretSync.connectionId,
             jobRanAt: ranAt,
             jobId: job.id!,
-            eraseStatus,
-            eraseMessage
+            removeStatus,
+            removeMessage
           }
         }
       });
 
-      if (isErased || isFinalAttempt) {
+      if (isSuccess || isFinalAttempt) {
         const updatedSecretSync = await secretSyncDAL.updateById(secretSync.id, {
-          eraseStatus,
-          lastEraseJobId: job.id,
-          lastEraseMessage: eraseMessage,
-          lastErasedAt: isErased ? ranAt : undefined
+          removeStatus,
+          lastRemoveJobId: job.id,
+          lastRemoveMessage: removeMessage,
+          lastRemovedAt: isSuccess ? ranAt : undefined
         });
 
-        if (!isErased) {
+        if (!isSuccess) {
           await $queueSendSecretSyncFailedNotifications({
             secretSync: updatedSecretSync,
-            action: SecretSyncAction.Erase
+            action: SecretSyncAction.RemoveSecrets
           });
         }
       }
     }
 
-    logger.info("SecretSync Erase Job with ID %s Completed", job.id);
+    logger.info("SecretSync Remove Job with ID %s Completed", job.id);
   };
 
   const $sendSecretSyncFailedNotifications = async (job: TSendSecretSyncFailedNotificationsJobDTO) => {
@@ -700,7 +701,7 @@ export const secretSyncQueueFactory = ({
       data: { secretSync, auditLogInfo, action }
     } = job;
 
-    const { projectId, destination, name, folder, lastSyncMessage, lastEraseMessage, lastImportMessage, environment } =
+    const { projectId, destination, name, folder, lastSyncMessage, lastRemoveMessage, lastImportMessage, environment } =
       secretSync;
 
     const projectMembers = await projectMembershipDAL.findAllProjectMembers(projectId);
@@ -720,48 +721,49 @@ export const secretSyncQueueFactory = ({
 
     const syncDestination = SECRET_SYNC_NAME_MAP[destination as SecretSync];
 
-    let subject: string;
+    let actionLabel: string;
     let failureMessage: string | null | undefined;
-    let content: string;
 
     switch (action) {
-      case SecretSyncAction.Import:
-        subject = "Import";
+      case SecretSyncAction.ImportSecrets:
+        actionLabel = "Import";
         failureMessage = lastImportMessage;
-        content = `Your ${syncDestination} Sync named "${name}" failed while attempting to import secrets.`;
+
         break;
-      case SecretSyncAction.Erase:
-        subject = "Erase";
-        failureMessage = lastEraseMessage;
-        content = `Your ${syncDestination} Sync named "${name}" failed while attempting to erase secrets.`;
+      case SecretSyncAction.RemoveSecrets:
+        actionLabel = "Remove";
+        failureMessage = lastRemoveMessage;
+
         break;
-      case SecretSyncAction.Sync:
+      case SecretSyncAction.SyncSecrets:
       default:
-        subject = `Sync`;
+        actionLabel = `Sync`;
         failureMessage = lastSyncMessage;
-        content = `Your ${syncDestination} Sync named "${name}" failed to sync.`;
         break;
     }
 
     await smtpService.sendMail({
       recipients: projectAdmins.map((member) => member.user.email!).filter(Boolean),
       template: SmtpTemplates.SecretSyncFailed,
-      subjectLine: `Secret Sync Failed to ${subject} Secrets`,
+      subjectLine: `Secret Sync Failed to ${actionLabel} Secrets`,
       substitutions: {
         syncName: name,
         syncDestination,
-        content,
+        content: `Your ${syncDestination} Sync named "${name}" failed while attempting to ${action.toLowerCase()} secrets.`,
         failureMessage,
         secretPath: folder.path,
         environment: environment.name,
         projectName: project.name,
-        // TODO (scott): verify this is still the URL after bare react change
         syncUrl: `${appCfg.SITE_URL}/integrations/secret-syncs/${destination}/${secretSync.id}`
       }
     });
   };
 
-  const queueSecretSyncsByPath = async ({ secretPath, projectId, environmentSlug }: TQueueSecretSyncsByPathDTO) => {
+  const queueSecretSyncsSyncSecretsByPath = async ({
+    secretPath,
+    projectId,
+    environmentSlug
+  }: TQueueSecretSyncsByPathDTO) => {
     const folder = await folderDAL.findBySecretPath(projectId, environmentSlug, secretPath);
 
     if (!folder)
@@ -771,32 +773,41 @@ export const secretSyncQueueFactory = ({
 
     const secretSyncs = await secretSyncDAL.find({ folderId: folder.id, isEnabled: true });
 
-    await Promise.all(secretSyncs.map((secretSync) => queueSecretSyncById({ syncId: secretSync.id })));
+    await Promise.all(secretSyncs.map((secretSync) => queueSecretSyncSyncSecretsById({ syncId: secretSync.id })));
   };
 
   queueService.start(QueueName.AppConnectionSecretSync, async (job) => {
-    if (job.name === QueueJobs.AppConnectionSendSecretSyncActionFailedNotifications) {
+    if (job.name === QueueJobs.SecretSyncSendActionFailedNotifications) {
       await $sendSecretSyncFailedNotifications(job as TSendSecretSyncFailedNotificationsJobDTO);
       return;
     }
 
     const { syncId } = job.data as
-      | TQueueSecretSyncByIdDTO
-      | TQueueSecretSyncImportByIdDTO
-      | TQueueSecretSyncEraseByIdDTO;
+      | TQueueSecretSyncSyncSecretsByIdDTO
+      | TQueueSecretSyncImportSecretsByIdDTO
+      | TQueueSecretSyncRemoveSecretsByIdDTO;
 
-    const lock = await keyStore.acquireLock([KeyStorePrefixes.SecretSyncLock(syncId)], 5 * 60 * 1000);
+    logger.info("Acquiring lock...");
+
+    let lock: Awaited<ReturnType<typeof keyStore.acquireLock>>;
+
+    try {
+      lock = await keyStore.acquireLock([KeyStorePrefixes.SecretSyncLock(syncId)], 5 * 60 * 1000);
+    } catch (e) {
+      logger.error("Failed to acquire lock!");
+      return;
+    }
 
     try {
       switch (job.name) {
-        case QueueJobs.AppConnectionSecretSync:
-          await $syncSecrets(job as TSecretSyncDTO);
+        case QueueJobs.SecretSyncSyncSecrets:
+          await $syncSecrets(job as TSecretSyncSyncSecretsDTO);
           break;
-        case QueueJobs.AppConnectionSecretSyncImport:
-          await $importSecrets(job as TSecretSyncImportDTO);
+        case QueueJobs.SecretSyncImportSecrets:
+          await $importSecrets(job as TSecretSyncImportSecretsDTO);
           break;
-        case QueueJobs.AppConnectionSecretSyncErase:
-          await $eraseSecrets(job as TSecretSyncEraseDTO);
+        case QueueJobs.SecretSyncRemoveSecrets:
+          await $removeSecrets(job as TSecretSyncRemoveSecretsDTO);
           break;
         default:
           throw new InternalServerError({
@@ -810,9 +821,9 @@ export const secretSyncQueueFactory = ({
   });
 
   return {
-    queueSecretSyncById,
-    queueSecretSyncImportById,
-    queueSecretSyncEraseById,
-    queueSecretSyncsByPath
+    queueSecretSyncSyncSecretsById,
+    queueSecretSyncImportSecretsById,
+    queueSecretSyncRemoveSecretsById,
+    queueSecretSyncsSyncSecretsByPath
   };
 };

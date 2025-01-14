@@ -27,30 +27,33 @@ const getEncryptedSecrets = async (client: Octokit, secretSync: TGitHubSyncWithC
   switch (destinationConfig.scope) {
     case GitHubSyncScope.Organization: {
       encryptedSecrets = (
-        await client.request("GET /orgs/{org}/actions/secrets", {
-          org: destinationConfig.org
+        await client.paginate("GET /orgs/{org}/actions/secrets", {
+          org: destinationConfig.org,
+          per_page: 100
         })
-      ).data.secrets;
+      ).secrets;
       break;
     }
     case GitHubSyncScope.Repository: {
       encryptedSecrets = (
-        await client.request("GET /repos/{owner}/{repo}/actions/secrets", {
-          owner: destinationConfig.owner,
-          repo: destinationConfig.repo
-        })
-      ).data.secrets;
-      break;
-    }
-    case GitHubSyncScope.Environment:
-    default: {
-      encryptedSecrets = (
-        await client.request("GET /repos/{owner}/{repo}/environments/{environment_name}/secrets", {
+        await client.paginate("GET /repos/{owner}/{repo}/actions/secrets", {
           owner: destinationConfig.owner,
           repo: destinationConfig.repo,
-          environment_name: destinationConfig.env
+          per_page: 100
         })
-      ).data.secrets;
+      ).secrets;
+      break;
+    }
+    case GitHubSyncScope.RepositoryEnvironment:
+    default: {
+      encryptedSecrets = (
+        await client.paginate("GET /repos/{owner}/{repo}/environments/{environment_name}/secrets", {
+          owner: destinationConfig.owner,
+          repo: destinationConfig.repo,
+          environment_name: destinationConfig.env,
+          per_page: 100
+        })
+      ).secrets;
       break;
     }
   }
@@ -90,7 +93,7 @@ const getPublicKey = async (client: Octokit, secretSync: TGitHubSyncWithCredenti
       ).data;
       break;
     }
-    case GitHubSyncScope.Environment:
+    case GitHubSyncScope.RepositoryEnvironment:
     default: {
       publicKey = (
         await client.request("GET /repos/{owner}/{repo}/environments/{environment_name}/secrets/public-key", {
@@ -125,7 +128,7 @@ const deleteSecret = async (client: Octokit, secretSync: TGitHubSyncWithCredenti
       });
       break;
     }
-    case GitHubSyncScope.Environment:
+    case GitHubSyncScope.RepositoryEnvironment:
     default: {
       await client.request("DELETE /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}", {
         owner: destinationConfig.owner,
@@ -167,7 +170,7 @@ const putSecret = async (client: Octokit, secretSync: TGitHubSyncWithCredentials
       });
       break;
     }
-    case GitHubSyncScope.Environment:
+    case GitHubSyncScope.RepositoryEnvironment:
     default: {
       await client.request("PUT /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}", {
         owner: destinationConfig.owner,

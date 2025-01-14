@@ -22,7 +22,7 @@ export const GitHubSyncDestinationSchema = z.object({
         repo: z.string().min(1, "Repository name required")
       }),
       z.object({
-        scope: z.literal(GitHubSyncScope.Environment),
+        scope: z.literal(GitHubSyncScope.RepositoryEnvironment),
         owner: z.string().min(1, "Repository owner name required"),
         repo: z.string().min(1, "Repository name required"),
         env: z.string().min(1, "Environment name required")

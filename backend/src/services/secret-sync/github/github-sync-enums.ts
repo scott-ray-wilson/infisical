@@ -1,7 +1,7 @@
 export enum GitHubSyncScope {
   Repository = "repository",
   Organization = "organization",
-  Environment = "environment"
+  RepositoryEnvironment = "repository-environment"
 }
 
 export enum GitHubSyncVisibility {

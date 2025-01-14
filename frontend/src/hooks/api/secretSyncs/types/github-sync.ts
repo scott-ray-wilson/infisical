@@ -3,9 +3,9 @@ import { SecretSync } from "@app/hooks/api/secretSyncs";
 import { TRootSecretSync } from "@app/hooks/api/secretSyncs/types/root-sync";
 
 export enum GitHubSyncScope {
-  Repository = "repository",
   Organization = "organization",
-  Environment = "environment"
+  Repository = "repository",
+  RepositoryEnvironment = "repository-environment"
 }
 
 export enum GitHubSyncVisibility {
@@ -29,7 +29,7 @@ export type TGitHubSync = TRootSecretSync & {
         repo: string;
       }
     | {
-        scope: GitHubSyncScope.Environment;
+        scope: GitHubSyncScope.RepositoryEnvironment;
         owner: string;
         repo: string;
         env: string;

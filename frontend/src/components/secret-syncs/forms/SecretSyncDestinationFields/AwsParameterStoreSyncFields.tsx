@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { Badge, FilterableSelect, FormControl, Input } from "@app/components/v2";
 import { AWS_REGIONS } from "@app/helpers/appConnections";
+import { SecretSync } from "@app/hooks/api/secretSyncs";
 
 import { TSecretSyncForm } from "../schemas";
 
@@ -25,7 +26,9 @@ const Option = ({ isSelected, children, ...props }: OptionProps<(typeof AWS_REGI
 };
 
 export const AwsParameterStoreSyncFields = () => {
-  const { control } = useFormContext<TSecretSyncForm>();
+  const { control } = useFormContext<
+    TSecretSyncForm & { destination: SecretSync.AWSParameterStore }
+  >();
 
   return (
     <>

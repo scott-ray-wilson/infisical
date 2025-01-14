@@ -25,7 +25,7 @@ const GitHubSyncDestinationConfigSchema = z
       repo: z.string().min(1, "Repository name required").describe(SecretSyncs.DESTINATION_CONFIG.GITHUB.REPO)
     }),
     z.object({
-      scope: z.literal(GitHubSyncScope.Environment),
+      scope: z.literal(GitHubSyncScope.RepositoryEnvironment),
       owner: z.string().min(1, "Repository owner name required").describe(SecretSyncs.DESTINATION_CONFIG.GITHUB.OWNER),
       repo: z.string().min(1, "Repository name required").describe(SecretSyncs.DESTINATION_CONFIG.GITHUB.REPO),
       env: z.string().min(1, "Environment name required").describe(SecretSyncs.DESTINATION_CONFIG.GITHUB.ENV)

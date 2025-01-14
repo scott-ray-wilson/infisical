@@ -62,6 +62,10 @@ export const getGitHubClient = (appConnection: TGitHubConnection) => {
   return client;
 };
 
+export const getGitHubRepositories = (appConnection: TGitHubConnection) => {
+  const client = getGitHubClient(appConnection);
+};
+
 type TokenRespData = {
   access_token: string;
   scope: string;

@@ -9,12 +9,14 @@ import {
   AwsParameterStoreSyncListItemSchema,
   AwsParameterStoreSyncSchema
 } from "@app/services/secret-sync/aws-parameter-store";
+import { GitHubSyncListItemSchema, GitHubSyncSchema } from "@app/services/secret-sync/github";
 
-// union once more available
-const SecretSyncSchema = AwsParameterStoreSyncSchema;
+const SecretSyncSchema = z.discriminatedUnion("destination", [AwsParameterStoreSyncSchema, GitHubSyncSchema]);
 
-// union once more available
-const SecretSyncOptionsSchema = AwsParameterStoreSyncListItemSchema;
+const SecretSyncOptionsSchema = z.discriminatedUnion("destination", [
+  AwsParameterStoreSyncListItemSchema,
+  GitHubSyncListItemSchema
+]);
 
 export const registerSecretSyncRouter = async (server: FastifyZodProvider) => {
   server.route({

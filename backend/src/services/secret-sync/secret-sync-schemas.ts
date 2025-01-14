@@ -6,12 +6,14 @@ import { removeTrailingSlash } from "@app/lib/fn";
 import { slugSchema } from "@app/server/lib/schemas";
 import { SecretSync, SecretSyncInitialSyncBehavior } from "@app/services/secret-sync/secret-sync-enums";
 import { SECRET_SYNC_CONNECTION_MAP } from "@app/services/secret-sync/secret-sync-maps";
+import { TSyncOptionsConfig } from "@app/services/secret-sync/secret-sync-types";
 
-const SyncOptionsSchema = (secretSync: SecretSync) =>
+const SyncOptionsSchema = (secretSync: SecretSync, options: TSyncOptionsConfig = { canImportSecrets: true }) =>
   z.object({
-    initialSyncBehavior: z
-      .nativeEnum(SecretSyncInitialSyncBehavior)
-      .describe(SecretSyncs.SYNC_OPTIONS(secretSync).INITIAL_SYNC_BEHAVIOR),
+    initialSyncBehavior: (options.canImportSecrets
+      ? z.nativeEnum(SecretSyncInitialSyncBehavior)
+      : z.literal(SecretSyncInitialSyncBehavior.OverwriteDestination)
+    ).describe(SecretSyncs.SYNC_OPTIONS(secretSync).INITIAL_SYNC_BEHAVIOR),
     prependPrefix: z
       .string()
       .trim()
@@ -26,14 +28,14 @@ const SyncOptionsSchema = (secretSync: SecretSync) =>
       .describe(SecretSyncs.SYNC_OPTIONS(secretSync).APPEND_SUFFIX)
   });
 
-export const BaseSecretSyncSchema = (destination: SecretSync) =>
+export const BaseSecretSyncSchema = (destination: SecretSync, syncOptionsConfig?: TSyncOptionsConfig) =>
   SecretSyncsSchema.omit({
     destination: true,
     destinationConfig: true,
     syncOptions: true
   }).extend({
     // destination needs to be on the extended object for type differentiation
-    syncOptions: SyncOptionsSchema(destination),
+    syncOptions: SyncOptionsSchema(destination, syncOptionsConfig),
     // join properties
     projectId: z.string(),
     connection: z.object({
@@ -45,7 +47,7 @@ export const BaseSecretSyncSchema = (destination: SecretSync) =>
     folder: z.object({ id: z.string(), path: z.string() })
   });
 
-export const GenericCreateSecretSyncFieldsSchema = (destination: SecretSync) =>
+export const GenericCreateSecretSyncFieldsSchema = (destination: SecretSync, syncOptionsConfig?: TSyncOptionsConfig) =>
   z.object({
     name: slugSchema({ field: "name" }).describe(SecretSyncs.CREATE(destination).name),
     projectId: z.string().trim().min(1, "Project ID required").describe(SecretSyncs.CREATE(destination).projectId),
@@ -64,10 +66,10 @@ export const GenericCreateSecretSyncFieldsSchema = (destination: SecretSync) =>
       .transform(removeTrailingSlash)
       .describe(SecretSyncs.CREATE(destination).secretPath),
     isEnabled: z.boolean().default(true).describe(SecretSyncs.CREATE(destination).isEnabled),
-    syncOptions: SyncOptionsSchema(destination).describe(SecretSyncs.CREATE(destination).syncOptions)
+    syncOptions: SyncOptionsSchema(destination, syncOptionsConfig).describe(SecretSyncs.CREATE(destination).syncOptions)
   });
 
-export const GenericUpdateSecretSyncFieldsSchema = (destination: SecretSync) =>
+export const GenericUpdateSecretSyncFieldsSchema = (destination: SecretSync, syncOptionsConfig?: TSyncOptionsConfig) =>
   z.object({
     name: slugSchema({ field: "name" }).describe(SecretSyncs.UPDATE(destination).name).optional(),
     description: z
@@ -87,5 +89,7 @@ export const GenericUpdateSecretSyncFieldsSchema = (destination: SecretSync) =>
       .optional()
       .describe(SecretSyncs.UPDATE(destination).secretPath),
     isEnabled: z.boolean().optional().describe(SecretSyncs.UPDATE(destination).isEnabled),
-    syncOptions: SyncOptionsSchema(destination).optional().describe(SecretSyncs.UPDATE(destination).syncOptions)
+    syncOptions: SyncOptionsSchema(destination, syncOptionsConfig)
+      .optional()
+      .describe(SecretSyncs.UPDATE(destination).syncOptions)
   });

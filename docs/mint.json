@@ -813,6 +813,18 @@
                 "api-reference/endpoints/secret-syncs/aws-parameter-store/import-secrets",
                 "api-reference/endpoints/secret-syncs/aws-parameter-store/remove-secrets"
               ]
+            },
+            { "group":  "GitHub",
+              "pages": [
+                "api-reference/endpoints/secret-syncs/github/list",
+                "api-reference/endpoints/secret-syncs/github/get-by-id",
+                "api-reference/endpoints/secret-syncs/github/get-by-name",
+                "api-reference/endpoints/secret-syncs/github/create",
+                "api-reference/endpoints/secret-syncs/github/update",
+                "api-reference/endpoints/secret-syncs/github/delete",
+                "api-reference/endpoints/secret-syncs/github/sync-secrets",
+                "api-reference/endpoints/secret-syncs/github/remove-secrets"
+              ]
             }
           ]
         },

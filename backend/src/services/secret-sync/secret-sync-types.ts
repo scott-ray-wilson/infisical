@@ -26,6 +26,10 @@ export type TSecretSyncInput = TAwsParameterStoreSyncInput | TGitHubSyncInput;
 
 export type TSecretSyncListItem = TAwsParameterStoreSyncListItem | TGitHubSyncListItem;
 
+export type TSyncOptionsConfig = {
+  canImportSecrets: boolean;
+};
+
 export type TListSecretSyncsByProjectId = {
   projectId: string;
   destination?: SecretSync;

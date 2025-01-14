@@ -1,3 +1,5 @@
+import { createAppAuth } from "@octokit/auth-app";
+import { Octokit } from "@octokit/rest";
 import { AxiosResponse } from "axios";
 
 import { getConfig } from "@app/lib/config/env";
@@ -8,7 +10,7 @@ import { IntegrationUrls } from "@app/services/integration-auth/integration-list
 
 import { AppConnection } from "../app-connection-enums";
 import { GitHubConnectionMethod } from "./github-connection-enums";
-import { TGitHubConnectionConfig } from "./github-connection-types";
+import { TGitHubConnection, TGitHubConnectionConfig } from "./github-connection-types";
 
 export const getGitHubConnectionListItem = () => {
   const { INF_APP_CONNECTION_GITHUB_OAUTH_CLIENT_ID, INF_APP_CONNECTION_GITHUB_APP_SLUG } = getConfig();
@@ -20,6 +22,44 @@ export const getGitHubConnectionListItem = () => {
     oauthClientId: INF_APP_CONNECTION_GITHUB_OAUTH_CLIENT_ID,
     appClientSlug: INF_APP_CONNECTION_GITHUB_APP_SLUG
   };
+};
+
+export const getGitHubClient = (appConnection: TGitHubConnection) => {
+  const appCfg = getConfig();
+
+  const { method, credentials } = appConnection;
+
+  let client: Octokit;
+
+  switch (method) {
+    case GitHubConnectionMethod.App:
+      if (!appCfg.CLIENT_APP_ID_GITHUB_APP || !appCfg.CLIENT_PRIVATE_KEY_GITHUB_APP) {
+        throw new InternalServerError({
+          message: `GitHub ${getAppConnectionMethodName(method)} environment variables have not been configured`
+        });
+      }
+
+      client = new Octokit({
+        authStrategy: createAppAuth,
+        auth: {
+          appId: appCfg.CLIENT_APP_ID_GITHUB_APP,
+          privateKey: appCfg.CLIENT_PRIVATE_KEY_GITHUB_APP,
+          installationId: credentials.installationId
+        }
+      });
+      break;
+    case GitHubConnectionMethod.OAuth:
+      client = new Octokit({
+        auth: credentials.accessToken
+      });
+      break;
+    default:
+      throw new InternalServerError({
+        message: `Unhandled GitHub connection method: ${method as GitHubConnectionMethod}`
+      });
+  }
+
+  return client;
 };
 
 type TokenRespData = {

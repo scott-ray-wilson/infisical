@@ -1712,6 +1712,12 @@ export const SecretSyncs = {
     AWS_PARAMETER_STORE: {
       REGION: "The AWS region to sync secrets to.",
       PATH: "The Parameter Store path to sync secrets to."
+    },
+    GITHUB: {
+      ORG: "The name of the GitHub organization.",
+      OWNER: "The name of the GitHub account owner of the repository.",
+      REPO: "The name of the GitHub repository.",
+      ENV: "The name of the GitHub environment. The name must be URL encoded."
     }
   }
 };

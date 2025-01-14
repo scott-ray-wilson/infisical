@@ -1,11 +1,9 @@
-import { BadRequestError } from "@app/lib/errors";
 import {
   AWS_PARAMETER_STORE_SYNC_LIST_OPTION,
   AwsParameterStoreSyncFns
 } from "@app/services/secret-sync/aws-parameter-store";
 import { GITHUB_SYNC_LIST_OPTION, GithubSyncFns } from "@app/services/secret-sync/github";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
-import { SECRET_SYNC_NAME_MAP } from "@app/services/secret-sync/secret-sync-maps";
 import {
   TSecretMap,
   TSecretSyncListItem,
@@ -64,14 +62,14 @@ const stripAffixes = (secretSync: TSecretSyncWithCredentials, unprocessedSecretM
 // TODO(scott): ideally do this in a map to reduce code but requires typescript trickery...
 
 export const SecretSyncFns = {
-  syncSecrets: (secretSync: TSecretSyncWithCredentials, unprocessedSecretMap: TSecretMap): Promise<void> => {
-    const secretMap = addAffixes(secretSync, unprocessedSecretMap);
+  syncSecrets: (secretSync: TSecretSyncWithCredentials, secretMap: TSecretMap): Promise<void> => {
+    const affixedSecretMap = addAffixes(secretSync, secretMap);
 
     switch (secretSync.destination) {
       case SecretSync.AWSParameterStore:
-        return AwsParameterStoreSyncFns.syncSecrets(secretSync, secretMap);
+        return AwsParameterStoreSyncFns.syncSecrets(secretSync, affixedSecretMap);
       case SecretSync.GitHub:
-        return GithubSyncFns.syncSecrets(secretSync, secretMap);
+        return GithubSyncFns.syncSecrets(secretSync, affixedSecretMap);
       default:
         throw new Error(
           `Unhandled sync destination for push secrets: ${(secretSync as TSecretSyncWithCredentials).destination}`
@@ -88,25 +86,22 @@ export const SecretSyncFns = {
         secretMap = await GithubSyncFns.importSecrets(secretSync);
         break;
       default:
-        throw new BadRequestError({
-          message: `${
-            SECRET_SYNC_NAME_MAP[(secretSync as TSecretSyncWithCredentials).destination]
-          } does not support importing secrets.`
-        });
+        throw new Error(
+          `Unhandled sync destination for push secrets: ${(secretSync as TSecretSyncWithCredentials).destination}`
+        );
     }
 
     return stripAffixes(secretSync, secretMap);
   },
-  removeSecrets: (secretSync: TSecretSyncWithCredentials, unprocessedSecretMap: TSecretMap): Promise<void> => {
-    const secretMap = addAffixes(secretSync, unprocessedSecretMap);
+  removeSecrets: (secretSync: TSecretSyncWithCredentials, secretMap: TSecretMap): Promise<void> => {
+    const affixedSecretMap = addAffixes(secretSync, secretMap);
 
     switch (secretSync.destination) {
       case SecretSync.AWSParameterStore:
-        return AwsParameterStoreSyncFns.removeSecrets(secretSync, secretMap);
+        return AwsParameterStoreSyncFns.removeSecrets(secretSync, affixedSecretMap);
       case SecretSync.GitHub:
-        return GithubSyncFns.removeSecrets(secretSync, secretMap);
+        return GithubSyncFns.removeSecrets(secretSync, affixedSecretMap);
       default:
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new Error(
           `Unhandled sync destination for removing secrets: ${(secretSync as TSecretSyncWithCredentials).destination}`
         );

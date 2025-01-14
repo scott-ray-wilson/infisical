@@ -219,7 +219,8 @@ export const rolePermission2Form = (permissions: TProjectPermission[] = []) => {
         ProjectPermissionSub.SecretApproval,
         ProjectPermissionSub.Tags,
         ProjectPermissionSub.SecretRotation,
-        ProjectPermissionSub.Kms
+        ProjectPermissionSub.Kms,
+        ProjectPermissionSub.SecretSyncs
       ].includes(subject)
     ) {
       // from above statement we are sure it won't be undefined

@@ -1,9 +1,10 @@
 import { z } from "zod";
 
+import { GitHubSyncDestinationSchema } from "@app/components/secret-syncs/forms/schemas/github-sync-destination-schema";
 import { SecretSyncInitialSyncBehavior } from "@app/hooks/api/secretSyncs";
 import { slugSchema } from "@app/lib/schemas";
 
-import { AwsParameterStoreConfigSchema } from "./aws-parameter-store-config-schema";
+import { AwsParameterStoreSyncDestinationSchema } from "./aws-parameter-store-sync-destination-schema";
 
 const BaseSecretSyncSchema = z.object({
   name: slugSchema({ field: "Name" }),
@@ -28,6 +29,11 @@ const BaseSecretSyncSchema = z.object({
 });
 
 // TODO: union once more supported
-export const SecretSyncFormSchema = AwsParameterStoreConfigSchema.and(BaseSecretSyncSchema);
+export const SecretSyncFormSchema = z
+  .discriminatedUnion("destination", [
+    AwsParameterStoreSyncDestinationSchema,
+    GitHubSyncDestinationSchema
+  ])
+  .and(BaseSecretSyncSchema);
 
 export type TSecretSyncForm = z.infer<typeof SecretSyncFormSchema>;

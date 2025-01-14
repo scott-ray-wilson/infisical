@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { SecretSync } from "@app/hooks/api/secretSyncs";
 
-export const AwsParameterStoreConfigSchema = z.object({
+export const AwsParameterStoreSyncDestinationSchema = z.object({
   destination: z.literal(SecretSync.AWSParameterStore),
   destinationConfig: z.object({
     path: z

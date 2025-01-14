@@ -1,4 +1,4 @@
-import { ForcedSubject, MongoAbility } from "@casl/ability";
+import { MongoAbility } from "@casl/ability";
 
 export enum OrgPermissionActions {
   Read = "read",
@@ -61,12 +61,13 @@ export type OrgPermissionSet =
   | [OrgPermissionAdminConsoleAction, OrgPermissionSubjects.AdminConsole]
   | [OrgPermissionActions, OrgPermissionSubjects.AuditLogs]
   | [OrgPermissionActions, OrgPermissionSubjects.ProjectTemplates]
-  | [
-      OrgPermissionAppConnectionActions,
-      (
-        | OrgPermissionSubjects.AppConnections
-        | (ForcedSubject<OrgPermissionSubjects.AppConnections> & AppConnectionSubjectFields)
-      )
-    ];
+  | [OrgPermissionActions, OrgPermissionSubjects.AppConnections];
+// | [
+//     OrgPermissionAppConnectionActions,
+//     (
+//       | OrgPermissionSubjects.AppConnections
+//       | (ForcedSubject<OrgPermissionSubjects.AppConnections> & AppConnectionSubjectFields)
+//     )
+//   ];
 
 export type TOrgPermission = MongoAbility<OrgPermissionSet>;

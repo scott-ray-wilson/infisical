@@ -1,15 +1,17 @@
 import { SecretSync, SecretSyncImportBehavior } from "@app/hooks/api/secretSyncs";
 import { TAwsParameterStoreSync } from "@app/hooks/api/secretSyncs/types/aws-parameter-store-sync";
+import { TGitHubSync } from "@app/hooks/api/secretSyncs/types/github-sync";
 import { TSecretSyncOption } from "@app/hooks/api/secretSyncs/types/sync-options";
+import { DiscriminativePick } from "@app/types";
 
-export type TSecretSync = TAwsParameterStoreSync;
+export type TSecretSync = TAwsParameterStoreSync | TGitHubSync;
 
 export type TListSecretSyncs = { secretSyncs: TSecretSync[] };
 
 export type TListSecretSyncOptions = { secretSyncOptions: TSecretSyncOption[] };
 export type TSecretSyncResponse = { secretSync: TSecretSync };
 
-export type TCreateSecretSyncDTO = Pick<
+export type TCreateSecretSyncDTO = DiscriminativePick<
   TSecretSync,
   | "name"
   | "destinationConfig"

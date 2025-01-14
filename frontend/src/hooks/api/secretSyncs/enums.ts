@@ -1,5 +1,6 @@
 export enum SecretSync {
-  AWSParameterStore = "aws-parameter-store"
+  AWSParameterStore = "aws-parameter-store",
+  GitHub = "github"
 }
 
 export enum SecretSyncStatus {

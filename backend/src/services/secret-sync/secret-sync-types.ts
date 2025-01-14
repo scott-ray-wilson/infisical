@@ -41,6 +41,7 @@ export type TCreateSecretSyncDTO = Pick<TSecretSync, "syncOptions" | "destinatio
   projectId: string;
   secretPath: string;
   environment: string;
+  isEnabled?: boolean;
 };
 
 export type TUpdateSecretSyncDTO = Partial<Omit<TCreateSecretSyncDTO, "connectionId" | "projectId">> & {
@@ -56,7 +57,7 @@ export type TDeleteSecretSyncDTO = {
 type AuditLogInfo = Pick<TCreateAuditLogDTO, "userAgent" | "userAgentType" | "ipAddress" | "actor">;
 
 export enum SecretSyncStatus {
-  Queued = "queued",
+  Pending = "pending",
   Running = "running",
   Succeeded = "succeeded",
   Failed = "failed"
@@ -78,6 +79,7 @@ export type TQueueSecretSyncsByPathDTO = {
 
 export type TQueueSecretSyncSyncSecretsByIdDTO = {
   syncId: string;
+  failedToAcquireLockCount?: number;
   auditLogInfo?: AuditLogInfo;
 };
 

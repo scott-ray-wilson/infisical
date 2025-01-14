@@ -21,7 +21,11 @@ import { twMerge } from "tailwind-merge";
 
 import { createNotification } from "@app/components/notifications";
 import { ProjectPermissionCan } from "@app/components/permissions";
-import { SecretSyncStatusBadge } from "@app/components/secret-syncs";
+import {
+  SecretSyncImportStatusBadge,
+  SecretSyncRemoveStatusBadge,
+  SecretSyncStatusBadge
+} from "@app/components/secret-syncs";
 import {
   Badge,
   DropdownMenu,
@@ -160,54 +164,63 @@ export const SecretSyncRow = ({
         secondaryText={destinationValues.secondaryText}
       />
       <Td>
-        {isEnabled ? (
-          syncStatus && (
-            <Tooltip
-              position="left"
-              className="max-w-sm"
-              content={
-                [SecretSyncStatus.Succeeded, SecretSyncStatus.Failed].includes(syncStatus) ? (
-                  <div className="flex flex-col gap-2 whitespace-normal py-1">
-                    {lastSyncedAt && (
-                      <div>
-                        <div
-                          className={`mb-2 flex self-start ${syncStatus === SecretSyncStatus.Failed ? "text-yellow" : "text-green"}`}
-                        >
-                          <FontAwesomeIcon
-                            icon={faCalendarCheck}
-                            className="ml-1 pr-1.5 pt-0.5 text-sm"
-                          />
-                          <div className="text-xs">Last Synced</div>
+        <div className="flex items-center gap-1">
+          {isEnabled ? (
+            syncStatus && (
+              <Tooltip
+                position="left"
+                className="max-w-sm"
+                content={
+                  [SecretSyncStatus.Succeeded, SecretSyncStatus.Failed].includes(syncStatus) ? (
+                    <div className="flex flex-col gap-2 whitespace-normal py-1">
+                      {lastSyncedAt && (
+                        <div>
+                          <div
+                            className={`mb-2 flex self-start ${syncStatus === SecretSyncStatus.Failed ? "text-yellow" : "text-green"}`}
+                          >
+                            <FontAwesomeIcon
+                              icon={faCalendarCheck}
+                              className="ml-1 pr-1.5 pt-0.5 text-sm"
+                            />
+                            <div className="text-xs">Last Synced</div>
+                          </div>
+                          <div className="rounded bg-mineshaft-600 p-2 text-xs">
+                            {format(new Date(lastSyncedAt), "yyyy-MM-dd, hh:mm aaa")}
+                          </div>
                         </div>
-                        <div className="rounded bg-mineshaft-600 p-2 text-xs">
-                          {format(new Date(lastSyncedAt), "yyyy-MM-dd, hh:mm aaa")}
+                      )}
+                      {failureMessage && (
+                        <div>
+                          <div className="mb-2 flex self-start text-red">
+                            <FontAwesomeIcon
+                              icon={faXmark}
+                              className="ml-1 pr-1.5 pt-0.5 text-sm"
+                            />
+                            <div className="text-xs">Failure Reason</div>
+                          </div>
+                          <div className="rounded bg-mineshaft-600 p-2 text-xs">
+                            {failureMessage}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {failureMessage && (
-                      <div>
-                        <div className="mb-2 flex self-start text-red">
-                          <FontAwesomeIcon icon={faXmark} className="ml-1 pr-1.5 pt-0.5 text-sm" />
-                          <div className="text-xs">Failure Reason</div>
-                        </div>
-                        <div className="rounded bg-mineshaft-600 p-2 text-xs">{failureMessage}</div>
-                      </div>
-                    )}
-                  </div>
-                ) : undefined
-              }
-            >
-              <div>
-                <SecretSyncStatusBadge status={syncStatus} />
-              </div>
-            </Tooltip>
-          )
-        ) : (
-          <Badge className="flex items-center gap-1.5">
-            <FontAwesomeIcon icon={faBan} />
-            <span>Disabled</span>
-          </Badge>
-        )}
+                      )}
+                    </div>
+                  ) : undefined
+                }
+              >
+                <div>
+                  <SecretSyncStatusBadge status={syncStatus} />
+                </div>
+              </Tooltip>
+            )
+          ) : (
+            <Badge className="flex w-min items-center gap-1.5 bg-mineshaft-400/50 text-bunker-300">
+              <FontAwesomeIcon icon={faBan} />
+              <span>Disabled</span>
+            </Badge>
+          )}
+          <SecretSyncImportStatusBadge mini secretSync={secretSync} />
+          <SecretSyncRemoveStatusBadge mini secretSync={secretSync} />
+        </div>
       </Td>
       <Td>
         <Tooltip className="max-w-sm text-center" content="Options">

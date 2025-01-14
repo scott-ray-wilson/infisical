@@ -54,7 +54,8 @@ const getParametersByPath = async (ssm: AWS.SSM, path: string): Promise<TAWSPara
       if (parameters.Parameters) {
         parameters.Parameters.forEach((parameter) => {
           if (parameter.Name) {
-            const secKey = parameter.Name.substring(path.length);
+            // no leading slash if path is '/'
+            const secKey = path.length > 1 ? parameter.Name.substring(path.length) : parameter.Name;
             awsParameterStoreSecretsRecord[secKey] = parameter;
           }
         });

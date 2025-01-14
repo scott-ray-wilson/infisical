@@ -29,6 +29,7 @@ export const SecretSyncStatusBadge = ({ status }: Props) => {
       text = "Synced";
       icon = faCheck;
       break;
+    case SecretSyncStatus.Pending: // no need to differentiate from user perspective
     case SecretSyncStatus.Running:
     default:
       variant = "primary";
@@ -38,7 +39,7 @@ export const SecretSyncStatusBadge = ({ status }: Props) => {
   }
 
   return (
-    <Badge className="flex w-min items-center gap-1.5" variant={variant}>
+    <Badge className="flex h-5 w-min items-center gap-1.5" variant={variant}>
       <FontAwesomeIcon icon={icon} />
       <span>{text}</span>
     </Badge>

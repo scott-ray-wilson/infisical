@@ -10,12 +10,20 @@ export type TRootSecretSync = {
   connectionId: string;
   createdAt: string;
   updatedAt: string;
-  syncStatus: SecretSyncStatus | null;
   isEnabled: boolean;
   projectId: string;
+  syncStatus: SecretSyncStatus | null;
   lastSyncJobId: string | null;
   lastSyncedAt: Date | null;
   lastSyncMessage: string | null;
+  importStatus: SecretSyncStatus | null;
+  lastImportJobId: string | null;
+  lastImportedAt: Date | null;
+  lastImportMessage: string | null;
+  removeStatus: SecretSyncStatus | null;
+  lastRemoveJobId: string | null;
+  lastRemovedAt: Date | null;
+  lastRemoveMessage: string | null;
   syncOptions: {
     initialSyncBehavior: SecretSyncInitialSyncBehavior;
     prependPrefix?: string;

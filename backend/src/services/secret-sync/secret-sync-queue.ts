@@ -1,12 +1,12 @@
 import opentelemetry from "@opentelemetry/api";
 import { AxiosError } from "axios";
+import { Job } from "bullmq";
 
 import { ProjectMembershipRole, SecretType } from "@app/db/schemas";
 import { TAuditLogServiceFactory } from "@app/ee/services/audit-log/audit-log-service";
 import { EventType } from "@app/ee/services/audit-log/audit-log-types";
 import { KeyStorePrefixes, TKeyStoreFactory } from "@app/keystore/keystore";
 import { getConfig } from "@app/lib/config/env";
-import { InternalServerError } from "@app/lib/errors";
 import { logger } from "@app/lib/logger";
 import { QueueJobs, QueueName, TQueueServiceFactory } from "@app/queue";
 import { decryptAppConnectionCredentials } from "@app/services/app-connection/app-connection-fns";
@@ -86,6 +86,21 @@ type TSecretSyncQueueFactoryDep = {
   secretVersionTagDAL: TSecretVersionTagDALFactory;
   secretVersionV2BridgeDAL: Pick<TSecretVersionV2DALFactory, "insertMany" | "findLatestVersionMany">;
   secretVersionTagV2BridgeDAL: Pick<TSecretVersionV2TagDALFactory, "insertMany">;
+};
+
+const getRequeueDelay = (failureCount?: number) => {
+  if (!failureCount) return 0;
+
+  const baseDelay = 1000;
+  const maxDelay = 30000;
+
+  const delay = Math.min(baseDelay * 2 ** failureCount, maxDelay);
+
+  const jitter = delay * (0.5 + Math.random() * 0.5);
+
+  console.log("jitter", jitter);
+
+  return jitter;
 };
 
 export const secretSyncQueueFactory = ({
@@ -238,8 +253,8 @@ export const secretSyncQueueFactory = ({
 
   const queueSecretSyncSyncSecretsById = async (payload: TQueueSecretSyncSyncSecretsByIdDTO) =>
     queueService.queue(QueueName.AppConnectionSecretSync, QueueJobs.SecretSyncSyncSecrets, payload, {
+      delay: getRequeueDelay(payload.failedToAcquireLockCount),
       attempts: 5,
-      delay: 1000,
       backoff: {
         type: "exponential",
         delay: 3000
@@ -250,24 +265,14 @@ export const secretSyncQueueFactory = ({
 
   const queueSecretSyncImportSecretsById = async (payload: TQueueSecretSyncImportSecretsByIdDTO) =>
     queueService.queue(QueueName.AppConnectionSecretSync, QueueJobs.SecretSyncImportSecrets, payload, {
-      attempts: 5,
-      delay: 1000,
-      backoff: {
-        type: "exponential",
-        delay: 3000
-      },
+      attempts: 1,
       removeOnComplete: true,
       removeOnFail: true
     });
 
   const queueSecretSyncRemoveSecretsById = async (payload: TQueueSecretSyncRemoveSecretsByIdDTO) =>
     queueService.queue(QueueName.AppConnectionSecretSync, QueueJobs.SecretSyncRemoveSecrets, payload, {
-      attempts: 5,
-      delay: 1000,
-      backoff: {
-        type: "exponential",
-        delay: 3000
-      },
+      attempts: 1,
       removeOnComplete: true,
       removeOnFail: true
     });
@@ -800,6 +805,57 @@ export const secretSyncQueueFactory = ({
     await Promise.all(secretSyncs.map((secretSync) => queueSecretSyncSyncSecretsById({ syncId: secretSync.id })));
   };
 
+  const $handleAcquireLockFailure = async (
+    job: Job<
+      TQueueSecretSyncSyncSecretsByIdDTO | TQueueSecretSyncImportSecretsByIdDTO | TQueueSecretSyncRemoveSecretsByIdDTO
+    >
+  ) => {
+    const { syncId } = job.data;
+
+    switch (job.name) {
+      case QueueJobs.SecretSyncSyncSecrets: {
+        const { failedToAcquireLockCount = 0, ...rest } = job.data as TQueueSecretSyncSyncSecretsByIdDTO;
+
+        if (failedToAcquireLockCount < 10) {
+          await queueSecretSyncSyncSecretsById({ ...rest, failedToAcquireLockCount: failedToAcquireLockCount + 1 });
+        }
+
+        break;
+      }
+      case QueueJobs.SecretSyncImportSecrets: {
+        const secretSync = await secretSyncDAL.updateById(syncId, {
+          importStatus: SecretSyncStatus.Failed,
+          lastImportMessage: "Failed to run job. Please try again.",
+          lastImportJobId: job.id
+        });
+
+        await $queueSendSecretSyncFailedNotifications({
+          secretSync,
+          action: SecretSyncAction.ImportSecrets
+        });
+
+        break;
+      }
+      case QueueJobs.SecretSyncRemoveSecrets: {
+        const secretSync = await secretSyncDAL.updateById(syncId, {
+          removeStatus: SecretSyncStatus.Failed,
+          lastRemoveMessage: "Failed to run job. Please try again.",
+          lastRemoveJobId: job.id
+        });
+
+        await $queueSendSecretSyncFailedNotifications({
+          secretSync,
+          action: SecretSyncAction.RemoveSecrets
+        });
+
+        break;
+      }
+      default:
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        throw new Error(`Unhandled Secret Sync Job ${job.name}`);
+    }
+  };
+
   queueService.start(QueueName.AppConnectionSecretSync, async (job) => {
     if (job.name === QueueJobs.SecretSyncSendActionFailedNotifications) {
       await $sendSecretSyncFailedNotifications(job as TSendSecretSyncFailedNotificationsJobDTO);
@@ -811,14 +867,20 @@ export const secretSyncQueueFactory = ({
       | TQueueSecretSyncImportSecretsByIdDTO
       | TQueueSecretSyncRemoveSecretsByIdDTO;
 
-    logger.info("Acquiring lock...");
-
     let lock: Awaited<ReturnType<typeof keyStore.acquireLock>>;
 
     try {
-      lock = await keyStore.acquireLock([KeyStorePrefixes.SecretSyncLock(syncId)], 5 * 60 * 1000);
+      lock = await keyStore.acquireLock(
+        [KeyStorePrefixes.SecretSyncLock(syncId)],
+        // scott: not sure on this duration; syncs can take excessive amounts of time so we need to keep it locked,
+        // but should always release below...
+        5 * 60 * 1000
+      );
     } catch (e) {
-      logger.error("Failed to acquire lock!");
+      logger.info(`SecretSync Failed to acquire lock [syncId=${syncId}] [job=${job.name}]`);
+
+      $handleAcquireLockFailure(job);
+
       return;
     }
 
@@ -834,10 +896,8 @@ export const secretSyncQueueFactory = ({
           await $handleRemoveSecretsJob(job as TSecretSyncRemoveSecretsDTO);
           break;
         default:
-          throw new InternalServerError({
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            message: `Unhandled Secret Sync Job ${job.name}`
-          });
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          throw new Error(`Unhandled Secret Sync Job ${job.name}`);
       }
     } finally {
       await lock.release();

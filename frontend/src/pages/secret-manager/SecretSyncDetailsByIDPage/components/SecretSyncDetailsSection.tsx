@@ -45,7 +45,7 @@ export const SecretSyncDetailsSection = ({ secretSync, onEditDetails }: Props) =
             {isEnabled ? (
               syncStatus && <SecretSyncStatusBadge status={syncStatus} />
             ) : (
-              <Badge className="flex w-min items-center gap-1.5">
+              <Badge className="flex w-min items-center gap-1.5 bg-mineshaft-400/50 text-bunker-300">
                 <FontAwesomeIcon icon={faBan} />
                 <span>Disabled</span>
               </Badge>

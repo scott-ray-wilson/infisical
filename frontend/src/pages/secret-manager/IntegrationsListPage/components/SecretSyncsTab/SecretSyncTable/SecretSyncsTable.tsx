@@ -417,7 +417,7 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
                   </IconButton>
                 </div>
               </Th>
-              <Th className="min-w-[7.5rem]">
+              <Th className="min-w-[10rem]">
                 <div className="flex items-center">
                   Status
                   <IconButton

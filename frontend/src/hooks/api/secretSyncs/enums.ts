@@ -3,7 +3,7 @@ export enum SecretSync {
 }
 
 export enum SecretSyncStatus {
-  Queued = "queued",
+  Pending = "pending",
   Running = "running",
   Succeeded = "succeeded",
   Failed = "failed"

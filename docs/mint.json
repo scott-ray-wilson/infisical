@@ -1,6 +1,6 @@
 {
   "name": "Infisical",
-  "openapi": "https://app.infisical.com/api/docs/json",
+  "openapi": "http://localhost:8080/api/docs/json",
   "logo": {
     "dark": "/logo/dark.svg",
     "light": "/logo/light.svg",
@@ -801,9 +801,9 @@
                 "api-reference/endpoints/secret-syncs/aws-parameter-store/create",
                 "api-reference/endpoints/secret-syncs/aws-parameter-store/update",
                 "api-reference/endpoints/secret-syncs/aws-parameter-store/delete",
-                "api-reference/endpoints/secret-syncs/aws-parameter-store/sync",
-                "api-reference/endpoints/secret-syncs/aws-parameter-store/import",
-                "api-reference/endpoints/secret-syncs/aws-parameter-store/remove"
+                "api-reference/endpoints/secret-syncs/aws-parameter-store/sync-secrets",
+                "api-reference/endpoints/secret-syncs/aws-parameter-store/import-secrets",
+                "api-reference/endpoints/secret-syncs/aws-parameter-store/remove-secrets"
               ]
             }
           ]

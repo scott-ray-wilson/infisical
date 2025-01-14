@@ -14,6 +14,7 @@ import { TProjectBotServiceFactory } from "@app/services/project-bot/project-bot
 import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-folder-dal";
 import { listSecretSyncOptions } from "@app/services/secret-sync/secret-sync-fns";
 import {
+  SecretSyncStatus,
   TCreateSecretSyncDTO,
   TDeleteSecretSyncDTO,
   TFindSecretSyncByIdDTO,
@@ -240,7 +241,11 @@ export const secretSyncServiceFactory = ({
           message: `A Secret Sync with the name "${params.name}" already exists for the project with ID "${folder.projectId}"`
         });
 
-      const sync = await secretSyncDAL.create({ folderId: folder.id, ...params });
+      const sync = await secretSyncDAL.create({
+        folderId: folder.id,
+        ...params,
+        ...(params.isEnabled && { syncStatus: SecretSyncStatus.Pending })
+      });
 
       return sync;
     });
@@ -327,7 +332,12 @@ export const secretSyncServiceFactory = ({
           });
       }
 
-      const updatedSync = await secretSyncDAL.updateById(syncId, params);
+      const isEnabled = params.isEnabled ?? secretSync.isEnabled;
+
+      const updatedSync = await secretSyncDAL.updateById(syncId, {
+        ...params,
+        ...(isEnabled && { syncStatus: SecretSyncStatus.Pending })
+      });
 
       return updatedSync;
     });
@@ -399,9 +409,18 @@ export const secretSyncServiceFactory = ({
         message: `Secret sync with ID "${secretSync.id}" is not configured for ${SECRET_SYNC_NAME_MAP[destination]}`
       });
 
+    // const isSyncJobRunning = Boolean(await keyStore.getItem(KeyStorePrefixes.SecretSyncLock(syncId)));
+    //
+    // if (isSyncJobRunning)
+    //   throw new BadRequestError({ message: `A job for this sync is already in progress. Please try again shortly.` });
+
     await secretSyncQueue.queueSecretSyncSyncSecretsById({ syncId, ...params });
 
-    return secretSync as TSecretSync;
+    const updatedSecretSync = await secretSyncDAL.updateById(syncId, {
+      syncStatus: SecretSyncStatus.Pending
+    });
+
+    return updatedSecretSync as TSecretSync;
   };
 
   const triggerSecretSyncImportSecretsById = async (
@@ -441,7 +460,11 @@ export const secretSyncServiceFactory = ({
 
     await secretSyncQueue.queueSecretSyncImportSecretsById({ syncId, ...params });
 
-    return secretSync as TSecretSync;
+    const updatedSecretSync = await secretSyncDAL.updateById(syncId, {
+      importStatus: SecretSyncStatus.Pending
+    });
+
+    return updatedSecretSync as TSecretSync;
   };
 
   const triggerSecretSyncRemoveSecretsById = async (
@@ -481,7 +504,11 @@ export const secretSyncServiceFactory = ({
 
     await secretSyncQueue.queueSecretSyncRemoveSecretsById({ syncId, ...params });
 
-    return secretSync as TSecretSync;
+    const updatedSecretSync = await secretSyncDAL.updateById(syncId, {
+      removeStatus: SecretSyncStatus.Pending
+    });
+
+    return updatedSecretSync as TSecretSync;
   };
 
   return {

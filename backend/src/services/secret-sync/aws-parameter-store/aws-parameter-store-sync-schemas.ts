@@ -17,7 +17,7 @@ const AwsParameterStoreSyncDestinationConfigSchema = z.object({
     .min(1, "Parameter Store Path Required")
     .transform(wrapWithSlashes)
     .superRefine((val, ctx) => {
-      if (!/^\/([\w-]+\/)*[\w-]+\/$/.test(val)) {
+      if (!/^\/([/]|(([\w-]+\/)+))?$/.test(val)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: `Invalid Parameter Store Path - must follow "/example/path/" format`

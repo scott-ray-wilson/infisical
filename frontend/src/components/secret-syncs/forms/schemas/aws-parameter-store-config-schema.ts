@@ -9,7 +9,7 @@ export const AwsParameterStoreConfigSchema = z.object({
       .string()
       .min(1, "Parameter Store Path required")
       .superRefine((val, ctx) => {
-        if (!/^\/([\w-]+\/)*[\w-]+\/$/.test(val)) {
+        if (!/^\/([/]|(([\w-]+\/)+))?$/.test(val)) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: 'Invalid path - must follow "/example/path/" format'

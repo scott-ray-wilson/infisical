@@ -19,7 +19,9 @@ import { ProjectPermissionCan } from "@app/components/permissions";
 import {
   DeleteSecretSyncModal,
   SecretSyncImportSecretsModal,
-  SecretSyncRemoveSecretsModal
+  SecretSyncImportStatusBadge,
+  SecretSyncRemoveSecretsModal,
+  SecretSyncRemoveStatusBadge
 } from "@app/components/secret-syncs";
 import {
   Button,
@@ -119,111 +121,116 @@ export const SecretSyncActionTriggers = ({ secretSync }: Props) => {
 
   return (
     <>
-      <div className="ml-auto mt-4 flex items-center">
-        <Button
-          variant="outline_bg"
-          leftIcon={<FontAwesomeIcon icon={faRotate} />}
-          onClick={handleTriggerSync}
-          className="h-9 rounded-r-none bg-mineshaft-500"
-        >
-          Trigger Sync
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <IconButton
-              ariaLabel="add-folder-or-import"
-              variant="outline_bg"
-              className="h-9 w-10 rounded-l-none border-l-2 border-mineshaft border-l-mineshaft-700 bg-mineshaft-500"
-            >
-              <FontAwesomeIcon icon={faEllipsisV} />
-            </IconButton>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              icon={<FontAwesomeIcon icon={isIdCopied ? faCheck : faCopy} />}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCopyId();
-              }}
-            >
-              Copy Sync ID
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              icon={<FontAwesomeIcon icon={faDownload} />}
-              onClick={() => handlePopUpOpen("importSecrets")}
-            >
-              <Tooltip
-                position="left"
-                sideOffset={42}
-                content={`Import secrets from this ${destinationName} destination into Infisical.`}
+      <div className="ml-auto mt-4 flex flex-wrap items-center justify-end gap-2">
+        <SecretSyncImportStatusBadge secretSync={secretSync} />
+        <SecretSyncRemoveStatusBadge secretSync={secretSync} />
+        <div>
+          <Button
+            variant="outline_bg"
+            leftIcon={<FontAwesomeIcon icon={faRotate} />}
+            onClick={handleTriggerSync}
+            className="h-9 rounded-r-none bg-mineshaft-500"
+          >
+            Trigger Sync
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                ariaLabel="add-folder-or-import"
+                variant="outline_bg"
+                className="h-9 w-10 rounded-l-none border-l-2 border-mineshaft border-l-mineshaft-700 bg-mineshaft-500"
               >
-                <div className="flex h-full w-full items-center justify-between gap-1">
-                  <span>Import Secrets</span>
-                  <FontAwesomeIcon className="text-bunker-300" size="sm" icon={faInfoCircle} />
-                </div>
-              </Tooltip>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              icon={<FontAwesomeIcon icon={faEraser} />}
-              onClick={() => handlePopUpOpen("removeSecrets")}
-            >
-              <Tooltip
-                position="left"
-                sideOffset={42}
-                content={`Erase secrets synced by Infisical from this ${destinationName} destination.`}
+                <FontAwesomeIcon icon={faEllipsisV} />
+              </IconButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                icon={<FontAwesomeIcon icon={isIdCopied ? faCheck : faCopy} />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyId();
+                }}
               >
-                <div className="flex h-full w-full items-center justify-between gap-1">
-                  <span>Erase Secrets</span>
-                  <FontAwesomeIcon className="text-bunker-300" size="sm" icon={faInfoCircle} />
-                </div>
-              </Tooltip>
-            </DropdownMenuItem>
-
-            <ProjectPermissionCan
-              I={ProjectPermissionActions.Edit}
-              a={ProjectPermissionSub.SecretSyncs}
-            >
-              {(isAllowed: boolean) => (
-                <DropdownMenuItem
-                  isDisabled={!isAllowed}
-                  icon={<FontAwesomeIcon icon={secretSync.isEnabled ? faToggleOff : faToggleOn} />}
-                  onClick={handleToggleEnableSync}
+                Copy Sync ID
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                icon={<FontAwesomeIcon icon={faDownload} />}
+                onClick={() => handlePopUpOpen("importSecrets")}
+              >
+                <Tooltip
+                  position="left"
+                  sideOffset={42}
+                  content={`Import secrets from this ${destinationName} destination into Infisical.`}
                 >
-                  {secretSync.isEnabled ? "Disable" : "Enable"} Sync
-                </DropdownMenuItem>
-              )}
-            </ProjectPermissionCan>
-            <ProjectPermissionCan
-              I={ProjectPermissionActions.Delete}
-              a={ProjectPermissionSub.SecretSyncs}
-            >
-              {(isAllowed: boolean) => (
-                <DropdownMenuItem
-                  isDisabled={!isAllowed}
-                  icon={<FontAwesomeIcon icon={faTrash} />}
-                  onClick={() => handlePopUpOpen("deleteSync")}
+                  <div className="flex h-full w-full items-center justify-between gap-1">
+                    <span>Import Secrets</span>
+                    <FontAwesomeIcon className="text-bunker-300" size="sm" icon={faInfoCircle} />
+                  </div>
+                </Tooltip>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                icon={<FontAwesomeIcon icon={faEraser} />}
+                onClick={() => handlePopUpOpen("removeSecrets")}
+              >
+                <Tooltip
+                  position="left"
+                  sideOffset={42}
+                  content={`Remove secrets synced by Infisical from this ${destinationName} destination.`}
                 >
-                  Delete Sync
-                </DropdownMenuItem>
-              )}
-            </ProjectPermissionCan>
-          </DropdownMenuContent>
-        </DropdownMenu>
+                  <div className="flex h-full w-full items-center justify-between gap-1">
+                    <span>Remove Secrets</span>
+                    <FontAwesomeIcon className="text-bunker-300" size="sm" icon={faInfoCircle} />
+                  </div>
+                </Tooltip>
+              </DropdownMenuItem>
+              <ProjectPermissionCan
+                I={ProjectPermissionActions.Edit}
+                a={ProjectPermissionSub.SecretSyncs}
+              >
+                {(isAllowed: boolean) => (
+                  <DropdownMenuItem
+                    isDisabled={!isAllowed}
+                    icon={
+                      <FontAwesomeIcon icon={secretSync.isEnabled ? faToggleOff : faToggleOn} />
+                    }
+                    onClick={handleToggleEnableSync}
+                  >
+                    {secretSync.isEnabled ? "Disable" : "Enable"} Sync
+                  </DropdownMenuItem>
+                )}
+              </ProjectPermissionCan>
+              <ProjectPermissionCan
+                I={ProjectPermissionActions.Delete}
+                a={ProjectPermissionSub.SecretSyncs}
+              >
+                {(isAllowed: boolean) => (
+                  <DropdownMenuItem
+                    isDisabled={!isAllowed}
+                    icon={<FontAwesomeIcon icon={faTrash} />}
+                    onClick={() => handlePopUpOpen("deleteSync")}
+                  >
+                    Delete Sync
+                  </DropdownMenuItem>
+                )}
+              </ProjectPermissionCan>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <SecretSyncImportSecretsModal
         onOpenChange={(isOpen) => handlePopUpToggle("importSecrets", isOpen)}
         isOpen={popUp.importSecrets.isOpen}
-        secretSync={popUp.importSecrets.data}
+        secretSync={secretSync}
       />
       <SecretSyncRemoveSecretsModal
         onOpenChange={(isOpen) => handlePopUpToggle("removeSecrets", isOpen)}
         isOpen={popUp.removeSecrets.isOpen}
-        secretSync={popUp.removeSecrets.data}
+        secretSync={secretSync}
       />
       <DeleteSecretSyncModal
         onOpenChange={(isOpen) => handlePopUpToggle("deleteSync", isOpen)}
         isOpen={popUp.deleteSync.isOpen}
-        secretSync={popUp.deleteSync.data}
+        secretSync={secretSync}
         onComplete={() =>
           navigate({
             to: ROUTE_PATHS.SecretManager.IntegrationsListPage.path,

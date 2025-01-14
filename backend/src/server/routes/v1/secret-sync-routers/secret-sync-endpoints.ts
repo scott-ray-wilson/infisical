@@ -28,6 +28,7 @@ export const registerSyncSecretsEndpoints = <T extends TSecretSync, I extends TS
     destinationConfig: I["destinationConfig"];
     syncOptions: I["syncOptions"];
     description?: string | null;
+    isEnabled?: boolean;
   }>;
   updateSchema: z.ZodType<{
     name?: string;

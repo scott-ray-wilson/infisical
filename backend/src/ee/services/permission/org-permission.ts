@@ -245,16 +245,11 @@ const buildAdminPermission = () => {
   can(OrgPermissionActions.Edit, OrgPermissionSubjects.ProjectTemplates);
   can(OrgPermissionActions.Delete, OrgPermissionSubjects.ProjectTemplates);
 
-  can(
-    [
-      OrgPermissionAppConnectionActions.Create,
-      OrgPermissionAppConnectionActions.Edit,
-      OrgPermissionAppConnectionActions.Delete,
-      OrgPermissionAppConnectionActions.Read,
-      OrgPermissionAppConnectionActions.Connect
-    ],
-    OrgPermissionSubjects.AppConnections
-  );
+  can(OrgPermissionAppConnectionActions.Read, OrgPermissionSubjects.AppConnections);
+  can(OrgPermissionAppConnectionActions.Create, OrgPermissionSubjects.AppConnections);
+  can(OrgPermissionAppConnectionActions.Edit, OrgPermissionSubjects.AppConnections);
+  can(OrgPermissionAppConnectionActions.Delete, OrgPermissionSubjects.AppConnections);
+  can(OrgPermissionAppConnectionActions.Connect, OrgPermissionSubjects.AppConnections);
 
   can(OrgPermissionAdminConsoleAction.AccessAllProjects, OrgPermissionSubjects.AdminConsole);
 

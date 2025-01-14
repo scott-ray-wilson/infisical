@@ -88,6 +88,10 @@ type TSecretSyncQueueFactoryDep = {
   secretVersionTagV2BridgeDAL: Pick<TSecretVersionV2TagDALFactory, "insertMany">;
 };
 
+type SecretSyncActionJob = Job<
+  TQueueSecretSyncSyncSecretsByIdDTO | TQueueSecretSyncImportSecretsByIdDTO | TQueueSecretSyncRemoveSecretsByIdDTO
+>;
+
 const getRequeueDelay = (failureCount?: number) => {
   if (!failureCount) return 0;
 
@@ -471,7 +475,8 @@ export const secretSyncQueueFactory = ({
         if (!isSynced) {
           await $queueSendSecretSyncFailedNotifications({
             secretSync: updatedSecretSync,
-            action: SecretSyncAction.SyncSecrets
+            action: SecretSyncAction.SyncSecrets,
+            auditLogInfo
           });
         }
       }
@@ -593,7 +598,8 @@ export const secretSyncQueueFactory = ({
         if (!isSuccess) {
           await $queueSendSecretSyncFailedNotifications({
             secretSync: updatedSecretSync,
-            action: SecretSyncAction.ImportSecrets
+            action: SecretSyncAction.ImportSecrets,
+            auditLogInfo
           });
         }
       }
@@ -716,7 +722,8 @@ export const secretSyncQueueFactory = ({
         if (!isSuccess) {
           await $queueSendSecretSyncFailedNotifications({
             secretSync: updatedSecretSync,
-            action: SecretSyncAction.RemoveSecrets
+            action: SecretSyncAction.RemoveSecrets,
+            auditLogInfo
           });
         }
       }
@@ -805,33 +812,47 @@ export const secretSyncQueueFactory = ({
     await Promise.all(secretSyncs.map((secretSync) => queueSecretSyncSyncSecretsById({ syncId: secretSync.id })));
   };
 
-  const $handleAcquireLockFailure = async (
-    job: Job<
-      TQueueSecretSyncSyncSecretsByIdDTO | TQueueSecretSyncImportSecretsByIdDTO | TQueueSecretSyncRemoveSecretsByIdDTO
-    >
-  ) => {
-    const { syncId } = job.data;
+  const $handleAcquireLockFailure = async (job: SecretSyncActionJob) => {
+    const { syncId, auditLogInfo } = job.data;
 
     switch (job.name) {
       case QueueJobs.SecretSyncSyncSecrets: {
         const { failedToAcquireLockCount = 0, ...rest } = job.data as TQueueSecretSyncSyncSecretsByIdDTO;
 
+        //
         if (failedToAcquireLockCount < 10) {
           await queueSecretSyncSyncSecretsById({ ...rest, failedToAcquireLockCount: failedToAcquireLockCount + 1 });
+          return;
         }
+
+        const secretSync = await secretSyncDAL.updateById(syncId, {
+          syncStatus: SecretSyncStatus.Failed,
+          lastSyncMessage:
+            "Failed to run job. This typically happens when a sync is already in progress. Please try again.",
+          lastSyncJobId: job.id
+        });
+
+        await $queueSendSecretSyncFailedNotifications({
+          secretSync,
+          action: SecretSyncAction.SyncSecrets,
+          auditLogInfo
+        });
 
         break;
       }
+      // Scott: the two cases below are unlikely to happen as we check the lock at the API level but including this as a fallback
       case QueueJobs.SecretSyncImportSecrets: {
         const secretSync = await secretSyncDAL.updateById(syncId, {
           importStatus: SecretSyncStatus.Failed,
-          lastImportMessage: "Failed to run job. Please try again.",
+          lastImportMessage:
+            "Failed to run job. This typically happens when a sync is already in progress. Please try again.",
           lastImportJobId: job.id
         });
 
         await $queueSendSecretSyncFailedNotifications({
           secretSync,
-          action: SecretSyncAction.ImportSecrets
+          action: SecretSyncAction.ImportSecrets,
+          auditLogInfo
         });
 
         break;
@@ -839,13 +860,15 @@ export const secretSyncQueueFactory = ({
       case QueueJobs.SecretSyncRemoveSecrets: {
         const secretSync = await secretSyncDAL.updateById(syncId, {
           removeStatus: SecretSyncStatus.Failed,
-          lastRemoveMessage: "Failed to run job. Please try again.",
+          lastRemoveMessage:
+            "Failed to run job. This typically happens when a sync is already in progress. Please try again.",
           lastRemoveJobId: job.id
         });
 
         await $queueSendSecretSyncFailedNotifications({
           secretSync,
-          action: SecretSyncAction.RemoveSecrets
+          action: SecretSyncAction.RemoveSecrets,
+          auditLogInfo
         });
 
         break;
@@ -879,7 +902,7 @@ export const secretSyncQueueFactory = ({
     } catch (e) {
       logger.info(`SecretSync Failed to acquire lock [syncId=${syncId}] [job=${job.name}]`);
 
-      $handleAcquireLockFailure(job);
+      await $handleAcquireLockFailure(job as SecretSyncActionJob);
 
       return;
     }

@@ -409,10 +409,10 @@ export const secretSyncServiceFactory = ({
         message: `Secret sync with ID "${secretSync.id}" is not configured for ${SECRET_SYNC_NAME_MAP[destination]}`
       });
 
-    // const isSyncJobRunning = Boolean(await keyStore.getItem(KeyStorePrefixes.SecretSyncLock(syncId)));
-    //
-    // if (isSyncJobRunning)
-    //   throw new BadRequestError({ message: `A job for this sync is already in progress. Please try again shortly.` });
+    const isSyncJobRunning = Boolean(await keyStore.getItem(KeyStorePrefixes.SecretSyncLock(syncId)));
+
+    if (isSyncJobRunning)
+      throw new BadRequestError({ message: `A job for this sync is already in progress. Please try again shortly.` });
 
     await secretSyncQueue.queueSecretSyncSyncSecretsById({ syncId, ...params });
 

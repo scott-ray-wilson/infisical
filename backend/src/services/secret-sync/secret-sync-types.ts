@@ -2,6 +2,12 @@ import { Job } from "bullmq";
 
 import { TCreateAuditLogDTO } from "@app/ee/services/audit-log/audit-log-types";
 import { QueueJobs } from "@app/queue";
+import {
+  TGitHubSync,
+  TGitHubSyncInput,
+  TGitHubSyncListItem,
+  TGitHubSyncWithCredentials
+} from "@app/services/secret-sync/github";
 import { TSecretSyncDALFactory } from "@app/services/secret-sync/secret-sync-dal";
 import { SecretSync, SecretSyncImportBehavior } from "@app/services/secret-sync/secret-sync-enums";
 
@@ -12,13 +18,13 @@ import {
   TAwsParameterStoreSyncWithCredentials
 } from "./aws-parameter-store";
 
-export type TSecretSync = TAwsParameterStoreSync;
+export type TSecretSync = TAwsParameterStoreSync | TGitHubSync;
 
-export type TSecretSyncWithCredentials = TAwsParameterStoreSyncWithCredentials;
+export type TSecretSyncWithCredentials = TAwsParameterStoreSyncWithCredentials | TGitHubSyncWithCredentials;
 
-export type TSecretSyncInput = TAwsParameterStoreSyncInput;
+export type TSecretSyncInput = TAwsParameterStoreSyncInput | TGitHubSyncInput;
 
-export type TSecretSyncListItem = TAwsParameterStoreSyncListItem;
+export type TSecretSyncListItem = TAwsParameterStoreSyncListItem | TGitHubSyncListItem;
 
 export type TListSecretSyncsByProjectId = {
   projectId: string;

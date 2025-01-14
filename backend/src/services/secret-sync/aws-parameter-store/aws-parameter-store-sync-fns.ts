@@ -1,7 +1,7 @@
 import AWS, { AWSError } from "aws-sdk";
 
 import { getAwsConnectionConfig } from "@app/services/app-connection/aws/aws-connection-fns";
-import { TSecretMap, TSecretSyncWithCredentials } from "@app/services/secret-sync/secret-sync-types";
+import { TSecretMap } from "@app/services/secret-sync/secret-sync-types";
 
 import { TAwsParameterStoreSyncWithCredentials } from "./aws-parameter-store-sync-types";
 
@@ -10,7 +10,7 @@ type TAWSParameterStoreRecord = Record<string, AWS.SSM.Parameter>;
 const MAX_RETRIES = 5;
 const BATCH_SIZE = 10;
 
-const getSSM = async (secretSync: TSecretSyncWithCredentials) => {
+const getSSM = async (secretSync: TAwsParameterStoreSyncWithCredentials) => {
   const { destinationConfig, connection } = secretSync;
 
   const config = await getAwsConnectionConfig(connection, destinationConfig.region);

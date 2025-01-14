@@ -35,6 +35,7 @@ const AwsParameterStoreSyncDestinationConfigSchema = z.object({
 });
 
 export const AwsParameterStoreSyncSchema = BaseSecretSyncSchema(SecretSync.AWSParameterStore).extend({
+  destination: z.literal(SecretSync.AWSParameterStore),
   destinationConfig: AwsParameterStoreSyncDestinationConfigSchema
 });
 
@@ -54,5 +55,5 @@ export const AwsParameterStoreSyncListItemSchema = z.object({
   name: z.literal("AWS Parameter Store"),
   connection: z.literal(AppConnection.AWS),
   destination: z.literal(SecretSync.AWSParameterStore),
-  supportsImport: z.literal(true)
+  canImportSecrets: z.literal(true)
 });

@@ -32,7 +32,7 @@ export const BaseSecretSyncSchema = (destination: SecretSync) =>
     destinationConfig: true,
     syncOptions: true
   }).extend({
-    destination: z.literal(destination),
+    // destination needs to be on the extended object for type differentiation
     syncOptions: SyncOptionsSchema(destination),
     // join properties
     projectId: z.string(),

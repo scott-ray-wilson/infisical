@@ -33,26 +33,28 @@ export const SecretSyncOptionsFields = ({ hideInitialSync }: Props) => {
               <FormControl
                 tooltipClassName="max-w-lg py-3"
                 tooltipText={
-                  <div className="flex flex-col gap-3">
-                    <p>
-                      Specify how Infisical should resolve the initial sync to {destinationName}.
-                      The following options are available:
-                    </p>
-                    <ul className="flex list-disc flex-col gap-3 pl-4">
-                      {Object.values(SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP).map((details) => {
-                        const { name, description } = details(destinationName);
+                  syncOption?.canImportSecrets ? (
+                    <div className="flex flex-col gap-3">
+                      <p>
+                        Specify how Infisical should resolve the initial sync to {destinationName}.
+                        The following options are available:
+                      </p>
+                      <ul className="flex list-disc flex-col gap-3 pl-4">
+                        {Object.values(SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP).map((details) => {
+                          const { name, description } = details(destinationName);
 
-                        return (
-                          <li key={name}>
-                            <p className="text-mineshaft-300">
-                              <span className="font-medium text-bunker-200">{name}</span>:{" "}
-                              {description}
-                            </p>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
+                          return (
+                            <li key={name}>
+                              <p className="text-mineshaft-300">
+                                <span className="font-medium text-bunker-200">{name}</span>:{" "}
+                                {description}
+                              </p>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ) : undefined
                 }
                 errorText={error?.message}
                 isError={Boolean(error?.message)}
@@ -83,8 +85,8 @@ export const SecretSyncOptionsFields = ({ hideInitialSync }: Props) => {
           {!syncOption?.canImportSecrets && (
             <p className="-mt-2.5 mb-2.5 text-xs text-yellow">
               <FontAwesomeIcon className="mr-1" size="xs" icon={faTriangleExclamation} />
-              {destinationName} does not support importing secrets. Secrets not present in Infisical
-              will be removed from the destination.
+              {destinationName} only supports overwriting destination secrets. Secrets not present
+              in Infisical will be removed from the destination.
             </p>
           )}
         </>

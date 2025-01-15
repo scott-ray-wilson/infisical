@@ -23,6 +23,7 @@ import {
 } from "@app/services/app-connection/app-connection-types";
 import { ValidateAwsConnectionCredentialsSchema } from "@app/services/app-connection/aws";
 import { ValidateGitHubConnectionCredentialsSchema } from "@app/services/app-connection/github";
+import { githubConnectionService } from "@app/services/app-connection/github/github-connection-service";
 import { TKmsServiceFactory } from "@app/services/kms/kms-service";
 
 import { TAppConnectionDALFactory } from "./app-connection-dal";
@@ -338,7 +339,11 @@ export const appConnectionServiceFactory = ({
     }
   };
 
-  const connectAppConnectionById = async (connectionId: string, actor: OrgServiceActor) => {
+  const connectAppConnectionById = async <T extends TAppConnection>(
+    app: AppConnection,
+    connectionId: string,
+    actor: OrgServiceActor
+  ) => {
     const appConnection = await appConnectionDAL.findById(connectionId);
 
     if (!appConnection) throw new NotFoundError({ message: `Could not find App Connection with ID ${connectionId}` });
@@ -356,7 +361,16 @@ export const appConnectionServiceFactory = ({
       subject(OrgPermissionSubjects.AppConnections, { connectionId: appConnection.id })
     );
 
-    return decryptAppConnection(appConnection, kmsService);
+    if (appConnection.app !== app)
+      throw new BadRequestError({
+        message: `${
+          APP_CONNECTION_NAME_MAP[appConnection.app as AppConnection]
+        } Connection with ID ${connectionId} cannot be used to connect to ${APP_CONNECTION_NAME_MAP[app]}`
+      });
+
+    const connection = await decryptAppConnection(appConnection, kmsService);
+
+    return connection as T;
   };
 
   const listAvailableAppConnectionsForUser = async (app: AppConnection, actor: OrgServiceActor) => {
@@ -391,6 +405,7 @@ export const appConnectionServiceFactory = ({
     updateAppConnection,
     deleteAppConnection,
     connectAppConnectionById,
-    listAvailableAppConnectionsForUser
+    listAvailableAppConnectionsForUser,
+    github: githubConnectionService(connectAppConnectionById)
   };
 };

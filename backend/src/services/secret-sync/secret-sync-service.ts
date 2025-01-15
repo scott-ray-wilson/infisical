@@ -6,9 +6,7 @@ import { TPermissionServiceFactory } from "@app/ee/services/permission/permissio
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/ee/services/permission/project-permission";
 import { KeyStorePrefixes, TKeyStoreFactory } from "@app/keystore/keystore";
 import { BadRequestError, NotFoundError } from "@app/lib/errors";
-import { startsWithVowel } from "@app/lib/fn";
 import { OrgServiceActor } from "@app/lib/types";
-import { APP_CONNECTION_NAME_MAP } from "@app/services/app-connection/app-connection-maps";
 import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
 import { TProjectBotServiceFactory } from "@app/services/project-bot/project-bot-service";
 import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-folder-dal";
@@ -206,18 +204,21 @@ export const secretSyncServiceFactory = ({
         message: `Could not find folder with path "${secretPath}" in environment "${environment}" for project with ID "${projectId}"`
       });
 
-    const appConnection = await appConnectionService.connectAppConnectionById(params.connectionId, actor);
-
     const destinationApp = SECRET_SYNC_CONNECTION_MAP[params.destination];
 
-    if (appConnection.app !== destinationApp) {
-      const appName = APP_CONNECTION_NAME_MAP[appConnection.app];
-      throw new BadRequestError({
-        message: `Invalid App Connection - Cannot sync to ${SECRET_SYNC_NAME_MAP[params.destination]} using ${
-          startsWithVowel(appName) ? "an" : "a"
-        } ${appName} Connection`
-      });
-    }
+    // validates permission to connect and app is valid for sync destination
+    await appConnectionService.connectAppConnectionById(destinationApp, params.connectionId, actor);
+
+    // TODO: re-verify with new behavior
+
+    // if (appConnection.app !== destinationApp) {
+    //   const appName = APP_CONNECTION_NAME_MAP[appConnection.app];
+    //   throw new BadRequestError({
+    //     message: `Invalid App Connection - Cannot sync to ${SECRET_SYNC_NAME_MAP[params.destination]} using ${
+    //       startsWithVowel(appName) ? "an" : "a"
+    //     } ${appName} Connection`
+    //   });
+    // }
 
     const projectFolders = await folderDAL.findByProjectId(folder.projectId);
 

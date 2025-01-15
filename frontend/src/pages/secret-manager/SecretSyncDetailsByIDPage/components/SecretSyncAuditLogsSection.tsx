@@ -49,7 +49,7 @@ export const SecretSyncAuditLogsSection = ({ secretSync }: Props) => {
         />
       ) : (
         <div className="flex h-full items-center justify-center rounded-lg bg-mineshaft-800 text-sm text-mineshaft-200">
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-4 py-20">
             <FontAwesomeIcon size="2x" icon={faFingerprint} />
             <p>
               Please{" "}

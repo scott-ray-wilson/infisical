@@ -24,7 +24,8 @@ export const GitHubConnectionOAuthOutputCredentialsSchema = z.object({
 });
 
 export const GitHubConnectionAppOutputCredentialsSchema = z.object({
-  installationId: z.string()
+  installationId: z.string(),
+  accessToken: z.string()
 });
 
 export const ValidateGitHubConnectionCredentialsSchema = z.discriminatedUnion("method", [
@@ -74,11 +75,11 @@ export const GitHubConnectionSchema = z.intersection(
 export const SanitizedGitHubConnectionSchema = z.discriminatedUnion("method", [
   BaseGitHubConnectionSchema.extend({
     method: z.literal(GitHubConnectionMethod.App),
-    credentials: GitHubConnectionAppOutputCredentialsSchema.omit({ installationId: true })
+    credentials: GitHubConnectionAppOutputCredentialsSchema.pick({})
   }),
   BaseGitHubConnectionSchema.extend({
     method: z.literal(GitHubConnectionMethod.OAuth),
-    credentials: GitHubConnectionOAuthOutputCredentialsSchema.omit({ accessToken: true })
+    credentials: GitHubConnectionOAuthOutputCredentialsSchema.pick({})
   })
 ]);
 

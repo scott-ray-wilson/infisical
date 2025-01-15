@@ -38,11 +38,11 @@ export const AwsConnectionSchema = z.intersection(
 export const SanitizedAwsConnectionSchema = z.discriminatedUnion("method", [
   BaseAwsConnectionSchema.extend({
     method: z.literal(AwsConnectionMethod.AssumeRole),
-    credentials: AwsConnectionAssumeRoleCredentialsSchema.omit({ roleArn: true })
+    credentials: AwsConnectionAssumeRoleCredentialsSchema.pick({})
   }),
   BaseAwsConnectionSchema.extend({
     method: z.literal(AwsConnectionMethod.AccessKey),
-    credentials: AwsConnectionAccessTokenCredentialsSchema.omit({ secretAccessKey: true })
+    credentials: AwsConnectionAccessTokenCredentialsSchema.pick({ accessKeyId: true })
   })
 ]);
 

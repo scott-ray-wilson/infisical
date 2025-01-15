@@ -1,13 +1,18 @@
+import { z } from "zod";
+
+import { readLimit } from "@app/server/config/rateLimiter";
+import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import {
   CreateGitHubConnectionSchema,
   SanitizedGitHubConnectionSchema,
   UpdateGitHubConnectionSchema
 } from "@app/services/app-connection/github";
+import { AuthMode } from "@app/services/auth/auth-type";
 
 import { registerAppConnectionEndpoints } from "./app-connection-endpoints";
 
-export const registerGitHubConnectionRouter = async (server: FastifyZodProvider) =>
+export const registerGitHubConnectionRouter = async (server: FastifyZodProvider) => {
   registerAppConnectionEndpoints({
     app: AppConnection.GitHub,
     server,
@@ -15,3 +20,60 @@ export const registerGitHubConnectionRouter = async (server: FastifyZodProvider)
     createSchema: CreateGitHubConnectionSchema,
     updateSchema: UpdateGitHubConnectionSchema
   });
+
+  // The below endpoints are not exposed and for Infisical App use
+
+  server.route({
+    method: "GET",
+    url: `/:connectionId/repositories`,
+    config: {
+      rateLimit: readLimit
+    },
+    schema: {
+      params: z.object({
+        connectionId: z.string().uuid()
+      }),
+      response: {
+        200: z.object({
+          repositories: z
+            .object({ id: z.number(), name: z.string(), owner: z.object({ login: z.string(), id: z.number() }) })
+            .array()
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
+    handler: async (req) => {
+      const { connectionId } = req.params;
+
+      const repositories = await server.services.appConnection.github.listRepositories(connectionId, req.permission);
+
+      return { repositories };
+    }
+  });
+
+  server.route({
+    method: "GET",
+    url: `/:connectionId/organizations`,
+    config: {
+      rateLimit: readLimit
+    },
+    schema: {
+      params: z.object({
+        connectionId: z.string().uuid()
+      }),
+      response: {
+        200: z.object({
+          organizations: z.object({ id: z.number(), login: z.string() }).array()
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
+    handler: async (req) => {
+      const { connectionId } = req.params;
+
+      const organizations = await server.services.appConnection.github.listOrganizations(connectionId, req.permission);
+
+      return { organizations };
+    }
+  });
+};

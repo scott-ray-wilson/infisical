@@ -7,7 +7,7 @@ type Props = {
   secretSync: TAwsParameterStoreSync;
 };
 
-export const AwsParameterStoreDestinationCol = ({ secretSync }: Props) => {
+export const AwsParameterStoreSyncDestinationCol = ({ secretSync }: Props) => {
   const { region, path } = secretSync.destinationConfig;
 
   return (

@@ -17,7 +17,7 @@ interface GitHubSecret {
   selected_repositories_url?: string | undefined;
 }
 
-// TODO: rate limit handling and pagination
+// TODO: rate limit handling
 
 const getEncryptedSecrets = async (client: Octokit, secretSync: TGitHubSyncWithCredentials) => {
   let encryptedSecrets: GitHubSecret[];
@@ -26,34 +26,26 @@ const getEncryptedSecrets = async (client: Octokit, secretSync: TGitHubSyncWithC
 
   switch (destinationConfig.scope) {
     case GitHubSyncScope.Organization: {
-      encryptedSecrets = (
-        await client.paginate("GET /orgs/{org}/actions/secrets", {
-          org: destinationConfig.org,
-          per_page: 100
-        })
-      ).secrets;
+      encryptedSecrets = await client.paginate("GET /orgs/{org}/actions/secrets", {
+        org: destinationConfig.org
+      });
       break;
     }
     case GitHubSyncScope.Repository: {
-      encryptedSecrets = (
-        await client.paginate("GET /repos/{owner}/{repo}/actions/secrets", {
-          owner: destinationConfig.owner,
-          repo: destinationConfig.repo,
-          per_page: 100
-        })
-      ).secrets;
+      encryptedSecrets = await client.paginate("GET /repos/{owner}/{repo}/actions/secrets", {
+        owner: destinationConfig.owner,
+        repo: destinationConfig.repo
+      });
+
       break;
     }
     case GitHubSyncScope.RepositoryEnvironment:
     default: {
-      encryptedSecrets = (
-        await client.paginate("GET /repos/{owner}/{repo}/environments/{environment_name}/secrets", {
-          owner: destinationConfig.owner,
-          repo: destinationConfig.repo,
-          environment_name: destinationConfig.env,
-          per_page: 100
-        })
-      ).secrets;
+      encryptedSecrets = await client.paginate("GET /repos/{owner}/{repo}/environments/{environment_name}/secrets", {
+        owner: destinationConfig.owner,
+        repo: destinationConfig.repo,
+        environment_name: destinationConfig.env
+      });
       break;
     }
   }

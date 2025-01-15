@@ -4,9 +4,12 @@ import { SecretSyncLabel } from "@app/components/secret-syncs";
 import { TSecretSyncForm } from "@app/components/secret-syncs/forms/schemas";
 import { Badge } from "@app/components/v2";
 import { AWS_REGIONS } from "@app/helpers/appConnections";
+import { SecretSync } from "@app/hooks/api/secretSyncs";
 
 export const AwsParameterStoreSyncReviewFields = () => {
-  const { watch } = useFormContext<TSecretSyncForm>();
+  const { watch } = useFormContext<
+    TSecretSyncForm & { destination: SecretSync.AWSParameterStore }
+  >();
 
   const [region, path] = watch(["destinationConfig.region", "destinationConfig.path"]);
 

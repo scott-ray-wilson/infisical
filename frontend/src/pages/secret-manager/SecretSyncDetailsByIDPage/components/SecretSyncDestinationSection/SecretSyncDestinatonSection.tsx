@@ -9,6 +9,7 @@ import { ProjectPermissionActions, ProjectPermissionSub } from "@app/context";
 import { APP_CONNECTION_MAP } from "@app/helpers/appConnections";
 import { SecretSync, TSecretSync } from "@app/hooks/api/secretSyncs";
 import { AwsParameterStoreSyncDestinationSection } from "@app/pages/secret-manager/SecretSyncDetailsByIDPage/components/SecretSyncDestinationSection/AwsParameterStoreSyncDestinationSection";
+import { GitHubSyncDestinationSection } from "@app/pages/secret-manager/SecretSyncDetailsByIDPage/components/SecretSyncDestinationSection/GitHubSyncDestinationSection";
 
 type Props = {
   secretSync: TSecretSync;
@@ -24,6 +25,9 @@ export const SecretSyncDestinationSection = ({ secretSync, onEditDestination }: 
   switch (secretSync.destination) {
     case SecretSync.AWSParameterStore:
       DestinationComponents = <AwsParameterStoreSyncDestinationSection secretSync={secretSync} />;
+      break;
+    case SecretSync.GitHub:
+      DestinationComponents = <GitHubSyncDestinationSection secretSync={secretSync} />;
       break;
     default:
       throw new Error(`Unhandled Destination Section components: ${destination}`);

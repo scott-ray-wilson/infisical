@@ -70,7 +70,7 @@ export const EditSecretSyncForm = ({ secretSync, fields, onComplete }: Props) =>
       );
       break;
     case SecretSyncEditFields.Options:
-      Component = <SecretSyncOptionsFields />;
+      Component = <SecretSyncOptionsFields hideInitialSync={Boolean(secretSync.lastSyncedAt)} />;
       break;
     case SecretSyncEditFields.Source:
       Component = <SecretSyncSourceFields />;

@@ -12,6 +12,36 @@ import { AppConnection } from "../app-connection-enums";
 import { GitHubConnectionMethod } from "./github-connection-enums";
 import { TGitHubConnection, TGitHubConnectionConfig } from "./github-connection-types";
 
+type GetInstallation = {
+  installationId: string;
+  accessToken: string;
+};
+
+const getInstallation = async ({ installationId, accessToken }: GetInstallation) => {
+  const installationsResp = await request.get<{
+    installations: {
+      id: number;
+      account: {
+        login: string;
+        type: string;
+        id: number;
+      };
+    }[];
+  }>(IntegrationUrls.GITHUB_USER_INSTALLATIONS, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${accessToken}`,
+      "Accept-Encoding": "application/json"
+    }
+  });
+
+  const matchingInstallation = installationsResp.data.installations.find(
+    (installation) => installation.id === +installationId
+  );
+
+  return matchingInstallation;
+};
+
 export const getGitHubConnectionListItem = () => {
   const { INF_APP_CONNECTION_GITHUB_OAUTH_CLIENT_ID, INF_APP_CONNECTION_GITHUB_APP_SLUG } = getConfig();
 
@@ -33,17 +63,20 @@ export const getGitHubClient = (appConnection: TGitHubConnection) => {
 
   switch (method) {
     case GitHubConnectionMethod.App:
-      if (!appCfg.CLIENT_APP_ID_GITHUB_APP || !appCfg.CLIENT_PRIVATE_KEY_GITHUB_APP) {
+      if (!appCfg.INF_APP_CONNECTION_GITHUB_APP_ID || !appCfg.INF_APP_CONNECTION_GITHUB_APP_PRIVATE_KEY) {
         throw new InternalServerError({
-          message: `GitHub ${getAppConnectionMethodName(method)} environment variables have not been configured`
+          message: `GitHub ${getAppConnectionMethodName(method).replace(
+            "GitHub",
+            ""
+          )} environment variables have not been configured`
         });
       }
 
       client = new Octokit({
         authStrategy: createAppAuth,
         auth: {
-          appId: appCfg.CLIENT_APP_ID_GITHUB_APP,
-          privateKey: appCfg.CLIENT_PRIVATE_KEY_GITHUB_APP,
+          appId: appCfg.INF_APP_CONNECTION_GITHUB_APP_ID,
+          privateKey: appCfg.INF_APP_CONNECTION_GITHUB_APP_PRIVATE_KEY,
           installationId: credentials.installationId
         }
       });
@@ -62,14 +95,71 @@ export const getGitHubClient = (appConnection: TGitHubConnection) => {
   return client;
 };
 
-export const getGitHubRepositories = (appConnection: TGitHubConnection) => {
+type GitHubOrganization = {
+  login: string;
+  id: number;
+};
+
+type GitHubRepository = {
+  id: number;
+  name: string;
+  owner: GitHubOrganization;
+};
+
+export const getGitHubRepositories = async (appConnection: TGitHubConnection) => {
   const client = getGitHubClient(appConnection);
+
+  let repositories: GitHubRepository[];
+
+  switch (appConnection.method) {
+    case GitHubConnectionMethod.App:
+      repositories = await client.paginate("GET /installation/repositories");
+      break;
+    case GitHubConnectionMethod.OAuth:
+    default:
+      repositories = (await client.paginate("GET /user/repos")).filter((repo) => repo.permissions?.admin);
+      break;
+  }
+
+  return repositories;
+};
+
+export const getGitHubOrganizations = async (appConnection: TGitHubConnection) => {
+  const client = getGitHubClient(appConnection);
+
+  let organizations: GitHubOrganization[];
+
+  switch (appConnection.method) {
+    case GitHubConnectionMethod.App: {
+      const installation = await getInstallation({
+        installationId: appConnection.credentials.installationId,
+        accessToken: appConnection.credentials.accessToken
+      });
+
+      if (!installation) {
+        throw new ForbiddenRequestError({
+          message: "User does not have access to the provided installation"
+        });
+      }
+
+      organizations = installation.account.type === "Organization" ? [installation.account] : [];
+
+      break;
+    }
+    case GitHubConnectionMethod.OAuth:
+    default:
+      organizations = await client.paginate("GET /user/orgs");
+      break;
+  }
+
+  return organizations;
 };
 
 type TokenRespData = {
   access_token: string;
   scope: string;
   token_type: string;
+  error?: string;
 };
 
 export const validateGitHubConnectionCredentials = async (config: TGitHubConnectionConfig) => {
@@ -97,7 +187,10 @@ export const validateGitHubConnectionCredentials = async (config: TGitHubConnect
 
   if (!clientId || !clientSecret) {
     throw new InternalServerError({
-      message: `GitHub ${getAppConnectionMethodName(method)} environment variables have not been configured`
+      message: `GitHub ${getAppConnectionMethodName(method).replace(
+        "GitHub",
+        ""
+      )} environment variables have not been configured`
     });
   }
 
@@ -109,7 +202,7 @@ export const validateGitHubConnectionCredentials = async (config: TGitHubConnect
         client_id: clientId,
         client_secret: clientSecret,
         code: credentials.code,
-        redirect_uri: `${SITE_URL}/app-connections/github/oauth/callback`
+        redirect_uri: `${SITE_URL}/organization/app-connections/github/oauth/callback`
       },
       headers: {
         Accept: "application/json",
@@ -129,36 +222,26 @@ export const validateGitHubConnectionCredentials = async (config: TGitHubConnect
   }
 
   if (method === GitHubConnectionMethod.App) {
-    const installationsResp = await request.get<{
-      installations: {
-        id: number;
-        account: {
-          login: string;
-        };
-      }[];
-    }>(IntegrationUrls.GITHUB_USER_INSTALLATIONS, {
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${tokenResp.data.access_token}`,
-        "Accept-Encoding": "application/json"
-      }
+    const installation = await getInstallation({
+      installationId: credentials.installationId,
+      accessToken: tokenResp.data.access_token
     });
 
-    const matchingInstallation = installationsResp.data.installations.find(
-      (installation) => installation.id === +credentials.installationId
-    );
-
-    if (!matchingInstallation) {
+    if (!installation) {
       throw new ForbiddenRequestError({
         message: "User does not have access to the provided installation"
       });
     }
   }
 
+  if (!tokenResp.data.access_token) {
+    throw new InternalServerError({ message: `Missing access token: ${tokenResp.data.error}` });
+  }
+
   switch (method) {
     case GitHubConnectionMethod.App:
       return {
-        // access token not needed for GitHub App
+        accessToken: tokenResp.data.access_token,
         installationId: credentials.installationId
       };
     case GitHubConnectionMethod.OAuth:

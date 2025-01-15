@@ -1,7 +1,7 @@
-import { useEffect } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
-import { SingleValue } from "react-select";
+import { MultiValue, SingleValue } from "react-select";
 
+import { SecretSyncConnectionField } from "@app/components/secret-syncs/forms/SecretSyncConnectionField";
 import { FilterableSelect, FormControl, Select, SelectItem } from "@app/components/v2";
 import {
   TGitHubConnectionOrganization,
@@ -17,7 +17,11 @@ import {
 
 import { TSecretSyncForm } from "../schemas";
 
-export const GitHubSyncFields = () => {
+type Props = {
+  isUpdate?: boolean;
+};
+
+export const GitHubSyncFields = ({ isUpdate }: Props) => {
   const {
     control,
     formState: { errors },
@@ -30,6 +34,7 @@ export const GitHubSyncFields = () => {
   const connectionId = useWatch({ name: "connection.id", control });
   const currentScope = watch("destinationConfig.scope", GitHubSyncScope.Repository);
   const currentVisibility = watch("destinationConfig.visibility", GitHubSyncVisibility.All);
+  const currentOrg = watch("destinationConfig.org");
 
   const { data: repositories = [], isPending: isRepositoriesPending } =
     useGitHubConnectionListRepositories(connectionId, {
@@ -41,15 +46,21 @@ export const GitHubSyncFields = () => {
       enabled: Boolean(connectionId && currentScope === GitHubSyncScope.Organization)
     });
 
-  useEffect(() => {
-    setValue("destinationConfig.org", "");
-    setValue("destinationConfig.repo", "");
-    setValue("destinationConfig.owner", "");
-    setValue("destinationConfig.visibility", GitHubSyncVisibility.All);
-  }, [connectionId]);
+  // useEffect(() => {}, [connectionId]);
+
+  console.log("repositories", repositories);
 
   return (
     <>
+      <SecretSyncConnectionField
+        isUpdate={isUpdate}
+        onChange={() => {
+          setValue("destinationConfig.org", "");
+          setValue("destinationConfig.repo", "");
+          setValue("destinationConfig.owner", "");
+          setValue("destinationConfig.selectedRepositoryIds", []);
+        }}
+      />
       <Controller
         name="destinationConfig.scope"
         control={control}
@@ -83,7 +94,8 @@ export const GitHubSyncFields = () => {
             render={({ field: { value, onChange }, fieldState: { error } }) => (
               <FormControl isError={Boolean(error)} errorText={error?.message} label="Organization">
                 <FilterableSelect
-                  isLoading={isOrganizationsPending}
+                  isLoading={isOrganizationsPending && Boolean(connectionId)}
+                  isDisabled={!connectionId || isOrganizationsPending}
                   value={organizations.find((org) => org.login === value) ?? null}
                   onChange={(option) =>
                     onChange((option as SingleValue<TGitHubConnectionOrganization>)?.login ?? null)
@@ -125,6 +137,35 @@ export const GitHubSyncFields = () => {
               </FormControl>
             )}
           />
+          {currentVisibility === GitHubSyncVisibility.Selected && (
+            <Controller
+              render={({ field: { value, onChange }, fieldState: { error } }) => (
+                <FormControl
+                  isError={Boolean(error)}
+                  errorText={error?.message}
+                  label="Selected Repositories"
+                >
+                  <FilterableSelect
+                    menuPlacement="top"
+                    isLoading={isRepositoriesPending && Boolean(currentOrg)}
+                    isDisabled={!currentOrg || isRepositoriesPending || !connectionId}
+                    isMulti
+                    value={repositories.filter((repo) => value?.includes(repo.id))}
+                    onChange={(option) => {
+                      const repos = option as MultiValue<TGitHubConnectionRepository>;
+                      onChange(repos.map((repo) => repo.id));
+                    }}
+                    options={repositories.filter((repo) => repo.owner.login === currentOrg)}
+                    placeholder="Select one or more repositories..."
+                    getOptionLabel={(option) => `${option.owner.login}/${option.name}`}
+                    getOptionValue={(option) => option.id.toString()}
+                  />
+                </FormControl>
+              )}
+              control={control}
+              name="destinationConfig.selectedRepositoryIds"
+            />
+          )}
         </>
       )}
       {currentScope !== GitHubSyncScope.Organization && (
@@ -132,7 +173,9 @@ export const GitHubSyncFields = () => {
           render={({ field: { value, onChange }, fieldState: { error } }) => (
             <FormControl isError={Boolean(error)} errorText={error?.message} label="Repository">
               <FilterableSelect
-                isLoading={isRepositoriesPending}
+                menuPlacement="top"
+                isLoading={isRepositoriesPending && Boolean(connectionId)}
+                isDisabled={isRepositoriesPending || !connectionId}
                 value={repositories.find((repo) => repo.name === value) ?? null}
                 onChange={(option) => {
                   const repo = option as SingleValue<TGitHubConnectionRepository>;

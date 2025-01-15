@@ -3,6 +3,7 @@ import { components, OptionProps, SingleValue } from "react-select";
 import { faCheckCircle } from "@fortawesome/free-regular-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
+import { SecretSyncConnectionField } from "@app/components/secret-syncs/forms/SecretSyncConnectionField";
 import { Badge, FilterableSelect, FormControl, Input } from "@app/components/v2";
 import { AWS_REGIONS } from "@app/helpers/appConnections";
 import { SecretSync } from "@app/hooks/api/secretSyncs";
@@ -25,13 +26,18 @@ const Option = ({ isSelected, children, ...props }: OptionProps<(typeof AWS_REGI
   );
 };
 
-export const AwsParameterStoreSyncFields = () => {
+type Props = {
+  isUpdate?: boolean;
+};
+
+export const AwsParameterStoreSyncFields = ({ isUpdate }: Props) => {
   const { control } = useFormContext<
     TSecretSyncForm & { destination: SecretSync.AWSParameterStore }
   >();
 
   return (
     <>
+      <SecretSyncConnectionField isUpdate={isUpdate} />
       <Controller
         render={({ field: { value, onChange }, fieldState: { error } }) => (
           <FormControl isError={Boolean(error)} errorText={error?.message} label="Region">

@@ -11,7 +11,6 @@ import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import { SecretSync, TSecretSync, useCreateSecretSync } from "@app/hooks/api/secretSyncs";
 
 import { SecretSyncFormSchema, TSecretSyncForm } from "./schemas";
-import { SecretSyncConnectionField } from "./SecretSyncConnectionField";
 import { SecretSyncDestinationFields } from "./SecretSyncDestinationFields";
 import { SecretSyncDetailsFields } from "./SecretSyncDetailsFields";
 import { SecretSyncOptionsFields } from "./SecretSyncOptionsFields";
@@ -142,7 +141,6 @@ export const CreateSecretSyncForm = ({ destination, onComplete, onCancel }: Prop
               <SecretSyncSourceFields />
             </Tab.Panel>
             <Tab.Panel>
-              <SecretSyncConnectionField />
               <SecretSyncDestinationFields />
             </Tab.Panel>
             <Tab.Panel>

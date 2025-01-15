@@ -6,16 +6,20 @@ import { TSecretSyncForm } from "../schemas";
 import { AwsParameterStoreSyncFields } from "./AwsParameterStoreSyncFields";
 import { GitHubSyncFields } from "./GitHubSyncFields";
 
-export const SecretSyncDestinationFields = () => {
+type Props = {
+  isUpdate?: boolean;
+};
+
+export const SecretSyncDestinationFields = ({ isUpdate }: Props) => {
   const { watch } = useFormContext<TSecretSyncForm>();
 
   const destination = watch("destination");
 
   switch (destination) {
     case SecretSync.AWSParameterStore:
-      return <AwsParameterStoreSyncFields />;
+      return <AwsParameterStoreSyncFields isUpdate={isUpdate} />;
     case SecretSync.GitHub:
-      return <GitHubSyncFields />;
+      return <GitHubSyncFields isUpdate={isUpdate} />;
     default:
       throw new Error(`Unhandled Destination Config Field: ${destination}`);
   }

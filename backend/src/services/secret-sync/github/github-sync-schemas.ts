@@ -34,20 +34,11 @@ const GitHubSyncDestinationConfigSchema = z
   .superRefine((options, ctx) => {
     if (options.scope !== GitHubSyncScope.Organization) return;
 
-    if (options.visibility === GitHubSyncVisibility.Selected && !options.selectedRepositoryIds) {
+    if (options.visibility === GitHubSyncVisibility.Selected && !options.selectedRepositoryIds?.length) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: `Selected repository IDs required for visibility "Select"`,
-        path: ["selected_repository_ids"]
-      });
-      return;
-    }
-
-    if (options.selectedRepositoryIds) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: `Selected repository IDs are only configurable for visibility "Select"`,
-        path: ["selected_repository_ids"]
+        message: "Select at least 1 repository",
+        path: ["selectedRepositoryIds"]
       });
     }
   });

@@ -1,7 +1,6 @@
 import { SecretSync, TSecretSync } from "@app/hooks/api/secretSyncs";
-
-import { AwsParameterStoreSyncDestinationCol } from "./AwsParameterStoreSyncDestinationCol";
-import { GitHubSyncDestinationCol } from "./GitHubSyncDestinationCol";
+import { AwsParameterStoreSyncDestinationCol } from "@app/pages/secret-manager/IntegrationsListPage/components/SecretSyncsTab/SecretSyncTable/SecretSyncDestinationCol/AwsParameterStoreSyncDestinationCol";
+import { GitHubSyncDestinationCol } from "@app/pages/secret-manager/IntegrationsListPage/components/SecretSyncsTab/SecretSyncTable/SecretSyncDestinationCol/GitHubSyncDestinationCol";
 
 type Props = {
   secretSync: TSecretSync;
@@ -14,6 +13,8 @@ export const SecretSyncDestinationCol = ({ secretSync }: Props) => {
     case SecretSync.GitHub:
       return <GitHubSyncDestinationCol secretSync={secretSync} />;
     default:
-      throw new Error(`Unhandled Sync Destination Col ${(secretSync as TSecretSync).destination}`);
+      throw new Error(
+        `Unhandled Secret Sync Destination Col: ${(secretSync as TSecretSync).destination}`
+      );
   }
 };

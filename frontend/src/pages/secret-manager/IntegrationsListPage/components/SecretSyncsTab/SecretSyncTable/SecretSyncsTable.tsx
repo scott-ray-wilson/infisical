@@ -148,7 +148,7 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
             environment.name.toLowerCase().includes(searchValue) ||
             connection.name.toLowerCase().includes(searchValue) ||
             destinationValues.primaryText.toLowerCase().includes(searchValue) ||
-            destinationValues.secondaryText.toLowerCase().includes(searchValue)
+            destinationValues.secondaryText?.toLowerCase().includes(searchValue)
           );
         })
         .sort((a, b) => {

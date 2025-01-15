@@ -42,8 +42,8 @@ import { ProjectPermissionActions, ProjectPermissionSub } from "@app/context";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import { useToggle } from "@app/hooks";
 import { SecretSyncStatus, TSecretSync } from "@app/hooks/api/secretSyncs";
+import { SecretSyncDestinationCol } from "@app/pages/secret-manager/IntegrationsListPage/components/SecretSyncsTab/SecretSyncTable/SecretSyncDestinationCol/SecretSyncDestinationCol";
 
-import { getSecretSyncDestinationColValues } from "./helpers";
 import { SecretSyncTableCell } from "./SecretSyncTableCell";
 
 type Props = {
@@ -113,8 +113,6 @@ export const SecretSyncRow = ({
 
   const destinationDetails = SECRET_SYNC_MAP[destination];
 
-  const destinationValues = getSecretSyncDestinationColValues(secretSync);
-
   return (
     <Tr
       onClick={() =>
@@ -159,10 +157,7 @@ export const SecretSyncRow = ({
         </div>
       </Td>
       <SecretSyncTableCell primaryText={secretPath} secondaryText={environment.name} />
-      <SecretSyncTableCell
-        primaryText={destinationValues.primaryText}
-        secondaryText={destinationValues.secondaryText}
-      />
+      <SecretSyncDestinationCol secretSync={secretSync} />
       <Td>
         <div className="flex items-center gap-1">
           {isEnabled ? (

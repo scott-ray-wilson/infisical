@@ -24,8 +24,7 @@ export const GitHubConnectionOAuthOutputCredentialsSchema = z.object({
 });
 
 export const GitHubConnectionAppOutputCredentialsSchema = z.object({
-  installationId: z.string(),
-  accessToken: z.string()
+  installationId: z.string()
 });
 
 export const ValidateGitHubConnectionCredentialsSchema = z.discriminatedUnion("method", [

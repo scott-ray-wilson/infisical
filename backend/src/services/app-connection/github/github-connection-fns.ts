@@ -12,36 +12,6 @@ import { AppConnection } from "../app-connection-enums";
 import { GitHubConnectionMethod } from "./github-connection-enums";
 import { TGitHubConnection, TGitHubConnectionConfig } from "./github-connection-types";
 
-type GetInstallation = {
-  installationId: string;
-  accessToken: string;
-};
-
-const getInstallation = async ({ installationId, accessToken }: GetInstallation) => {
-  const installationsResp = await request.get<{
-    installations: {
-      id: number;
-      account: {
-        login: string;
-        type: string;
-        id: number;
-      };
-    }[];
-  }>(IntegrationUrls.GITHUB_USER_INSTALLATIONS, {
-    headers: {
-      Accept: "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      "Accept-Encoding": "application/json"
-    }
-  });
-
-  const matchingInstallation = installationsResp.data.installations.find(
-    (installation) => installation.id === +installationId
-  );
-
-  return matchingInstallation;
-};
-
 export const getGitHubConnectionListItem = () => {
   const { INF_APP_CONNECTION_GITHUB_OAUTH_CLIENT_ID, INF_APP_CONNECTION_GITHUB_APP_SLUG } = getConfig();
 
@@ -131,18 +101,17 @@ export const getGitHubOrganizations = async (appConnection: TGitHubConnection) =
 
   switch (appConnection.method) {
     case GitHubConnectionMethod.App: {
-      const installation = await getInstallation({
-        installationId: appConnection.credentials.installationId,
-        accessToken: appConnection.credentials.accessToken
+      const installationRepositories = await client.paginate("GET /installation/repositories");
+
+      const organizationMap: Record<string, GitHubOrganization> = {};
+
+      installationRepositories.forEach((repo) => {
+        if (repo.owner.type === "Organization") {
+          organizationMap[repo.owner.id] = repo.owner;
+        }
       });
 
-      if (!installation) {
-        throw new ForbiddenRequestError({
-          message: "User does not have access to the provided installation"
-        });
-      }
-
-      organizations = installation.account.type === "Organization" ? [installation.account] : [];
+      organizations = Object.values(organizationMap);
 
       break;
     }
@@ -222,12 +191,28 @@ export const validateGitHubConnectionCredentials = async (config: TGitHubConnect
   }
 
   if (method === GitHubConnectionMethod.App) {
-    const installation = await getInstallation({
-      installationId: credentials.installationId,
-      accessToken: tokenResp.data.access_token
+    const installationsResp = await request.get<{
+      installations: {
+        id: number;
+        account: {
+          login: string;
+          type: string;
+          id: number;
+        };
+      }[];
+    }>(IntegrationUrls.GITHUB_USER_INSTALLATIONS, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${tokenResp.data.access_token}`,
+        "Accept-Encoding": "application/json"
+      }
     });
 
-    if (!installation) {
+    const matchingInstallation = installationsResp.data.installations.find(
+      (installation) => installation.id === +credentials.installationId
+    );
+
+    if (!matchingInstallation) {
       throw new ForbiddenRequestError({
         message: "User does not have access to the provided installation"
       });
@@ -241,7 +226,6 @@ export const validateGitHubConnectionCredentials = async (config: TGitHubConnect
   switch (method) {
     case GitHubConnectionMethod.App:
       return {
-        accessToken: tokenResp.data.access_token,
         installationId: credentials.installationId
       };
     case GitHubConnectionMethod.OAuth:

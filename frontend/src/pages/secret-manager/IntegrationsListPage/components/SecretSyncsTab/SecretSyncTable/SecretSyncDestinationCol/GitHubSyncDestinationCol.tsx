@@ -1,30 +1,44 @@
-import { Td, Tooltip } from "@app/components/v2";
-import { GitHubSyncScope, TGitHubSync } from "@app/hooks/api/secretSyncs/types/github-sync";
+import {
+  GitHubSyncScope,
+  GitHubSyncVisibility,
+  TGitHubSync
+} from "@app/hooks/api/secretSyncs/types/github-sync";
+
+import { getSecretSyncDestinationColValues } from "../helpers";
+import { SecretSyncTableCell, SecretSyncTableCellProps } from "../SecretSyncTableCell";
 
 type Props = {
   secretSync: TGitHubSync;
 };
 
 export const GitHubSyncDestinationCol = ({ secretSync }: Props) => {
-  const config = secretSync.destinationConfig;
+  const { primaryText, secondaryText } = getSecretSyncDestinationColValues(secretSync);
 
-  switch (config.scope) {
-    case GitHubSyncScope.Organization:
-      return null;
-    case GitHubSyncScope.Repository:
-      return (
-        <Td>
-          <Tooltip
-            side="left"
-            className="max-w-2xl break-words"
-            content={`${config.owner}/${config.repo}`}
-          >
-            <p className="truncate text-sm">{`${config.owner}/${config.repo}`}</p>
-          </Tooltip>
-        </Td>
-      );
-    case GitHubSyncScope.RepositoryEnvironment:
-    default:
-      return null;
+  const { destinationConfig } = secretSync;
+
+  let additionalProps: Pick<
+    SecretSyncTableCellProps,
+    "additionalTooltipContent" | "infoBadge" | "secondaryClassName"
+  > = {};
+
+  if (
+    destinationConfig.scope === GitHubSyncScope.Organization &&
+    destinationConfig.visibility === GitHubSyncVisibility.Selected
+  ) {
+    additionalProps = {
+      infoBadge: "secondary",
+      additionalTooltipContent: <>hi</>
+    };
   }
+
+  return (
+    <SecretSyncTableCell
+      primaryText={primaryText}
+      secondaryText={secondaryText}
+      {...additionalProps}
+      secondaryClassName={
+        destinationConfig.scope === GitHubSyncScope.Organization ? "capitalize" : undefined
+      }
+    />
+  );
 };

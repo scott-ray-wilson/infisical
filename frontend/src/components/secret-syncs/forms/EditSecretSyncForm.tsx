@@ -3,7 +3,6 @@ import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { createNotification } from "@app/components/notifications";
-import { SecretSyncConnectionField } from "@app/components/secret-syncs/forms/SecretSyncConnectionField";
 import { SecretSyncEditFields } from "@app/components/secret-syncs/types";
 import { Button, ModalClose } from "@app/components/v2";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
@@ -62,12 +61,7 @@ export const EditSecretSyncForm = ({ secretSync, fields, onComplete }: Props) =>
 
   switch (fields) {
     case SecretSyncEditFields.Destination:
-      Component = (
-        <>
-          <SecretSyncConnectionField isEditing />
-          <SecretSyncDestinationFields />
-        </>
-      );
+      Component = <SecretSyncDestinationFields />;
       break;
     case SecretSyncEditFields.Options:
       Component = <SecretSyncOptionsFields hideInitialSync={Boolean(secretSync.lastSyncedAt)} />;

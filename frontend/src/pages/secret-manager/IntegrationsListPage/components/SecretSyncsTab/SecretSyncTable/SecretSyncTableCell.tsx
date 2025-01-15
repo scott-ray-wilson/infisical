@@ -1,11 +1,27 @@
+import { ReactNode } from "react";
+import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { twMerge } from "tailwind-merge";
+
 import { Td, Tooltip } from "@app/components/v2";
 
-type Props = {
+export type SecretSyncTableCellProps = {
   primaryText: string;
-  secondaryText: string;
+  secondaryText?: string;
+  infoBadge?: "primary" | "secondary";
+  additionalTooltipContent?: ReactNode;
+  primaryClassName?: string;
+  secondaryClassName?: string;
 };
 
-export const SecretSyncTableCell = ({ primaryText, secondaryText }: Props) => {
+export const SecretSyncTableCell = ({
+  primaryText,
+  secondaryText,
+  infoBadge,
+  additionalTooltipContent,
+  primaryClassName,
+  secondaryClassName
+}: SecretSyncTableCellProps) => {
   return (
     <Td className="!min-w-[8rem] max-w-0">
       <Tooltip
@@ -14,14 +30,37 @@ export const SecretSyncTableCell = ({ primaryText, secondaryText }: Props) => {
         content={
           <>
             <p className="text-sm">{primaryText}</p>
-            <p className="text-xs leading-3 text-bunker-300">{secondaryText}</p>
+            {secondaryText && <p className="text-xs leading-3 text-bunker-300">{secondaryText}</p>}
+            {additionalTooltipContent}
           </>
         }
       >
-        <>
-          <p className="truncate text-sm">{primaryText}</p>
-          <p className="truncate text-xs leading-3 text-bunker-300">{secondaryText}</p>
-        </>
+        <div>
+          <p className={twMerge("truncate text-sm", primaryClassName)}>
+            {primaryText}
+            {infoBadge === "primary" && (
+              <FontAwesomeIcon
+                size="xs"
+                icon={faInfoCircle}
+                className="ml-1 inline-block text-bunker-300"
+              />
+            )}
+          </p>
+          {secondaryText && (
+            <p
+              className={twMerge("truncate text-xs leading-3 text-bunker-300", secondaryClassName)}
+            >
+              {secondaryText}
+              {infoBadge === "secondary" && (
+                <FontAwesomeIcon
+                  size="xs"
+                  icon={faInfoCircle}
+                  className="ml-1 inline-block text-bunker-300"
+                />
+              )}
+            </p>
+          )}
+        </div>
       </Tooltip>
     </Td>
   );

@@ -9,10 +9,11 @@ import { useListAvailableAppConnections } from "@app/hooks/api/appConnections";
 import { TSecretSyncForm } from "./schemas";
 
 type Props = {
-  isEditing?: boolean;
+  isUpdate?: boolean;
+  onChange?: VoidFunction;
 };
 
-export const SecretSyncConnectionField = ({ isEditing }: Props) => {
+export const SecretSyncConnectionField = ({ isUpdate, onChange: callback }: Props) => {
   const { permission } = useOrgPermission();
   const { control, watch } = useFormContext<TSecretSyncForm>();
 
@@ -31,7 +32,7 @@ export const SecretSyncConnectionField = ({ isEditing }: Props) => {
   return (
     <>
       <p className="mb-4 text-sm text-bunker-300">
-        {isEditing
+        {isUpdate
           ? "Configure the sync destination."
           : `Specify the App Connection to use to connect to ${connectionName} and configure destination
         parameters.`}
@@ -40,7 +41,7 @@ export const SecretSyncConnectionField = ({ isEditing }: Props) => {
         render={({ field: { value, onChange }, fieldState: { error } }) => (
           <FormControl
             tooltipText={
-              isEditing
+              isUpdate
                 ? undefined
                 : "App Connections can be created from the Organization Settings page."
             }
@@ -55,12 +56,15 @@ export const SecretSyncConnectionField = ({ isEditing }: Props) => {
                 : error?.message
             }
             label={`${connectionName} Connection`}
-            helperText={isEditing ? "Connection cannot be changed" : ""}
+            helperText={isUpdate ? "Connection cannot be changed" : ""}
           >
             <FilterableSelect
               value={value}
-              isDisabled={isEditing}
-              onChange={onChange}
+              isDisabled={isUpdate}
+              onChange={(newValue) => {
+                onChange(newValue);
+                if (callback) callback();
+              }}
               isLoading={isLoading}
               options={options}
               placeholder="Select connection..."

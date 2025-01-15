@@ -1,4 +1,7 @@
 import { Controller, useFormContext } from "react-hook-form";
+import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Link } from "@tanstack/react-router";
 
 import { FilterableSelect, FormControl } from "@app/components/v2";
 import { OrgPermissionActions, OrgPermissionSubjects, useOrgPermission } from "@app/context";
@@ -9,11 +12,10 @@ import { useListAvailableAppConnections } from "@app/hooks/api/appConnections";
 import { TSecretSyncForm } from "./schemas";
 
 type Props = {
-  isUpdate?: boolean;
   onChange?: VoidFunction;
 };
 
-export const SecretSyncConnectionField = ({ isUpdate, onChange: callback }: Props) => {
+export const SecretSyncConnectionField = ({ onChange: callback }: Props) => {
   const { permission } = useOrgPermission();
   const { control, watch } = useFormContext<TSecretSyncForm>();
 
@@ -29,38 +31,24 @@ export const SecretSyncConnectionField = ({ isUpdate, onChange: callback }: Prop
     OrgPermissionSubjects.AppConnections
   );
 
+  const appName = APP_CONNECTION_MAP[SECRET_SYNC_CONNECTION_MAP[destination]].name;
+
   return (
     <>
       <p className="mb-4 text-sm text-bunker-300">
-        {isUpdate
-          ? "Configure the sync destination."
-          : `Specify the App Connection to use to connect to ${connectionName} and configure destination
-        parameters.`}
+        Specify the {appName} Connection to use to connect to {connectionName} and configure
+        destination parameters.
       </p>
       <Controller
         render={({ field: { value, onChange }, fieldState: { error } }) => (
           <FormControl
-            tooltipText={
-              isUpdate
-                ? undefined
-                : "App Connections can be created from the Organization Settings page."
-            }
-            isError={Boolean(options?.length === 0) || Boolean(error)}
-            errorText={
-              options?.length === 0
-                ? `You do not have access to any ${connectionName} connections. ${
-                    canCreateConnection
-                      ? "Create a connection from the Organization Settings page."
-                      : ""
-                  }`
-                : error?.message
-            }
+            tooltipText="App Connections can be created from the Organization Settings page."
+            isError={Boolean(error)}
+            errorText={error?.message}
             label={`${connectionName} Connection`}
-            helperText={isUpdate ? "Connection cannot be changed" : ""}
           >
             <FilterableSelect
               value={value}
-              isDisabled={isUpdate}
               onChange={(newValue) => {
                 onChange(newValue);
                 if (callback) callback();
@@ -76,6 +64,26 @@ export const SecretSyncConnectionField = ({ isUpdate, onChange: callback }: Prop
         control={control}
         name="connection"
       />
+      {options?.length === 0 && (
+        <p className="-mt-2.5 mb-2.5 text-xs text-yellow">
+          <FontAwesomeIcon className="mr-1" size="xs" icon={faInfoCircle} />
+          {canCreateConnection ? (
+            <>
+              You do not have access to any {appName} Connections. Create one from the{" "}
+              <Link
+                to="/organization/settings"
+                className="underline"
+                search={{ selectedTab: "app-connections" }}
+              >
+                Organization Settings
+              </Link>{" "}
+              page.
+            </>
+          ) : (
+            `You do not have access to any ${appName} Connections. Contact an admin to create one.`
+          )}
+        </p>
+      )}
     </>
   );
 };

@@ -9,10 +9,25 @@ export type TGitHubConnectionRepository = {
   owner: TGitHubConnectionOrganization;
 };
 
+export type TGitHubConnectionEnvironment = {
+  id: number;
+  name: string;
+};
+
 export type TGitHubConnectionListRepositoriesResponse = {
   repositories: TGitHubConnectionRepository[];
 };
 
 export type TGitHubConnectionListOrganizationsResponse = {
   organizations: TGitHubConnectionOrganization[];
+};
+
+export type TGitHubConnectionListEnvironmentsResponse = {
+  environments: TGitHubConnectionEnvironment[];
+};
+
+export type TListGitHubConnectionEnvironments = {
+  connectionId: string;
+  repo: string;
+  owner: string;
 };

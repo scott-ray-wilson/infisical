@@ -1,5 +1,8 @@
 import { SecretSync, TSecretSync } from "@app/hooks/api/secretSyncs";
-import { GitHubSyncScope } from "@app/hooks/api/secretSyncs/types/github-sync";
+import {
+  GitHubSyncScope,
+  GitHubSyncVisibility
+} from "@app/hooks/api/secretSyncs/types/github-sync";
 
 // This functional ensures parity across what is displayed in the destination column
 // and the values used when search filtering
@@ -18,7 +21,11 @@ export const getSecretSyncDestinationColValues = (secretSync: TSecretSync) => {
       switch (destinationConfig.scope) {
         case GitHubSyncScope.Organization:
           primaryText = destinationConfig.org;
-          secondaryText = `Organization - Visibility ${destinationConfig.visibility}`;
+          if (destinationConfig.visibility === GitHubSyncVisibility.Selected) {
+            secondaryText = `Organization - ${destinationConfig.selectedRepositoryIds?.length ?? 0} Repositories`;
+          } else {
+            secondaryText = `Organization - ${destinationConfig.visibility} Repositories`;
+          }
           break;
         case GitHubSyncScope.Repository:
           primaryText = `${destinationConfig.owner}/${destinationConfig.repo}`;
@@ -26,7 +33,7 @@ export const getSecretSyncDestinationColValues = (secretSync: TSecretSync) => {
           break;
         case GitHubSyncScope.RepositoryEnvironment:
           primaryText = `${destinationConfig.owner}/${destinationConfig.repo}`;
-          secondaryText = `Environment: ${destinationConfig.env}`;
+          secondaryText = `Environment - ${destinationConfig.env}`;
           break;
         default:
           throw new Error(`Unhandled GitHub Scope Destination Col Values ${destination}`);

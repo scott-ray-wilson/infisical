@@ -1,18 +1,25 @@
 import { OrgServiceActor } from "@app/lib/types";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import {
+  getGitHubEnvironments,
   getGitHubOrganizations,
   getGitHubRepositories
 } from "@app/services/app-connection/github/github-connection-fns";
 import { TGitHubConnection } from "@app/services/app-connection/github/github-connection-types";
 
-type GetAppConnectionFunc = (
+type TGetAppConnectionFunc = (
   app: AppConnection,
   connectionId: string,
   actor: OrgServiceActor
 ) => Promise<TGitHubConnection>;
 
-export const githubConnectionService = (getAppConnection: GetAppConnectionFunc) => {
+type TListGitHubEnvironmentsDTO = {
+  connectionId: string;
+  repo: string;
+  owner: string;
+};
+
+export const githubConnectionService = (getAppConnection: TGetAppConnectionFunc) => {
   const listRepositories = async (connectionId: string, actor: OrgServiceActor) => {
     const appConnection = await getAppConnection(AppConnection.GitHub, connectionId, actor);
 
@@ -29,8 +36,20 @@ export const githubConnectionService = (getAppConnection: GetAppConnectionFunc) 
     return organizations;
   };
 
+  const listEnvironments = async (
+    { connectionId, repo, owner }: TListGitHubEnvironmentsDTO,
+    actor: OrgServiceActor
+  ) => {
+    const appConnection = await getAppConnection(AppConnection.GitHub, connectionId, actor);
+
+    const environments = await getGitHubEnvironments(appConnection, owner, repo);
+
+    return environments;
+  };
+
   return {
     listRepositories,
-    listOrganizations
+    listOrganizations,
+    listEnvironments
   };
 };

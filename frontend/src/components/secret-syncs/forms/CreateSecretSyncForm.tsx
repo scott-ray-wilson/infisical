@@ -8,7 +8,13 @@ import { createNotification } from "@app/components/notifications";
 import { Button, FormControl, Switch } from "@app/components/v2";
 import { useWorkspace } from "@app/context";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
-import { SecretSync, TSecretSync, useCreateSecretSync } from "@app/hooks/api/secretSyncs";
+import {
+  SecretSync,
+  SecretSyncInitialSyncBehavior,
+  TSecretSync,
+  useCreateSecretSync,
+  useSecretSyncOption
+} from "@app/hooks/api/secretSyncs";
 
 import { SecretSyncFormSchema, TSecretSyncForm } from "./schemas";
 import { SecretSyncDestinationFields } from "./SecretSyncDestinationFields";
@@ -38,11 +44,18 @@ export const CreateSecretSyncForm = ({ destination, onComplete, onCancel }: Prop
 
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
 
+  const { syncOption } = useSecretSyncOption(destination);
+
   const formMethods = useForm<TSecretSyncForm>({
     resolver: zodResolver(SecretSyncFormSchema),
     defaultValues: {
       destination,
-      isEnabled: true
+      isEnabled: true,
+      syncOptions: {
+        initialSyncBehavior: syncOption?.canImportSecrets
+          ? undefined
+          : SecretSyncInitialSyncBehavior.OverwriteDestination
+      }
     },
     reValidateMode: "onChange"
   });

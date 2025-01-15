@@ -1,7 +1,6 @@
 import { Octokit } from "@octokit/rest";
 import sodium from "libsodium-wrappers";
 
-import { BadRequestError } from "@app/lib/errors";
 import { getGitHubClient } from "@app/services/app-connection/github";
 import { GitHubSyncScope } from "@app/services/secret-sync/github/github-sync-enums";
 import { SECRET_SYNC_NAME_MAP } from "@app/services/secret-sync/secret-sync-maps";
@@ -210,9 +209,7 @@ export const GithubSyncFns = {
     });
   },
   importSecrets: async (secretSync: TGitHubSyncWithCredentials) => {
-    throw new BadRequestError({
-      message: `${SECRET_SYNC_NAME_MAP[secretSync.destination]} does not support importing secrets.`
-    });
+    throw new Error(`${SECRET_SYNC_NAME_MAP[secretSync.destination]} does not support importing secrets.`);
   },
   removeSecrets: async (secretSync: TGitHubSyncWithCredentials, affixedSecretMap: TSecretMap) => {
     const client = getGitHubClient(secretSync.connection);

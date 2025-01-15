@@ -21,7 +21,7 @@ export const SecretSyncModalHeader = ({ destination, isConfigured }: Props) => {
       />
       <div>
         <div className="flex items-center text-mineshaft-300">
-          {destinationDetails.name}
+          {destinationDetails.name} Sync
           <a
             target="_blank"
             href={`https://infisical.com/docs/integrations/secret-syncs/${destination}`}
@@ -40,7 +40,7 @@ export const SecretSyncModalHeader = ({ destination, isConfigured }: Props) => {
         </div>
         <p className="text-sm leading-4 text-mineshaft-400">
           {isConfigured
-            ? `${destinationDetails.name} Sync`
+            ? `Edit ${destinationDetails.name} Sync`
             : `Sync secrets to ${destinationDetails.name}`}
         </p>
       </div>

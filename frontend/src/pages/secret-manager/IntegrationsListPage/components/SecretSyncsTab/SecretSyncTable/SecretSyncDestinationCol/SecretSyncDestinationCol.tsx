@@ -1,6 +1,7 @@
 import { SecretSync, TSecretSync } from "@app/hooks/api/secretSyncs";
-import { AwsParameterStoreSyncDestinationCol } from "@app/pages/secret-manager/IntegrationsListPage/components/SecretSyncsTab/SecretSyncTable/SecretSyncDestinationCol/AwsParameterStoreSyncDestinationCol";
-import { GitHubSyncDestinationCol } from "@app/pages/secret-manager/IntegrationsListPage/components/SecretSyncsTab/SecretSyncTable/SecretSyncDestinationCol/GitHubSyncDestinationCol";
+
+import { AwsParameterStoreSyncDestinationCol } from "./AwsParameterStoreSyncDestinationCol";
+import { GitHubSyncDestinationCol } from "./GitHubSyncDestinationCol";
 
 type Props = {
   secretSync: TSecretSync;

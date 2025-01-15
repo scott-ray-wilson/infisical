@@ -77,10 +77,9 @@ export const EditSecretSyncForm = ({ secretSync, fields, onComplete }: Props) =>
 
   const {
     handleSubmit,
-    formState: { isSubmitting, isDirty, errors }
+    formState: { isSubmitting, isDirty }
   } = formMethods;
 
-  console.log("errors", errors);
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <FormProvider {...formMethods}>{Component}</FormProvider>

@@ -1,3 +1,4 @@
+import { GitHubSyncSelectedRepositoriesTooltipContent } from "@app/components/secret-syncs/github/GitHubSyncSelectedRepositoriesTooltipContent";
 import {
   GitHubSyncScope,
   GitHubSyncVisibility,
@@ -27,7 +28,11 @@ export const GitHubSyncDestinationCol = ({ secretSync }: Props) => {
   ) {
     additionalProps = {
       infoBadge: "secondary",
-      additionalTooltipContent: <>hi</>
+      additionalTooltipContent: (
+        <div className="mt-4">
+          <GitHubSyncSelectedRepositoriesTooltipContent secretSync={secretSync} />
+        </div>
+      )
     };
   }
 

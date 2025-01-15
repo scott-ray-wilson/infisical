@@ -4,10 +4,13 @@ import { apiRequest } from "@app/config/request";
 import { appConnectionKeys } from "@app/hooks/api/appConnections";
 
 import {
+  TGitHubConnectionEnvironment,
+  TGitHubConnectionListEnvironmentsResponse,
   TGitHubConnectionListOrganizationsResponse,
   TGitHubConnectionListRepositoriesResponse,
   TGitHubConnectionOrganization,
-  TGitHubConnectionRepository
+  TGitHubConnectionRepository,
+  TListGitHubConnectionEnvironments
 } from "./types";
 
 const githubConnectionKeys = {
@@ -15,7 +18,9 @@ const githubConnectionKeys = {
   listRepositories: (connectionId: string) =>
     [...githubConnectionKeys.all, "repositories", connectionId] as const,
   listOrganizations: (connectionId: string) =>
-    [...githubConnectionKeys.all, "organizatons", connectionId] as const
+    [...githubConnectionKeys.all, "organizations", connectionId] as const,
+  listEnvironments: ({ connectionId, repo, owner }: TListGitHubConnectionEnvironments) =>
+    [...githubConnectionKeys.all, "environments", connectionId, repo, owner] as const
 };
 
 export const useGitHubConnectionListRepositories = (
@@ -63,6 +68,37 @@ export const useGitHubConnectionListOrganizations = (
       );
 
       return data.organizations;
+    },
+    ...options
+  });
+};
+
+export const useGitHubConnectionListEnvironments = (
+  { connectionId, repo, owner }: TListGitHubConnectionEnvironments,
+  options?: Omit<
+    UseQueryOptions<
+      TGitHubConnectionEnvironment[],
+      unknown,
+      TGitHubConnectionEnvironment[],
+      ReturnType<typeof githubConnectionKeys.listEnvironments>
+    >,
+    "queryKey" | "queryFn"
+  >
+) => {
+  return useQuery({
+    queryKey: githubConnectionKeys.listEnvironments({ connectionId, repo, owner }),
+    queryFn: async () => {
+      const { data } = await apiRequest.get<TGitHubConnectionListEnvironmentsResponse>(
+        `/api/v1/app-connections/github/${connectionId}/environments`,
+        {
+          params: {
+            repo,
+            owner
+          }
+        }
+      );
+
+      return data.environments;
     },
     ...options
   });

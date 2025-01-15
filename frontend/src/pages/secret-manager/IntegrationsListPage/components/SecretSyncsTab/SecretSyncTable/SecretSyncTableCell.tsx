@@ -48,7 +48,7 @@ export const SecretSyncTableCell = ({
           </p>
           {secondaryText && (
             <p
-              className={twMerge("truncate text-xs leading-3 text-bunker-300", secondaryClassName)}
+              className={twMerge("truncate text-xs leading-4 text-bunker-300", secondaryClassName)}
             >
               {secondaryText}
               {infoBadge === "secondary" && (

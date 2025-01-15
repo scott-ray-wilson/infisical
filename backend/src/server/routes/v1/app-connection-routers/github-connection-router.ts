@@ -76,4 +76,42 @@ export const registerGitHubConnectionRouter = async (server: FastifyZodProvider)
       return { organizations };
     }
   });
+
+  server.route({
+    method: "GET",
+    url: `/:connectionId/environments`,
+    config: {
+      rateLimit: readLimit
+    },
+    schema: {
+      params: z.object({
+        connectionId: z.string().uuid()
+      }),
+      querystring: z.object({
+        repo: z.string().min(1, "Repository name is required"),
+        owner: z.string().min(1, "Repository owner name is required")
+      }),
+      response: {
+        200: z.object({
+          environments: z.object({ id: z.number(), name: z.string() }).array()
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
+    handler: async (req) => {
+      const { connectionId } = req.params;
+      const { repo, owner } = req.query;
+
+      const environments = await server.services.appConnection.github.listEnvironments(
+        {
+          connectionId,
+          repo,
+          owner
+        },
+        req.permission
+      );
+
+      return { environments };
+    }
+  });
 };

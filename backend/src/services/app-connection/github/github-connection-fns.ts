@@ -124,6 +124,26 @@ export const getGitHubOrganizations = async (appConnection: TGitHubConnection) =
   return organizations;
 };
 
+export const getGitHubEnvironments = async (appConnection: TGitHubConnection, owner: string, repo: string) => {
+  const client = getGitHubClient(appConnection);
+
+  try {
+    const environments = await client.paginate("GET /repos/{owner}/{repo}/environments", {
+      owner,
+      repo
+    });
+
+    return environments;
+  } catch (e) {
+    // repo doesn't have envs
+    if ((e as { status: number }).status === 404) {
+      return [];
+    }
+
+    throw e;
+  }
+};
+
 type TokenRespData = {
   access_token: string;
   scope: string;

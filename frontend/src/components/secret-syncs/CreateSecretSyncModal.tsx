@@ -56,7 +56,10 @@ export const CreateSecretSyncModal = ({ onOpenChange, ...props }: Props) => {
         bodyClassName="overflow-visible"
       >
         <Content
-          onComplete={() => onOpenChange(false)}
+          onComplete={() => {
+            setSelectedSync(null);
+            onOpenChange(false);
+          }}
           selectedSync={selectedSync}
           setSelectedSync={setSelectedSync}
         />

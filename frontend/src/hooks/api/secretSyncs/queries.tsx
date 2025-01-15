@@ -1,14 +1,13 @@
 import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 
 import { apiRequest } from "@app/config/request";
-import { SecretSync } from "@app/hooks/api/secretSyncs";
+import { SecretSync, TSecretSyncOption } from "@app/hooks/api/secretSyncs";
 import {
   TListSecretSyncOptions,
   TListSecretSyncs,
   TSecretSync,
   TSecretSyncResponse
 } from "@app/hooks/api/secretSyncs/types";
-import { TSecretSyncOption } from "@app/hooks/api/secretSyncs/types/sync-options";
 
 export const secretSyncKeys = {
   all: ["secret-sync"] as const,
@@ -39,18 +38,13 @@ export const useSecretSyncOptions = (
     ...options
   });
 };
-//
-// export const useGetAppConnectionOption = <T extends AppConnection>(app: T) => {
-//   const { data: options = [], isLoading } = useSecretSyncOptions();
-//
-//   return useMemo(
-//     () => ({
-//       option: (options.find((opt) => opt.app === app) as TAppConnectionOptionMap[T]) ?? {},
-//       isLoading
-//     }),
-//     [options, app]
-//   );
-// };
+
+export const useSecretSyncOption = (destination: SecretSync) => {
+  const { data: syncOptions, isPending } = useSecretSyncOptions();
+  const syncOption = syncOptions?.find((option) => option.destination === destination);
+
+  return { syncOption, isPending };
+};
 
 export const useListSecretSyncs = (
   projectId: string,

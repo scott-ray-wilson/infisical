@@ -41,7 +41,7 @@ import { ROUTE_PATHS } from "@app/const/routes";
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/context";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import { useToggle } from "@app/hooks";
-import { SecretSyncStatus, TSecretSync } from "@app/hooks/api/secretSyncs";
+import { SecretSyncStatus, TSecretSync, useSecretSyncOption } from "@app/hooks/api/secretSyncs";
 import { SecretSyncDestinationCol } from "@app/pages/secret-manager/IntegrationsListPage/components/SecretSyncsTab/SecretSyncTable/SecretSyncDestinationCol/SecretSyncDestinationCol";
 
 import { SecretSyncTableCell } from "./SecretSyncTableCell";
@@ -77,6 +77,8 @@ export const SecretSyncRow = ({
     isEnabled,
     projectId
   } = secretSync;
+
+  const { syncOption } = useSecretSyncOption(destination);
 
   const destinationName = SECRET_SYNC_MAP[destination].name;
 
@@ -136,7 +138,7 @@ export const SecretSyncRow = ({
         <img
           alt={`${destinationDetails.name} sync`}
           src={`/images/integrations/${destinationDetails.image}`}
-          className="min-w-[1.5rem]"
+          className="min-w-[1.75rem]"
         />
       </Td>
       <Td className="!min-w-[8rem] max-w-0">
@@ -153,7 +155,7 @@ export const SecretSyncRow = ({
               </Tooltip>
             )}
           </div>
-          <p className="truncate text-xs leading-3 text-bunker-300">{destinationDetails.name}</p>
+          <p className="truncate text-xs leading-4 text-bunker-300">{destinationDetails.name}</p>
         </div>
       </Td>
       <SecretSyncTableCell primaryText={secretPath} secondaryText={environment.name} />
@@ -258,24 +260,26 @@ export const SecretSyncRow = ({
                   </div>
                 </Tooltip>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                icon={<FontAwesomeIcon icon={faDownload} />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onTriggerImportSecrets(secretSync);
-                }}
-              >
-                <Tooltip
-                  position="left"
-                  sideOffset={42}
-                  content={`Import secrets from this ${destinationName} destination into Infisical.`}
+              {syncOption?.canImportSecrets && (
+                <DropdownMenuItem
+                  icon={<FontAwesomeIcon icon={faDownload} />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onTriggerImportSecrets(secretSync);
+                  }}
                 >
-                  <div className="flex h-full w-full items-center justify-between gap-1">
-                    <span>Import Secrets</span>
-                    <FontAwesomeIcon className="text-bunker-300" size="sm" icon={faInfoCircle} />
-                  </div>
-                </Tooltip>
-              </DropdownMenuItem>
+                  <Tooltip
+                    position="left"
+                    sideOffset={42}
+                    content={`Import secrets from this ${destinationName} destination into Infisical.`}
+                  >
+                    <div className="flex h-full w-full items-center justify-between gap-1">
+                      <span>Import Secrets</span>
+                      <FontAwesomeIcon className="text-bunker-300" size="sm" icon={faInfoCircle} />
+                    </div>
+                  </Tooltip>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 icon={<FontAwesomeIcon icon={faEraser} />}
                 onClick={(e) => {

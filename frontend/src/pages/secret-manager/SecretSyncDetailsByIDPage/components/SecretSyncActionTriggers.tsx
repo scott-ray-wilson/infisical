@@ -38,6 +38,7 @@ import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import { usePopUp, useToggle } from "@app/hooks";
 import {
   TSecretSync,
+  useSecretSyncOption,
   useTriggerSecretSyncSyncSecrets,
   useUpdateSecretSync
 } from "@app/hooks/api/secretSyncs";
@@ -59,7 +60,10 @@ export const SecretSyncActionTriggers = ({ secretSync }: Props) => {
   const triggerSyncSecrets = useTriggerSecretSyncSyncSecrets();
   const updateSync = useUpdateSecretSync();
 
-  const destinationName = SECRET_SYNC_MAP[secretSync.destination].name;
+  const { destination } = secretSync;
+
+  const destinationName = SECRET_SYNC_MAP[destination].name;
+  const { syncOption } = useSecretSyncOption(destination);
 
   const [isIdCopied, setIsIdCopied] = useToggle(false);
 
@@ -153,21 +157,23 @@ export const SecretSyncActionTriggers = ({ secretSync }: Props) => {
               >
                 Copy Sync ID
               </DropdownMenuItem>
-              <DropdownMenuItem
-                icon={<FontAwesomeIcon icon={faDownload} />}
-                onClick={() => handlePopUpOpen("importSecrets")}
-              >
-                <Tooltip
-                  position="left"
-                  sideOffset={42}
-                  content={`Import secrets from this ${destinationName} destination into Infisical.`}
+              {syncOption?.canImportSecrets && (
+                <DropdownMenuItem
+                  icon={<FontAwesomeIcon icon={faDownload} />}
+                  onClick={() => handlePopUpOpen("importSecrets")}
                 >
-                  <div className="flex h-full w-full items-center justify-between gap-1">
-                    <span>Import Secrets</span>
-                    <FontAwesomeIcon className="text-bunker-300" size="sm" icon={faInfoCircle} />
-                  </div>
-                </Tooltip>
-              </DropdownMenuItem>
+                  <Tooltip
+                    position="left"
+                    sideOffset={42}
+                    content={`Import secrets from this ${destinationName} destination into Infisical.`}
+                  >
+                    <div className="flex h-full w-full items-center justify-between gap-1">
+                      <span>Import Secrets</span>
+                      <FontAwesomeIcon className="text-bunker-300" size="sm" icon={faInfoCircle} />
+                    </div>
+                  </Tooltip>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 icon={<FontAwesomeIcon icon={faEraser} />}
                 onClick={() => handlePopUpOpen("removeSecrets")}

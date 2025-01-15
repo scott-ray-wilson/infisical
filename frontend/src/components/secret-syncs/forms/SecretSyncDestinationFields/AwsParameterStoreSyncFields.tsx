@@ -26,18 +26,14 @@ const Option = ({ isSelected, children, ...props }: OptionProps<(typeof AWS_REGI
   );
 };
 
-type Props = {
-  isUpdate?: boolean;
-};
-
-export const AwsParameterStoreSyncFields = ({ isUpdate }: Props) => {
+export const AwsParameterStoreSyncFields = () => {
   const { control } = useFormContext<
     TSecretSyncForm & { destination: SecretSync.AWSParameterStore }
   >();
 
   return (
     <>
-      <SecretSyncConnectionField isUpdate={isUpdate} />
+      <SecretSyncConnectionField />
       <Controller
         render={({ field: { value, onChange }, fieldState: { error } }) => (
           <FormControl isError={Boolean(error)} errorText={error?.message} label="Region">

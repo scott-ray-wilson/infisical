@@ -88,7 +88,6 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
     "importSecrets",
     "removeSecrets"
   ] as const);
-
   const triggerSync = useTriggerSecretSyncSyncSecrets();
   const updateSync = useUpdateSecretSync();
 
@@ -346,7 +345,6 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
             ) : (
               <DropdownMenuItem isDisabled>No Secret Syncs Configured</DropdownMenuItem>
             )}
-
             <DropdownMenuLabel>Environment</DropdownMenuLabel>
             {currentWorkspace.environments.map((env) => (
               <DropdownMenuItem

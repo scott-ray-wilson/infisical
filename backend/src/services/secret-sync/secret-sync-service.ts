@@ -209,17 +209,6 @@ export const secretSyncServiceFactory = ({
     // validates permission to connect and app is valid for sync destination
     await appConnectionService.connectAppConnectionById(destinationApp, params.connectionId, actor);
 
-    // TODO: re-verify with new behavior
-
-    // if (appConnection.app !== destinationApp) {
-    //   const appName = APP_CONNECTION_NAME_MAP[appConnection.app];
-    //   throw new BadRequestError({
-    //     message: `Invalid App Connection - Cannot sync to ${SECRET_SYNC_NAME_MAP[params.destination]} using ${
-    //       startsWithVowel(appName) ? "an" : "a"
-    //     } ${appName} Connection`
-    //   });
-    // }
-
     const projectFolders = await folderDAL.findByProjectId(folder.projectId);
 
     const secretSync = await secretSyncDAL.transaction(async (tx) => {
@@ -429,6 +418,12 @@ export const secretSyncServiceFactory = ({
     actor: OrgServiceActor
   ) => {
     await checkSecretSyncAvailability(actor.orgId);
+
+    if (!listSecretSyncOptions().find((option) => option.destination === destination)?.canImportSecrets) {
+      throw new BadRequestError({
+        message: `${SECRET_SYNC_NAME_MAP[destination]} does not support importing secrets.`
+      });
+    }
 
     const secretSync = await secretSyncDAL.findById(syncId);
 

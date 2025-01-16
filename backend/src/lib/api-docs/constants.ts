@@ -1717,7 +1717,7 @@ export const SecretSyncs = {
       ORG: "The name of the GitHub organization.",
       OWNER: "The name of the GitHub account owner of the repository.",
       REPO: "The name of the GitHub repository.",
-      ENV: "The name of the GitHub environment. The name must be URL encoded."
+      ENV: "The name of the GitHub environment."
     }
   }
 };

@@ -8,6 +8,7 @@ import {
   AWS_SECRETS_MANAGER_SYNC_LIST_OPTION,
   AwsSecretsManagerSyncFns
 } from "@app/services/secret-sync/aws-secrets-manager";
+import { DATABRICKS_SYNC_LIST_OPTION, databricksSyncFactory } from "@app/services/secret-sync/databricks";
 import { GITHUB_SYNC_LIST_OPTION, GithubSyncFns } from "@app/services/secret-sync/github";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 import { SecretSyncError } from "@app/services/secret-sync/secret-sync-errors";
@@ -19,11 +20,8 @@ import {
 
 import { TAppConnectionDALFactory } from "../app-connection/app-connection-dal";
 import { TKmsServiceFactory } from "../kms/kms-service";
-import {
-  AZURE_APP_CONFIGURATION_SYNC_LIST_OPTION,
-  azureAppConfigurationSecretSyncFactory
-} from "./azure-app-configuration";
-import { AZURE_KEY_VAULT_SYNC_LIST_OPTION, azureKeyVaultSecretSyncFactory } from "./azure-key-vault";
+import { AZURE_APP_CONFIGURATION_SYNC_LIST_OPTION, azureAppConfigurationSyncFactory } from "./azure-app-configuration";
+import { AZURE_KEY_VAULT_SYNC_LIST_OPTION, azureKeyVaultSyncFactory } from "./azure-key-vault";
 import { GCP_SYNC_LIST_OPTION } from "./gcp";
 import { GcpSyncFns } from "./gcp/gcp-sync-fns";
 
@@ -33,7 +31,8 @@ const SECRET_SYNC_LIST_OPTIONS: Record<SecretSync, TSecretSyncListItem> = {
   [SecretSync.GitHub]: GITHUB_SYNC_LIST_OPTION,
   [SecretSync.GCPSecretManager]: GCP_SYNC_LIST_OPTION,
   [SecretSync.AzureKeyVault]: AZURE_KEY_VAULT_SYNC_LIST_OPTION,
-  [SecretSync.AzureAppConfiguration]: AZURE_APP_CONFIGURATION_SYNC_LIST_OPTION
+  [SecretSync.AzureAppConfiguration]: AZURE_APP_CONFIGURATION_SYNC_LIST_OPTION,
+  [SecretSync.Databricks]: DATABRICKS_SYNC_LIST_OPTION
 };
 
 export const listSecretSyncOptions = () => {
@@ -103,15 +102,17 @@ export const SecretSyncFns = {
       case SecretSync.GCPSecretManager:
         return GcpSyncFns.syncSecrets(secretSync, secretMap);
       case SecretSync.AzureKeyVault:
-        return azureKeyVaultSecretSyncFactory({
+        return azureKeyVaultSyncFactory({
           appConnectionDAL,
           kmsService
         }).syncSecrets(secretSync, secretMap);
       case SecretSync.AzureAppConfiguration:
-        return azureAppConfigurationSecretSyncFactory({
+        return azureAppConfigurationSyncFactory({
           appConnectionDAL,
           kmsService
         }).syncSecrets(secretSync, secretMap);
+      case SecretSync.Databricks:
+        return databricksSyncFactory().syncSecrets(secretSync, secretMap);
       default:
         throw new Error(
           `Unhandled sync destination for sync secrets fns: ${(secretSync as TSecretSyncWithCredentials).destination}`
@@ -137,17 +138,19 @@ export const SecretSyncFns = {
         secretMap = await GcpSyncFns.getSecrets(secretSync);
         break;
       case SecretSync.AzureKeyVault:
-        secretMap = await azureKeyVaultSecretSyncFactory({
+        secretMap = await azureKeyVaultSyncFactory({
           appConnectionDAL,
           kmsService
         }).getSecrets(secretSync);
         break;
       case SecretSync.AzureAppConfiguration:
-        secretMap = await azureAppConfigurationSecretSyncFactory({
+        secretMap = await azureAppConfigurationSyncFactory({
           appConnectionDAL,
           kmsService
         }).getSecrets(secretSync);
         break;
+      case SecretSync.Databricks:
+        return databricksSyncFactory().getSecrets(secretSync);
       default:
         throw new Error(
           `Unhandled sync destination for get secrets fns: ${(secretSync as TSecretSyncWithCredentials).destination}`
@@ -174,15 +177,17 @@ export const SecretSyncFns = {
       case SecretSync.GCPSecretManager:
         return GcpSyncFns.removeSecrets(secretSync, secretMap);
       case SecretSync.AzureKeyVault:
-        return azureKeyVaultSecretSyncFactory({
+        return azureKeyVaultSyncFactory({
           appConnectionDAL,
           kmsService
         }).removeSecrets(secretSync, secretMap);
       case SecretSync.AzureAppConfiguration:
-        return azureAppConfigurationSecretSyncFactory({
+        return azureAppConfigurationSyncFactory({
           appConnectionDAL,
           kmsService
         }).removeSecrets(secretSync, secretMap);
+      case SecretSync.Databricks:
+        return databricksSyncFactory().removeSecrets(secretSync, secretMap);
       default:
         throw new Error(
           `Unhandled sync destination for remove secrets fns: ${(secretSync as TSecretSyncWithCredentials).destination}`

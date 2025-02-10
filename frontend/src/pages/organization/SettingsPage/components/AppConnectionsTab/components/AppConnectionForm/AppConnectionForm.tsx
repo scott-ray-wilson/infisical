@@ -6,6 +6,7 @@ import {
   useUpdateAppConnection
 } from "@app/hooks/api/appConnections";
 import { AppConnection } from "@app/hooks/api/appConnections/enums";
+import { DatabricksConnectionForm } from "@app/pages/organization/SettingsPage/components/AppConnectionsTab/components/AppConnectionForm/DatabricksConnectionForm";
 import { DiscriminativePick } from "@app/types";
 
 import { AppConnectionHeader } from "../AppConnectionHeader";
@@ -59,6 +60,8 @@ const CreateForm = ({ app, onComplete }: CreateFormProps) => {
       return <AzureKeyVaultConnectionForm />;
     case AppConnection.AzureAppConfiguration:
       return <AzureAppConfigurationConnectionForm />;
+    case AppConnection.Databricks:
+      return <DatabricksConnectionForm onSubmit={onSubmit} />;
     default:
       throw new Error(`Unhandled App ${app}`);
   }
@@ -102,6 +105,8 @@ const UpdateForm = ({ appConnection, onComplete }: UpdateFormProps) => {
       return <AzureKeyVaultConnectionForm appConnection={appConnection} />;
     case AppConnection.AzureAppConfiguration:
       return <AzureAppConfigurationConnectionForm appConnection={appConnection} />;
+    case AppConnection.Databricks:
+      return <DatabricksConnectionForm onSubmit={onSubmit} appConnection={appConnection} />;
     default:
       throw new Error(`Unhandled App ${(appConnection as TAppConnection).app}`);
   }

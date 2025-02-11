@@ -46,6 +46,10 @@ export const ROUTE_PATHS = Object.freeze({
       "/_authenticate/_inject-org-details/_org-layout/organization/roles/$roleId"
     ),
     AppConnections: {
+      AppConnectionsPage: setRoute(
+        "/organization/app-connections",
+        "/_authenticate/_inject-org-details/_org-layout/organization/app-connections"
+      ),
       OauthCallbackPage: setRoute(
         "/organization/app-connections/$appConnection/oauth/callback",
         "/_authenticate/_inject-org-details/_org-layout/organization/app-connections/$appConnection/oauth/callback"

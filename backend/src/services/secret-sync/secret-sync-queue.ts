@@ -64,7 +64,7 @@ export type TSecretSyncQueueFactory = ReturnType<typeof secretSyncQueueFactory>;
 type TSecretSyncQueueFactoryDep = {
   queueService: Pick<TQueueServiceFactory, "queue" | "start">;
   kmsService: Pick<TKmsServiceFactory, "createCipherPairWithDataKey">;
-  appConnectionDAL: Pick<TAppConnectionDALFactory, "findById" | "update">;
+  appConnectionDAL: Pick<TAppConnectionDALFactory, "findById" | "update" | "updateById">;
   keyStore: Pick<TKeyStoreFactory, "acquireLock" | "setItemWithExpiry" | "getItem">;
   folderDAL: TSecretFolderDALFactory;
   secretV2BridgeDAL: Pick<
@@ -271,7 +271,7 @@ export const secretSyncQueueFactory = ({
   const queueSecretSyncSyncSecretsById = async (payload: TQueueSecretSyncSyncSecretsByIdDTO) =>
     queueService.queue(QueueName.AppConnectionSecretSync, QueueJobs.SecretSyncSyncSecrets, payload, {
       delay: getRequeueDelay(payload.failedToAcquireLockCount), // this is for delaying re-queued jobs if sync is locked
-      attempts: 5,
+      attempts: 1,
       backoff: {
         type: "exponential",
         delay: 3000

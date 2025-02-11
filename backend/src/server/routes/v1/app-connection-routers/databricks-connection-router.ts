@@ -35,7 +35,7 @@ export const registerDatabricksConnectionRouter = async (server: FastifyZodProvi
       }),
       response: {
         200: z.object({
-          secretScopes: z.object({ scope: z.string() }).array()
+          secretScopes: z.object({ name: z.string() }).array()
         })
       }
     },

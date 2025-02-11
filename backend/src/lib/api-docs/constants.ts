@@ -1747,11 +1747,11 @@ export const SecretSyncs = {
       label: "An optional label to assign to secrets created in Azure App Configuration."
     },
     GCP: {
-      scope: "The Google scope that secrets should be synced to",
-      projectId: "The ID of the Google project secrets should be synced to"
+      scope: "The Google scope that secrets should be synced to.",
+      projectId: "The ID of the Google project secrets should be synced to."
     },
     DATABRICKS: {
-      scope: "The Databricks scope to that secrets should be synced to"
+      scope: "The Databricks secret scope that secrets should be synced to."
     }
   }
 };

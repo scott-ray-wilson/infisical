@@ -21,7 +21,7 @@ type TDatabricksSecretSyncFactoryDeps = {
 
 const DATABRICKS_SCOPE_SECRET_LIMIT = 1000;
 
-const listDatabricksSecretKeys = async ({ workspaceUrl, scope, accessToken }: TDatabricksListSecretKeys) => {
+const listDatabricksSecrets = async ({ workspaceUrl, scope, accessToken }: TDatabricksListSecretKeys) => {
   const { data } = await request.get<TDatabricksListSecretKeysResponse>(
     `${removeTrailingSlash(workspaceUrl)}/api/2.0/secrets/list`,
     {
@@ -35,11 +35,12 @@ const listDatabricksSecretKeys = async ({ workspaceUrl, scope, accessToken }: TD
     }
   );
 
-  return data.keys;
+  // not present in response if no secrets exist in scope
+  return data.secrets ?? [];
 };
 const putDatabricksSecret = async ({ workspaceUrl, scope, key, value, accessToken }: TDatabricksPutSecret) =>
   request.post(
-    `${removeTrailingSlash(workspaceUrl)}/2.0/secrets/put`,
+    `${removeTrailingSlash(workspaceUrl)}/api/2.0/secrets/put`,
     {
       scope,
       key,
@@ -55,7 +56,7 @@ const putDatabricksSecret = async ({ workspaceUrl, scope, key, value, accessToke
 
 const deleteDatabricksSecrets = async ({ workspaceUrl, scope, key, accessToken }: TDatabricksDeleteSecret) =>
   request.post(
-    `${removeTrailingSlash(workspaceUrl)}/2.0/secrets/delete`,
+    `${removeTrailingSlash(workspaceUrl)}/api/2.0/secrets/delete`,
     {
       scope,
       key
@@ -97,16 +98,16 @@ export const databricksSyncFactory = ({ kmsService, appConnectionDAL }: TDatabri
       });
     }
 
-    const databricksSecretKeys = await listDatabricksSecretKeys({
+    const databricksSecretKeys = await listDatabricksSecrets({
       workspaceUrl,
       scope,
       accessToken
     });
 
-    for await (const key of databricksSecretKeys) {
-      if (!(key in secretMap)) {
+    for await (const secret of databricksSecretKeys) {
+      if (!(secret.key in secretMap)) {
         await deleteDatabricksSecrets({
-          key,
+          key: secret.key,
           workspaceUrl,
           scope,
           accessToken
@@ -125,16 +126,16 @@ export const databricksSyncFactory = ({ kmsService, appConnectionDAL }: TDatabri
 
     const accessToken = await getDatabricksConnectionAccessToken(connection, appConnectionDAL, kmsService);
 
-    const databricksSecretKeys = await listDatabricksSecretKeys({
+    const databricksSecretKeys = await listDatabricksSecrets({
       workspaceUrl,
       scope,
       accessToken
     });
 
-    for await (const key of databricksSecretKeys) {
-      if (key in secretMap) {
+    for await (const secret of databricksSecretKeys) {
+      if (secret.key in secretMap) {
         await deleteDatabricksSecrets({
-          key,
+          key: secret.key,
           workspaceUrl,
           scope,
           accessToken

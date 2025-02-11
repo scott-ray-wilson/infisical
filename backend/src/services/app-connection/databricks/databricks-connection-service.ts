@@ -37,7 +37,8 @@ const listDatabricksSecretScopes = async (
     }
   );
 
-  return data.scopes;
+  // not present in response if no scopes exists
+  return data.scopes ?? [];
 };
 
 export const databricksConnectionService = (

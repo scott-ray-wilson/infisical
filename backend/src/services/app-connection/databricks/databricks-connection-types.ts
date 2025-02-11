@@ -32,5 +32,5 @@ export type TAuthorizeDatabricksConnection = {
 };
 
 export type TDatabricksListSecretScopesResponse = {
-  scopes: { scope: string; backend_type: string; keyvault_metadata: { resource_id: string; dns_name: string } }[];
+  scopes?: { name: string; backend_type: string; keyvault_metadata: { resource_id: string; dns_name: string } }[];
 };

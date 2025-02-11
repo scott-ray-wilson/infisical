@@ -1,5 +1,6 @@
 import { AxiosError } from "axios";
 
+import { logger } from "@app/lib/logger";
 import {
   AWS_PARAMETER_STORE_SYNC_LIST_OPTION,
   AwsParameterStoreSyncFns
@@ -40,7 +41,7 @@ export const listSecretSyncOptions = () => {
 };
 
 type TSyncSecretDeps = {
-  appConnectionDAL: Pick<TAppConnectionDALFactory, "findById" | "update">;
+  appConnectionDAL: Pick<TAppConnectionDALFactory, "findById" | "update" | "updateById">;
   kmsService: Pick<TKmsServiceFactory, "createCipherPairWithDataKey">;
 };
 
@@ -112,7 +113,10 @@ export const SecretSyncFns = {
           kmsService
         }).syncSecrets(secretSync, secretMap);
       case SecretSync.Databricks:
-        return databricksSyncFactory().syncSecrets(secretSync, secretMap);
+        return databricksSyncFactory({
+          appConnectionDAL,
+          kmsService
+        }).syncSecrets(secretSync, secretMap);
       default:
         throw new Error(
           `Unhandled sync destination for sync secrets fns: ${(secretSync as TSecretSyncWithCredentials).destination}`
@@ -150,7 +154,10 @@ export const SecretSyncFns = {
         }).getSecrets(secretSync);
         break;
       case SecretSync.Databricks:
-        return databricksSyncFactory().getSecrets(secretSync);
+        return databricksSyncFactory({
+          appConnectionDAL,
+          kmsService
+        }).getSecrets(secretSync);
       default:
         throw new Error(
           `Unhandled sync destination for get secrets fns: ${(secretSync as TSecretSyncWithCredentials).destination}`
@@ -187,7 +194,10 @@ export const SecretSyncFns = {
           kmsService
         }).removeSecrets(secretSync, secretMap);
       case SecretSync.Databricks:
-        return databricksSyncFactory().removeSecrets(secretSync, secretMap);
+        return databricksSyncFactory({
+          appConnectionDAL,
+          kmsService
+        }).removeSecrets(secretSync, secretMap);
       default:
         throw new Error(
           `Unhandled sync destination for remove secrets fns: ${(secretSync as TSecretSyncWithCredentials).destination}`
@@ -213,6 +223,8 @@ export const parseSyncErrorMessage = (err: unknown): string => {
   } else {
     errorMessage = (err as Error)?.message || "An unknown error occurred.";
   }
+
+  logger.error(errorMessage);
 
   return errorMessage.length <= MAX_MESSAGE_LENGTH
     ? errorMessage

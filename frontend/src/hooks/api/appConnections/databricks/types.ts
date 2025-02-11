@@ -1,5 +1,5 @@
 export type TDatabricksSecretScope = {
-  scope: string;
+  name: string;
 };
 
 export type TDatabricksConnectionListSecretScopesResponse = {

@@ -43,7 +43,7 @@ export const DatabricksSyncFields = () => {
             helperText={
               <Tooltip
                 className="max-w-md"
-                content="Ensure that you've created the secret scope in the selected workspace"
+                content="Ensure that you've created the secret scope in the selected workspace and the service principal has been be assigned to the respective workspace."
               >
                 <div>
                   <span>Don&#39;t see the secret scope you&#39;re looking for?</span>{" "}
@@ -55,14 +55,14 @@ export const DatabricksSyncFields = () => {
             <FilterableSelect
               isLoading={isSecretScopesPending && Boolean(connectionId)}
               isDisabled={!connectionId}
-              value={secretScopes.find((secretScope) => secretScope.scope === value) ?? null}
+              value={secretScopes.find((scope) => scope.name === value) ?? null}
               onChange={(option) =>
-                onChange((option as SingleValue<TDatabricksSecretScope>)?.scope ?? null)
+                onChange((option as SingleValue<TDatabricksSecretScope>)?.name ?? null)
               }
               options={secretScopes}
               placeholder="Select a secret scope..."
-              getOptionLabel={(option) => option.scope}
-              getOptionValue={(option) => option.scope}
+              getOptionLabel={(option) => option.name}
+              getOptionValue={(option) => option.name}
             />
           </FormControl>
         )}

@@ -53,9 +53,9 @@ export const getDatabricksConnectionAccessToken = async (
 
   // get new token if less than 10 minutes from expiry
   if (Date.now() < expiresAt - 10_000) {
-    logger.warn("token expires within 10 minutes");
     return accessToken;
   }
+  logger.warn("token expires 10 minutes");
 
   const authData = await authorizeDatabricksConnection({ clientId, clientSecret, workspaceUrl });
 

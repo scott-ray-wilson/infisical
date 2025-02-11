@@ -19,8 +19,7 @@ export type TDatabricksSyncWithCredentials = TDatabricksSync & {
 };
 
 export type TDatabricksListSecretKeysResponse = {
-  keys: string[];
-  last_updated_timestamp: number;
+  secrets?: { key: string; last_updated_timestamp: number }[];
 };
 
 type TBaseDatabricksSecretRequest = {

@@ -32,6 +32,8 @@ description: "Learn how to configure an AWS Parameter Store Sync for Infisical."
             - **AWS Connection**: The AWS Connection to authenticate with.
             - **Region**: The AWS region to deploy secrets to.
             - **Path**: The AWS Parameter Store path to deploy secrets to.
+            - **Key ID**: The AWS KMS key ID or alias to encrypt parameters with.
+            - **Tags**: Optional tags to add to parameters synced by Infisical.
 
         5. Configure the **Sync Options** to specify how secrets should be synced, then click **Next**.
         ![Configure Options](/images/secret-syncs/aws-parameter-store/aws-parameter-store-options.png)

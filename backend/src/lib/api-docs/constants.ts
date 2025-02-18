@@ -1725,7 +1725,10 @@ export const SecretSyncs = {
   DESTINATION_CONFIG: {
     AWS_PARAMETER_STORE: {
       region: "The AWS region to sync secrets to.",
-      path: "The Parameter Store path to sync secrets to."
+      path: "The Parameter Store path to sync secrets to.",
+      keyId: "The AWS KMS key ID or alias to use when encrypting parameters synced by Infisical.",
+      tags: "Optional resource tags to add to parameters synced by Infisical.",
+      syncSecretMetadataAsTags: `Whether Infisical secret metadata should be added as resource tags to parameters synced by Infisical.`
     },
     AWS_SECRETS_MANAGER: {
       region: "The AWS region to sync secrets to.",

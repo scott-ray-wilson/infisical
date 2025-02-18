@@ -7,6 +7,9 @@ export type TAwsParameterStoreSync = TRootSecretSync & {
   destinationConfig: {
     path: string;
     region: string;
+    keyId?: string;
+    tags?: { key: string; value?: string }[];
+    syncSecretMetadataAsTags?: boolean;
   };
   connection: {
     app: AppConnection.AWS;

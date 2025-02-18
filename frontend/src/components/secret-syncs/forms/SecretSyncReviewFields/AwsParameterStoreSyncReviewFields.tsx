@@ -1,8 +1,10 @@
 import { useFormContext } from "react-hook-form";
+import { faEye } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { SecretSyncLabel } from "@app/components/secret-syncs";
 import { TSecretSyncForm } from "@app/components/secret-syncs/forms/schemas";
-import { Badge } from "@app/components/v2";
+import { Badge, Table, TBody, Td, Th, THead, Tooltip, Tr } from "@app/components/v2";
 import { AWS_REGIONS } from "@app/helpers/appConnections";
 import { SecretSync } from "@app/hooks/api/secretSyncs";
 
@@ -11,7 +13,7 @@ export const AwsParameterStoreSyncReviewFields = () => {
     TSecretSyncForm & { destination: SecretSync.AWSParameterStore }
   >();
 
-  const [region, path] = watch(["destinationConfig.region", "destinationConfig.path"]);
+  const [{ region, path, keyId, tags, syncSecretMetadataAsTags }] = watch(["destinationConfig"]);
 
   const awsRegion = AWS_REGIONS.find((r) => r.slug === region);
 
@@ -24,6 +26,45 @@ export const AwsParameterStoreSyncReviewFields = () => {
         </Badge>
       </SecretSyncLabel>
       <SecretSyncLabel label="Path">{path}</SecretSyncLabel>
+      {keyId && <SecretSyncLabel label="KMS Key">{keyId}</SecretSyncLabel>}
+      {tags?.length && (
+        <SecretSyncLabel label="AWS Tags">
+          <Tooltip
+            side="right"
+            className="max-w-xl p-1"
+            content={
+              <Table>
+                <THead>
+                  <Th className="w-[40%] p-2">Key</Th>
+                  <Th className="p-2">Value</Th>
+                </THead>
+                <TBody>
+                  {tags.map((tag) => (
+                    <Tr key={tag.key}>
+                      <Td className="p-2">{tag.key}</Td>
+                      <Td className="p-2">{tag.value}</Td>
+                    </Tr>
+                  ))}
+                </TBody>
+              </Table>
+            }
+          >
+            <div className="w-min">
+              <Badge className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap bg-mineshaft-400/50 text-bunker-300">
+                <FontAwesomeIcon icon={faEye} />
+                <span>
+                  {tags.length} Tag{tags.length > 1 ? "s" : ""}
+                </span>
+              </Badge>
+            </div>
+          </Tooltip>
+        </SecretSyncLabel>
+      )}
+      {syncSecretMetadataAsTags && (
+        <SecretSyncLabel label="AWS Tags">
+          <Badge variant="success">Enabled</Badge>
+        </SecretSyncLabel>
+      )}
     </>
   );
 };

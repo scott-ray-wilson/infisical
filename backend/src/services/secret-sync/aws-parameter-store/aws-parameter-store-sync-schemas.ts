@@ -17,7 +17,40 @@ const AwsParameterStoreSyncDestinationConfigSchema = z.object({
     .min(1, "Parameter Store Path required")
     .max(2048, "Cannot exceed 2048 characters")
     .regex(/^\/([/]|(([\w-]+\/)+))?$/, 'Invalid path - must follow "/example/path/" format')
-    .describe(SecretSyncs.DESTINATION_CONFIG.AWS_PARAMETER_STORE.path)
+    .describe(SecretSyncs.DESTINATION_CONFIG.AWS_PARAMETER_STORE.path),
+  keyId: z
+    .string()
+    .regex(/^([a-zA-Z0-9:/_-]+)$/, "Invalid KMS Key ID")
+    .min(1, "Invalid KMS Key ID")
+    .max(256, "Invalid KMS Key ID")
+    .optional()
+    .describe(SecretSyncs.DESTINATION_CONFIG.AWS_PARAMETER_STORE.keyId),
+  tags: z
+    .object({
+      key: z
+        .string()
+        .regex(
+          /^([\p{L}\p{Z}\p{N}_.:/=+\-@]*)$/u,
+          "Tag keys can only contain Unicode letters, digits, white space and any of the following: _."
+        )
+        .min(1, "AWS tag key required")
+        .max(128, "AWS tag name cannot exceed 128 characters"),
+      value: z
+        .string()
+        .regex(/^([\p{L}\p{Z}\p{N}_.:/=+\-@]*)$/u, "Invalid AWS tag value")
+        .max(256, "Tag values can only contain Unicode letters, digits, white space and any of the following: _.:/=+@-")
+    })
+    .array()
+    .max(50)
+    .refine((items) => new Set(items.map((item) => item.key)).size === items.length, {
+      message: "AWS tag keys must be unique"
+    })
+    .optional()
+    .describe(SecretSyncs.DESTINATION_CONFIG.AWS_PARAMETER_STORE.tags),
+  syncSecretMetadataAsTags: z
+    .boolean()
+    .optional()
+    .describe(SecretSyncs.DESTINATION_CONFIG.AWS_PARAMETER_STORE.syncSecretMetadataAsTags)
 });
 
 export const AwsParameterStoreSyncSchema = BaseSecretSyncSchema(SecretSync.AWSParameterStore).extend({

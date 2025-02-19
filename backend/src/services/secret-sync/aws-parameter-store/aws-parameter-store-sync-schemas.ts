@@ -8,6 +8,7 @@ import {
   GenericCreateSecretSyncFieldsSchema,
   GenericUpdateSecretSyncFieldsSchema
 } from "@app/services/secret-sync/secret-sync-schemas";
+import { TSyncOptionsConfig } from "@app/services/secret-sync/secret-sync-types";
 
 const AwsParameterStoreSyncDestinationConfigSchema = z.object({
   region: z.nativeEnum(AWSRegion).describe(SecretSyncs.DESTINATION_CONFIG.AWS_PARAMETER_STORE.region),
@@ -24,7 +25,10 @@ const AwsParameterStoreSyncDestinationConfigSchema = z.object({
     .min(1, "Invalid KMS Key ID")
     .max(256, "Invalid KMS Key ID")
     .optional()
-    .describe(SecretSyncs.DESTINATION_CONFIG.AWS_PARAMETER_STORE.keyId),
+    .describe(SecretSyncs.DESTINATION_CONFIG.AWS_PARAMETER_STORE.keyId)
+});
+
+const AwsParameterStoreSyncOptionsSchema = z.object({
   tags: z
     .object({
       key: z
@@ -53,19 +57,29 @@ const AwsParameterStoreSyncDestinationConfigSchema = z.object({
     .describe(SecretSyncs.DESTINATION_CONFIG.AWS_PARAMETER_STORE.syncSecretMetadataAsTags)
 });
 
-export const AwsParameterStoreSyncSchema = BaseSecretSyncSchema(SecretSync.AWSParameterStore).extend({
+const AwsParameterStoreSyncOptionsConfig: TSyncOptionsConfig = { canImportSecrets: true };
+
+export const AwsParameterStoreSyncSchema = BaseSecretSyncSchema(
+  SecretSync.AWSParameterStore,
+  AwsParameterStoreSyncOptionsConfig,
+  AwsParameterStoreSyncOptionsSchema
+).extend({
   destination: z.literal(SecretSync.AWSParameterStore),
   destinationConfig: AwsParameterStoreSyncDestinationConfigSchema
 });
 
 export const CreateAwsParameterStoreSyncSchema = GenericCreateSecretSyncFieldsSchema(
-  SecretSync.AWSParameterStore
+  SecretSync.AWSParameterStore,
+  AwsParameterStoreSyncOptionsConfig,
+  AwsParameterStoreSyncOptionsSchema
 ).extend({
   destinationConfig: AwsParameterStoreSyncDestinationConfigSchema
 });
 
 export const UpdateAwsParameterStoreSyncSchema = GenericUpdateSecretSyncFieldsSchema(
-  SecretSync.AWSParameterStore
+  SecretSync.AWSParameterStore,
+  AwsParameterStoreSyncOptionsConfig,
+  AwsParameterStoreSyncOptionsSchema
 ).extend({
   destinationConfig: AwsParameterStoreSyncDestinationConfigSchema.optional()
 });

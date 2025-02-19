@@ -287,7 +287,7 @@ const deleteParametersBatch = async (
 
 export const AwsParameterStoreSyncFns = {
   syncSecrets: async (secretSync: TAwsParameterStoreSyncWithCredentials, secretMap: TSecretMap) => {
-    const { destinationConfig } = secretSync;
+    const { destinationConfig, syncOptions } = secretSync;
 
     const ssm = await getSSM(secretSync);
 
@@ -299,12 +299,10 @@ export const AwsParameterStoreSyncFns = {
       ssm,
       destinationConfig.path,
       awsParameterStoreSecretsRecord,
-      Boolean(destinationConfig.tags || destinationConfig.syncSecretMetadataAsTags)
+      Boolean(syncOptions.tags || syncOptions.syncSecretMetadataAsTags)
     );
 
-    const syncTagsRecord = Object.fromEntries(
-      secretSync.destinationConfig.tags?.map((tag) => [tag.key, tag.value]) ?? []
-    );
+    const syncTagsRecord = Object.fromEntries(syncOptions.tags?.map((tag) => [tag.key, tag.value]) ?? []);
 
     for await (const entry of Object.entries(secretMap)) {
       const [key, { value, secretMetadata }] = entry;
@@ -340,7 +338,7 @@ export const AwsParameterStoreSyncFns = {
       const { tagsToAdd, tagKeysToRemove } = processParameterTags({
         syncTagsRecord: {
           // configured sync tags take preference over secret metadata
-          ...(destinationConfig.syncSecretMetadataAsTags &&
+          ...(syncOptions.syncSecretMetadataAsTags &&
             Object.fromEntries(secretMetadata?.map((tag) => [tag.key, tag.value]) ?? [])),
           ...syncTagsRecord
         },

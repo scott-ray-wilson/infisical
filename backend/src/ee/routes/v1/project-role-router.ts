@@ -269,4 +269,37 @@ export const registerProjectRoleRouter = async (server: FastifyZodProvider) => {
       return { data: { permissions, membership } };
     }
   });
+
+  server.route({
+    method: "POST",
+    url: "/:projectId/permissions/generate",
+    config: {
+      rateLimit: writeLimit
+    },
+    schema: {
+      params: z.object({
+        projectId: z.string().trim()
+      }),
+      body: z.object({
+        prompt: z.string()
+      }),
+      response: {
+        200: z.object({
+          permissions: z.any()
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT]),
+    handler: async (req) => {
+      const permissions = await server.services.projectRole.generatePermission(
+        {
+          prompt: "Can you generate permissions for read only access for secrets excluding frontend?",
+          projectId: req.params.projectId
+        },
+        req.permission
+      );
+
+      return { permissions };
+    }
+  });
 };

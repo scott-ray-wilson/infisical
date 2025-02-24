@@ -37,12 +37,14 @@ export const GeneralPermissionPolicies = <T extends keyof NonNullable<TFormSchem
   title,
   isDisabled
 }: Props<T>) => {
-  const { control } = useFormContext<TFormSchema>();
+  const { control, watch } = useFormContext<TFormSchema>();
   const items = useFieldArray({
     control,
     name: `permissions.${subject}`
   });
   const [isOpen, setIsOpen] = useToggle();
+
+  const permissions = watch("permissions");
 
   if (!items.fields.length) return <div />;
 
@@ -185,7 +187,7 @@ export const GeneralPermissionPolicies = <T extends keyof NonNullable<TFormSchem
           ))}
           {isOpen && (
             <ReactFlowProvider>
-              <PermissionPolicyViewer />
+              <PermissionPolicyViewer subject={subject} permissions={permissions} />
             </ReactFlowProvider>
           )}
         </div>

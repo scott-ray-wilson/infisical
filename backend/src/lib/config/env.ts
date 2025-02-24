@@ -207,6 +207,7 @@ const envSchema = z
     // azure app
     INF_APP_CONNECTION_AZURE_CLIENT_ID: zpStr(z.string().optional()),
     INF_APP_CONNECTION_AZURE_CLIENT_SECRET: zpStr(z.string().optional()),
+    OPENAI_API_KEY: zpStr(z.string().optional()),
 
     /* CORS ----------------------------------------------------------------------------- */
 

@@ -10,7 +10,9 @@ import {
   useReactFlow
 } from "@xyflow/react";
 
-import { useWorkspace } from "@app/context";
+import { useProjectPermission, useWorkspace } from "@app/context";
+import { PermissionAccess } from "@app/pages/project/RoleDetailsBySlugPage/components/PermissionPolicyViewer/types";
+import { formRolePermission2API } from "@app/pages/project/RoleDetailsBySlugPage/components/ProjectRoleModifySection.utils";
 
 import { BasePermissionEdge } from "./edges";
 import { FolderNode, RoleNode } from "./nodes";
@@ -18,6 +20,7 @@ import {
   createEdge,
   createFolderNode,
   createRoleNode,
+  evaluatePermissions,
   fetchAllProjectFolders,
   positionElements
 } from "./utils";
@@ -33,36 +36,64 @@ export enum PermissionEdge {
   Base = "base"
 }
 
-export const PermissionPolicyViewer = () => {
+export const PermissionPolicyViewer = ({
+  permissions,
+  subject
+}: {
+  permissions: any;
+  subject: string;
+}) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const { currentWorkspace } = useWorkspace();
   const [isLoading, setIsLoading] = useState(false);
 
+  const test = useProjectPermission();
+  const environment = "dev";
+  console.log("project permission", test.permission);
+
   useEffect(() => {
     (async () => {
       setIsLoading(true);
-      const { parent, descendants } = await fetchAllProjectFolders(currentWorkspace.id, "dev");
+      const permission = evaluatePermissions(formRolePermission2API(permissions));
+
+      const { parent, descendants } = await fetchAllProjectFolders(
+        currentWorkspace.id,
+        environment,
+        "/"
+      );
 
       const folderNodes = [
-        createFolderNode(parent),
-        ...descendants.map((folder) => createFolderNode(folder))
+        createFolderNode({ folder: parent, permission, environment }),
+        ...descendants.map((folder) => createFolderNode({ folder, permission, environment }))
       ];
 
-      const folderEdges = descendants.map((folder) =>
-        createEdge({ source: folder.parentId, target: folder.id })
-      );
-      console.log("parent", parent);
+      const folderEdges = folderNodes.map(({ data: folder }) => {
+        const actions = Object.values(folder.actions);
 
-      const init = positionElements(
-        [createRoleNode(), ...folderNodes],
-        [createEdge({ source: "role", target: parent.id }), ...folderEdges]
-      );
+        console.log("actions", actions);
+        let access: PermissionAccess;
+        if (actions.every((action) => action)) {
+          access = PermissionAccess.Full;
+        } else if (actions.some((action) => action)) {
+          access = PermissionAccess.Partial;
+        } else {
+          access = PermissionAccess.None;
+        }
+
+        return createEdge({
+          source: folder.parentId ?? "role",
+          target: folder.id,
+          access
+        });
+      });
+
+      const init = positionElements([createRoleNode(subject), ...folderNodes], [...folderEdges]);
       setNodes(init.nodes);
       setEdges(init.edges);
       setIsLoading(false);
     })();
-  }, []);
+  }, [JSON.stringify(permissions)]);
 
   // const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 

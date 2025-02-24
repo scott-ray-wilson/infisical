@@ -172,3 +172,8 @@ export type TListProjectIdentitiesDTO = {
 export enum ProjectIdentityOrderBy {
   Name = "name"
 }
+
+export type TGeneratePoliciesDTO = {
+  projectId: string;
+  prompt: string;
+};

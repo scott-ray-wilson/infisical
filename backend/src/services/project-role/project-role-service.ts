@@ -107,8 +107,8 @@ const WorkspacePolicyActionSchema = z.object({
 
 const ConditionSchema = z
   .object({
-    operator: z.string(),
-    lhs: z.string(),
+    operator: z.nativeEnum(PermissionConditionOperators),
+    lhs: z.enum(["secretPath"]),
     rhs: z.string()
   })
   .array()
@@ -437,7 +437,30 @@ export const projectRoleServiceFactory = ({
       messages: [
         {
           role: "system",
-          content: `Given the following project folder hierarchy, generate a permissions schema based of the users prompt: ${folders.toString()}`
+          content: `
+          You are a security permissions expert responsible for generating precise access control schemas. Your task is to analyze folder hierarchies and create permission rules that exactly match user requirements.
+          
+          When generating permissions schemas, follow these critical security rules:
+
+          Path Construction Rules:
+          - Always use leading slashes in paths (e.g., '/folder' not 'folder')
+          - Use '**' in glob patterns to indicate nested folder access (e.g., '/folder/**')
+          - Only use paths that are explicitly provided in the folder array
+          - Never infer or generate paths that weren't provided
+          
+          Access Control Rules:
+          - Listing a folder path automatically blocks access to all child folders
+          - To block access to a specific folder and it's descendants, use '/folder' (not '/folder/**')
+          - Place all inverted permissions (deny rules) at the end of the array
+          - You should never have only an inverted policy, do not give responses with a single inverted element
+          - Inverted permissions only apply to actions that have true as their value
+          
+          Validation Requirements:
+          - Verify that all paths are valid against the provided folder hierarchy
+          - Double-check that glob patterns are correctly formatted
+          - Ensure no conflicting permissions are generated
+           
+           project folders: ${folders.toString()}.`
         },
         {
           role: "user",

@@ -3,6 +3,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { faPlus, faSave, faShieldHalved } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ReactFlowProvider } from "@xyflow/react";
 import { twMerge } from "tailwind-merge";
 
 import { createNotification } from "@app/components/notifications";
@@ -21,6 +22,7 @@ import {
 import { ProjectPermissionSub, useWorkspace } from "@app/context";
 import { useGetProjectRoleBySlug, useUpdateProjectRole } from "@app/hooks/api";
 import { useGeneratePolicies } from "@app/hooks/api/workspace/mutations";
+import { PermissionPolicyViewer } from "@app/pages/project/RoleDetailsBySlugPage/components/PermissionPolicyViewer";
 import Typewriter from "@app/pages/project/RoleDetailsBySlugPage/components/Typewriter";
 
 import { GeneralPermissionConditions } from "./GeneralPermissionConditions";
@@ -67,10 +69,14 @@ export const RolePermissionsSection = ({ roleSlug, isDisabled }: Props) => {
     currentWorkspace?.id ?? "",
     roleSlug as string
   );
+  const [policies, setPolicies] = useState<any | null>(null);
+  const [description, setDescription] = useState<string | null>(null);
 
   const generatePolicies = useGeneratePolicies();
 
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(
+    "Can you generate a secrets policy for read only access for secrets excluding frontend folder directory?"
+  );
   const [showCipher, setShowCipher] = useState(false);
 
   const form = useForm<TFormSchema>({
@@ -87,8 +93,19 @@ export const RolePermissionsSection = ({ roleSlug, isDisabled }: Props) => {
   const { mutateAsync: updateRole } = useUpdateProjectRole();
 
   const onGeneratePolicies = async () => {
+    setPolicies(null);
+    setDescription(null);
+
     try {
-      const resp = await generatePolicies.mutateAsync({ prompt, projectId: currentWorkspace?.id });
+      const { permissions, description } = await generatePolicies.mutateAsync({
+        prompt,
+        projectId: currentWorkspace?.id
+      });
+
+      console.log("permissions", permissions);
+
+      setPolicies(permissions);
+      setDescription(description);
     } catch (e) {
       createNotification({
         type: "error",
@@ -155,7 +172,24 @@ export const RolePermissionsSection = ({ roleSlug, isDisabled }: Props) => {
           }
           bodyClassName="px-3 pt-1 pb-3"
         >
-          {generatePolicies.isPending ? (
+          {/* eslint-disable-next-line no-nested-ternary */}
+          {policies ? (
+            <div>
+              <ReactFlowProvider>
+                <PermissionPolicyViewer subject="secrets" permissions={policies} />
+              </ReactFlowProvider>
+              <div className="mt-2 flex items-center gap-2">
+                <Button onClick={onGeneratePolicies} isDisabled={!prompt} colorSchema="secondary">
+                  Regenerate
+                </Button>
+                <ModalClose asChild>
+                  <Button variant="plain" colorSchema="secondary">
+                    Cancel
+                  </Button>
+                </ModalClose>
+              </div>
+            </div>
+          ) : generatePolicies.isPending ? (
             <div className="flex w-full items-center justify-center gap-2 rounded bg-mineshaft-900 p-4 text-base">
               <Spinner className="h-9 w-9 text-mineshaft-400" />
               <Typewriter text="Certainly! Please allow me a few moments..." />
@@ -169,7 +203,9 @@ export const RolePermissionsSection = ({ roleSlug, isDisabled }: Props) => {
                 placeholder="Ask Cipher a security question..."
               />
               <div className="mt-2 flex items-center gap-2">
-                <Button colorSchema="secondary">Ask</Button>
+                <Button onClick={onGeneratePolicies} isDisabled={!prompt} colorSchema="secondary">
+                  Ask
+                </Button>
                 <ModalClose asChild>
                   <Button variant="plain" colorSchema="secondary">
                     Cancel

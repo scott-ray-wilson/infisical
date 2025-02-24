@@ -50,7 +50,6 @@ export const PermissionPolicyViewer = ({
 
   const test = useProjectPermission();
   const environment = "dev";
-  console.log("project permission", test.permission);
 
   useEffect(() => {
     (async () => {
@@ -71,7 +70,6 @@ export const PermissionPolicyViewer = ({
       const folderEdges = folderNodes.map(({ data: folder }) => {
         const actions = Object.values(folder.actions);
 
-        console.log("actions", actions);
         let access: PermissionAccess;
         if (actions.every((action) => action)) {
           access = PermissionAccess.Full;

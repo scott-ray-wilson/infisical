@@ -293,7 +293,7 @@ export const registerProjectRoleRouter = async (server: FastifyZodProvider) => {
     handler: async (req) => {
       const permissions = await server.services.projectRole.generatePermission(
         {
-          prompt: "Can you generate permissions for read only access for secrets excluding frontend?",
+          prompt: req.body.prompt,
           projectId: req.params.projectId
         },
         req.permission

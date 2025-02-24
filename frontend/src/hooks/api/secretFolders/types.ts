@@ -5,6 +5,7 @@ export enum ReservedFolders {
 export type TSecretFolder = {
   id: string;
   name: string;
+  parentId?: string | null;
 };
 
 export type TGetProjectFoldersDTO = {

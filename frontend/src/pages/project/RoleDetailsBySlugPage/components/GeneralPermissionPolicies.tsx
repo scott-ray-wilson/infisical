@@ -8,11 +8,13 @@ import {
   faTrash
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ReactFlowProvider } from "@xyflow/react";
 import { twMerge } from "tailwind-merge";
 
 import { Button, Checkbox, Select, SelectItem, Tag, Tooltip } from "@app/components/v2";
 import { ProjectPermissionSub } from "@app/context";
 import { useToggle } from "@app/hooks";
+import { PermissionPolicyViewer } from "@app/pages/project/RoleDetailsBySlugPage/components/PermissionPolicyViewer/PermissionPolicyViewer";
 
 import {
   isConditionalSubjects,
@@ -181,6 +183,11 @@ export const GeneralPermissionPolicies = <T extends keyof NonNullable<TFormSchem
               </div>
             </div>
           ))}
+          {isOpen && (
+            <ReactFlowProvider>
+              <PermissionPolicyViewer />
+            </ReactFlowProvider>
+          )}
         </div>
       )}
     </div>

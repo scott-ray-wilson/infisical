@@ -4,7 +4,7 @@ import { apiRequest } from "@app/config/request";
 
 import { userKeys } from "../users/query-keys";
 import { workspaceKeys } from "./query-keys";
-import { TUpdateWorkspaceGroupRoleDTO } from "./types";
+import { TGeneratePoliciesDTO, TUpdateWorkspaceGroupRoleDTO } from "./types";
 
 export const useAddGroupToWorkspace = () => {
   const queryClient = useQueryClient();
@@ -50,6 +50,21 @@ export const useUpdateGroupWorkspaceRole = () => {
       queryClient.invalidateQueries({
         queryKey: workspaceKeys.getWorkspaceGroupMemberships(projectId)
       });
+    }
+  });
+};
+
+export const useGeneratePolicies = () => {
+  return useMutation({
+    mutationFn: async ({ projectId, prompt }: TGeneratePoliciesDTO) => {
+      const { data } = await apiRequest.post<{ permissions: any; description: string }>(
+        `/api/v1/workspace/${projectId}/permissions/generate`,
+        {
+          prompt
+        }
+      );
+
+      return data;
     }
   });
 };

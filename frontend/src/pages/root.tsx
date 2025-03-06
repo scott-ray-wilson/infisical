@@ -7,6 +7,8 @@ import { adminQueryKeys, fetchServerConfig } from "@app/hooks/api/admin/queries"
 import { TServerConfig } from "@app/hooks/api/admin/types";
 import { queryClient } from "@app/hooks/api/reactQuery";
 
+import "regenerator-runtime/runtime";
+
 type TRouterContext = {
   serverConfig: TServerConfig | null;
   queryClient: QueryClient;

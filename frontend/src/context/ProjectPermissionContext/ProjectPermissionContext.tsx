@@ -57,6 +57,7 @@ export const useProjectPermission = () => {
           };
         }
       });
+      console.log("ability", ability);
 
       return {
         permission: ability,

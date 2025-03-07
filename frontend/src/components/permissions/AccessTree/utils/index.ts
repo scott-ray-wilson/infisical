@@ -1,4 +1,9 @@
-import { createMongoAbility, MongoAbility, MongoQuery, subject } from "@casl/ability";
+import {
+  createMongoAbility,
+  MongoAbility,
+  MongoQuery,
+  subject as abilitySubject
+} from "@casl/ability";
 import Dagre from "@dagrejs/dagre";
 import { Edge, MarkerType, Node } from "@xyflow/react";
 
@@ -79,25 +84,60 @@ const props = {
 export const createFolderNode = ({
   folder,
   permission,
-  environment
+  environment,
+  subject
 }: {
   folder: TSecretFolderWithPath;
   permission: MongoAbility<ProjectPermissionSet, MongoQuery>;
   environment: string;
+  subject: ProjectPermissionSub;
 }) => {
+  const rules = permission.rules.filter((rule) => {
+    const ruleSubject = typeof rule.subject === "string" ? rule.subject : rule.subject[0];
+    return ruleSubject === subject;
+  });
+
+  const actionRuleMap: Record<string, (typeof rules)[number]>[] = [];
+  rules.forEach((rule) => {
+    if (typeof rule.action === "string") {
+      actionRuleMap.push({ [rule.action]: rule });
+    } else {
+      actionRuleMap.push(Object.fromEntries(rule.action.map((action) => [action, rule])));
+    }
+  });
+
   const actions = Object.fromEntries(
     [
       ProjectPermissionActions.Create,
       ProjectPermissionActions.Read,
       ProjectPermissionActions.Edit,
       ProjectPermissionActions.Delete
-    ].map((action) => [
-      action,
-      permission.can(
-        action,
-        subject(ProjectPermissionSub.Secrets, { secretPath: folder.path, environment })
-      )
-    ])
+    ].map((action) => {
+      let access: PermissionAccess;
+      try {
+        if (
+          permission.can(action, abilitySubject(subject, { secretPath: folder.path, environment }))
+        ) {
+          if (
+            actionRuleMap.some(
+              (el) => el[action]?.conditions?.secretName || el[action]?.conditions?.tags
+            )
+          ) {
+            access = PermissionAccess.Partial;
+          } else {
+            access = PermissionAccess.Full;
+          }
+        } else {
+          access = PermissionAccess.None;
+        }
+      } catch (e) {
+        console.log("actions error");
+        console.error(e);
+        access = PermissionAccess.None;
+      }
+
+      return [action, access];
+    })
   );
 
   return {
@@ -106,7 +146,8 @@ export const createFolderNode = ({
     data: {
       ...folder,
       actions,
-      environment
+      environment,
+      actionRuleMap
     },
     position: { x: 0, y: 0 },
     ...props,
@@ -144,21 +185,20 @@ export const createEdge = ({
   access: PermissionAccess;
 }) => {
   let color: string;
-  let opacity: number;
+
   switch (access) {
     case PermissionAccess.Full:
-    case PermissionAccess.Partial:
       color = "#2ecc71";
-      opacity = 1;
+
       break;
-    // case PermissionAccess.Partial:
-    //   color = "#f1c40f";
-    //   opacity = 1;
-    //   break;
+    case PermissionAccess.Partial:
+      color = "#f1c40f";
+
+      break;
     case PermissionAccess.None:
     default:
       color = "#e74c3c";
-      // opacity = 0.5;
+
       break;
   }
 
@@ -172,7 +212,7 @@ export const createEdge = ({
       color
     },
     animated: true,
-    style: { stroke: color, opacity }
+    style: { stroke: color }
   };
 };
 

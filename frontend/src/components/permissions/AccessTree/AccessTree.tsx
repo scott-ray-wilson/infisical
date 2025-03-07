@@ -21,7 +21,7 @@ import {
   evaluatePermissions,
   positionElements
 } from "@app/components/permissions/AccessTree/utils";
-import { Spinner } from "@app/components/v2";
+import { FormLabel, Select, SelectItem, Spinner } from "@app/components/v2";
 import { ProjectPermissionSub, useProjectPermission, useWorkspace } from "@app/context";
 import { useListProjectEnvironmentsFolders } from "@app/hooks/api/secretFolders/queries";
 import { formRolePermission2API } from "@app/pages/project/RoleDetailsBySlugPage/components/ProjectRoleModifySection.utils";
@@ -65,22 +65,23 @@ const AccessTreeContent = ({ permissions }: TProps) => {
     if (!environmentsFolders) return;
 
     const permission = evaluatePermissions(formRolePermission2API(permissions));
+    console.log("permission", permission);
 
     const roleNode = createRoleNode(subject);
 
     const { folders } = environmentsFolders[environment];
 
     const folderNodes = folders.map((folder) =>
-      createFolderNode({ folder, permission, environment })
+      createFolderNode({ folder, permission, environment, subject })
     );
 
     const folderEdges = folderNodes.map(({ data: folder }) => {
       const actions = Object.values(folder.actions);
 
       let access: PermissionAccess;
-      if (actions.every((action) => action)) {
+      if (Object.values(actions).some((action) => action === PermissionAccess.Full)) {
         access = PermissionAccess.Full;
-      } else if (actions.some((action) => action)) {
+      } else if (Object.values(actions).some((action) => action === PermissionAccess.Partial)) {
         access = PermissionAccess.Partial;
       } else {
         access = PermissionAccess.None;
@@ -93,41 +94,11 @@ const AccessTreeContent = ({ permissions }: TProps) => {
       });
     });
 
-    console.log("edges", folderEdges);
-
-    // (async () => {
-    //   setIsLoading(true);
-    //
-    //
-    //   const { parent, descendants } = await fetchAllProjectFolders(
-    //     currentWorkspace.id,
-    //     environments[0],
-    //     "/"
-    //   );
-    //
-    //   const nodes = [];
-    //   const edges = [];
-    //
-    //   environments.forEach((environment) => {
-
-    //
-    //
-    //
-
-    //
-    //     nodes.push(...folderNodes);
-    //
-    //
-    //     edges.push(...folderEdges);
-    //   });
-    //
     const init = positionElements([roleNode, ...folderNodes], [...folderEdges]);
     console.log("init", init);
     setNodes(init.nodes);
     setEdges(init.edges);
-    //   setIsLoading(false);
-    // })();
-  }, [JSON.stringify(permissions), environmentsFolders]);
+  }, [JSON.stringify(permissions), environmentsFolders, environment, subject]);
 
   // const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
@@ -144,7 +115,8 @@ const AccessTreeContent = ({ permissions }: TProps) => {
     setTimeout(() => {
       fitView({
         padding: 0.2, // Adds 20% padding around the nodes
-        duration: 800 // Animation duration in milliseconds
+        duration: 800, // Animation duration in milliseconds
+        maxZoom: 1
       });
     }, 5);
   }, [fitView, nodes, edges, isLoading]);
@@ -187,6 +159,53 @@ const AccessTreeContent = ({ permissions }: TProps) => {
             <Spinner />
           </Panel>
         )}
+        <Panel
+          position="top-left"
+          className="opacity-40 transition-opacity duration-200 hover:opacity-100"
+        >
+          <FormLabel label="Policy" />
+          <Select
+            value={subject}
+            onValueChange={setSubject}
+            className="w-[11.5rem] border border-mineshaft-500 capitalize"
+            position="popper"
+            dropdownContainerClassName="max-w-none"
+          >
+            {[
+              ProjectPermissionSub.Secrets,
+              ProjectPermissionSub.SecretFolders,
+              ProjectPermissionSub.DynamicSecrets,
+              ProjectPermissionSub.SecretImports
+            ].map((sub) => {
+              return (
+                <SelectItem className="capitalize" value={sub} key={sub}>
+                  {sub.replace("-", " ")}
+                </SelectItem>
+              );
+            })}
+          </Select>
+        </Panel>
+        <Panel
+          position="top-right"
+          className="opacity-40 transition-opacity duration-200 hover:opacity-100"
+        >
+          <FormLabel label="Environment" />
+          <Select
+            value={environment}
+            onValueChange={setEnvironment}
+            className="w-44 border border-mineshaft-500 capitalize"
+            position="popper"
+            dropdownContainerClassName="max-w-[11rem]"
+          >
+            {currentWorkspace.environments.map(({ name, slug }) => {
+              return (
+                <SelectItem value={slug} key={slug}>
+                  {name}
+                </SelectItem>
+              );
+            })}
+          </Select>
+        </Panel>
         <Background color="#5d5f64" bgColor="#111419" variant={BackgroundVariant.Dots} />
         <Controls position="bottom-left" />
       </ReactFlow>

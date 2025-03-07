@@ -1,3 +1,4 @@
+import { ReactElement } from "react";
 import {
   faCheckCircle,
   faCircleMinus,
@@ -5,11 +6,16 @@ import {
   faFolder
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Handle, NodeProps, Position } from "@xyflow/react";
+import { Handle, NodeProps, NodeToolbar, Position } from "@xyflow/react";
 
 import { PermissionAccess } from "@app/components/permissions/AccessTree/types";
 import { createFolderNode } from "@app/components/permissions/AccessTree/utils";
 import { Tooltip } from "@app/components/v2";
+import {
+  formatedConditionsOperatorNames,
+  PermissionConditionOperators
+} from "@app/context/ProjectPermissionContext/types";
+import { camelCaseToSpaces } from "@app/helpers/string";
 
 const AccessMap = {
   [PermissionAccess.Full]: { className: "text-green", icon: faCheckCircle },
@@ -24,42 +30,94 @@ type Props = {
 };
 
 const TooltipContent = ({ action, access, actionRuleMap }: Props) => {
-  if (access === PermissionAccess.Full) {
-    return <span className="capitalize">Full {action} Permissions</span>;
-  }
+  let component: ReactElement;
 
-  if (access === PermissionAccess.None) {
-    return <span className="capitalize">No {action} Permissions</span>;
+  switch (access) {
+    case PermissionAccess.Full:
+      component = (
+        <>
+          <div className="flex items-center gap-1.5 capitalize text-green">
+            <FontAwesomeIcon icon={faCheckCircle} size="xs" />
+            <span>Full {action} Permissions</span>
+          </div>
+          <p>Policy grants unconditional {action} permissions to this location.</p>
+        </>
+      );
+      break;
+    case PermissionAccess.Partial:
+      component = (
+        <>
+          <div className="flex items-center gap-1.5 capitalize text-yellow">
+            <FontAwesomeIcon icon={faCircleMinus} className="text-yellow" size="xs" />
+            <span>Conditional {action} Permissions</span>
+          </div>
+          <p className="mb-1">Policy conditional allows {action} permissions to this location.</p>
+          <ul className="flex list-disc flex-col gap-2 pl-4">
+            {actionRuleMap.map((ruleMap, index) => {
+              const rule = ruleMap[action];
+
+              if (
+                !rule ||
+                !rule.conditions ||
+                (!rule.conditions.secretName && !rule.conditions.secretTags)
+              )
+                return null;
+
+              return (
+                <li key={`${action}_${index + 1}`}>
+                  <span className="italic text-mineshaft-300">
+                    {rule.inverted ? "Forbids" : "Allows"} when:
+                  </span>
+                  {Object.entries(rule.conditions).map(([key, condition]) => (
+                    <ul key={key} className="list-[square] pl-4">
+                      {Object.entries(condition as object).map(([operator, value]) => (
+                        <li>
+                          <span className="font-semibold capitalize">{camelCaseToSpaces(key)}</span>{" "}
+                          <span className="text-mineshaft-200">
+                            {
+                              formatedConditionsOperatorNames[
+                                operator as PermissionConditionOperators
+                              ]
+                            }
+                          </span>{" "}
+                          <span className="text-yellow">
+                            {typeof value === "string" ? value : value.join(", ")}
+                          </span>
+                          .
+                        </li>
+                      ))}
+                    </ul>
+                  ))}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      );
+      break;
+    case PermissionAccess.None:
+      component = (
+        <>
+          <div className="flex items-center gap-1.5 capitalize text-red">
+            <FontAwesomeIcon icon={faCircleXmark} size="xs" />
+            <span>No {action} Permissions</span>
+          </div>
+          <p>Policy always forbids {action} permissions to this location.</p>
+        </>
+      );
+      break;
+    default:
+      throw new Error(`Unhandled access type: ${access}`);
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      <span className="capitalize">Conditional {action} Permissions</span>
-      {actionRuleMap.map((ruleMap, index) => {
-        const rule = ruleMap[action];
-
-        if (!rule || !rule.conditions || (!rule.conditions.secretName && !rule.conditions.tags))
-          return null;
-
-        console.log("rule", rule.conditions.secretName);
-
-        return (
-          // eslint-disable-next-line react/no-array-index-key
-          <div key={`${action}_${index}`}>
-            <span>{rule.inverted ? "Forbid" : "Allow"}</span>
-            {Boolean(rule.conditions.secretName) && (
-              <p>
-                Secret Name{" "}
-                {Object.entries(rule.conditions.secretName as object)
-                  .map(([key, value]) => `${key} ${value as string}`)
-                  .join(", ")}
-                .
-              </p>
-            )}
-          </div>
-        );
-      })}
-    </div>
+    <NodeToolbar
+      className="rounded-md border border-mineshaft-600 bg-mineshaft-800 px-4 py-2 text-sm font-light text-bunker-200"
+      isVisible
+      position={Position.Bottom}
+    >
+      {component}
+    </NodeToolbar>
   );
 };
 
@@ -87,7 +145,7 @@ export const FolderNode = ({
             const { className, icon } = AccessMap[access];
             return (
               <Tooltip
-                className="max-w-2xl"
+                className="hidden" // just using the tooltip to trigger node toolbar
                 content={
                   <TooltipContent action={action} access={access} actionRuleMap={actionRuleMap} />
                 }

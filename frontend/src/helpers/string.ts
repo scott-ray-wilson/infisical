@@ -12,3 +12,7 @@ export const isValidPath = (val: string): boolean => {
   const validPathRegex = /^[a-zA-Z0-9-_.:]+(?:\/[a-zA-Z0-9-_.:]+)*$/;
   return validPathRegex.test(val);
 };
+
+export const camelCaseToSpaces = (input: string) => {
+  return input.replace(/([a-z])([A-Z])/g, "$1 $2");
+};

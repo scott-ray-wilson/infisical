@@ -120,7 +120,7 @@ export const createFolderNode = ({
         ) {
           if (
             actionRuleMap.some(
-              (el) => el[action]?.conditions?.secretName || el[action]?.conditions?.tags
+              (el) => el[action]?.conditions?.secretName || el[action]?.conditions?.secretTags
             )
           ) {
             access = PermissionAccess.Partial;

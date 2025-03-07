@@ -1,9 +1,4 @@
-import {
-  createMongoAbility,
-  MongoAbility,
-  MongoQuery,
-  subject as abilitySubject
-} from "@casl/ability";
+import { MongoAbility, MongoQuery, subject as abilitySubject } from "@casl/ability";
 import Dagre from "@dagrejs/dagre";
 import { Edge, MarkerType, Node } from "@xyflow/react";
 
@@ -13,10 +8,7 @@ import {
   ProjectPermissionSet,
   ProjectPermissionSub
 } from "@app/context/ProjectPermissionContext";
-import { conditionsMatcher } from "@app/hooks/api/roles/queries";
-import { TSecretFolder, TSecretFolderWithPath } from "@app/hooks/api/secretFolders/types";
-import { groupBy } from "@app/lib/fn/array";
-import { omit } from "@app/lib/fn/object";
+import { TSecretFolderWithPath } from "@app/hooks/api/secretFolders/types";
 
 import { PermissionEdge, PermissionNode } from "../AccessTree";
 
@@ -46,34 +38,6 @@ export const positionElements = (nodes: Node[], edges: Edge[]) => {
   };
 };
 
-type TFolderWithPath = TSecretFolder & { path: string };
-
-// export const fetchAllProjectFolders = async (
-//   workspaceId: string,
-//   environment: string,
-//   currentPath = "/"
-// ): Promise<{ parent: TFolderWithPath; descendants: TFolderWithPath[] }> => {
-//   // Get folders at current path
-//   const folders = await fetchProjectFolders(workspaceId, environment, currentPath);
-//   const parent = { name: currentPath, id: folders[0]?.parentId ?? "root", path: currentPath };
-//
-//   // Recursively fetch subfolders for each folder
-//   const subfolderPromises = folders.map(async (folder) => {
-//     const newPath = currentPath === "/" ? `/${folder.name}` : `${currentPath}/${folder.name}`;
-//
-//     const subfolders = await fetchAllProjectFolders(workspaceId, environment, newPath);
-//
-//     return [
-//       { ...folder, path: newPath },
-//       ...subfolders.descendants.map((nestedFolder) => ({ ...nestedFolder, path: newPath }))
-//     ];
-//   });
-//
-//   // Wait for all subfolder requests to complete and flatten results
-//   const nestedResults = await Promise.all(subfolderPromises);
-//   return { parent, descendants: nestedResults.flat() };
-// };
-
 const multiplier = 8;
 
 const props = {
@@ -83,16 +47,16 @@ const props = {
 
 export const createFolderNode = ({
   folder,
-  permission,
+  permissions,
   environment,
   subject
 }: {
   folder: TSecretFolderWithPath;
-  permission: MongoAbility<ProjectPermissionSet, MongoQuery>;
+  permissions: MongoAbility<ProjectPermissionSet, MongoQuery>;
   environment: string;
   subject: ProjectPermissionSub;
 }) => {
-  const rules = permission.rules.filter((rule) => {
+  const rules = permissions.rules.filter((rule) => {
     const ruleSubject = typeof rule.subject === "string" ? rule.subject : rule.subject[0];
     return ruleSubject === subject;
   });
@@ -116,7 +80,7 @@ export const createFolderNode = ({
       let access: PermissionAccess;
       try {
         if (
-          permission.can(action, abilitySubject(subject, { secretPath: folder.path, environment }))
+          permissions.can(action, abilitySubject(subject, { secretPath: folder.path, environment }))
         ) {
           if (
             actionRuleMap.some(
@@ -131,7 +95,6 @@ export const createFolderNode = ({
           access = PermissionAccess.None;
         }
       } catch (e) {
-        console.log("actions error");
         console.error(e);
         access = PermissionAccess.None;
       }
@@ -165,15 +128,11 @@ export const createRoleNode = (subject: string) => ({
   ...props
 });
 
-export const createEnvironmentNode = (name: string) => ({
-  id: name,
-  position: { x: 0, y: 0 },
-  data: {
-    name
-  },
-  type: PermissionNode.Environment,
-  ...props
-});
+const ColorMap: Record<PermissionAccess, string> = {
+  [PermissionAccess.Full]: "#2ecc71",
+  [PermissionAccess.Partial]: "#f1c40f",
+  [PermissionAccess.None]: "#e74c3c"
+};
 
 export const createEdge = ({
   source,
@@ -184,23 +143,7 @@ export const createEdge = ({
   target: string;
   access: PermissionAccess;
 }) => {
-  let color: string;
-
-  switch (access) {
-    case PermissionAccess.Full:
-      color = "#2ecc71";
-
-      break;
-    case PermissionAccess.Partial:
-      color = "#f1c40f";
-
-      break;
-    case PermissionAccess.None:
-    default:
-      color = "#e74c3c";
-
-      break;
-  }
+  const color = ColorMap[access];
 
   return {
     id: `e${source}-${target}`,
@@ -214,35 +157,4 @@ export const createEdge = ({
     animated: true,
     style: { stroke: color }
   };
-};
-
-export const evaluatePermissions = (rule: any[]) => {
-  const negatedRules = groupBy(
-    rule.filter((i) => i.inverted && i.conditions),
-    (i) => `${i.subject}-${JSON.stringify(i.conditions)}`
-  );
-  const ability = createMongoAbility<ProjectPermissionSet>(rule, {
-    // this allows in frontend to skip some rules using *
-    conditionsMatcher: (rules) => {
-      return (entity) => {
-        // skip validation if its negated rules
-        const isNegatedRule =
-          // eslint-disable-next-line no-underscore-dangle
-          negatedRules?.[`${entity.__caslSubjectType__}-${JSON.stringify(rules)}`];
-        if (isNegatedRule) {
-          const baseMatcher = conditionsMatcher(rules);
-          return baseMatcher(entity);
-        }
-
-        const rulesStrippedOfWildcard = omit(
-          rules,
-          Object.keys(entity).filter((el) => entity[el]?.includes("*"))
-        );
-        const baseMatcher = conditionsMatcher(rulesStrippedOfWildcard);
-        return baseMatcher(entity);
-      };
-    }
-  });
-
-  return ability;
 };

@@ -47,7 +47,7 @@ const TooltipContent = ({ action, access, actionRuleMap }: Props) => {
     case PermissionAccess.Partial:
       component = (
         <>
-          <div className="flex items-center gap-1.5 capitalize text-yellow">
+          <div className="flex items-center gap-1.5 font-medium capitalize text-yellow">
             <FontAwesomeIcon icon={faCircleMinus} className="text-yellow" size="xs" />
             <span>Conditional {action} Permissions</span>
           </div>
@@ -65,14 +65,19 @@ const TooltipContent = ({ action, access, actionRuleMap }: Props) => {
 
               return (
                 <li key={`${action}_${index + 1}`}>
-                  <span className="italic text-mineshaft-300">
-                    {rule.inverted ? "Forbids" : "Allows"} when:
+                  <span
+                    className={`font-medium italic ${rule.inverted ? "text-red" : "text-green"} `}
+                  >
+                    {rule.inverted ? "Forbids" : "Allows"}
                   </span>
+                  <span> when:</span>
                   {Object.entries(rule.conditions).map(([key, condition]) => (
                     <ul key={key} className="list-[square] pl-4">
                       {Object.entries(condition as object).map(([operator, value]) => (
                         <li>
-                          <span className="font-semibold capitalize">{camelCaseToSpaces(key)}</span>{" "}
+                          <span className="font-medium capitalize text-mineshaft-100">
+                            {camelCaseToSpaces(key)}
+                          </span>{" "}
                           <span className="text-mineshaft-200">
                             {
                               formatedConditionsOperatorNames[
@@ -80,7 +85,7 @@ const TooltipContent = ({ action, access, actionRuleMap }: Props) => {
                               ]
                             }
                           </span>{" "}
-                          <span className="text-yellow">
+                          <span className="font-medium text-mineshaft-100">
                             {typeof value === "string" ? value : value.join(", ")}
                           </span>
                           .

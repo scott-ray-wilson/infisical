@@ -16,11 +16,20 @@ import {
 } from "@xyflow/react";
 
 import { useAccessTree } from "@app/components/permissions/AccessTree/hooks";
-import { FormLabel, Select, SelectItem, Spinner, Tooltip } from "@app/components/v2";
+import {
+  FilterableSelect,
+  FormLabel,
+  Input,
+  Select,
+  SelectItem,
+  Spinner,
+  Tooltip
+} from "@app/components/v2";
 import { ProjectPermissionSub } from "@app/context";
 import { ProjectPermissionSet } from "@app/context/ProjectPermissionContext";
+import { UserWsTags } from "@app/hooks/api/tags/types";
 
-import { AccessTreeErrorBoundary } from "./components";
+import { AccessTreeErrorBoundary, AccessTreeProvider } from "./components";
 import { BasePermissionEdge } from "./edges";
 import { FolderNode, RoleNode } from "./nodes";
 
@@ -43,7 +52,12 @@ const AccessTreeContent = ({ permissions }: AccessTreeProps) => {
     subject,
     environments,
     setEnvironment,
-    setSubject
+    setSubject,
+    tags,
+    secretName,
+    secretTags,
+    setSecretTags,
+    setSecretName
   } = useAccessTree(permissions);
 
   const { fitView, getViewport, setCenter } = useReactFlow();
@@ -95,29 +109,50 @@ const AccessTreeContent = ({ permissions }: AccessTreeProps) => {
         )}
         <Panel
           position="top-left"
-          className="opacity-40 transition-opacity duration-200 hover:opacity-100"
+          className="group flex w-[11.5rem] flex-col gap-2 pb-4 pr-4 opacity-40 transition-opacity duration-200 hover:opacity-100"
         >
-          <FormLabel label="Policy" />
-          <Select
-            value={subject}
-            onValueChange={(value) => setSubject(value as ProjectPermissionSub)}
-            className="w-[11.5rem] border border-mineshaft-500 capitalize"
-            position="popper"
-            dropdownContainerClassName="max-w-none"
-          >
-            {[
-              ProjectPermissionSub.Secrets,
-              ProjectPermissionSub.SecretFolders,
-              ProjectPermissionSub.DynamicSecrets,
-              ProjectPermissionSub.SecretImports
-            ].map((sub) => {
-              return (
-                <SelectItem className="capitalize" value={sub} key={sub}>
-                  {sub.replace("-", " ")}
-                </SelectItem>
-              );
-            })}
-          </Select>
+          <div>
+            <FormLabel label="Policy" />
+            <Select
+              value={subject}
+              onValueChange={(value) => setSubject(value as ProjectPermissionSub)}
+              className="w-full border border-mineshaft-500 capitalize"
+              position="popper"
+              dropdownContainerClassName="max-w-none"
+            >
+              {[
+                ProjectPermissionSub.Secrets,
+                ProjectPermissionSub.SecretFolders,
+                ProjectPermissionSub.DynamicSecrets,
+                ProjectPermissionSub.SecretImports
+              ].map((sub) => {
+                return (
+                  <SelectItem className="capitalize" value={sub} key={sub}>
+                    {sub.replace("-", " ")}
+                  </SelectItem>
+                );
+              })}
+            </Select>
+          </div>
+          {subject === ProjectPermissionSub.Secrets && (
+            <>
+              <div className="opacity-0 group-hover:opacity-100">
+                <FormLabel label="Secret Name" />
+                <Input value={secretName} onChange={(e) => setSecretName(e.target.value)} />
+              </div>
+              <div className="opacity-0 group-hover:opacity-100">
+                <FormLabel label="Secret Tags" />
+                <FilterableSelect
+                  isMulti
+                  value={secretTags}
+                  onChange={(value) => setSecretTags(value as UserWsTags)}
+                  options={tags!}
+                  getOptionLabel={(option) => option.slug}
+                  getOptionValue={(option) => option.slug}
+                />
+              </div>
+            </>
+          )}
         </Panel>
         <Panel
           position="top-right"
@@ -179,9 +214,11 @@ const AccessTreeContent = ({ permissions }: AccessTreeProps) => {
 export const AccessTree = (props: AccessTreeProps) => {
   return (
     <AccessTreeErrorBoundary {...props}>
-      <ReactFlowProvider>
-        <AccessTreeContent {...props} />
-      </ReactFlowProvider>
+      <AccessTreeProvider>
+        <ReactFlowProvider>
+          <AccessTreeContent {...props} />
+        </ReactFlowProvider>
+      </AccessTreeProvider>
     </AccessTreeErrorBoundary>
   );
 };

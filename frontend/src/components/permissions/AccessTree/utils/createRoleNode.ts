@@ -1,4 +1,4 @@
-import { PermissionNode } from "@app/components/permissions/AccessTree/types";
+import { PermissionNode } from "../types";
 
 export const createRoleNode = (subject: string) => ({
   id: "role",

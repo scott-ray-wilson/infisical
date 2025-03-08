@@ -4,19 +4,21 @@ import { Edge, Node, useEdgesState, useNodesState } from "@xyflow/react";
 
 import { ProjectPermissionSub, useWorkspace } from "@app/context";
 import { ProjectPermissionSet } from "@app/context/ProjectPermissionContext";
+import { useGetWsTags } from "@app/hooks/api";
 import { useListProjectEnvironmentsFolders } from "@app/hooks/api/secretFolders/queries";
 
+import { useAccessTreeContext } from "../components";
 import { PermissionAccess } from "../types";
 import { createBaseEdge, createFolderNode, createRoleNode, positionElements } from "../utils";
 
 export const useAccessTree = (permissions: MongoAbility<ProjectPermissionSet, MongoQuery>) => {
   const { currentWorkspace } = useWorkspace();
-
+  const { secretName, secretTags, setSecretName, setSecretTags } = useAccessTreeContext();
   const [nodes, setNodes] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
   const [subject, setSubject] = useState(ProjectPermissionSub.Secrets);
   const [environment, setEnvironment] = useState(currentWorkspace.environments[0].slug);
-
+  const { data: tags } = useGetWsTags(currentWorkspace.id);
   const { data: environmentsFolders, isPending } = useListProjectEnvironmentsFolders(
     currentWorkspace.id
   );
@@ -29,7 +31,7 @@ export const useAccessTree = (permissions: MongoAbility<ProjectPermissionSet, Mo
     const { folders } = environmentsFolders[environment];
 
     const folderNodes = folders.map((folder) =>
-      createFolderNode({ folder, permissions, environment, subject })
+      createFolderNode({ folder, permissions, environment, subject, secretTags, secretName })
     );
 
     const folderEdges = folderNodes.map(({ data: folder }) => {
@@ -54,7 +56,7 @@ export const useAccessTree = (permissions: MongoAbility<ProjectPermissionSet, Mo
     const init = positionElements([roleNode, ...folderNodes], [...folderEdges]);
     setNodes(init.nodes);
     setEdges(init.edges);
-  }, [permissions, environmentsFolders, environment, subject]);
+  }, [permissions, environmentsFolders, environment, subject, secretName, secretTags]);
 
   return {
     nodes,
@@ -64,6 +66,11 @@ export const useAccessTree = (permissions: MongoAbility<ProjectPermissionSet, Mo
     setEnvironment,
     setSubject,
     isLoading: isPending,
-    environments: currentWorkspace.environments
+    environments: currentWorkspace.environments,
+    tags,
+    secretName,
+    setSecretName,
+    secretTags,
+    setSecretTags
   };
 };

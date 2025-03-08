@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { faMagnifyingGlass, faUsers, faEllipsis } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsis, faMagnifyingGlass, faUsers } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
@@ -8,6 +8,10 @@ import {
   Badge,
   Button,
   DeleteActionModal,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   EmptyState,
   Input,
   Table,
@@ -17,11 +21,7 @@ import {
   Td,
   Th,
   THead,
-  Tr,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
+  Tr
 } from "@app/components/v2";
 import { useSubscription, useUser } from "@app/context";
 import { useDebounce, usePopUp } from "@app/hooks";

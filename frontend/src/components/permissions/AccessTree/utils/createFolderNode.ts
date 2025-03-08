@@ -6,6 +6,7 @@ import {
   ProjectPermissionSub
 } from "@app/context/ProjectPermissionContext";
 import { TSecretFolderWithPath } from "@app/hooks/api/secretFolders/types";
+import { UserWsTags } from "@app/hooks/api/tags/types";
 
 import { PermissionAccess, PermissionNode } from "../types";
 
@@ -13,12 +14,16 @@ export const createFolderNode = ({
   folder,
   permissions,
   environment,
-  subject
+  subject,
+  secretName,
+  secretTags
 }: {
   folder: TSecretFolderWithPath;
   permissions: MongoAbility<ProjectPermissionSet, MongoQuery>;
   environment: string;
   subject: ProjectPermissionSub;
+  secretName: string;
+  secretTags: UserWsTags;
 }) => {
   const rules = permissions.rules.filter((rule) => {
     const ruleSubject = typeof rule.subject === "string" ? rule.subject : rule.subject[0];
@@ -50,12 +55,14 @@ export const createFolderNode = ({
             abilitySubject(subject, {
               secretPath: folder.path,
               environment,
-              secretName: "*",
-              secretTags: ["*"]
+              secretName: secretName || "*",
+              secretTags: secretTags.length ? secretTags.map((tag) => tag.slug) : "*"
             })
           )
         ) {
           if (
+            (!secretName || secretName === "*") &&
+            !secretTags.length &&
             actionRuleMap.some(
               (el) => el[action]?.conditions?.secretName || el[action]?.conditions?.secretTags
             )

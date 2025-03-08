@@ -1,128 +1,69 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { MongoAbility, MongoQuery } from "@casl/ability";
+import { faCircleQuestion } from "@fortawesome/free-regular-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   Background,
   BackgroundVariant,
   ConnectionLineType,
   Controls,
-  Edge,
   Node,
+  NodeMouseHandler,
   Panel,
   ReactFlow,
   ReactFlowProvider,
-  useEdgesState,
-  useNodesState,
   useReactFlow
 } from "@xyflow/react";
 
-import { AccessTreeErrorBoundary } from "@app/components/permissions/AccessTree/boundary/AccessTreeErrorBoundary";
-import { EnvironmentNode } from "@app/components/permissions/AccessTree/nodes/EnvironmentNode";
-import { PermissionAccess } from "@app/components/permissions/AccessTree/types";
-import {
-  createEdge,
-  createFolderNode,
-  createRoleNode,
-  positionElements
-} from "@app/components/permissions/AccessTree/utils";
-import { FormLabel, Select, SelectItem, Spinner } from "@app/components/v2";
-import { ProjectPermissionSub, useWorkspace } from "@app/context";
+import { useAccessTree } from "@app/components/permissions/AccessTree/hooks";
+import { FormLabel, Select, SelectItem, Spinner, Tooltip } from "@app/components/v2";
+import { ProjectPermissionSub } from "@app/context";
 import { ProjectPermissionSet } from "@app/context/ProjectPermissionContext";
-import { useListProjectEnvironmentsFolders } from "@app/hooks/api/secretFolders/queries";
 
+import { AccessTreeErrorBoundary } from "./components";
 import { BasePermissionEdge } from "./edges";
 import { FolderNode, RoleNode } from "./nodes";
 
 import "@xyflow/react/dist/style.css";
 
-export enum PermissionNode {
-  Role = "role",
-  Folder = "folder",
-  Environment = "environment"
-}
-
-export enum PermissionEdge {
-  Base = "base"
-}
-
-type TProps = {
+export type AccessTreeProps = {
   permissions: MongoAbility<ProjectPermissionSet, MongoQuery>;
 };
 
-const AccessTreeContent = ({ permissions }: TProps) => {
-  const { currentWorkspace } = useWorkspace();
+const EdgeTypes = { base: BasePermissionEdge };
 
-  const { data: environmentsFolders, isPending } = useListProjectEnvironmentsFolders(
-    currentWorkspace.id
-  );
+const NodeTypes = { role: RoleNode, folder: FolderNode };
 
-  const [nodes, setNodes] = useNodesState<Node>([]);
-  const [edges, setEdges] = useEdgesState<Edge>([]);
-  const [subject, setSubject] = useState(ProjectPermissionSub.Secrets);
-  const [environment, setEnvironment] = useState(currentWorkspace.environments[0].slug);
-
-  useEffect(() => {
-    if (!environmentsFolders || !permissions) return;
-
-    const roleNode = createRoleNode(subject);
-
-    const { folders } = environmentsFolders[environment];
-
-    const folderNodes = folders.map((folder) =>
-      createFolderNode({ folder, permissions, environment, subject })
-    );
-
-    const folderEdges = folderNodes.map(({ data: folder }) => {
-      const actions = Object.values(folder.actions);
-
-      let access: PermissionAccess;
-      if (Object.values(actions).some((action) => action === PermissionAccess.Full)) {
-        access = PermissionAccess.Full;
-      } else if (Object.values(actions).some((action) => action === PermissionAccess.Partial)) {
-        access = PermissionAccess.Partial;
-      } else {
-        access = PermissionAccess.None;
-      }
-
-      return createEdge({
-        source: folder.parentId ?? "role",
-        target: folder.id,
-        access
-      });
-    });
-
-    const init = positionElements([roleNode, ...folderNodes], [...folderEdges]);
-    setNodes(init.nodes);
-    setEdges(init.edges);
-  }, [permissions, environmentsFolders, environment, subject]);
-
-  // const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
-
-  const edgeTypes = useMemo(() => ({ base: BasePermissionEdge }), []);
-  const nodeTypes = useMemo(
-    () => ({ role: RoleNode, folder: FolderNode, environment: EnvironmentNode }),
-    []
-  );
+const AccessTreeContent = ({ permissions }: AccessTreeProps) => {
+  const {
+    edges,
+    nodes,
+    isLoading,
+    environment,
+    subject,
+    environments,
+    setEnvironment,
+    setSubject
+  } = useAccessTree(permissions);
 
   const { fitView, getViewport, setCenter } = useReactFlow();
 
-  const onNodeClick = useCallback(
-    (event, node) => {
-      // Center the view on the clicked node
+  const onNodeClick: NodeMouseHandler<Node> = useCallback(
+    (_, node) => {
       setCenter(
-        node.position.x + node.width / 2,
-        node.position.y + node.height / 2 + 50,
-        { duration: 800, zoom: 1 } // Optional animation duration in ms
+        node.position.x + (node.width ? node.width / 2 : 0),
+        node.position.y + (node.height ? node.height / 2 + 50 : 50),
+        { duration: 1000, zoom: 1 }
       );
     },
     [setCenter]
   );
 
   useEffect(() => {
-    // Center the flow after the component mounts
     setTimeout(() => {
       fitView({
-        padding: 0.2, // Adds 20% padding around the nodes
-        duration: 1000, // Animation duration in milliseconds
+        padding: 0.2,
+        duration: 1000,
         maxZoom: 1
       });
     }, 5);
@@ -134,8 +75,8 @@ const AccessTreeContent = ({ permissions }: TProps) => {
         className="rounded-md border border-mineshaft"
         nodes={nodes}
         edges={edges}
-        edgeTypes={edgeTypes}
-        nodeTypes={nodeTypes}
+        edgeTypes={EdgeTypes}
+        nodeTypes={NodeTypes}
         fitView
         onNodeClick={onNodeClick}
         colorMode="dark"
@@ -147,7 +88,7 @@ const AccessTreeContent = ({ permissions }: TProps) => {
           hideAttribution: false // we need pro license if we want to hide
         }}
       >
-        {isPending && (
+        {isLoading && (
           <Panel className="flex h-full w-full items-center justify-center">
             <Spinner />
           </Panel>
@@ -190,7 +131,7 @@ const AccessTreeContent = ({ permissions }: TProps) => {
             position="popper"
             dropdownContainerClassName="max-w-[11rem]"
           >
-            {currentWorkspace.environments.map(({ name, slug }) => {
+            {environments.map(({ name, slug }) => {
               return (
                 <SelectItem value={slug} key={slug}>
                   {name}
@@ -199,6 +140,35 @@ const AccessTreeContent = ({ permissions }: TProps) => {
             })}
           </Select>
         </Panel>
+        <Panel position="bottom-right">
+          <Tooltip
+            className="max-w-2xl"
+            position="top"
+            content={
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <div className="h-1 w-4 border-b-2 border-dashed border-green" />
+                  <span>
+                    Policy unconditionally allows permission for at least one action in this folder
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-1 w-4 border-b-2 border-dashed border-yellow" />
+                  <span>
+                    {" "}
+                    Policy conditionally allows permission for at least one action in this folder
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-1 w-4 border-b-2 border-dashed border-red" />
+                  <span>Policy always forbids permission for all actions in this folder</span>
+                </div>
+              </div>
+            }
+          >
+            <FontAwesomeIcon className="mb-2 text-mineshaft-400" icon={faCircleQuestion} />
+          </Tooltip>
+        </Panel>
         <Background color="#5d5f64" bgColor="#111419" variant={BackgroundVariant.Dots} />
         <Controls position="bottom-left" />
       </ReactFlow>
@@ -206,7 +176,7 @@ const AccessTreeContent = ({ permissions }: TProps) => {
   );
 };
 
-export const AccessTree = (props: TProps) => {
+export const AccessTree = (props: AccessTreeProps) => {
   return (
     <AccessTreeErrorBoundary {...props}>
       <ReactFlowProvider>

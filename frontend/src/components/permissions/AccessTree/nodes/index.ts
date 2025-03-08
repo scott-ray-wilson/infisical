@@ -1,2 +1,2 @@
-export * from "./FolderNode";
+export * from "./FolderNode/FolderNode";
 export * from "./RoleNode";

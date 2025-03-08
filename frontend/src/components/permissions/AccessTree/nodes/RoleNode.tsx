@@ -11,7 +11,7 @@ export const RoleNode = ({ data: { subject } }: NodeProps & { data: { subject: s
         position={Position.Top}
       />
       <div className="flex h-full w-full flex-col items-center justify-center rounded-md border border-mineshaft bg-mineshaft-800 px-3 py-2 font-inter shadow-lg">
-        <div className="flex items-center space-x-2 text-xs text-mineshaft-300">
+        <div className="flex items-center space-x-2 text-xs text-mineshaft-200">
           <FontAwesomeIcon className="mb-0.5" icon={faIdBadge} />
           <span className="capitalize">{subject.replace("-", " ")} Access</span>
         </div>

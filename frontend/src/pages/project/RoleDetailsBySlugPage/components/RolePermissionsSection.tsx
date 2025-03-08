@@ -1,27 +1,19 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { MongoAbility, MongoQuery, RawRuleOf } from "@casl/ability";
-import {
-  faArrowUpRightFromSquare,
-  faDownLeftAndUpRightToCenter,
-  faPlus,
-  faSave,
-  faUpRightAndDownLeftFromCenter,
-  faWindowRestore
-} from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faSave } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AccessTree } from "src/components/permissions";
 import { twMerge } from "tailwind-merge";
 
 import { createNotification } from "@app/components/notifications";
+import { AccessTreeCard } from "@app/components/permissions";
 import {
   Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  IconButton
+  DropdownMenuTrigger
 } from "@app/components/v2";
 import { ProjectPermissionSub, useWorkspace } from "@app/context";
 import { ProjectPermissionSet } from "@app/context/ProjectPermissionContext";
@@ -140,95 +132,9 @@ export const RolePermissionsSection = ({ roleSlug, isDisabled }: Props) => {
     [JSON.stringify(permissions)]
   );
 
-  const [viewMode, setViewMode] = useState<"inline" | "anchored" | "modal">("inline");
-
   return (
     <div className="w-full">
-      <div
-        className={twMerge(
-          "w-full",
-          viewMode === "modal"
-            ? "fixed inset-0 z-50 p-10"
-            : viewMode === "anchored"
-              ? "fixed bottom-4 left-20 z-50 h-[40%] w-[38%] min-w-[32rem] lg:w-[34%]"
-              : ""
-        )}
-      >
-        <div
-          className={`mb-4 h-full w-full rounded-lg border border-mineshaft-600 bg-mineshaft-900 ${viewMode === "anchored" ? "relative p-0" : "flex flex-col p-4"} transition-transform duration-500`}
-        >
-          {viewMode !== "anchored" ? (
-            <div className="mb-4 flex items-start justify-between border-b border-mineshaft-400 pb-4">
-              <div>
-                <h3 className="text-lg font-semibold text-mineshaft-100">Access Tree</h3>
-                <p className="text-sm leading-3 text-mineshaft-400">
-                  Visual access policies for the configured role.
-                </p>
-              </div>
-              <div className="mr-4 mt-3 flex items-center gap-1">
-                <IconButton
-                  colorSchema="secondary"
-                  variant="plain"
-                  onClick={() => setViewMode((prev) => (prev === "inline" ? "anchored" : "inline"))}
-                  ariaLabel="Anchor access tree"
-                  className=""
-                >
-                  <FontAwesomeIcon
-                    icon={viewMode === "anchored" ? faArrowUpRightFromSquare : faWindowRestore}
-                  />
-                </IconButton>
-                <IconButton
-                  colorSchema="secondary"
-                  variant="plain"
-                  onClick={() => setViewMode((prev) => (prev === "inline" ? "modal" : "inline"))}
-                  ariaLabel="Expand access tree"
-                >
-                  <FontAwesomeIcon
-                    icon={
-                      viewMode === "modal"
-                        ? faDownLeftAndUpRightToCenter
-                        : faUpRightAndDownLeftFromCenter
-                    }
-                  />
-                </IconButton>
-              </div>
-            </div>
-          ) : (
-            <div className="absolute right-2 top-2 z-50">
-              <IconButton
-                colorSchema="secondary"
-                variant="plain"
-                onClick={() => setViewMode((prev) => (prev === "inline" ? "anchored" : "inline"))}
-                ariaLabel="Anchor access tree"
-                className=""
-              >
-                <FontAwesomeIcon
-                  icon={viewMode === "anchored" ? faArrowUpRightFromSquare : faWindowRestore}
-                />
-              </IconButton>
-              <IconButton
-                colorSchema="secondary"
-                variant="plain"
-                onClick={() => setViewMode((prev) => (prev === "inline" ? "modal" : "inline"))}
-                ariaLabel="Expand access tree"
-              >
-                <FontAwesomeIcon
-                  icon={
-                    viewMode === "modal"
-                      ? faDownLeftAndUpRightToCenter
-                      : faUpRightAndDownLeftFromCenter
-                  }
-                />
-              </IconButton>
-            </div>
-          )}
-          <div
-            className={`flex ${viewMode === "inline" ? "h-96" : viewMode === "anchored" ? "h-full" : "flex-1"} items-center space-x-4`}
-          >
-            <AccessTree permissions={formattedPermissions} />
-          </div>
-        </div>
-      </div>
+      <AccessTreeCard permissions={formattedPermissions} />
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="w-full rounded-lg border border-mineshaft-600 bg-mineshaft-900 p-4"

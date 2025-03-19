@@ -1,7 +1,7 @@
 import { BadRequestError } from "@app/lib/errors";
 import { alphaNumericNanoId } from "@app/lib/nanoid";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
-import { sqlConnectionQuery } from "@app/services/app-connection/shared/sql";
+import { getSqlConnectionClient } from "@app/services/app-connection/shared/sql";
 
 import { MsSqlConnectionMethod } from "./mssql-connection-enums";
 import { TMsSqlConnectionConfig } from "./mssql-connection-types";
@@ -18,15 +18,15 @@ export const getMsSqlConnectionListItem = () => {
 export const validateMsSqlConnectionCredentials = async (config: TMsSqlConnectionConfig) => {
   const { credentials, isPlatformManaged } = config;
 
+  const client = await getSqlConnectionClient({ app: AppConnection.MsSql, credentials });
+
   try {
     if (isPlatformManaged) {
       const newPassword = alphaNumericNanoId(32);
-      await sqlConnectionQuery({
-        credentials,
-        app: AppConnection.MsSql,
-        query: `ALTER LOGIN ?? WITH PASSWORD = '${newPassword}' OLD_PASSWORD = '${credentials.password}';`,
-        variables: [credentials.username]
-      });
+
+      await client.raw(`ALTER LOGIN ?? WITH PASSWORD = '${newPassword}' OLD_PASSWORD = '${credentials.password}';`, [
+        credentials.username
+      ]);
 
       return {
         ...credentials,
@@ -34,11 +34,7 @@ export const validateMsSqlConnectionCredentials = async (config: TMsSqlConnectio
       };
     }
 
-    await sqlConnectionQuery({
-      credentials,
-      app: AppConnection.MsSql,
-      query: "SELECT GETDATE()"
-    });
+    await client.raw(`SELECT 1`);
 
     return credentials;
   } catch (e) {
@@ -49,5 +45,7 @@ export const validateMsSqlConnectionCredentials = async (config: TMsSqlConnectio
     }
 
     throw new BadRequestError({ message: "Unable to validate connection - verify credentials" });
+  } finally {
+    await client.destroy();
   }
 };

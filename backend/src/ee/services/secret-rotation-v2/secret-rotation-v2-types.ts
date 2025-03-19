@@ -1,5 +1,6 @@
 import {
   TPostgresCredentialsRotation,
+  TPostgresCredentialsRotationGeneratedCredentials,
   TPostgresCredentialsRotationInput,
   TPostgresCredentialsRotationListItem,
   TPostgresCredentialsRotationWithConnection
@@ -9,6 +10,8 @@ import { SecretRotation } from "./secret-rotation-v2-enums";
 export type TSecretRotationV2 = TPostgresCredentialsRotation;
 
 export type TSecretRotationV2WithConnection = TPostgresCredentialsRotationWithConnection;
+
+export type TSecretRotationV2GeneratedCredentials = TPostgresCredentialsRotationGeneratedCredentials;
 
 export type TSecretRotationV2Input = TPostgresCredentialsRotationInput;
 

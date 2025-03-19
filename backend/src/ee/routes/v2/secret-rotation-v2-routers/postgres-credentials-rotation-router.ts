@@ -1,5 +1,6 @@
 import {
   CreatePostgresCredentialsRotationSchema,
+  PostgresCredentialsRotationGeneratedCredentialsSchema,
   PostgresCredentialsRotationSchema,
   UpdatePostgresCredentialsRotationSchema
 } from "@app/ee/services/secret-rotation-v2/postgres-credentials";
@@ -13,5 +14,6 @@ export const registerPostgresCredentialsRotationRouter = async (server: FastifyZ
     server,
     responseSchema: PostgresCredentialsRotationSchema,
     createSchema: CreatePostgresCredentialsRotationSchema,
-    updateSchema: UpdatePostgresCredentialsRotationSchema
+    updateSchema: UpdatePostgresCredentialsRotationSchema,
+    generatedCredentialsSchema: PostgresCredentialsRotationGeneratedCredentialsSchema
   });

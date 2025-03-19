@@ -3,8 +3,7 @@ import knex from "knex";
 import { getConfig } from "@app/lib/config/env";
 import { getDbConnectionHost } from "@app/lib/knex";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
-
-import { TSqlConnectionQueryParams } from "./sql-connection-types";
+import { TSqlConnection } from "@app/services/app-connection/app-connection-types";
 
 const EXTERNAL_REQUEST_TIMEOUT = 10 * 1000;
 
@@ -13,14 +12,16 @@ const SQL_CONNECTION_CLIENT_MAP = {
   [AppConnection.MsSql]: "mssql"
 };
 
-export const sqlConnectionQuery = async ({
-  credentials: { host, database, port, ca, password, username },
-  app,
-  query,
-  variables = [],
-  options
-}: TSqlConnectionQueryParams) => {
+export const getSqlConnectionClient = async (
+  appConnection: Pick<TSqlConnection, "credentials" | "app">,
+  options?: Record<string, unknown>
+) => {
   const appCfg = getConfig();
+
+  const {
+    app,
+    credentials: { host, database, port, ca, password, username }
+  } = appConnection;
 
   const ssl = ca ? { rejectUnauthorized: false, ca } : undefined;
   const isCloud = Boolean(appCfg.LICENSE_SERVER_KEY); // quick and dirty way to check if its cloud or not
@@ -37,7 +38,7 @@ export const sqlConnectionQuery = async ({
   )
     throw new Error("Invalid Host");
 
-  const db = knex({
+  const client = knex({
     client: SQL_CONNECTION_CLIENT_MAP[app],
     connection: {
       database,
@@ -47,16 +48,9 @@ export const sqlConnectionQuery = async ({
       password,
       connectionTimeoutMillis: EXTERNAL_REQUEST_TIMEOUT,
       ssl,
-      pool: { min: 0, max: 1 },
       options
     }
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const results = await db.raw(query, variables);
-
-  await db.destroy();
-
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-  return results;
+  return client;
 };

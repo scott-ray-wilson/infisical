@@ -58,6 +58,8 @@ export type TAppConnection = { id: string } & (
   | TMsSqlConnection
 );
 
+export type TSqlConnection = TPostgresConnection | TMsSqlConnection;
+
 export type TAppConnectionInput = { id: string } & (
   | TAwsConnectionInput
   | TGitHubConnectionInput

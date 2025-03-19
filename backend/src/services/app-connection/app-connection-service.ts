@@ -5,7 +5,6 @@ import { TPermissionServiceFactory } from "@app/ee/services/permission/permissio
 import { generateHash } from "@app/lib/crypto/encryption";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
 import { BadRequestError, DatabaseError, NotFoundError } from "@app/lib/errors";
-import { logger } from "@app/lib/logger";
 import { DiscriminativePick, OrgServiceActor } from "@app/lib/types";
 import {
   decryptAppConnection,
@@ -242,8 +241,6 @@ export const appConnectionServiceFactory = ({
             APP_CONNECTION_NAME_MAP[app]
           } Connection with method ${getAppConnectionMethodName(method)}`
         });
-
-      logger.warn(params, "PARAMS");
 
       const validatedCredentials = await validateAppConnectionCredentials({
         app,

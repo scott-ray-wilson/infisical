@@ -32,7 +32,7 @@ const PostgresCredentialsRotationParametersSchema = z.object({
     .describe(SecretRotations.PARAMETERS.POSTGRES_CREDENTIALS.revokeStatement)
 });
 
-const PostgresCredentialsRotationGeneratedCredentialsSchema = z
+export const PostgresCredentialsRotationGeneratedCredentialsSchema = z
   .object({
     username: z.string(),
     password: z.string()
@@ -44,7 +44,6 @@ const PostgresCredentialsRotationGeneratedCredentialsSchema = z
 export const PostgresCredentialsRotationSchema = BaseSecretRotationSchema(SecretRotation.PostgresCredentials).extend({
   type: z.literal(SecretRotation.PostgresCredentials),
   parameters: PostgresCredentialsRotationParametersSchema
-  // generatedCredentials: PostgresCredentialsRotationGeneratedCredentialsSchema
 });
 
 export const CreatePostgresCredentialsRotationSchema = BaseCreateSecretRotationSchema(
@@ -60,7 +59,7 @@ export const UpdatePostgresCredentialsRotationSchema = BaseUpdateSecretRotationS
 });
 
 export const PostgresCredentialsRotationListItemSchema = z.object({
-  name: z.literal("PostgreSQL  Credentials"),
+  name: z.literal("PostgreSQL Credentials"),
   connection: z.literal(AppConnection.Postgres),
   type: z.literal(SecretRotation.PostgresCredentials)
 });

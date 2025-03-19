@@ -27,9 +27,13 @@
 // import { HUMANITEC_SYNC_LIST_OPTION } from "./humanitec";
 // import { HumanitecSyncFns } from "./humanitec/humanitec-sync-fns";
 //
+
+import { TAppConnectionServiceFactoryDep } from "@app/services/app-connection/app-connection-service";
+import { KmsDataKey } from "@app/services/kms/kms-types";
+
 import { POSTGRES_CREDENTIALS_ROTATION_LIST_OPTION } from "./postgres-credentials";
 import { SecretRotation } from "./secret-rotation-v2-enums";
-import { TSecretRotationV2ListItem } from "./secret-rotation-v2-types";
+import { TSecretRotationV2GeneratedCredentials, TSecretRotationV2ListItem } from "./secret-rotation-v2-types";
 
 const SECRET_ROTATION_LIST_OPTIONS: Record<SecretRotation, TSecretRotationV2ListItem> = {
   [SecretRotation.PostgresCredentials]: POSTGRES_CREDENTIALS_ROTATION_LIST_OPTION,
@@ -39,6 +43,49 @@ const SECRET_ROTATION_LIST_OPTIONS: Record<SecretRotation, TSecretRotationV2List
 export const listSecretRotationOptions = () => {
   return Object.values(SECRET_ROTATION_LIST_OPTIONS).sort((a, b) => a.name.localeCompare(b.name));
 };
+
+export const encryptSecretRotationCredentials = async ({
+  projectId,
+  generatedCredentials,
+  kmsService
+}: {
+  projectId: string;
+  generatedCredentials: TSecretRotationV2GeneratedCredentials;
+  kmsService: TAppConnectionServiceFactoryDep["kmsService"];
+}) => {
+  const { encryptor } = await kmsService.createCipherPairWithDataKey({
+    type: KmsDataKey.SecretManager,
+    projectId
+  });
+
+  const { cipherTextBlob: encryptedCredentialsBlob } = encryptor({
+    plainText: Buffer.from(JSON.stringify(generatedCredentials))
+  });
+
+  return encryptedCredentialsBlob;
+};
+
+export const decryptSecretRotationCredentials = async ({
+  projectId,
+  encryptedGeneratedCredentials,
+  kmsService
+}: {
+  projectId: string;
+  encryptedGeneratedCredentials: Buffer;
+  kmsService: TAppConnectionServiceFactoryDep["kmsService"];
+}) => {
+  const { decryptor } = await kmsService.createCipherPairWithDataKey({
+    type: KmsDataKey.SecretManager,
+    projectId
+  });
+
+  const decryptedPlainTextBlob = decryptor({
+    cipherTextBlob: encryptedGeneratedCredentials
+  });
+
+  return JSON.parse(decryptedPlainTextBlob.toString()) as TSecretRotationV2GeneratedCredentials;
+};
+
 //
 // type TSyncSecretDeps = {
 //   appConnectionDAL: Pick<TAppConnectionDALFactory, "findById" | "update" | "updateById">;

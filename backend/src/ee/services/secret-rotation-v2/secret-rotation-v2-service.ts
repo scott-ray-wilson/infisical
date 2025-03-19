@@ -8,9 +8,14 @@ import {
   ProjectPermissionSecretRotationActions,
   ProjectPermissionSub
 } from "@app/ee/services/permission/project-permission";
-import { listSecretRotationOptions } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-fns";
+import {
+  decryptSecretRotationCredentials,
+  encryptSecretRotationCredentials,
+  listSecretRotationOptions
+} from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-fns";
 import {
   SECRET_ROTATION_CONNECTION_MAP,
+  SECRET_ROTATION_FACTORY_MAP,
   SECRET_ROTATION_NAME_MAP
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-maps";
 import {
@@ -20,12 +25,15 @@ import {
   TFindSecretRotationV2ByNameDTO,
   TListSecretRotationsV2ByProjectId,
   TSecretRotationV2,
+  TSecretRotationV2GeneratedCredentials,
+  TSecretRotationV2WithConnection,
   TUpdateSecretRotationV2DTO
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-types";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
 import { BadRequestError, DatabaseError, NotFoundError } from "@app/lib/errors";
 import { OrgServiceActor } from "@app/lib/types";
 import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
+import { TKmsServiceFactory } from "@app/services/kms/kms-service";
 import { TProjectBotServiceFactory } from "@app/services/project-bot/project-bot-service";
 import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-folder-dal";
 
@@ -37,7 +45,7 @@ type TSecretRotationV2ServiceFactoryDep = {
   permissionService: Pick<TPermissionServiceFactory, "getProjectPermission" | "getOrgPermission">;
   projectBotService: Pick<TProjectBotServiceFactory, "getBotKey">;
   folderDAL: Pick<TSecretFolderDALFactory, "findByProjectId" | "findById" | "findBySecretPath">;
-  // keyStore: Pick<TKeyStoreFactory, "getItem">;
+  kmsService: Pick<TKmsServiceFactory, "createCipherPairWithDataKey">;
   licenseService: Pick<TLicenseServiceFactory, "getPlan">;
 };
 
@@ -49,7 +57,8 @@ export const secretRotationV2ServiceFactory = ({
   permissionService,
   appConnectionService,
   projectBotService,
-  licenseService
+  licenseService,
+  kmsService
 }: TSecretRotationV2ServiceFactoryDep) => {
   const listSecretRotationsByProjectId = async (
     { projectId, type }: TListSecretRotationsV2ByProjectId,
@@ -119,6 +128,53 @@ export const secretRotationV2ServiceFactory = ({
       });
 
     return secretRotation as TSecretRotationV2;
+  };
+
+  const findSecretRotationGeneratedCredentialsById = async (
+    { type, rotationId }: TFindSecretRotationV2ByIdDTO,
+    actor: OrgServiceActor
+  ) => {
+    const plan = await licenseService.getPlan(actor.orgId);
+
+    if (!plan.secretRotation)
+      throw new BadRequestError({
+        message:
+          "Failed to access secret rotation credentials due to plan restriction. Upgrade plan to access secret rotations credentials."
+      });
+
+    const secretRotation = await secretRotationV2DAL.findById(rotationId);
+
+    if (!secretRotation)
+      throw new NotFoundError({
+        message: `Could not find ${SECRET_ROTATION_NAME_MAP[type]} Rotation with ID "${rotationId}"`
+      });
+
+    const { permission } = await permissionService.getProjectPermission({
+      actor: actor.type,
+      actorId: actor.id,
+      actorAuthMethod: actor.authMethod,
+      actorOrgId: actor.orgId,
+      actionProjectType: ActionProjectType.SecretManager,
+      projectId: secretRotation.projectId
+    });
+
+    ForbiddenError.from(permission).throwUnlessCan(
+      ProjectPermissionSecretRotationActions.ReadCredentials,
+      ProjectPermissionSub.SecretRotation
+    );
+
+    if (secretRotation.connection.app !== SECRET_ROTATION_CONNECTION_MAP[type])
+      throw new BadRequestError({
+        message: `Secret Rotation with ID "${secretRotation.id}" is not configured for ${SECRET_ROTATION_NAME_MAP[type]}`
+      });
+
+    const generatedCredentials = await decryptSecretRotationCredentials({
+      projectId: secretRotation.projectId,
+      encryptedGeneratedCredentials: secretRotation.encryptedGeneratedCredentials,
+      kmsService
+    });
+
+    return { generatedCredentials, activeIndex: secretRotation.activeIndex };
   };
 
   const findSecretRotationByName = async (
@@ -210,17 +266,42 @@ export const secretRotationV2ServiceFactory = ({
     const typeApp = SECRET_ROTATION_CONNECTION_MAP[params.type];
 
     // validates permission to connect and app is valid for sync type
-    await appConnectionService.connectAppConnectionById(typeApp, params.connectionId, actor);
+    const appConnection = await appConnectionService.connectAppConnectionById(typeApp, params.connectionId, actor);
 
-    // TODO: initialize credentials
+    // TODO: check if secrets exist
+
+    const generatedCredentials: TSecretRotationV2GeneratedCredentials = [];
+
+    try {
+      const rotationFactory = SECRET_ROTATION_FACTORY_MAP[params.type]({
+        parameters: params.parameters,
+        connection: appConnection
+      } as TSecretRotationV2WithConnection);
+
+      const credentials = await rotationFactory.issue();
+
+      generatedCredentials.push(credentials);
+    } catch (error) {
+      throw new BadRequestError({
+        message: `Failed to generate credentials for secret rotation: ${(error as Error)?.message ?? "Unknown error"}`
+      });
+    }
+
+    const encryptedGeneratedCredentials = await encryptSecretRotationCredentials({
+      generatedCredentials,
+      projectId,
+      kmsService
+    });
 
     try {
       const secretRotation = await secretRotationV2DAL.create({
         folderId: folder.id,
         ...params,
-        encryptedGeneratedCredentials: Buffer.from([]),
+        encryptedGeneratedCredentials,
         projectId
       });
+
+      // TODO: test with derivations
 
       return secretRotation as TSecretRotationV2;
     } catch (err) {
@@ -379,159 +460,6 @@ export const secretRotationV2ServiceFactory = ({
 
     return secretRotation as TSecretRotationV2;
   };
-  //
-  // const triggerSecretRotationRotationSecretsById = async (
-  //   { rotationId, type, ...params }: TTriggerSecretRotationRotationSecretsByIdDTO,
-  //   actor: OrgServiceActor
-  // ) => {
-  //   const secretRotation = await secretRotationDAL.findById(rotationId);
-  //
-  //   if (!secretRotation)
-  //     throw new NotFoundError({
-  //       message: `Could not find ${SECRET_ROTATION_NAME_MAP[type]} Rotation with ID "${rotationId}"`
-  //     });
-  //
-  //   const { permission } = await permissionService.getProjectPermission({
-  //     actor: actor.type,
-  //     actorId: actor.id,
-  //     actorAuthMethod: actor.authMethod,
-  //     actorOrgId: actor.orgId,
-  //     actionProjectType: ActionProjectType.SecretManager,
-  //     projectId: secretRotation.projectId
-  //   });
-  //
-  //   ForbiddenError.from(permission).throwUnlessCan(
-  //     ProjectPermissionSecretRotationActions.RotationSecrets,
-  //     ProjectPermissionSub.SecretRotations
-  //   );
-  //
-  //   if (secretRotation.connection.app !== SECRET_ROTATION_CONNECTION_MAP[type])
-  //     throw new BadRequestError({
-  //       message: `Secret sync with ID "${secretRotation.id}" is not configured for ${SECRET_ROTATION_NAME_MAP[type]}`
-  //     });
-  //
-  //   if (!secretRotation.folderId)
-  //     throw new BadRequestError({
-  //       message: `Invalid source configuration: folder no longer exists. Please configure a valid source and try again.`
-  //     });
-  //
-  //   const isRotationJobRunning = Boolean(await keyStore.getItem(KeyStorePrefixes.SecretRotationLock(rotationId)));
-  //
-  //   if (isRotationJobRunning)
-  //     throw new BadRequestError({ message: `A job for this sync is already in progress. Please try again shortly.` });
-  //
-  //   await secretRotationQueue.queueSecretRotationRotationSecretsById({ rotationId, ...params });
-  //
-  //   const updatedSecretRotation = await secretRotationDAL.updateById(rotationId, {
-  //     syncStatus: SecretRotationStatus.Pending
-  //   });
-  //
-  //   return updatedSecretRotation as TSecretRotation;
-  // };
-  //
-  // const triggerSecretRotationImportSecretsById = async (
-  //   { rotationId, type, ...params }: TTriggerSecretRotationImportSecretsByIdDTO,
-  //   actor: OrgServiceActor
-  // ) => {
-  //   if (!listSecretRotationOptions().find((option) => option.type === type)?.canImportSecrets) {
-  //     throw new BadRequestError({
-  //       message: `${SECRET_ROTATION_NAME_MAP[type]} does not support importing secrets.`
-  //     });
-  //   }
-  //
-  //   const secretRotation = await secretRotationDAL.findById(rotationId);
-  //
-  //   if (!secretRotation)
-  //     throw new NotFoundError({
-  //       message: `Could not find ${SECRET_ROTATION_NAME_MAP[type]} Rotation with ID "${rotationId}"`
-  //     });
-  //
-  //   const { permission } = await permissionService.getProjectPermission({
-  //     actor: actor.type,
-  //     actorId: actor.id,
-  //     actorAuthMethod: actor.authMethod,
-  //     actorOrgId: actor.orgId,
-  //     actionProjectType: ActionProjectType.SecretManager,
-  //     projectId: secretRotation.projectId
-  //   });
-  //
-  //   ForbiddenError.from(permission).throwUnlessCan(
-  //     ProjectPermissionSecretRotationActions.ImportSecrets,
-  //     ProjectPermissionSub.SecretRotations
-  //   );
-  //
-  //   if (secretRotation.connection.app !== SECRET_ROTATION_CONNECTION_MAP[type])
-  //     throw new BadRequestError({
-  //       message: `Secret sync with ID "${secretRotation.id}" is not configured for ${SECRET_ROTATION_NAME_MAP[type]}`
-  //     });
-  //
-  //   if (!secretRotation.folderId)
-  //     throw new BadRequestError({
-  //       message: `Invalid source configuration: folder no longer exists. Please configure a valid source and try again.`
-  //     });
-  //
-  //   const isRotationJobRunning = Boolean(await keyStore.getItem(KeyStorePrefixes.SecretRotationLock(rotationId)));
-  //
-  //   if (isRotationJobRunning)
-  //     throw new BadRequestError({ message: `A job for this sync is already in progress. Please try again shortly.` });
-  //
-  //   await secretRotationQueue.queueSecretRotationImportSecretsById({ rotationId, ...params });
-  //
-  //   const updatedSecretRotation = await secretRotationDAL.updateById(rotationId, {
-  //     importStatus: SecretRotationStatus.Pending
-  //   });
-  //
-  //   return updatedSecretRotation as TSecretRotation;
-  // };
-  //
-  // const triggerSecretRotationRemoveSecretsById = async (
-  //   { rotationId, type, ...params }: TTriggerSecretRotationRemoveSecretsByIdDTO,
-  //   actor: OrgServiceActor
-  // ) => {
-  //   const secretRotation = await secretRotationDAL.findById(rotationId);
-  //
-  //   if (!secretRotation)
-  //     throw new NotFoundError({
-  //       message: `Could not find ${SECRET_ROTATION_NAME_MAP[type]} Rotation with ID "${rotationId}"`
-  //     });
-  //
-  //   const { permission } = await permissionService.getProjectPermission({
-  //     actor: actor.type,
-  //     actorId: actor.id,
-  //     actorAuthMethod: actor.authMethod,
-  //     actorOrgId: actor.orgId,
-  //     actionProjectType: ActionProjectType.SecretManager,
-  //     projectId: secretRotation.projectId
-  //   });
-  //
-  //   ForbiddenError.from(permission).throwUnlessCan(
-  //     ProjectPermissionSecretRotationActions.RemoveSecrets,
-  //     ProjectPermissionSub.SecretRotations
-  //   );
-  //
-  //   if (secretRotation.connection.app !== SECRET_ROTATION_CONNECTION_MAP[type])
-  //     throw new BadRequestError({
-  //       message: `Secret sync with ID "${secretRotation.id}" is not configured for ${SECRET_ROTATION_NAME_MAP[type]}`
-  //     });
-  //
-  //   if (!secretRotation.folderId)
-  //     throw new BadRequestError({
-  //       message: `Invalid source configuration: folder no longer exists. Please configure a valid source and try again.`
-  //     });
-  //
-  //   const isRotationJobRunning = Boolean(await keyStore.getItem(KeyStorePrefixes.SecretRotationLock(rotationId)));
-  //
-  //   if (isRotationJobRunning)
-  //     throw new BadRequestError({ message: `A job for this sync is already in progress. Please try again shortly.` });
-  //
-  //   await secretRotationQueue.queueSecretRotationRemoveSecretsById({ rotationId, ...params });
-  //
-  //   const updatedSecretRotation = await secretRotationDAL.updateById(rotationId, {
-  //     removeStatus: SecretRotationStatus.Pending
-  //   });
-  //
-  //   return updatedSecretRotation as TSecretRotation;
-  // };
 
   return {
     listSecretRotationOptions,
@@ -540,7 +468,8 @@ export const secretRotationV2ServiceFactory = ({
     updateSecretRotation,
     findSecretRotationById,
     findSecretRotationByName,
-    deleteSecretRotation
+    deleteSecretRotation,
+    findSecretRotationGeneratedCredentialsById
     // triggerSecretRotationRotationSecretsById,
     // triggerSecretRotationImportSecretsById,
     // triggerSecretRotationRemoveSecretsById

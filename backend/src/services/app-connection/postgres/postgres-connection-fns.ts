@@ -1,7 +1,7 @@
 import { BadRequestError } from "@app/lib/errors";
 import { alphaNumericNanoId } from "@app/lib/nanoid";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
-import { sqlConnectionQuery } from "@app/services/app-connection/shared/sql";
+import { getSqlConnectionClient } from "@app/services/app-connection/shared/sql";
 
 import { PostgresConnectionMethod } from "./postgres-connection-enums";
 import { TPostgresConnectionConfig } from "./postgres-connection-types";
@@ -18,15 +18,13 @@ export const getPostgresConnectionListItem = () => {
 export const validatePostgresConnectionCredentials = async (config: TPostgresConnectionConfig) => {
   const { credentials, isPlatformManaged } = config;
 
+  const client = await getSqlConnectionClient({ app: AppConnection.Postgres, credentials });
+
   try {
     if (isPlatformManaged) {
       const newPassword = alphaNumericNanoId(32);
-      await sqlConnectionQuery({
-        credentials,
-        app: AppConnection.Postgres,
-        query: `ALTER ROLE ?? WITH PASSWORD '${newPassword}';`,
-        variables: [credentials.username]
-      });
+
+      await client.raw(`ALTER USER ?? WITH PASSWORD '${newPassword}';`, [credentials.username]);
 
       return {
         ...credentials,
@@ -34,14 +32,12 @@ export const validatePostgresConnectionCredentials = async (config: TPostgresCon
       };
     }
 
-    await sqlConnectionQuery({
-      credentials,
-      app: AppConnection.Postgres,
-      query: "SELECT NOW()"
-    });
+    await client.raw(`Select 1`);
 
     return credentials;
   } catch (e) {
     throw new BadRequestError({ message: "Unable to validate connection - verify credentials" });
+  } finally {
+    await client.destroy();
   }
 };

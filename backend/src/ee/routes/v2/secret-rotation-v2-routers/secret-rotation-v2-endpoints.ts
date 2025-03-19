@@ -5,6 +5,7 @@ import { SecretRotation } from "@app/ee/services/secret-rotation-v2/secret-rotat
 import { SECRET_ROTATION_NAME_MAP } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-maps";
 import {
   TSecretRotationV2,
+  TSecretRotationV2GeneratedCredentials,
   TSecretRotationV2Input
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-types";
 import { SecretRotations } from "@app/lib/api-docs";
@@ -13,12 +14,17 @@ import { readLimit, writeLimit } from "@app/server/config/rateLimiter";
 import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
 import { AuthMode } from "@app/services/auth/auth-type";
 
-export const registerSecretRotationEndpoints = <T extends TSecretRotationV2, I extends TSecretRotationV2Input>({
+export const registerSecretRotationEndpoints = <
+  T extends TSecretRotationV2,
+  I extends TSecretRotationV2Input,
+  C extends TSecretRotationV2GeneratedCredentials
+>({
   server,
   type,
   createSchema,
   updateSchema,
-  responseSchema
+  responseSchema,
+  generatedCredentialsSchema
 }: {
   type: SecretRotation;
   server: FastifyZodProvider;
@@ -44,6 +50,7 @@ export const registerSecretRotationEndpoints = <T extends TSecretRotationV2, I e
     interval?: number;
   }>;
   responseSchema: z.ZodTypeAny;
+  generatedCredentialsSchema: z.ZodTypeAny;
 }) => {
   const rotationType = SECRET_ROTATION_NAME_MAP[type];
 
@@ -320,37 +327,40 @@ export const registerSecretRotationEndpoints = <T extends TSecretRotationV2, I e
         rotationId: z.string().uuid().describe(SecretRotations.GET_CREDENTIALS_BY_ID(type).rotationId)
       }),
       response: {
-        200: z.object({ secretRotation: responseSchema })
+        200: z.object({
+          credentials: generatedCredentialsSchema,
+          activeIndex: z.number(),
+          rotationId: z.string().uuid(),
+          type: z.literal(type)
+        })
       }
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
       const { rotationId } = req.params;
 
-      // TODO!
-      // const secretRotation = (await server.services.secretRotation.triggerSecretRotationRotationSecretsById(
-      //   {
-      //     rotationId,
-      //     type,
-      //     auditLogInfo: req.auditLogInfo
-      //   },
-      //   req.permission
-      // )) as T;
+      const { generatedCredentials, activeIndex } =
+        await server.services.secretRotationV2.findSecretRotationGeneratedCredentialsById(
+          {
+            rotationId,
+            type
+          },
+          req.permission
+        );
 
-      // await server.services.auditLog.createAuditLog({
-      //   ...req.auditLogInfo,
-      //   orgId: req.permission.orgId,
-      //   event: {
-      //     type: EventType.DELETE_SECRET_ROTATION,
-      //     metadata: {
-      //       type,
-      //       rotationId,
-      //       removeSecrets
-      //     }
-      //   }
-      // });
+      await server.services.auditLog.createAuditLog({
+        ...req.auditLogInfo,
+        orgId: req.permission.orgId,
+        event: {
+          type: EventType.GET_SECRET_ROTATION_CREDENTIALS,
+          metadata: {
+            type,
+            rotationId
+          }
+        }
+      });
 
-      return { secretRotation: null };
+      return { credentials: generatedCredentials, activeIndex, rotationId, type };
     }
   });
 

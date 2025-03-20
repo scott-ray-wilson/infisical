@@ -1508,7 +1508,8 @@ export const registerRoutes = async (
     folderDAL,
     projectBotService,
     licenseService,
-    kmsService
+    kmsService,
+    auditLogService
   });
 
   await superAdminService.initServerCfg();

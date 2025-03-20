@@ -300,7 +300,7 @@ export const registerSecretRotationEndpoints = <
 
       await server.services.auditLog.createAuditLog({
         ...req.auditLogInfo,
-        orgId: req.permission.orgId,
+        projectId: secretRotation.projectId,
         event: {
           type: EventType.DELETE_SECRET_ROTATION,
           metadata: {
@@ -339,7 +339,7 @@ export const registerSecretRotationEndpoints = <
     handler: async (req) => {
       const { rotationId } = req.params;
 
-      const { generatedCredentials, activeIndex } =
+      const { generatedCredentials, activeIndex, projectId } =
         await server.services.secretRotationV2.findSecretRotationGeneratedCredentialsById(
           {
             rotationId,
@@ -350,7 +350,7 @@ export const registerSecretRotationEndpoints = <
 
       await server.services.auditLog.createAuditLog({
         ...req.auditLogInfo,
-        orgId: req.permission.orgId,
+        projectId,
         event: {
           type: EventType.GET_SECRET_ROTATION_CREDENTIALS,
           metadata: {
@@ -360,7 +360,7 @@ export const registerSecretRotationEndpoints = <
         }
       });
 
-      return { credentials: generatedCredentials, activeIndex, rotationId, type };
+      return { credentials: generatedCredentials as C, activeIndex, rotationId, type };
     }
   });
 
@@ -383,30 +383,15 @@ export const registerSecretRotationEndpoints = <
     handler: async (req) => {
       const { rotationId } = req.params;
 
-      // TODO!
-      // const secretRotation = (await server.services.secretRotation.triggerSecretRotationRotationSecretsById(
-      //   {
-      //     rotationId,
-      //     type,
-      //     auditLogInfo: req.auditLogInfo
-      //   },
-      //   req.permission
-      // )) as T;
+      const secretRotation = (await server.services.secretRotationV2.rotateSecretRotation(
+        {
+          rotationId,
+          type
+        },
+        req.permission
+      )) as T;
 
-      // await server.services.auditLog.createAuditLog({
-      //   ...req.auditLogInfo,
-      //   orgId: req.permission.orgId,
-      //   event: {
-      //     type: EventType.DELETE_SECRET_ROTATION,
-      //     metadata: {
-      //       type,
-      //       rotationId,
-      //       removeSecrets
-      //     }
-      //   }
-      // });
-
-      return { secretRotation: null };
+      return { secretRotation };
     }
   });
 };

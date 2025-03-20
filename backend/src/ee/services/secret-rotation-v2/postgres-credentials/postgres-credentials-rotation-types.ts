@@ -4,7 +4,6 @@ import { TPostgresConnection } from "@app/services/app-connection/postgres";
 
 import {
   CreatePostgresCredentialsRotationSchema,
-  PostgresCredentialsRotationGeneratedCredentialsSchema,
   PostgresCredentialsRotationListItemSchema,
   PostgresCredentialsRotationSchema
 } from "./postgres-credentials-rotation-schemas";
@@ -14,10 +13,6 @@ export type TPostgresCredentialsRotation = z.infer<typeof PostgresCredentialsRot
 export type TPostgresCredentialsRotationInput = z.infer<typeof CreatePostgresCredentialsRotationSchema>;
 
 export type TPostgresCredentialsRotationListItem = z.infer<typeof PostgresCredentialsRotationListItemSchema>;
-
-export type TPostgresCredentialsRotationGeneratedCredentials = z.infer<
-  typeof PostgresCredentialsRotationGeneratedCredentialsSchema
->;
 
 export type TPostgresCredentialsRotationWithConnection = TPostgresCredentialsRotation & {
   connection: TPostgresConnection;

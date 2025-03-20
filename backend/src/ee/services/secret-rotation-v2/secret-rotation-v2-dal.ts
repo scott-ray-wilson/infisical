@@ -116,7 +116,7 @@ export const secretRotationV2DALFactory = (
 
       const foldersWithPath = await folderDAL.findSecretPathByFolderIds(
         filter.projectId,
-        secretRotations.filter((rotation) => Boolean(rotation.folderId)).map((rotation) => rotation.folderId!)
+        secretRotations.filter((rotation) => Boolean(rotation.folderId)).map((rotation) => rotation.folderId)
       );
 
       const folderRecord: Record<string, (typeof foldersWithPath)[number]> = {};

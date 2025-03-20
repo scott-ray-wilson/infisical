@@ -19,7 +19,6 @@ import {
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-fns";
 import {
   SECRET_ROTATION_CONNECTION_MAP,
-  SECRET_ROTATION_FACTORY_MAP,
   SECRET_ROTATION_NAME_MAP
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-maps";
 import {
@@ -35,6 +34,7 @@ import {
   TSecretRotationV2WithConnection,
   TUpdateSecretRotationV2DTO
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-types";
+import { sqlCredentialsRotationFactory } from "@app/ee/services/secret-rotation-v2/shared/sql-credentials";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
 import { BadRequestError, DatabaseError, NotFoundError } from "@app/lib/errors";
 import { OrgServiceActor } from "@app/lib/types";
@@ -47,7 +47,7 @@ import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-fold
 
 import { TSecretRotationV2DALFactory } from "./secret-rotation-v2-dal";
 
-type TSecretRotationV2ServiceFactoryDep = {
+export type TSecretRotationV2ServiceFactoryDep = {
   secretRotationV2DAL: TSecretRotationV2DALFactory;
   appConnectionService: Pick<TAppConnectionServiceFactory, "connectAppConnectionById">;
   permissionService: Pick<TPermissionServiceFactory, "getProjectPermission" | "getOrgPermission">;
@@ -61,6 +61,19 @@ type TSecretRotationV2ServiceFactoryDep = {
 export type TSecretRotationV2ServiceFactory = ReturnType<typeof secretRotationV2ServiceFactory>;
 
 const MAX_GENERATED_CREDENTIALS_LENGTH = 2;
+
+type TRotationFactory = (rotation: Pick<TSecretRotationV2WithConnection, "connection" | "parameters">) => {
+  issue: () => Promise<TSecretRotationV2GeneratedCredentials[number]>;
+  revoke: (generatedCredentials: TSecretRotationV2GeneratedCredentials[number]) => Promise<void>;
+  rotate: (
+    generatedCredentials: TSecretRotationV2GeneratedCredentials[number]
+  ) => Promise<TSecretRotationV2GeneratedCredentials[number]>;
+};
+
+export const SECRET_ROTATION_FACTORY_MAP: Record<SecretRotation, TRotationFactory> = {
+  [SecretRotation.PostgresCredentials]: sqlCredentialsRotationFactory,
+  [SecretRotation.MsSqlCredentials]: sqlCredentialsRotationFactory
+};
 
 export const secretRotationV2ServiceFactory = ({
   secretRotationV2DAL,
@@ -466,6 +479,7 @@ export const secretRotationV2ServiceFactory = ({
       // TODO: remove secrets
     } else {
       // TODO delete relations
+      // TODO revoke creds
     }
 
     await secretRotationV2DAL.deleteById(rotationId);

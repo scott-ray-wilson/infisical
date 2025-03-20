@@ -9,25 +9,26 @@ import {
 import { SqlCredentialsRotationParametersSchema } from "@app/ee/services/secret-rotation-v2/shared/sql-credentials";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 
-export const PostgresCredentialsRotationSchema = BaseSecretRotationSchema(SecretRotation.PostgresCredentials).extend({
-  type: z.literal(SecretRotation.PostgresCredentials),
+export const MsSqlCredentialsRotationSchema = BaseSecretRotationSchema(SecretRotation.MsSqlCredentials).extend({
+  type: z.literal(SecretRotation.MsSqlCredentials),
   parameters: SqlCredentialsRotationParametersSchema
 });
 
-export const CreatePostgresCredentialsRotationSchema = BaseCreateSecretRotationSchema(
-  SecretRotation.PostgresCredentials
+export const CreateMsSqlCredentialsRotationSchema = BaseCreateSecretRotationSchema(
+  SecretRotation.MsSqlCredentials
 ).extend({
   parameters: SqlCredentialsRotationParametersSchema
 });
 
-export const UpdatePostgresCredentialsRotationSchema = BaseUpdateSecretRotationSchema(
-  SecretRotation.PostgresCredentials
+export const UpdateMsSqlCredentialsRotationSchema = BaseUpdateSecretRotationSchema(
+  SecretRotation.MsSqlCredentials
 ).extend({
   parameters: SqlCredentialsRotationParametersSchema.optional()
 });
 
-export const PostgresCredentialsRotationListItemSchema = z.object({
-  name: z.literal("PostgreSQL Credentials"),
-  connection: z.literal(AppConnection.Postgres),
-  type: z.literal(SecretRotation.PostgresCredentials)
+export const MsSqlCredentialsRotationListItemSchema = z.object({
+  name: z.literal("Microsoft SQL Server Credentials"),
+  connection: z.literal(AppConnection.MsSql),
+  type: z.literal(SecretRotation.MsSqlCredentials)
+  // TODO: add parameter template
 });

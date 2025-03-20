@@ -100,6 +100,13 @@ const processStatement = async (statement: string, client: Knex) => {
   });
 };
 
+const getUsernameAndPassword = () => {
+  const username = alphaNumericNanoId(32);
+  const password = generatePassword();
+
+  return { username, password };
+};
+
 export const sqlCredentialsRotationFactory = (
   rotation: Pick<TSqlCredentialsRotationWithConnection, "connection" | "parameters">
 ) => {
@@ -109,18 +116,14 @@ export const sqlCredentialsRotationFactory = (
       parameters: { issueStatement }
     } = rotation;
 
-    const { database } = connection.credentials;
-
-    const username = alphaNumericNanoId(32);
-    const password = generatePassword();
+    const { username, password } = getUsernameAndPassword();
 
     const client = await getSqlConnectionClient(connection);
 
     try {
       const issueCredentialsStatement = handlebars.compile(issueStatement, { noEscape: true })({
         username,
-        password,
-        database
+        password
       });
 
       await processStatement(issueCredentialsStatement, client);
@@ -137,21 +140,56 @@ export const sqlCredentialsRotationFactory = (
       parameters: { revokeStatement }
     } = rotation;
 
-    const { database } = connection.credentials;
-
     const client = await getSqlConnectionClient(connection);
 
     try {
-      const issueCredentialsStatement = handlebars.compile(revokeStatement, { noEscape: true })({
-        username: generatedCredentials.username,
-        database
+      const revokeCredentialsStatement = handlebars.compile(revokeStatement, { noEscape: true })({
+        username: generatedCredentials.username
       });
 
-      await processStatement(issueCredentialsStatement, client);
+      await processStatement(revokeCredentialsStatement, client);
     } finally {
       await client.destroy();
     }
   };
 
-  return { issue, revoke };
+  const rotate = async (generatedCredentials?: TPostgresCredentialsRotationGeneratedCredentials[number]) => {
+    const {
+      connection,
+      parameters: { revokeStatement, issueStatement }
+    } = rotation;
+
+    const client = await getSqlConnectionClient(connection);
+
+    const { username, password } = getUsernameAndPassword();
+
+    try {
+      let issueCredentialsStatement = handlebars
+        .compile(issueStatement, { noEscape: true })({
+          username,
+          password
+        })
+        .trim();
+
+      if (!issueCredentialsStatement.endsWith(";")) {
+        issueCredentialsStatement += ";";
+      }
+
+      const revokeCredentialsStatement = generatedCredentials
+        ? handlebars
+            .compile(revokeStatement, { noEscape: true })({
+              username: generatedCredentials.username
+            })
+            .trim()
+        : "";
+
+      await processStatement(`${issueCredentialsStatement}${revokeCredentialsStatement}`, client);
+
+      return { username, password };
+    } finally {
+      await client.destroy();
+    }
+  };
+
+  return { issue, revoke, rotate };
 };

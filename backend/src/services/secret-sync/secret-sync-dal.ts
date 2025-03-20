@@ -176,7 +176,7 @@ export const secretSyncDALFactory = (
       if (!secretSyncs.length) return [];
 
       const foldersWithPath = await folderDAL.findSecretPathByFolderIds(
-        filter.projectId,
+        secretSyncs[0].projectId,
         secretSyncs.filter((sync) => Boolean(sync.folderId)).map((sync) => sync.folderId!)
       );
 

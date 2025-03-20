@@ -61,6 +61,8 @@ export type TCreateAuditLogDTO = {
   projectId?: string;
 } & BaseAuthData;
 
+export type AuditLogInfo = Pick<TCreateAuditLogDTO, "userAgent" | "userAgentType" | "ipAddress" | "actor">;
+
 interface BaseAuthData {
   ipAddress?: string;
   userAgent?: string;
@@ -2342,11 +2344,13 @@ interface DeleteSecretRotationEvent {
 
 interface RotateSecretRotationEvent {
   type: EventType.ROTATE_SECRET_ROTATION;
-  metadata: Pick<TSecretRotationV2, "parameters" | "type" | "rotationStatus" | "connectionId" | "folderId"> & {
+  metadata: Pick<
+    TSecretRotationV2,
+    "parameters" | "type" | "rotationStatus" | "connectionId" | "folderId" | "rotationStatusMessage"
+  > & {
     rotationId: string;
-    rotationMessage: string | null;
     jobId?: string;
-    rotatedAt: Date;
+    occurredAt: Date;
   };
 }
 

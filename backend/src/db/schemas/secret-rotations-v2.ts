@@ -20,13 +20,13 @@ export const SecretRotationsV2Schema = z.object({
   isAutoRotationEnabled: z.boolean().default(true),
   activeIndex: z.number().default(0),
   projectId: z.string(),
-  folderId: z.string().uuid().nullable().optional(),
+  folderId: z.string().uuid(),
   connectionId: z.string().uuid(),
   createdAt: z.date(),
   updatedAt: z.date(),
   rotationStatus: z.string().nullable().optional(),
+  rotationStatusMessage: z.string().nullable().optional(),
   lastRotationJobId: z.string().nullable().optional(),
-  lastRotationMessage: z.string().nullable().optional(),
   lastRotatedAt: z.date().nullable().optional()
 });
 

@@ -19,14 +19,14 @@ export async function up(knex: Knex): Promise<void> {
       // is deleted), to preserve configuration
       t.string("projectId").notNullable();
       t.foreign("projectId").references("id").inTable(TableName.Project).onDelete("CASCADE");
-      t.uuid("folderId");
-      t.foreign("folderId").references("id").inTable(TableName.SecretFolder).onDelete("SET NULL");
+      t.uuid("folderId").notNullable();
+      t.foreign("folderId").references("id").inTable(TableName.SecretFolder).onDelete("CASCADE");
       t.uuid("connectionId").notNullable();
       t.foreign("connectionId").references("id").inTable(TableName.AppConnection);
       t.timestamps(true, true, true);
       t.string("rotationStatus");
+      t.string("rotationStatusMessage", 1024);
       t.string("lastRotationJobId");
-      t.string("lastRotationMessage", 1024);
       t.datetime("lastRotatedAt");
     });
 

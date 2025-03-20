@@ -53,7 +53,7 @@ const baseSecretRotationV2Query = ({
 
 const expandSecretRotation = (
   secretRotation: Awaited<ReturnType<typeof baseSecretRotationV2Query>>[number],
-  folder?: Awaited<ReturnType<TSecretFolderDALFactory["findSecretPathByFolderIds"]>>[number]
+  folder: Awaited<ReturnType<TSecretFolderDALFactory["findSecretPathByFolderIds"]>>[number]
 ) => {
   const {
     envId,
@@ -76,7 +76,7 @@ const expandSecretRotation = (
   return {
     ...el,
     connectionId,
-    environment: envId ? { id: envId, name: envName, slug: envSlug } : null,
+    environment: { id: envId, name: envName, slug: envSlug },
     connection: {
       app: connectionApp,
       id: connectionId,
@@ -90,12 +90,10 @@ const expandSecretRotation = (
       version: connectionVersion,
       isPlatformManaged: connectionIsPlatformManaged
     },
-    folder: folder
-      ? {
-          id: folder.id,
-          path: folder.path
-        }
-      : null
+    folder: {
+      id: folder!.id,
+      path: folder!.path
+    }
   };
 };
 
@@ -104,6 +102,7 @@ export const secretRotationV2DALFactory = (
   folderDAL: Pick<TSecretFolderDALFactory, "findSecretPathByFolderIds">
 ) => {
   const secretRotationV2Orm = ormify(db, TableName.SecretRotationV2);
+  const secretRotationV2SecretMappingOrm = ormify(db, TableName.SecretRotationV2SecretMapping);
 
   const find = async (
     filter: Parameters<(typeof secretRotationV2Orm)["find"]>[0] & { projectId: string },
@@ -116,7 +115,8 @@ export const secretRotationV2DALFactory = (
 
       const foldersWithPath = await folderDAL.findSecretPathByFolderIds(
         filter.projectId,
-        secretRotations.filter((rotation) => Boolean(rotation.folderId)).map((rotation) => rotation.folderId)
+        secretRotations.filter((rotation) => Boolean(rotation.folderId)).map((rotation) => rotation.folderId),
+        tx
       );
 
       const folderRecord: Record<string, (typeof foldersWithPath)[number]> = {};
@@ -125,9 +125,7 @@ export const secretRotationV2DALFactory = (
         if (folder) folderRecord[folder.id] = folder;
       });
 
-      return secretRotations.map((rotation) =>
-        expandSecretRotation(rotation, rotation.folderId ? folderRecord[rotation.folderId] : undefined)
-      );
+      return secretRotations.map((rotation) => expandSecretRotation(rotation, folderRecord[rotation.folderId]));
     } catch (error) {
       throw new DatabaseError({ error, name: "Find - Secret Rotation V2" });
     }
@@ -142,9 +140,11 @@ export const secretRotationV2DALFactory = (
       }).first();
 
       if (secretRotation) {
-        const [folderWithPath] = secretRotation.folderId
-          ? await folderDAL.findSecretPathByFolderIds(secretRotation.projectId, [secretRotation.folderId])
-          : [];
+        const [folderWithPath] = await folderDAL.findSecretPathByFolderIds(
+          secretRotation.projectId,
+          [secretRotation.folderId],
+          tx
+        );
         return expandSecretRotation(secretRotation, folderWithPath);
       }
     } catch (error) {
@@ -152,38 +152,43 @@ export const secretRotationV2DALFactory = (
     }
   };
 
-  const create = async (data: Parameters<(typeof secretRotationV2Orm)["create"]>[0]) => {
-    const secretRotation = (await secretRotationV2Orm.transaction(async (tx) => {
-      const rotation = await secretRotationV2Orm.create(data, tx);
+  const create = async (data: Parameters<(typeof secretRotationV2Orm)["create"]>[0], tx?: Knex) => {
+    const rotation = await secretRotationV2Orm.create(data, tx);
 
-      return baseSecretRotationV2Query({
-        filter: { id: rotation.id },
-        db,
-        tx
-      }).first();
-    }))!;
+    const secretRotation = (await baseSecretRotationV2Query({
+      filter: { id: rotation.id },
+      db,
+      tx
+    }).first())!;
 
-    const [folderWithPath] = secretRotation.folderId
-      ? await folderDAL.findSecretPathByFolderIds(secretRotation.projectId, [secretRotation.folderId])
-      : [];
+    const [folderWithPath] = await folderDAL.findSecretPathByFolderIds(
+      secretRotation.projectId,
+      [secretRotation.folderId],
+      tx
+    );
 
     return expandSecretRotation(secretRotation, folderWithPath);
   };
 
-  const updateById = async (rotationId: string, data: Parameters<(typeof secretRotationV2Orm)["updateById"]>[1]) => {
-    const secretRotation = (await secretRotationV2Orm.transaction(async (tx) => {
-      const rotation = await secretRotationV2Orm.updateById(rotationId, data, tx);
+  const updateById = async (
+    rotationId: string,
+    data: Parameters<(typeof secretRotationV2Orm)["updateById"]>[1],
+    tx?: Knex
+  ) => {
+    const rotation = await secretRotationV2Orm.updateById(rotationId, data, tx);
 
-      return baseSecretRotationV2Query({
-        filter: { id: rotation.id },
-        db,
-        tx
-      }).first();
-    }))!;
+    const secretRotation = (await baseSecretRotationV2Query({
+      filter: { id: rotation.id },
+      db,
+      tx
+    }).first())!;
 
-    const [folderWithPath] = secretRotation.folderId
-      ? await folderDAL.findSecretPathByFolderIds(secretRotation.projectId, [secretRotation.folderId])
-      : [];
+    const [folderWithPath] = await folderDAL.findSecretPathByFolderIds(
+      secretRotation.projectId,
+      [secretRotation.folderId],
+      tx
+    );
+
     return expandSecretRotation(secretRotation, folderWithPath);
   };
 
@@ -192,9 +197,12 @@ export const secretRotationV2DALFactory = (
       const secretRotation = await baseSecretRotationV2Query({ filter, db, tx }).first();
 
       if (secretRotation) {
-        const [folderWithPath] = secretRotation.folderId
-          ? await folderDAL.findSecretPathByFolderIds(secretRotation.projectId, [secretRotation.folderId])
-          : [];
+        const [folderWithPath] = await folderDAL.findSecretPathByFolderIds(
+          secretRotation.projectId,
+          [secretRotation.folderId],
+          tx
+        );
+
         return expandSecretRotation(secretRotation, folderWithPath);
       }
     } catch (error) {
@@ -202,5 +210,23 @@ export const secretRotationV2DALFactory = (
     }
   };
 
-  return { ...secretRotationV2Orm, find, create, findById, updateById, findOne };
+  const findSecretMappingsByRotationId = async (rotationId: string) => {
+    const secretMappings = await secretRotationV2SecretMappingOrm.find({
+      rotationId
+    });
+
+    return secretMappings;
+  };
+
+  return {
+    ...secretRotationV2Orm,
+    find,
+    create,
+    findById,
+    updateById,
+    findOne,
+    insertSecretMappings: secretRotationV2SecretMappingOrm.insertMany,
+    updateSecretMappings: secretRotationV2SecretMappingOrm.update,
+    findSecretMappingsByRotationId
+  };
 };

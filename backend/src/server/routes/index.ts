@@ -1509,7 +1509,19 @@ export const registerRoutes = async (
     projectBotService,
     licenseService,
     kmsService,
-    auditLogService
+    auditLogService,
+    projectDAL,
+    projectBotDAL,
+    secretV2BridgeDAL,
+    secretDAL,
+    secretBlindIndexDAL,
+    secretTagDAL,
+    secretVersionDAL,
+    secretVersionTagDAL,
+    secretVersionTagV2BridgeDAL,
+    secretVersionV2BridgeDAL,
+    keyStore,
+    resourceMetadataDAL
   });
 
   await superAdminService.initServerCfg();

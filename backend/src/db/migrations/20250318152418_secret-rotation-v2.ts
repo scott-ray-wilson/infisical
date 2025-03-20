@@ -36,9 +36,21 @@ export async function up(knex: Knex): Promise<void> {
       t.unique(["projectId", "name"]);
     });
   }
+
+  if (!(await knex.schema.hasTable(TableName.SecretRotationV2SecretMapping))) {
+    await knex.schema.createTable(TableName.SecretRotationV2SecretMapping, (t) => {
+      t.uuid("id", { primaryKey: true }).defaultTo(knex.fn.uuid());
+      t.string("secretKey").notNullable();
+      t.uuid("secretId").notNullable();
+      t.foreign("secretId").references("id").inTable(TableName.SecretV2).onDelete("CASCADE");
+      t.uuid("rotationId").notNullable();
+      t.foreign("rotationId").references("id").inTable(TableName.SecretRotationV2).onDelete("CASCADE");
+    });
+  }
 }
 
 export async function down(knex: Knex): Promise<void> {
+  await knex.schema.dropTableIfExists(TableName.SecretRotationV2SecretMapping);
   await knex.schema.dropTableIfExists(TableName.SecretRotationV2);
   await dropOnUpdateTrigger(knex, TableName.SecretRotationV2);
 }

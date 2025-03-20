@@ -5,6 +5,7 @@ import {
   TPostgresCredentialsRotationListItem,
   TPostgresCredentialsRotationWithConnection
 } from "./postgres-credentials";
+import { TSecretRotationV2DALFactory } from "./secret-rotation-v2-dal";
 import { SecretRotation } from "./secret-rotation-v2-enums";
 
 export type TSecretRotationV2 = TPostgresCredentialsRotation;
@@ -17,6 +18,8 @@ export type TSecretRotationV2Input = TPostgresCredentialsRotationInput;
 
 export type TSecretRotationV2ListItem = TPostgresCredentialsRotationListItem;
 
+export type TSecretRotationV2Raw = NonNullable<Awaited<ReturnType<TSecretRotationV2DALFactory["findById"]>>>;
+
 export type TListSecretRotationsV2ByProjectId = {
   projectId: string;
   type?: SecretRotation;
@@ -26,6 +29,8 @@ export type TFindSecretRotationV2ByIdDTO = {
   rotationId: string;
   type: SecretRotation;
 };
+
+export type TRotateSecretRotationV2 = TFindSecretRotationV2ByIdDTO;
 
 export type TFindSecretRotationV2ByNameDTO = {
   rotationName: string;

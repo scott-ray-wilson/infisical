@@ -1,6 +1,6 @@
 export enum SecretRotation {
   PostgresCredentials = "postgres-credentials",
-  MsSqlCredentials = "mssql-login-credentials"
+  MsSqlCredentials = "mssql-credentials"
 }
 
 export enum SecretRotationStatus {

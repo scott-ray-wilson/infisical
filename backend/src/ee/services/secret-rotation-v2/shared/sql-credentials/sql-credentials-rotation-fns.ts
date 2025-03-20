@@ -2,10 +2,13 @@ import { randomInt } from "crypto";
 import handlebars from "handlebars";
 import { Knex } from "knex";
 
-import { TPostgresCredentialsRotationGeneratedCredentials } from "@app/ee/services/secret-rotation-v2/postgres-credentials";
-import { TSqlCredentialsRotationWithConnection } from "@app/ee/services/secret-rotation-v2/shared/sql-credentials/sql-credentials-rotation-types";
 import { alphaNumericNanoId } from "@app/lib/nanoid";
 import { getSqlConnectionClient } from "@app/services/app-connection/shared/sql";
+
+import {
+  TSqlCredentialsRotationGeneratedCredentials,
+  TSqlCredentialsRotationWithConnection
+} from "./sql-credentials-rotation-types";
 
 const DEFAULT_PASSWORD_REQUIREMENTS = {
   length: 48,
@@ -134,7 +137,7 @@ export const sqlCredentialsRotationFactory = (
     }
   };
 
-  const revoke = async (generatedCredentials: TPostgresCredentialsRotationGeneratedCredentials[number]) => {
+  const revoke = async (generatedCredentials: TSqlCredentialsRotationGeneratedCredentials[number]) => {
     const {
       connection,
       parameters: { revokeStatement }
@@ -153,7 +156,7 @@ export const sqlCredentialsRotationFactory = (
     }
   };
 
-  const rotate = async (generatedCredentials?: TPostgresCredentialsRotationGeneratedCredentials[number]) => {
+  const rotate = async (generatedCredentials?: TSqlCredentialsRotationGeneratedCredentials[number]) => {
     const {
       connection,
       parameters: { revokeStatement, issueStatement }

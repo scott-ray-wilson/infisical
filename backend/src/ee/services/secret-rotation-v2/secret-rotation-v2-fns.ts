@@ -1,43 +1,14 @@
-// import { AxiosError } from "axios";
-//
-// import {
-//   AWS_PARAMETER_STORE_SYNC_LIST_OPTION,
-//   AwsParameterStoreSyncFns
-// } from "@app/services/secret-sync/aws-parameter-store";
-// import {
-//   AWS_SECRETS_MANAGER_SYNC_LIST_OPTION,
-//   AwsSecretsManagerSyncFns
-// } from "@app/services/secret-sync/aws-secrets-manager";
-// import { DATABRICKS_SYNC_LIST_OPTION, databricksSyncFactory } from "@app/services/secret-sync/databricks";
-// import { GITHUB_SYNC_LIST_OPTION, GithubSyncFns } from "@app/services/secret-sync/github";
-// import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
-// import { SecretSyncError } from "@app/services/secret-sync/secret-sync-errors";
-// import {
-//   TSecretMap,
-//   TSecretSyncListItem,
-//   TSecretSyncWithCredentials
-// } from "@app/services/secret-sync/secret-sync-types";
-//
-// import { TAppConnectionDALFactory } from "../app-connection/app-connection-dal";
-// import { TKmsServiceFactory } from "../kms/kms-service";
-// import { AZURE_APP_CONFIGURATION_SYNC_LIST_OPTION, azureAppConfigurationSyncFactory } from "./azure-app-configuration";
-// import { AZURE_KEY_VAULT_SYNC_LIST_OPTION, azureKeyVaultSyncFactory } from "./azure-key-vault";
-// import { GCP_SYNC_LIST_OPTION } from "./gcp";
-// import { GcpSyncFns } from "./gcp/gcp-sync-fns";
-// import { HUMANITEC_SYNC_LIST_OPTION } from "./humanitec";
-// import { HumanitecSyncFns } from "./humanitec/humanitec-sync-fns";
-//
-
-import { TAppConnectionServiceFactoryDep } from "@app/services/app-connection/app-connection-service";
 import { KmsDataKey } from "@app/services/kms/kms-types";
 
+import { MSSQL_CREDENTIALS_ROTATION_LIST_OPTION } from "./mssql-credentials";
 import { POSTGRES_CREDENTIALS_ROTATION_LIST_OPTION } from "./postgres-credentials";
 import { SecretRotation } from "./secret-rotation-v2-enums";
+import { TSecretRotationV2ServiceFactoryDep } from "./secret-rotation-v2-service";
 import { TSecretRotationV2GeneratedCredentials, TSecretRotationV2ListItem } from "./secret-rotation-v2-types";
 
 const SECRET_ROTATION_LIST_OPTIONS: Record<SecretRotation, TSecretRotationV2ListItem> = {
   [SecretRotation.PostgresCredentials]: POSTGRES_CREDENTIALS_ROTATION_LIST_OPTION,
-  [SecretRotation.MsSqlCredentials]: POSTGRES_CREDENTIALS_ROTATION_LIST_OPTION // TODO: replace
+  [SecretRotation.MsSqlCredentials]: MSSQL_CREDENTIALS_ROTATION_LIST_OPTION
 };
 
 export const listSecretRotationOptions = () => {
@@ -51,7 +22,7 @@ export const encryptSecretRotationCredentials = async ({
 }: {
   projectId: string;
   generatedCredentials: TSecretRotationV2GeneratedCredentials;
-  kmsService: TAppConnectionServiceFactoryDep["kmsService"];
+  kmsService: TSecretRotationV2ServiceFactoryDep["kmsService"];
 }) => {
   const { encryptor } = await kmsService.createCipherPairWithDataKey({
     type: KmsDataKey.SecretManager,
@@ -72,7 +43,7 @@ export const decryptSecretRotationCredentials = async ({
 }: {
   projectId: string;
   encryptedGeneratedCredentials: Buffer;
-  kmsService: TAppConnectionServiceFactoryDep["kmsService"];
+  kmsService: TSecretRotationV2ServiceFactoryDep["kmsService"];
 }) => {
   const { decryptor } = await kmsService.createCipherPairWithDataKey({
     type: KmsDataKey.SecretManager,

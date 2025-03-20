@@ -1842,13 +1842,7 @@ export const SecretRotations = {
     rotationId: `The ID of the ${SECRET_ROTATION_NAME_MAP[type]} Rotation to rotate credentials for.`
   }),
   PARAMETERS: {
-    POSTGRES_CREDENTIALS: {
-      usernameSecretKey: "The secret key that the generated username will be mapped to.",
-      passwordSecretKey: "The secret key that the generated password will be mapped to.",
-      issueStatement: "The SQL statement to generate the credentials on rotation.",
-      revokeStatement: "The SQL statement to revoke expired credentials on rotation."
-    },
-    MSSQL_CREDENTIALS: {
+    SQL_CREDENTIALS: {
       usernameSecretKey: "The secret key that the generated username will be mapped to.",
       passwordSecretKey: "The secret key that the generated password will be mapped to.",
       issueStatement: "The SQL statement to generate the credentials on rotation.",

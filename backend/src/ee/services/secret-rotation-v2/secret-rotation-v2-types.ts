@@ -1,6 +1,13 @@
+import { TSqlCredentialsRotationGeneratedCredentials } from "@app/ee/services/secret-rotation-v2/shared/sql-credentials/sql-credentials-rotation-types";
+
+import {
+  TMsSqlCredentialsRotation,
+  TMsSqlCredentialsRotationInput,
+  TMsSqlCredentialsRotationListItem,
+  TMsSqlCredentialsRotationWithConnection
+} from "./mssql-credentials";
 import {
   TPostgresCredentialsRotation,
-  TPostgresCredentialsRotationGeneratedCredentials,
   TPostgresCredentialsRotationInput,
   TPostgresCredentialsRotationListItem,
   TPostgresCredentialsRotationWithConnection
@@ -8,15 +15,17 @@ import {
 import { TSecretRotationV2DALFactory } from "./secret-rotation-v2-dal";
 import { SecretRotation } from "./secret-rotation-v2-enums";
 
-export type TSecretRotationV2 = TPostgresCredentialsRotation;
+export type TSecretRotationV2 = TPostgresCredentialsRotation | TMsSqlCredentialsRotation;
 
-export type TSecretRotationV2WithConnection = TPostgresCredentialsRotationWithConnection;
+export type TSecretRotationV2WithConnection =
+  | TPostgresCredentialsRotationWithConnection
+  | TMsSqlCredentialsRotationWithConnection;
 
-export type TSecretRotationV2GeneratedCredentials = TPostgresCredentialsRotationGeneratedCredentials;
+export type TSecretRotationV2GeneratedCredentials = TSqlCredentialsRotationGeneratedCredentials;
 
-export type TSecretRotationV2Input = TPostgresCredentialsRotationInput;
+export type TSecretRotationV2Input = TPostgresCredentialsRotationInput | TMsSqlCredentialsRotationInput;
 
-export type TSecretRotationV2ListItem = TPostgresCredentialsRotationListItem;
+export type TSecretRotationV2ListItem = TPostgresCredentialsRotationListItem | TMsSqlCredentialsRotationListItem;
 
 export type TSecretRotationV2Raw = NonNullable<Awaited<ReturnType<TSecretRotationV2DALFactory["findById"]>>>;
 

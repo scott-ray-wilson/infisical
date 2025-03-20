@@ -50,20 +50,23 @@ export const BaseCreateSecretRotationSchema = (type: SecretRotation) =>
 
 export const BaseUpdateSecretRotationSchema = (type: SecretRotation) =>
   z.object({
-    name: slugSchema({ field: "name" }).describe(SecretRotations.UPDATE(type).name),
+    name: slugSchema({ field: "name" }).describe(SecretRotations.UPDATE(type).name).optional(),
     description: z
       .string()
       .trim()
       .max(256, "Description cannot exceed 256 characters")
       .nullish()
       .describe(SecretRotations.UPDATE(type).description),
-    environment: slugSchema({ field: "environment", max: 64 }).describe(SecretRotations.UPDATE(type).environment),
+    environment: slugSchema({ field: "environment", max: 64 })
+      .describe(SecretRotations.UPDATE(type).environment)
+      .optional(),
     secretPath: z
       .string()
       .trim()
       .min(1, "Secret path required")
       .transform(removeTrailingSlash)
-      .describe(SecretRotations.UPDATE(type).secretPath),
-    isAutoRotationEnabled: z.boolean().default(true).describe(SecretRotations.UPDATE(type).isAutoRotationEnabled),
-    interval: z.coerce.number().describe(SecretRotations.UPDATE(type).interval)
+      .describe(SecretRotations.UPDATE(type).secretPath)
+      .optional(),
+    isAutoRotationEnabled: z.boolean().optional().describe(SecretRotations.UPDATE(type).isAutoRotationEnabled),
+    interval: z.coerce.number().optional().describe(SecretRotations.UPDATE(type).interval)
   });

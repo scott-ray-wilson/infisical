@@ -3,6 +3,7 @@ import { TDynamicSecret } from "@app/hooks/api/dynamicSecret/types";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { TSecretFolder } from "@app/hooks/api/secretFolders/types";
 import { TSecretImport } from "@app/hooks/api/secretImports/types";
+import { TSecretRotationV2 } from "@app/hooks/api/secretRotationsV2";
 import { SecretV3Raw, SecretV3RawSanitized } from "@app/hooks/api/secrets/types";
 
 export type DashboardProjectSecretsOverviewResponse = {
@@ -26,10 +27,12 @@ export type DashboardProjectSecretsDetailsResponse = {
   folders?: TSecretFolder[];
   dynamicSecrets?: TDynamicSecret[];
   secrets?: SecretV3Raw[];
+  secretRotations?: TSecretRotationV2[];
   totalImportCount?: number;
   totalFolderCount?: number;
   totalDynamicSecretCount?: number;
   totalSecretCount?: number;
+  totalSecretRotationCount?: number;
   totalCount: number;
 };
 

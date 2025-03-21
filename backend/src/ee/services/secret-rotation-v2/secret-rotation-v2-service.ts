@@ -26,7 +26,8 @@ import {
   TDeleteSecretRotationV2DTO,
   TFindSecretRotationV2ByIdDTO,
   TFindSecretRotationV2ByNameDTO,
-  TGetSecretRotationV2Count,
+  TGetDashboardSecretRotationsV2,
+  TGetDashboardSecretRotationV2Count,
   TListSecretRotationsV2ByProjectId,
   TRotateSecretRotationV2,
   TSecretRotationV2,
@@ -39,7 +40,7 @@ import { sqlCredentialsRotationFactory } from "@app/ee/services/secret-rotation-
 import { TKeyStoreFactory } from "@app/keystore/keystore";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
 import { BadRequestError, DatabaseError, NotFoundError } from "@app/lib/errors";
-import { OrgServiceActor } from "@app/lib/types";
+import { OrderByDirection, OrgServiceActor } from "@app/lib/types";
 import { decryptAppConnection } from "@app/services/app-connection/app-connection-fns";
 import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
 import { ActorType } from "@app/services/auth/auth-type";
@@ -50,6 +51,7 @@ import { TProjectBotServiceFactory } from "@app/services/project-bot/project-bot
 import { TResourceMetadataDALFactory } from "@app/services/resource-metadata/resource-metadata-dal";
 import { TSecretDALFactory } from "@app/services/secret/secret-dal";
 import { createManySecretsRawFnFactory, updateManySecretsRawFnFactory } from "@app/services/secret/secret-fns";
+import { SecretsOrderBy } from "@app/services/secret/secret-types";
 import { TSecretVersionDALFactory } from "@app/services/secret/secret-version-dal";
 import { TSecretVersionTagDALFactory } from "@app/services/secret/secret-version-tag-dal";
 import { TSecretBlindIndexDALFactory } from "@app/services/secret-blind-index/secret-blind-index-dal";
@@ -817,10 +819,15 @@ export const secretRotationV2ServiceFactory = ({
     return updatedRotation;
   };
 
-  const getSecretRotationCount = async (
-    { projectId, environments, secretPath, search }: TGetSecretRotationV2Count,
+  const getDashboardSecretRotationCount = async (
+    { projectId, environments, secretPath, search }: TGetDashboardSecretRotationV2Count,
     actor: OrgServiceActor
   ) => {
+    const plan = await licenseService.getPlan(actor.orgId);
+
+    // this is only used for dashboard so no need to throw
+    if (!plan.secretRotation) return 0;
+
     const { permission } = await permissionService.getProjectPermission({
       actor: actor.type,
       actorId: actor.id,
@@ -830,18 +837,21 @@ export const secretRotationV2ServiceFactory = ({
       projectId
     });
 
-    environments.forEach((environment) =>
-      ForbiddenError.from(permission).throwUnlessCan(
+    // dashboard only so just filtering out inacessible envs
+    const permissiveEnvironments = environments.filter((environment) =>
+      permission.can(
         ProjectPermissionSecretRotationActions.Read,
         subject(ProjectPermissionSub.SecretRotation, { environment, secretPath })
       )
     );
 
-    const folders = await folderDAL.findBySecretPathMultiEnv(projectId, environments, secretPath);
+    const folders = await folderDAL.findBySecretPathMultiEnv(projectId, permissiveEnvironments, secretPath);
 
     if (!folders.length) {
       throw new NotFoundError({
-        message: `Folders with path '${secretPath}' in environments with slugs '${environments.join(", ")}' not found`
+        message: `Folders with path '${secretPath}' in environments with slugs '${permissiveEnvironments.join(
+          ", "
+        )}' not found`
       });
     }
 
@@ -851,6 +861,67 @@ export const secretRotationV2ServiceFactory = ({
     );
 
     return Number(secretRotations[0]?.count ?? 0);
+  };
+
+  const getDashboardSecretRotations = async (
+    {
+      projectId,
+      environments,
+      secretPath,
+      search,
+      limit,
+      offset = 0,
+      orderBy = SecretsOrderBy.Name,
+      orderDirection = OrderByDirection.ASC
+    }: TGetDashboardSecretRotationsV2,
+    actor: OrgServiceActor
+  ) => {
+    const plan = await licenseService.getPlan(actor.orgId);
+
+    // this is only used for dashboard so no need to throw
+    if (!plan.secretRotation) return [];
+
+    const { permission } = await permissionService.getProjectPermission({
+      actor: actor.type,
+      actorId: actor.id,
+      actorAuthMethod: actor.authMethod,
+      actorOrgId: actor.orgId,
+      actionProjectType: ActionProjectType.SecretManager,
+      projectId
+    });
+
+    // dashboard only so just filtering out inaccessible envs
+    const permissiveEnvironments = environments.filter((environment) =>
+      permission.can(
+        ProjectPermissionSecretRotationActions.Read,
+        subject(ProjectPermissionSub.SecretRotation, { environment, secretPath })
+      )
+    );
+
+    const folders = await folderDAL.findBySecretPathMultiEnv(projectId, permissiveEnvironments, secretPath);
+
+    if (!folders.length) {
+      throw new NotFoundError({
+        message: `Folders with path '${secretPath}' in environments with slugs '${permissiveEnvironments.join(
+          ", "
+        )}' not found`
+      });
+    }
+
+    const secretRotations = await secretRotationV2DAL.find(
+      {
+        $in: { folderId: folders.map((folder) => folder.id) },
+        $search: search ? { name: `%${search}%` } : undefined,
+        projectId
+      },
+      {
+        limit,
+        offset,
+        sort: orderBy ? [[orderBy, orderDirection]] : undefined
+      }
+    );
+
+    return secretRotations as TSecretRotationV2[];
   };
 
   return {
@@ -863,6 +934,8 @@ export const secretRotationV2ServiceFactory = ({
     deleteSecretRotation,
     findSecretRotationGeneratedCredentialsById,
     rotateSecretRotation,
-    rotateGeneratedCredentials
+    rotateGeneratedCredentials,
+    getDashboardSecretRotationCount,
+    getDashboardSecretRotations
   };
 };

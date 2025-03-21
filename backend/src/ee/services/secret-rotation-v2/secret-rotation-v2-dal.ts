@@ -4,20 +4,23 @@ import { TDbClient } from "@app/db";
 import { TableName } from "@app/db/schemas";
 import { TSecretRotationsV2 } from "@app/db/schemas/secret-rotations-v2";
 import { DatabaseError } from "@app/lib/errors";
-import { buildFindFilter, ormify, prependTableNameToFindFilter, selectAllTableCols } from "@app/lib/knex";
+import { buildFindFilter, ormify, prependTableNameToFindFilter, selectAllTableCols, TFindOpt } from "@app/lib/knex";
 import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-folder-dal";
 
 export type TSecretRotationV2DALFactory = ReturnType<typeof secretRotationV2DALFactory>;
 
 type TSecretRotationFindFilter = Parameters<typeof buildFindFilter<TSecretRotationsV2>>[0];
+type TSecretRotationFindOptions = TFindOpt<TSecretRotationsV2>;
 
 const baseSecretRotationV2Query = ({
   filter,
+  options,
   db,
   tx
 }: {
   db: TDbClient;
   filter?: TSecretRotationFindFilter;
+  options?: TSecretRotationFindOptions;
   tx?: Knex;
 }) => {
   const query = (tx || db.replicaNode())(TableName.SecretRotationV2)
@@ -46,6 +49,21 @@ const baseSecretRotationV2Query = ({
   if (filter) {
     /* eslint-disable @typescript-eslint/no-misused-promises */
     void query.where(buildFindFilter(prependTableNameToFindFilter(TableName.SecretRotationV2, filter)));
+  }
+
+  if (options) {
+    const { offset, limit, sort, count, countDistinct } = options;
+    if (countDistinct) {
+      void query.countDistinct(countDistinct);
+    } else if (count) {
+      void query.select(db.raw("COUNT(*) OVER() AS count"));
+      void query.select("*");
+    }
+    if (limit) void query.limit(limit);
+    if (offset) void query.offset(offset);
+    if (sort) {
+      void query.orderBy(sort.map(([column, order, nulls]) => ({ column: column as string, order, nulls })));
+    }
   }
 
   return query;
@@ -106,10 +124,11 @@ export const secretRotationV2DALFactory = (
 
   const find = async (
     filter: Parameters<(typeof secretRotationV2Orm)["find"]>[0] & { projectId: string },
+    options?: TSecretRotationFindOptions,
     tx?: Knex
   ) => {
     try {
-      const secretRotations = await baseSecretRotationV2Query({ filter, db, tx });
+      const secretRotations = await baseSecretRotationV2Query({ filter, db, tx, options });
 
       if (!secretRotations.length) return [];
 

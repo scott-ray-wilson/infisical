@@ -12,7 +12,6 @@ import { SecretRotationV2Schema } from "@app/ee/services/secret-rotation-v2/secr
 import { DASHBOARD } from "@app/lib/api-docs";
 import { BadRequestError } from "@app/lib/errors";
 import { removeTrailingSlash } from "@app/lib/fn";
-import { logger } from "@app/lib/logger";
 import { OrderByDirection } from "@app/lib/types";
 import { secretsLimit } from "@app/server/config/rateLimiter";
 import { getTelemetryDistinctId } from "@app/server/lib/telemetry";
@@ -421,6 +420,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           totalImportCount: z.number().optional(),
           totalFolderCount: z.number().optional(),
           totalDynamicSecretCount: z.number().optional(),
+          totalSecretRotationCount: z.number().optional(),
           totalSecretCount: z.number().optional(),
           totalCount: z.number()
         })
@@ -460,6 +460,9 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       let folders: Awaited<ReturnType<typeof server.services.folder.getFolders>> | undefined;
       let secrets: Awaited<ReturnType<typeof server.services.secret.getSecretsRaw>>["secrets"] | undefined;
       let dynamicSecrets: Awaited<ReturnType<typeof server.services.dynamicSecret.listDynamicSecretsByEnv>> | undefined;
+      let secretRotations:
+        | Awaited<ReturnType<typeof server.services.secretRotationV2.getDashboardSecretRotations>>
+        | undefined;
 
       let totalImportCount: number | undefined;
       let totalFolderCount: number | undefined;
@@ -548,23 +551,50 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         }
       }
 
-      try {
-        if (includeSecretRotations) {
-          totalSecretRotationCount = await server.services.secretRotationV2.getSecretRotationCount(
+      if (includeSecretRotations) {
+        totalSecretRotationCount = await server.services.secretRotationV2.getDashboardSecretRotationCount(
+          {
+            projectId,
+            search,
+            environments: [environment],
+            secretPath
+          },
+          req.permission
+        );
+
+        if (remainingLimit > 0 && totalSecretRotationCount > adjustedOffset) {
+          secretRotations = await server.services.secretRotationV2.getDashboardSecretRotations(
             {
               projectId,
               search,
+              orderBy,
+              orderDirection,
               environments: [environment],
-              secretPath
+              secretPath,
+              limit: remainingLimit,
+              offset: adjustedOffset
             },
-            actor
+            req.permission
           );
 
-          logger.warn("SECRET ROTATION COUNT", totalSecretRotationCount);
-        }
-      } catch (e) {
-        if (!(error instanceof ForbiddenError)) {
-          throw error;
+          await server.services.auditLog.createAuditLog({
+            projectId,
+            ...req.auditLogInfo,
+            event: {
+              type: EventType.GET_SECRET_ROTATIONS,
+              metadata: {
+                count: secretRotations.length,
+                rotationIds: secretRotations.map((rotation) => rotation.id),
+                secretPath,
+                environment
+              }
+            }
+          });
+
+          remainingLimit -= secretRotations.length;
+          adjustedOffset = 0;
+        } else {
+          adjustedOffset = Math.max(0, adjustedOffset - totalSecretRotationCount);
         }
       }
 
@@ -684,12 +714,18 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         folders,
         dynamicSecrets,
         secrets,
+        secretRotations,
         totalImportCount,
         totalFolderCount,
         totalDynamicSecretCount,
         totalSecretCount,
+        totalSecretRotationCount,
         totalCount:
-          (totalImportCount ?? 0) + (totalFolderCount ?? 0) + (totalDynamicSecretCount ?? 0) + (totalSecretCount ?? 0)
+          (totalImportCount ?? 0) +
+          (totalFolderCount ?? 0) +
+          (totalDynamicSecretCount ?? 0) +
+          (totalSecretCount ?? 0) +
+          (totalSecretRotationCount ?? 0)
       };
     }
   });

@@ -2308,6 +2308,8 @@ interface GetSecretRotationsEvent {
     type?: SecretRotation;
     count: number;
     rotationIds: string[];
+    secretPath?: string;
+    environment?: string;
   };
 }
 
@@ -2316,6 +2318,8 @@ interface GetSecretRotationEvent {
   metadata: {
     type: SecretRotation;
     rotationId: string;
+    secretPath: string;
+    environment: string;
   };
 }
 
@@ -2324,6 +2328,8 @@ interface GetSecretRotationCredentialsEvent {
   metadata: {
     type: SecretRotation;
     rotationId: string;
+    secretPath: string;
+    environment: string;
   };
 }
 

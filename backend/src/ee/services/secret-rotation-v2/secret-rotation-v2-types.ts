@@ -1,4 +1,6 @@
 import { TSqlCredentialsRotationGeneratedCredentials } from "@app/ee/services/secret-rotation-v2/shared/sql-credentials/sql-credentials-rotation-types";
+import { OrderByDirection } from "@app/lib/types";
+import { SecretsOrderBy } from "@app/services/secret/secret-types";
 
 import {
   TMsSqlCredentialsRotation,
@@ -68,9 +70,20 @@ export type TDeleteSecretRotationV2DTO = {
   removeSecrets: boolean;
 };
 
-export type TGetSecretRotationV2Count = {
+export type TGetDashboardSecretRotationV2Count = {
   search?: string;
   projectId: string;
   secretPath: string;
   environments: string[];
+};
+
+export type TGetDashboardSecretRotationsV2 = {
+  search?: string;
+  projectId: string;
+  secretPath: string;
+  environments: string[];
+  orderBy?: SecretsOrderBy;
+  orderDirection?: OrderByDirection;
+  limit: number;
+  offset: number;
 };

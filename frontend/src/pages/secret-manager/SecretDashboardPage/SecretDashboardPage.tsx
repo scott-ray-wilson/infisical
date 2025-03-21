@@ -201,12 +201,14 @@ const Page = () => {
     imports,
     folders,
     dynamicSecrets,
+    secretRotations,
     secrets,
     totalImportCount = 0,
     totalFolderCount = 0,
     totalDynamicSecretCount = 0,
     totalSecretCount = 0,
-    totalCount = 0
+    totalCount = 0,
+    totalSecretRotationCount = 0
   } = data ?? {};
 
   useResetPageHelper({
@@ -262,7 +264,8 @@ const Page = () => {
       (imports?.length || 0) -
       (folders?.length || 0) -
       (secrets?.length || 0) -
-      (dynamicSecrets?.length || 0),
+      (dynamicSecrets?.length || 0) -
+      (secretRotations?.length || 0),
     0
   );
   const isNotEmpty = Boolean(
@@ -520,6 +523,7 @@ const Page = () => {
                   importCount={totalImportCount}
                   secretCount={totalSecretCount}
                   folderCount={totalFolderCount}
+                  secretRotationCount={totalSecretRotationCount}
                 />
               }
               className="rounded-b-md border-t border-solid border-t-mineshaft-600"

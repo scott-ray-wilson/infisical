@@ -51,6 +51,15 @@ export enum ProjectPermissionSecretSyncActions {
   RemoveSecrets = "remove-secrets"
 }
 
+export enum ProjectPermissionSecretRotationActions {
+  Read = "read",
+  ReadCredentials = "read-credentials",
+  Create = "create",
+  Edit = "edit",
+  Delete = "delete",
+  Rotate = "rotate"
+}
+
 export enum PermissionConditionOperators {
   $IN = "$in",
   $ALL = "$all",
@@ -186,7 +195,7 @@ export type ProjectPermissionSet =
   | [ProjectPermissionActions, ProjectPermissionSub.Settings]
   | [ProjectPermissionActions, ProjectPermissionSub.ServiceTokens]
   | [ProjectPermissionActions, ProjectPermissionSub.SecretApproval]
-  | [ProjectPermissionActions, ProjectPermissionSub.SecretRotation]
+  | [ProjectPermissionSecretRotationActions, ProjectPermissionSub.SecretRotation]
   | [
       ProjectPermissionActions,
       (

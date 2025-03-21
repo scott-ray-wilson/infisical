@@ -227,7 +227,7 @@ export const sqlCredentialsRotationFactory = (
     }
   };
 
-  const validateParameters = async () => {
+  const throwOnInvalidParameters = async () => {
     const {
       connection,
       parameters: { issueStatement, revokeStatement } // username and password are validated at API-level
@@ -285,5 +285,5 @@ export const sqlCredentialsRotationFactory = (
     return secrets;
   };
 
-  return { issue, revoke, rotate, formatActiveCredentialsAsSecrets, validateParameters };
+  return { issue, revoke, rotate, formatActiveCredentialsAsSecrets, throwOnInvalidParameters };
 };

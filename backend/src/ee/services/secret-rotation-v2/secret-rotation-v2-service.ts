@@ -112,7 +112,7 @@ type TRotationFactory = (rotation: Pick<TSecretRotationV2WithConnection, "connec
     secretRotation: TSecretRotationV2,
     generatedCredentials: TSecretRotationV2GeneratedCredentials
   ) => { secretName: string; secretValue: string; type: SecretType }[];
-  validateParameters: () => Promise<void>;
+  throwOnInvalidParameters: () => Promise<void>;
 };
 
 const SECRET_ROTATION_FACTORY_MAP: Record<SecretRotation, TRotationFactory> = {
@@ -386,6 +386,9 @@ export const secretRotationV2ServiceFactory = ({
       connection: appConnection
     } as TSecretRotationV2WithConnection);
 
+    // throws if any invalid
+    await rotationFactory.throwOnInvalidParameters();
+
     try {
       const secretRotation = await rotationFactory.issue(async (newCredentials) => {
         const generatedCredentials = [newCredentials];
@@ -527,19 +530,19 @@ export const secretRotationV2ServiceFactory = ({
       folderId = newFolder.id;
     }
 
+    if (params.parameters) {
+      const appConnection = await decryptAppConnection(secretRotation.connection, kmsService);
+
+      const rotationFactory = SECRET_ROTATION_FACTORY_MAP[type]({
+        parameters: params.parameters,
+        connection: appConnection
+      } as TSecretRotationV2WithConnection);
+
+      // throws if any invalid
+      await rotationFactory.throwOnInvalidParameters();
+    }
+
     try {
-      if (params.parameters) {
-        const appConnection = await decryptAppConnection(secretRotation.connection, kmsService);
-
-        const rotationFactory = SECRET_ROTATION_FACTORY_MAP[type]({
-          parameters: params.parameters,
-          connection: appConnection
-        } as TSecretRotationV2WithConnection);
-
-        // throws if any invalid
-        await rotationFactory.validateParameters();
-      }
-
       const updatedSecretRotation = await secretRotationV2DAL.updateById(rotationId, {
         ...params,
         folderId
@@ -553,7 +556,7 @@ export const secretRotationV2ServiceFactory = ({
         switch (errorCode) {
           case DatabaseErrorCode.UniqueViolation:
             throw new BadRequestError({
-              message: `A Secret Rotation with the name "${params.name}" already exists for the project with ID "${folder.projectId}"`
+              message: `A Secret Rotation with the name "${params.name}" already exists for the project with ID "${secretRotation.projectId}"`
             });
           case DatabaseErrorCode.SyntaxError:
             throw new BadRequestError({

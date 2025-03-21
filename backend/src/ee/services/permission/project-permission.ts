@@ -127,6 +127,11 @@ export type SecretImportSubjectFields = {
   secretPath: string;
 };
 
+export type SecretRotationsSubjectFields = {
+  environment: string;
+  secretPath: string;
+};
+
 export type IdentityManagementSubjectFields = {
   identityId: string;
 };
@@ -169,7 +174,13 @@ export type ProjectPermissionSet =
   | [ProjectPermissionActions, ProjectPermissionSub.Settings]
   | [ProjectPermissionActions, ProjectPermissionSub.ServiceTokens]
   | [ProjectPermissionActions, ProjectPermissionSub.SecretApproval]
-  | [ProjectPermissionSecretRotationActions, ProjectPermissionSub.SecretRotation]
+  | [
+      ProjectPermissionSecretRotationActions,
+      (
+        | ProjectPermissionSub.SecretRotation
+        | (ForcedSubject<ProjectPermissionSub.SecretRotation> & SecretRotationsSubjectFields)
+      )
+    ]
   | [
       ProjectPermissionActions,
       ProjectPermissionSub.Identity | (ForcedSubject<ProjectPermissionSub.Identity> & IdentityManagementSubjectFields)
@@ -282,12 +293,6 @@ const GeneralPermissionSchema = [
   z.object({
     subject: z.literal(ProjectPermissionSub.SecretApproval).describe("The entity this permission pertains to."),
     action: CASL_ACTION_SCHEMA_NATIVE_ENUM(ProjectPermissionActions).describe(
-      "Describe what action an entity can take."
-    )
-  }),
-  z.object({
-    subject: z.literal(ProjectPermissionSub.SecretRotation).describe("The entity this permission pertains to."),
-    action: CASL_ACTION_SCHEMA_NATIVE_ENUM(ProjectPermissionSecretRotationActions).describe(
       "Describe what action an entity can take."
     )
   }),
@@ -472,6 +477,12 @@ export const ProjectPermissionV1Schema = z.discriminatedUnion("subject", [
       "Describe what action an entity can take."
     )
   }),
+  z.object({
+    subject: z.literal(ProjectPermissionSub.SecretRotation).describe("The entity this permission pertains to."),
+    action: CASL_ACTION_SCHEMA_NATIVE_ENUM(ProjectPermissionActions).describe(
+      "Describe what action an entity can take."
+    )
+  }),
   ...GeneralPermissionSchema
 ]);
 
@@ -523,6 +534,16 @@ export const ProjectPermissionV2Schema = z.discriminatedUnion("subject", [
       "Describe what action an entity can take."
     ),
     conditions: IdentityManagementConditionSchema.describe(
+      "When specified, only matching conditions will be allowed to access given resource."
+    ).optional()
+  }),
+  z.object({
+    subject: z.literal(ProjectPermissionSub.SecretRotation).describe("The entity this permission pertains to."),
+    inverted: z.boolean().optional().describe("Whether rule allows or forbids."),
+    action: CASL_ACTION_SCHEMA_NATIVE_ENUM(ProjectPermissionSecretRotationActions).describe(
+      "Describe what action an entity can take."
+    ),
+    conditions: SecretConditionV1Schema.describe(
       "When specified, only matching conditions will be allowed to access given resource."
     ).optional()
   }),

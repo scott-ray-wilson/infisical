@@ -688,6 +688,8 @@ export const ActionBar = ({
         isSingleEnvironmentMode
       />
       <CreateSecretRotationV2Modal
+        secretPath={secretPath}
+        environment={environment}
         isOpen={popUp.addSecretRotation.isOpen}
         onOpenChange={(isOpen) => handlePopUpToggle("addSecretRotation", isOpen)}
       />

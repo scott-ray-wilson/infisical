@@ -45,7 +45,7 @@ export const BaseCreateSecretRotationSchema = (type: SecretRotation) =>
       .optional()
       .default(true)
       .describe(SecretRotations.CREATE(type).isAutoRotationEnabled),
-    interval: z.coerce.number().describe(SecretRotations.CREATE(type).interval)
+    interval: z.coerce.number().min(1).describe(SecretRotations.CREATE(type).interval)
   });
 
 export const BaseUpdateSecretRotationSchema = (type: SecretRotation) =>
@@ -68,5 +68,5 @@ export const BaseUpdateSecretRotationSchema = (type: SecretRotation) =>
       .describe(SecretRotations.UPDATE(type).secretPath)
       .optional(),
     isAutoRotationEnabled: z.boolean().optional().describe(SecretRotations.UPDATE(type).isAutoRotationEnabled),
-    interval: z.coerce.number().optional().describe(SecretRotations.UPDATE(type).interval)
+    interval: z.coerce.number().min(1).optional().describe(SecretRotations.UPDATE(type).interval)
   });

@@ -1,23 +1,13 @@
 import { z } from "zod";
 
 import { EventType } from "@app/ee/services/audit-log/audit-log-types";
-import {
-  MsSqlCredentialsRotationListItemSchema,
-  MsSqlCredentialsRotationSchema
-} from "@app/ee/services/secret-rotation-v2/mssql-credentials";
-import {
-  PostgresCredentialsRotationListItemSchema,
-  PostgresCredentialsRotationSchema
-} from "@app/ee/services/secret-rotation-v2/postgres-credentials";
+import { MsSqlCredentialsRotationListItemSchema } from "@app/ee/services/secret-rotation-v2/mssql-credentials";
+import { PostgresCredentialsRotationListItemSchema } from "@app/ee/services/secret-rotation-v2/postgres-credentials";
+import { SecretRotationV2Schema } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-union-schema";
 import { SecretRotations } from "@app/lib/api-docs";
 import { readLimit } from "@app/server/config/rateLimiter";
 import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
 import { AuthMode } from "@app/services/auth/auth-type";
-
-const SecretRotationV2Schema = z.discriminatedUnion("type", [
-  PostgresCredentialsRotationSchema,
-  MsSqlCredentialsRotationSchema
-]);
 
 const SecretRotationV2OptionsSchema = z.discriminatedUnion("type", [
   PostgresCredentialsRotationListItemSchema,

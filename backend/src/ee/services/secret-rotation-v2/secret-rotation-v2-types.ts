@@ -67,3 +67,10 @@ export type TDeleteSecretRotationV2DTO = {
   rotationId: string;
   removeSecrets: boolean;
 };
+
+export type TGetSecretRotationV2Count = {
+  search?: string;
+  projectId: string;
+  secretPath: string;
+  environments: string[];
+};

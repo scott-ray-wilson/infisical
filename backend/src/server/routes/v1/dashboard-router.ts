@@ -8,9 +8,11 @@ import {
   ProjectPermissionSecretActions,
   ProjectPermissionSub
 } from "@app/ee/services/permission/project-permission";
+import { SecretRotationV2Schema } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-union-schema";
 import { DASHBOARD } from "@app/lib/api-docs";
 import { BadRequestError } from "@app/lib/errors";
 import { removeTrailingSlash } from "@app/lib/fn";
+import { logger } from "@app/lib/logger";
 import { OrderByDirection } from "@app/lib/types";
 import { secretsLimit } from "@app/server/config/rateLimiter";
 import { getTelemetryDistinctId } from "@app/server/lib/telemetry";
@@ -393,6 +395,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         includeSecrets: booleanSchema.describe(DASHBOARD.SECRET_DETAILS_LIST.includeSecrets),
         includeFolders: booleanSchema.describe(DASHBOARD.SECRET_DETAILS_LIST.includeFolders),
         includeDynamicSecrets: booleanSchema.describe(DASHBOARD.SECRET_DETAILS_LIST.includeDynamicSecrets),
+        includeSecretRotations: booleanSchema.describe(DASHBOARD.SECRET_DETAILS_LIST.includeSecretRotations),
         includeImports: booleanSchema.describe(DASHBOARD.SECRET_DETAILS_LIST.includeImports)
       }),
       response: {
@@ -405,6 +408,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             .optional(),
           folders: SecretFoldersSchema.array().optional(),
           dynamicSecrets: SanitizedDynamicSecretSchema.array().optional(),
+          secretRotations: SecretRotationV2Schema.array().optional(),
           secrets: secretRawSchema
             .extend({
               secretValueHidden: z.boolean(),
@@ -436,7 +440,8 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         includeFolders,
         includeSecrets,
         includeDynamicSecrets,
-        includeImports
+        includeImports,
+        includeSecretRotations
       } = req.query;
 
       if (!projectId || !environment) throw new BadRequestError({ message: "Missing workspace id or environment" });
@@ -459,6 +464,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       let totalImportCount: number | undefined;
       let totalFolderCount: number | undefined;
       let totalDynamicSecretCount: number | undefined;
+      let totalSecretRotationCount: number | undefined;
       let totalSecretCount: number | undefined;
 
       if (includeImports) {
@@ -543,6 +549,26 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       }
 
       try {
+        if (includeSecretRotations) {
+          totalSecretRotationCount = await server.services.secretRotationV2.getSecretRotationCount(
+            {
+              projectId,
+              search,
+              environments: [environment],
+              secretPath
+            },
+            actor
+          );
+
+          logger.warn("SECRET ROTATION COUNT", totalSecretRotationCount);
+        }
+      } catch (e) {
+        if (!(error instanceof ForbiddenError)) {
+          throw error;
+        }
+      }
+
+      try {
         if (includeDynamicSecrets) {
           totalDynamicSecretCount = await server.services.dynamicSecret.getDynamicSecretCount({
             actor: req.permission.type,
@@ -577,7 +603,13 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             adjustedOffset = Math.max(0, adjustedOffset - totalDynamicSecretCount);
           }
         }
+      } catch (error) {
+        if (!(error instanceof ForbiddenError)) {
+          throw error;
+        }
+      }
 
+      try {
         if (includeSecrets) {
           totalSecretCount = await server.services.secret.getSecretsCount({
             actorId: req.permission.id,

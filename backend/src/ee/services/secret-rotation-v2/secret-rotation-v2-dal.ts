@@ -227,6 +227,7 @@ export const secretRotationV2DALFactory = (
     findOne,
     insertSecretMappings: secretRotationV2SecretMappingOrm.insertMany,
     updateSecretMappings: secretRotationV2SecretMappingOrm.update,
-    findSecretMappingsByRotationId
+    findSecretMappingsByRotationId,
+    findRaw: secretRotationV2Orm.find
   };
 };

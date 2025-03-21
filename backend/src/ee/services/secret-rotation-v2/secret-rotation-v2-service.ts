@@ -26,6 +26,7 @@ import {
   TDeleteSecretRotationV2DTO,
   TFindSecretRotationV2ByIdDTO,
   TFindSecretRotationV2ByNameDTO,
+  TGetSecretRotationV2Count,
   TListSecretRotationsV2ByProjectId,
   TRotateSecretRotationV2,
   TSecretRotationV2,
@@ -203,7 +204,15 @@ export const secretRotationV2ServiceFactory = ({
       projectId
     });
 
-    return secretRotations as TSecretRotationV2[];
+    return secretRotations.filter((rotation) =>
+      permission.can(
+        ProjectPermissionSecretRotationActions.Read,
+        subject(ProjectPermissionSub.SecretRotation, {
+          environment: rotation.environment.slug,
+          secretPath: rotation.folder.path
+        })
+      )
+    ) as TSecretRotationV2[];
   };
 
   const findSecretRotationById = async ({ type, rotationId }: TFindSecretRotationV2ByIdDTO, actor: OrgServiceActor) => {
@@ -232,7 +241,10 @@ export const secretRotationV2ServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(
       ProjectPermissionSecretRotationActions.Read,
-      ProjectPermissionSub.SecretRotation
+      subject(ProjectPermissionSub.SecretRotation, {
+        environment: secretRotation.environment.slug,
+        secretPath: secretRotation.folder.path
+      })
     );
 
     if (secretRotation.connection.app !== SECRET_ROTATION_CONNECTION_MAP[type])
@@ -273,7 +285,10 @@ export const secretRotationV2ServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(
       ProjectPermissionSecretRotationActions.ReadCredentials,
-      ProjectPermissionSub.SecretRotation
+      subject(ProjectPermissionSub.SecretRotation, {
+        environment: secretRotation.environment.slug,
+        secretPath: secretRotation.folder.path
+      })
     );
 
     if (secretRotation.connection.app !== SECRET_ROTATION_CONNECTION_MAP[type])
@@ -323,7 +338,10 @@ export const secretRotationV2ServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(
       ProjectPermissionSecretRotationActions.Read,
-      ProjectPermissionSub.SecretRotation
+      subject(ProjectPermissionSub.SecretRotation, {
+        environment: secretRotation.environment.slug,
+        secretPath: secretRotation.folder.path
+      })
     );
 
     if (secretRotation.connection.app !== SECRET_ROTATION_CONNECTION_MAP[type])
@@ -361,7 +379,7 @@ export const secretRotationV2ServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(
       ProjectPermissionSecretRotationActions.Create,
-      ProjectPermissionSub.SecretRotation
+      subject(ProjectPermissionSub.SecretRotation, { environment, secretPath })
     );
 
     ForbiddenError.from(permission).throwUnlessCan(
@@ -487,7 +505,10 @@ export const secretRotationV2ServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(
       ProjectPermissionSecretRotationActions.Edit,
-      ProjectPermissionSub.SecretRotation
+      subject(ProjectPermissionSub.SecretRotation, {
+        environment: secretRotation.environment.slug,
+        secretPath: secretRotation.folder.path
+      })
     );
 
     if (secretRotation.connection.app !== SECRET_ROTATION_CONNECTION_MAP[type])
@@ -538,7 +559,6 @@ export const secretRotationV2ServiceFactory = ({
         connection: appConnection
       } as TSecretRotationV2WithConnection);
 
-      // throws if any invalid
       await rotationFactory.throwOnInvalidParameters();
     }
 
@@ -600,7 +620,10 @@ export const secretRotationV2ServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(
       ProjectPermissionSecretRotationActions.Delete,
-      ProjectPermissionSub.SecretRotation
+      subject(ProjectPermissionSub.SecretRotation, {
+        environment: secretRotation.environment.slug,
+        secretPath: secretRotation.folder.path
+      })
     );
 
     if (secretRotation.connection.app !== SECRET_ROTATION_CONNECTION_MAP[type])
@@ -671,8 +694,6 @@ export const secretRotationV2ServiceFactory = ({
           )) as TSecretRotationV2;
 
           const secretsData = rotationFactory.formatActiveCredentialsAsSecrets(updatedRotation, updatedCredentials);
-
-          throw new Error("Pretend Error");
 
           // TODO: ideally this would be part of transaction
           await $updateManySecretsRawFn({
@@ -780,7 +801,10 @@ export const secretRotationV2ServiceFactory = ({
 
     ForbiddenError.from(permission).throwUnlessCan(
       ProjectPermissionSecretRotationActions.Rotate,
-      ProjectPermissionSub.SecretRotation
+      subject(ProjectPermissionSub.SecretRotation, {
+        environment: secretRotation.environment.slug,
+        secretPath: secretRotation.folder.path
+      })
     );
 
     if (secretRotation.connection.app !== SECRET_ROTATION_CONNECTION_MAP[type])
@@ -791,6 +815,42 @@ export const secretRotationV2ServiceFactory = ({
     const updatedRotation = await rotateGeneratedCredentials(secretRotation);
 
     return updatedRotation;
+  };
+
+  const getSecretRotationCount = async (
+    { projectId, environments, secretPath, search }: TGetSecretRotationV2Count,
+    actor: OrgServiceActor
+  ) => {
+    const { permission } = await permissionService.getProjectPermission({
+      actor: actor.type,
+      actorId: actor.id,
+      actorAuthMethod: actor.authMethod,
+      actorOrgId: actor.orgId,
+      actionProjectType: ActionProjectType.SecretManager,
+      projectId
+    });
+
+    environments.forEach((environment) =>
+      ForbiddenError.from(permission).throwUnlessCan(
+        ProjectPermissionSecretRotationActions.Read,
+        subject(ProjectPermissionSub.SecretRotation, { environment, secretPath })
+      )
+    );
+
+    const folders = await folderDAL.findBySecretPathMultiEnv(projectId, environments, secretPath);
+
+    if (!folders.length) {
+      throw new NotFoundError({
+        message: `Folders with path '${secretPath}' in environments with slugs '${environments.join(", ")}' not found`
+      });
+    }
+
+    const secretRotations = await secretRotationV2DAL.findRaw(
+      { $in: { folderId: folders.map((folder) => folder.id) }, $search: search ? { name: `%${search}%` } : undefined },
+      { countDistinct: "name" }
+    );
+
+    return Number(secretRotations[0]?.count ?? 0);
   };
 
   return {

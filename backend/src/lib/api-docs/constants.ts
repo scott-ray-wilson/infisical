@@ -833,7 +833,8 @@ export const DASHBOARD = {
     includeSecrets: "Whether to include project secrets in the response.",
     includeFolders: "Whether to include project folders in the response.",
     includeImports: "Whether to include project secret imports in the response.",
-    includeDynamicSecrets: "Whether to include dynamic project secrets in the response."
+    includeDynamicSecrets: "Whether to include dynamic project secrets in the response.",
+    includeSecretRotations: "Whether to include secret rotations in the response."
   }
 } as const;
 

@@ -26,3 +26,10 @@ export const SqlCredentialsRotationParametersSchema = z.object({
     .min(1, "Revoke Credentials SQL Statement Required")
     .describe(SecretRotations.PARAMETERS.SQL_CREDENTIALS.revokeStatement)
 });
+
+export const SqlCredentialsRotationParametersTemplateSchema = z.object({
+  usernameSecretKey: z.string(),
+  passwordSecretKey: z.string(),
+  issueStatement: z.string(),
+  revokeStatement: z.string()
+});

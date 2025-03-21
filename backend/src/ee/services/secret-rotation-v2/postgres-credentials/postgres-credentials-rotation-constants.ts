@@ -5,5 +5,11 @@ import { AppConnection } from "@app/services/app-connection/app-connection-enums
 export const POSTGRES_CREDENTIALS_ROTATION_LIST_OPTION: TSecretRotationV2ListItem = {
   name: "PostgreSQL Credentials",
   type: SecretRotation.PostgresCredentials,
-  connection: AppConnection.Postgres
+  connection: AppConnection.Postgres,
+  parametersTemplate: {
+    usernameSecretKey: "POSTGRES_DB_USERNAME",
+    passwordSecretKey: "POSTGRES_DB_PASSWORD",
+    issueStatement: `CREATE USER "{{username}}" WITH ENCRYPTED PASSWORD '{{password}}'; GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "{{username}}";`,
+    revokeStatement: `REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM "{{username}}"; DROP ROLE "{{username}}";`
+  }
 };

@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { CreateSecretRotationForm } from "@app/components/secret-rotations-v2/forms";
 import { SecretRotationV2ModalHeader } from "@app/components/secret-rotations-v2/SecretRotationV2ModalHeader";
 import { SecretRotationV2Select } from "@app/components/secret-rotations-v2/SecretRotationV2Select";
 import { Modal, ModalContent } from "@app/components/v2";
@@ -8,29 +9,38 @@ import { SecretRotation, TSecretRotationV2 } from "@app/hooks/api/secretRotation
 type Props = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  secretPath: string;
+  environment: string;
 };
 
 type ContentProps = {
   onComplete: (secretRotation: TSecretRotationV2) => void;
   selectedRotation: SecretRotation | null;
   setSelectedRotation: (selectedRotation: SecretRotation | null) => void;
+  secretPath: string;
+  environment: string;
 };
 
-const Content = ({ onComplete, setSelectedRotation, selectedRotation }: ContentProps) => {
-  // if (selectedSync) {
-  //   return (
-  //     <CreateSecretSyncForm
-  //       onComplete={onComplete}
-  //       onCancel={() => setSelectedSync(null)}
-  //       destination={selectedSync}
-  //     />
-  //   );
-  // }
+const Content = ({ setSelectedRotation, selectedRotation, ...props }: ContentProps) => {
+  if (selectedRotation) {
+    return (
+      <CreateSecretRotationForm
+        onCancel={() => setSelectedRotation(null)}
+        type={selectedRotation}
+        {...props}
+      />
+    );
+  }
 
   return <SecretRotationV2Select onSelect={setSelectedRotation} />;
 };
 
-export const CreateSecretRotationV2Modal = ({ onOpenChange, ...props }: Props) => {
+export const CreateSecretRotationV2Modal = ({
+  onOpenChange,
+  secretPath,
+  environment,
+  ...props
+}: Props) => {
   const [selectedRotation, setSelectedRotation] = useState<SecretRotation | null>(null);
 
   return (
@@ -63,6 +73,8 @@ export const CreateSecretRotationV2Modal = ({ onOpenChange, ...props }: Props) =
           }}
           selectedRotation={selectedRotation}
           setSelectedRotation={setSelectedRotation}
+          secretPath={secretPath}
+          environment={environment}
         />
       </ModalContent>
     </Modal>

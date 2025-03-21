@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Tab } from "@headlessui/react";
@@ -7,7 +7,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { twMerge } from "tailwind-merge";
 
 import { createNotification } from "@app/components/notifications";
-import { Button, FormControl, Switch } from "@app/components/v2";
+import { SecretRotationV2ConfigurationFields } from "@app/components/secret-rotations-v2/forms/SecretRotationV2ConfigurationFields";
+import { SecretRotationV2DetailsFields } from "@app/components/secret-rotations-v2/forms/SecretRotationV2DetailsFields";
+import { SecretRotationV2ParametersFields } from "@app/components/secret-rotations-v2/forms/SecretRotationV2ParametersFields/SecretRotationV2ParametersFields";
+import { Button } from "@app/components/v2";
 import { useWorkspace } from "@app/context";
 import { SECRET_ROTATION_MAP } from "@app/helpers/secretRotationsV2";
 import {
@@ -17,12 +20,7 @@ import {
 } from "@app/hooks/api/secretRotationsV2";
 import { useCreateSecretRotationV2 } from "@app/hooks/api/secretRotationsV2/mutations";
 
-import { SecretSyncOptionsFields } from "./SecretSyncOptionsFields/SecretSyncOptionsFields";
 import { SecretRotationV2FormSchema, TSecretRotationV2Form } from "./schemas";
-import { SecretSyncDestinationFields } from "./SecretSyncDestinationFields";
-import { SecretSyncDetailsFields } from "./SecretSyncDetailsFields";
-import { SecretSyncReviewFields } from "./SecretSyncReviewFields";
-import { SecretSyncSourceFields } from "./SecretSyncSourceFields";
 
 type Props = {
   onComplete: (secretRotation: TSecretRotationV2) => void;
@@ -33,8 +31,13 @@ type Props = {
 };
 
 const FORM_TABS: { name: string; key: string; fields: (keyof TSecretRotationV2Form)[] }[] = [
-  { name: "Rotation Details", key: "details", fields: ["name", "description", "connection"] },
-  { name: "Parameters", key: "details", fields: ["parameters"] },
+  {
+    name: "Configuration",
+    key: "configuration",
+    fields: ["isAutoRotationEnabled", "interval", "connection"]
+  },
+  { name: "Parameters", key: "parameters", fields: ["parameters"] },
+  { name: "Details", key: "details", fields: ["name", "description"] },
   { name: "Review", key: "review", fields: [] }
 ];
 
@@ -53,7 +56,9 @@ export const CreateSecretRotationForm = ({ type, onComplete, onCancel }: Props) 
     resolver: zodResolver(SecretRotationV2FormSchema),
     defaultValues: {
       type,
-      isAutoRotationEnabled: true
+      isAutoRotationEnabled: true,
+      interval: 30,
+      parameters: rotationOption!.parametersTemplate
       // TODO: template parameters
     },
     reValidateMode: "onChange"
@@ -146,7 +151,6 @@ export const CreateSecretRotationForm = ({ type, onComplete, onCancel }: Props) 
           >
             I Understand
           </Button>
-
           <Button
             isDisabled={createSecretSync.isPending}
             variant="plain"
@@ -186,47 +190,15 @@ export const CreateSecretRotationForm = ({ type, onComplete, onCancel }: Props) 
           </Tab.List>
           <Tab.Panels>
             <Tab.Panel>
-              <SecretSyncSourceFields />
+              <SecretRotationV2ConfigurationFields />
             </Tab.Panel>
             <Tab.Panel>
-              <SecretSyncDestinationFields />
+              <SecretRotationV2ParametersFields />
             </Tab.Panel>
             <Tab.Panel>
-              <SecretSyncOptionsFields />
-              <Controller
-                control={control}
-                name="isAutoRotationEnabled"
-                render={({ field: { value, onChange }, fieldState: { error } }) => {
-                  return (
-                    <FormControl
-                      helperText={
-                        value
-                          ? "Secrets will automatically be synced when changes occur in the source location."
-                          : "Secrets will not automatically be synced when changes occur in the source location. You can still trigger syncs manually."
-                      }
-                      isError={Boolean(error)}
-                      errorText={error?.message}
-                    >
-                      <Switch
-                        className="bg-mineshaft-400/80 shadow-inner data-[state=checked]:bg-green/80"
-                        id="auto-sync-enabled"
-                        thumbClassName="bg-mineshaft-800"
-                        onCheckedChange={onChange}
-                        isChecked={value}
-                      >
-                        <p className="w-[8.4rem]">Auto-Rotation {value ? "Enabled" : "Disabled"}</p>
-                      </Switch>
-                    </FormControl>
-                  );
-                }}
-              />
+              <SecretRotationV2DetailsFields />
             </Tab.Panel>
-            <Tab.Panel>
-              <SecretSyncDetailsFields />
-            </Tab.Panel>
-            <Tab.Panel>
-              <SecretSyncReviewFields />
-            </Tab.Panel>
+            <Tab.Panel>{/* <SecretSyncDetailsFields /> */}</Tab.Panel>
           </Tab.Panels>
         </Tab.Group>
       </FormProvider>

@@ -10,7 +10,7 @@ export const SecretRotationV2DetailsFields = () => {
   return (
     <>
       <p className="mb-4 text-sm text-bunker-300">
-        Provide a name and description for this Secret Sync.
+        Provide a name and description for this Secret Rotation.
       </p>
       <Controller
         render={({ field: { value, onChange }, fieldState: { error } }) => (
@@ -20,7 +20,7 @@ export const SecretRotationV2DetailsFields = () => {
             errorText={error?.message}
             label="Name"
           >
-            <Input value={value} onChange={onChange} placeholder="my-secret-sync" />
+            <Input value={value} onChange={onChange} placeholder="my-secret-rotation" />
           </FormControl>
         )}
         control={control}
@@ -37,7 +37,7 @@ export const SecretRotationV2DetailsFields = () => {
             <TextArea
               value={value}
               onChange={onChange}
-              placeholder="Describe the purpose of this sync..."
+              placeholder="Describe the purpose of this rotation..."
               className="!resize-none"
               rows={4}
             />

@@ -6,7 +6,10 @@ import {
   BaseSecretRotationSchema,
   BaseUpdateSecretRotationSchema
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-schemas";
-import { SqlCredentialsRotationParametersSchema } from "@app/ee/services/secret-rotation-v2/shared/sql-credentials";
+import {
+  SqlCredentialsRotationParametersSchema,
+  SqlCredentialsRotationParametersTemplateSchema
+} from "@app/ee/services/secret-rotation-v2/shared/sql-credentials";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 
 export const PostgresCredentialsRotationSchema = BaseSecretRotationSchema(SecretRotation.PostgresCredentials).extend({
@@ -29,5 +32,6 @@ export const UpdatePostgresCredentialsRotationSchema = BaseUpdateSecretRotationS
 export const PostgresCredentialsRotationListItemSchema = z.object({
   name: z.literal("PostgreSQL Credentials"),
   connection: z.literal(AppConnection.Postgres),
-  type: z.literal(SecretRotation.PostgresCredentials)
+  type: z.literal(SecretRotation.PostgresCredentials),
+  parametersTemplate: SqlCredentialsRotationParametersTemplateSchema
 });

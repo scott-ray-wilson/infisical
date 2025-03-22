@@ -154,6 +154,11 @@ export type SecretImportSubjectFields = {
   secretPath: string;
 };
 
+export type SecretRotationSubjectFields = {
+  environment: string;
+  secretPath: string;
+};
+
 export type ProjectPermissionSet =
   | [
       ProjectPermissionSecretActions,
@@ -183,6 +188,13 @@ export type ProjectPermissionSet =
         | (ForcedSubject<ProjectPermissionSub.SecretImports> & SecretImportSubjectFields)
       )
     ]
+  | [
+      ProjectPermissionSecretRotationActions,
+      (
+        | ProjectPermissionSub.SecretRotation
+        | (ForcedSubject<ProjectPermissionSub.SecretRotation> & SecretRotationSubjectFields)
+      )
+    ]
   | [ProjectPermissionActions, ProjectPermissionSub.Role]
   | [ProjectPermissionActions, ProjectPermissionSub.Tags]
   | [ProjectPermissionActions, ProjectPermissionSub.Member]
@@ -195,7 +207,6 @@ export type ProjectPermissionSet =
   | [ProjectPermissionActions, ProjectPermissionSub.Settings]
   | [ProjectPermissionActions, ProjectPermissionSub.ServiceTokens]
   | [ProjectPermissionActions, ProjectPermissionSub.SecretApproval]
-  | [ProjectPermissionSecretRotationActions, ProjectPermissionSub.SecretRotation]
   | [
       ProjectPermissionActions,
       (

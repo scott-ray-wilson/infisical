@@ -17,7 +17,10 @@ import {
   TSecretRotationV2,
   useSecretRotationV2Option
 } from "@app/hooks/api/secretRotationsV2";
-import { useCreateSecretRotationV2 } from "@app/hooks/api/secretRotationsV2/mutations";
+import {
+  useCreateSecretRotationV2,
+  useUpdateSecretRotationV2
+} from "@app/hooks/api/secretRotationsV2/mutations";
 
 import { SecretRotationV2FormSchema, TSecretRotationV2Form } from "./schemas";
 
@@ -27,6 +30,7 @@ type Props = {
   onCancel: () => void;
   secretPath: string;
   environment: string;
+  secretRotation?: TSecretRotationV2;
 };
 
 const FORM_TABS: { name: string; key: string; fields: (keyof TSecretRotationV2Form)[] }[] = [
@@ -40,14 +44,16 @@ const FORM_TABS: { name: string; key: string; fields: (keyof TSecretRotationV2Fo
   { name: "Review", key: "review", fields: [] }
 ];
 
-export const CreateSecretRotationForm = ({
+export const SecretRotationV2Form = ({
   type,
   onComplete,
   onCancel,
   environment: envSlug,
-  secretPath
+  secretPath,
+  secretRotation
 }: Props) => {
-  const createSecretSync = useCreateSecretRotationV2();
+  const createSecretRotation = useCreateSecretRotationV2();
+  const updateSecretRotation = useUpdateSecretRotationV2();
   const { currentWorkspace } = useWorkspace();
   const { name: rotationType } = SECRET_ROTATION_MAP[type];
 
@@ -57,34 +63,47 @@ export const CreateSecretRotationForm = ({
 
   const formMethods = useForm<TSecretRotationV2Form>({
     resolver: zodResolver(SecretRotationV2FormSchema),
-    defaultValues: {
-      type,
-      isAutoRotationEnabled: true,
-      interval: 30,
-      parameters: rotationOption!.parametersTemplate,
-      environment: currentWorkspace?.environments.find((env) => env.slug === envSlug),
-      secretPath
-    },
+    defaultValues: secretRotation
+      ? {
+          ...secretRotation,
+          environment: currentWorkspace?.environments.find((env) => env.slug === envSlug),
+          secretPath
+        }
+      : {
+          type,
+          isAutoRotationEnabled: true,
+          interval: 30,
+          parameters: rotationOption!.parametersTemplate,
+          environment: currentWorkspace?.environments.find((env) => env.slug === envSlug),
+          secretPath
+        },
     reValidateMode: "onChange"
   });
 
   const onSubmit = async ({ environment, connection, ...formData }: TSecretRotationV2Form) => {
+    const mutation = secretRotation
+      ? updateSecretRotation.mutateAsync({
+          rotationId: secretRotation.id,
+          projectId: secretRotation.projectId,
+          ...formData
+        })
+      : createSecretRotation.mutateAsync({
+          ...formData,
+          connectionId: connection.id,
+          environment: environment.slug,
+          projectId: currentWorkspace.id
+        });
     try {
-      const secretRotation = await createSecretSync.mutateAsync({
-        ...formData,
-        connectionId: connection.id,
-        environment: environment.slug,
-        projectId: currentWorkspace.id
-      });
+      const rotation = await mutation;
 
       createNotification({
-        text: `Successfully added ${rotationType} Rotation`,
+        text: `Successfully ${secretRotation ? "updated" : "created"} ${rotationType} Rotation`,
         type: "success"
       });
-      onComplete(secretRotation);
+      onComplete(rotation);
     } catch (err: any) {
       createNotification({
-        title: `Failed to add ${rotationType} Rotation`,
+        title: `Failed to ${secretRotation ? "update" : "create"} ${rotationType} Rotation`,
         text: err.message,
         type: "error"
       });
@@ -172,7 +191,7 @@ export const CreateSecretRotationForm = ({
       </FormProvider>
       <div className="flex w-full flex-row-reverse justify-between gap-4 pt-4">
         <Button onClick={handleNext} colorSchema="secondary">
-          {isFinalStep ? "Create Secret Rotation" : "Next"}
+          {isFinalStep ? `${secretRotation ? "Update" : "Create"} Secret Rotation` : "Next"}
         </Button>
         {selectedTabIndex > 0 && (
           <Button onClick={handlePrev} colorSchema="secondary">

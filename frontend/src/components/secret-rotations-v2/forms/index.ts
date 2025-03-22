@@ -1,1 +1,1 @@
-export * from "./CreateSecretRotationV2Form";
+export * from "./SecretRotationV2Form";

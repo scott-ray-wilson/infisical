@@ -8,9 +8,12 @@ import {
   TPostgresCredentialsRotation,
   TPostgresCredentialsRotationGeneratedCredentialsResponse
 } from "@app/hooks/api/secretRotationsV2/types/postgres-credentials-rotation";
+import { SecretV3RawSanitized } from "@app/hooks/api/secrets/types";
 import { DiscriminativePick } from "@app/types";
 
-export type TSecretRotationV2 = TPostgresCredentialsRotation | TMsSqlCredentialsRotation;
+export type TSecretRotationV2 = (TPostgresCredentialsRotation | TMsSqlCredentialsRotation) & {
+  secrets: (SecretV3RawSanitized | null)[];
+};
 
 export type TSecretRotationV2Option = {
   name: string;

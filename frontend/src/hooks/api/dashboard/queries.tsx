@@ -285,7 +285,31 @@ export const useGetProjectSecretsDetails = (
     select: useCallback(
       (data: Awaited<ReturnType<typeof fetchProjectSecretsDetails>>) => ({
         ...data,
-        secrets: data.secrets ? mergePersonalSecrets(data.secrets) : undefined
+        secrets: data.secrets ? mergePersonalSecrets(data.secrets) : undefined,
+        secretRotations: data.secretRotations?.map((rotation) => ({
+          ...rotation,
+          secrets: rotation.secrets.map((el) =>
+            el
+              ? {
+                  id: el.id,
+                  env: el.environment,
+                  key: el.secretKey,
+                  value: el.secretValue,
+                  secretValueHidden: el.secretValueHidden,
+                  tags: el.tags || [],
+                  comment: el.secretComment || "",
+                  reminderRepeatDays: el.secretReminderRepeatDays,
+                  reminderNote: el.secretReminderNote,
+                  createdAt: el.createdAt,
+                  updatedAt: el.updatedAt,
+                  version: el.version,
+                  skipMultilineEncoding: el.skipMultilineEncoding,
+                  path: el.secretPath,
+                  secretMetadata: el.secretMetadata
+                }
+              : el
+          )
+        }))
       }),
       []
     ),

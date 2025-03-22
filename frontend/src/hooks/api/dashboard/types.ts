@@ -27,7 +27,9 @@ export type DashboardProjectSecretsDetailsResponse = {
   folders?: TSecretFolder[];
   dynamicSecrets?: TDynamicSecret[];
   secrets?: SecretV3Raw[];
-  secretRotations?: TSecretRotationV2[];
+  secretRotations?: (TSecretRotationV2 & {
+    secrets: (SecretV3Raw | null)[];
+  })[];
   totalImportCount?: number;
   totalFolderCount?: number;
   totalDynamicSecretCount?: number;
@@ -52,6 +54,9 @@ export type DashboardProjectSecretsDetails = Omit<
   "secrets"
 > & {
   secrets?: SecretV3RawSanitized[];
+  secretRotations?: (TSecretRotationV2 & {
+    secrets: (SecretV3RawSanitized | null)[];
+  })[];
 };
 
 export enum DashboardSecretsOrderBy {

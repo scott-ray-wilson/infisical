@@ -946,6 +946,7 @@ export const secretV2BridgeServiceFactory = ({
       projectId
     });
 
+    // scott: if any of this changes it also needs to be mirrored in secret rotation for getting dashboard secrets
     const decryptedSecrets = secrets
       .filter((el) => {
         const canDescribeSecret = hasSecretReadValueOrDescribePermission(

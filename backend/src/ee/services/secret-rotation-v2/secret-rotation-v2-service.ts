@@ -5,6 +5,7 @@ import { ActionProjectType, SecretType } from "@app/db/schemas";
 import { TAuditLogServiceFactory } from "@app/ee/services/audit-log/audit-log-service";
 import { AuditLogInfo, EventType } from "@app/ee/services/audit-log/audit-log-types";
 import { TLicenseServiceFactory } from "@app/ee/services/license/license-service";
+import { hasSecretReadValueOrDescribePermission } from "@app/ee/services/permission/permission-fns";
 import { TPermissionServiceFactory } from "@app/ee/services/permission/permission-service";
 import {
   ProjectPermissionSecretActions,
@@ -45,6 +46,7 @@ import { decryptAppConnection } from "@app/services/app-connection/app-connectio
 import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
 import { ActorType } from "@app/services/auth/auth-type";
 import { TKmsServiceFactory } from "@app/services/kms/kms-service";
+import { KmsDataKey } from "@app/services/kms/kms-types";
 import { TProjectDALFactory } from "@app/services/project/project-dal";
 import { TProjectBotDALFactory } from "@app/services/project-bot/project-bot-dal";
 import { TProjectBotServiceFactory } from "@app/services/project-bot/project-bot-service";
@@ -58,6 +60,7 @@ import { TSecretBlindIndexDALFactory } from "@app/services/secret-blind-index/se
 import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-folder-dal";
 import { TSecretTagDALFactory } from "@app/services/secret-tag/secret-tag-dal";
 import { TSecretV2BridgeDALFactory } from "@app/services/secret-v2-bridge/secret-v2-bridge-dal";
+import { reshapeBridgeSecret } from "@app/services/secret-v2-bridge/secret-v2-bridge-fns";
 import { TSecretVersionV2DALFactory } from "@app/services/secret-v2-bridge/secret-version-dal";
 import { TSecretVersionV2TagDALFactory } from "@app/services/secret-v2-bridge/secret-version-tag-dal";
 
@@ -911,7 +914,7 @@ export const secretRotationV2ServiceFactory = ({
       });
     }
 
-    const secretRotations = await secretRotationV2DAL.find(
+    const secretRotations = await secretRotationV2DAL.findWithMappedSecrets(
       {
         $in: { folderId: folders.map((folder) => folder.id) },
         $search: search ? { name: `%${search}%` } : undefined,
@@ -924,7 +927,65 @@ export const secretRotationV2ServiceFactory = ({
       }
     );
 
-    return secretRotations as TSecretRotationV2[];
+    const { decryptor: secretManagerDecryptor } = await kmsService.createCipherPairWithDataKey({
+      type: KmsDataKey.SecretManager,
+      projectId
+    });
+
+    const decryptedSecretRotations = secretRotations.map(({ secrets, ...rotation }) => {
+      const decryptedSecrets = secrets.map((secret) => {
+        const canDescribeSecret = hasSecretReadValueOrDescribePermission(
+          permission,
+          ProjectPermissionSecretActions.DescribeSecret,
+          {
+            environment: rotation.environment.slug,
+            secretPath: rotation.folder.path,
+            secretName: secret.key,
+            secretTags: secret.tags.map((i) => i.slug)
+          }
+        );
+
+        if (!canDescribeSecret) {
+          return null; // return null so we know to display empty row in dashboard
+        }
+
+        const secretValueHidden = !hasSecretReadValueOrDescribePermission(
+          permission,
+          ProjectPermissionSecretActions.ReadValue,
+          {
+            environment: rotation.environment.slug,
+            secretPath: rotation.folder.path,
+            secretName: secret.key,
+            secretTags: secret.tags.map((i) => i.slug)
+          }
+        );
+
+        return reshapeBridgeSecret(
+          projectId,
+          rotation.environment.slug,
+          rotation.folder.path,
+          {
+            ...secret,
+            value: secret.encryptedValue
+              ? secretManagerDecryptor({ cipherTextBlob: secret.encryptedValue }).toString()
+              : "",
+            comment: secret.encryptedComment
+              ? secretManagerDecryptor({ cipherTextBlob: secret.encryptedComment }).toString()
+              : ""
+          },
+          secretValueHidden
+        );
+      });
+
+      return {
+        ...rotation,
+        secrets: decryptedSecrets
+      };
+    });
+
+    return decryptedSecretRotations as (TSecretRotationV2 & {
+      secrets: Awaited<ReturnType<typeof reshapeBridgeSecret>>[];
+    })[];
   };
 
   return {

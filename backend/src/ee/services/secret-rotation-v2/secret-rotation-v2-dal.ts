@@ -3,8 +3,16 @@ import { Knex } from "knex";
 import { TDbClient } from "@app/db";
 import { TableName } from "@app/db/schemas";
 import { TSecretRotationsV2 } from "@app/db/schemas/secret-rotations-v2";
+import { SecretRotationV2Schema } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-union-schema";
 import { DatabaseError } from "@app/lib/errors";
-import { buildFindFilter, ormify, prependTableNameToFindFilter, selectAllTableCols, TFindOpt } from "@app/lib/knex";
+import {
+  buildFindFilter,
+  ormify,
+  prependTableNameToFindFilter,
+  selectAllTableCols,
+  sqlNestRelationships,
+  TFindOpt
+} from "@app/lib/knex";
 import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-folder-dal";
 
 export type TSecretRotationV2DALFactory = ReturnType<typeof secretRotationV2DALFactory>;
@@ -69,8 +77,8 @@ const baseSecretRotationV2Query = ({
   return query;
 };
 
-const expandSecretRotation = (
-  secretRotation: Awaited<ReturnType<typeof baseSecretRotationV2Query>>[number],
+const expandSecretRotation = <T extends Awaited<ReturnType<typeof baseSecretRotationV2Query>>[number]>(
+  secretRotation: T,
   folder: Awaited<ReturnType<TSecretFolderDALFactory["findSecretPathByFolderIds"]>>[number]
 ) => {
   const {
@@ -134,7 +142,7 @@ export const secretRotationV2DALFactory = (
 
       const foldersWithPath = await folderDAL.findSecretPathByFolderIds(
         filter.projectId,
-        secretRotations.filter((rotation) => Boolean(rotation.folderId)).map((rotation) => rotation.folderId),
+        secretRotations.map((rotation) => rotation.folderId),
         tx
       );
 
@@ -145,6 +153,138 @@ export const secretRotationV2DALFactory = (
       });
 
       return secretRotations.map((rotation) => expandSecretRotation(rotation, folderRecord[rotation.folderId]));
+    } catch (error) {
+      throw new DatabaseError({ error, name: "Find - Secret Rotation V2" });
+    }
+  };
+
+  const findWithMappedSecrets = async (
+    filter: Parameters<(typeof secretRotationV2Orm)["find"]>[0] & { projectId: string },
+    options?: TSecretRotationFindOptions,
+    tx?: Knex
+  ) => {
+    try {
+      const extendedQuery = baseSecretRotationV2Query({ filter, db, tx, options })
+        .join(
+          TableName.SecretRotationV2SecretMapping,
+          `${TableName.SecretRotationV2SecretMapping}.rotationId`,
+          `${TableName.SecretRotationV2}.id`
+        )
+        .join(TableName.SecretV2, `${TableName.SecretV2}.id`, `${TableName.SecretRotationV2SecretMapping}.secretId`)
+        .leftJoin(
+          TableName.SecretV2JnTag,
+          `${TableName.SecretV2}.id`,
+          `${TableName.SecretV2JnTag}.${TableName.SecretV2}Id`
+        )
+        .leftJoin(
+          TableName.SecretTag,
+          `${TableName.SecretV2JnTag}.${TableName.SecretTag}Id`,
+          `${TableName.SecretTag}.id`
+        )
+        .leftJoin(TableName.ResourceMetadata, `${TableName.SecretV2}.id`, `${TableName.ResourceMetadata}.secretId`)
+        .select(
+          db.ref("secretId").withSchema(TableName.SecretRotationV2SecretMapping),
+          db.ref("secretKey").withSchema(TableName.SecretRotationV2SecretMapping), // TODO: maybe remove key from mapping
+          db.ref("version").withSchema(TableName.SecretV2).as("secretVersion"),
+          db.ref("type").withSchema(TableName.SecretV2).as("secretType"),
+          // db.ref("key").withSchema(TableName.SecretV2).as("secretKey"),
+          db.ref("encryptedValue").withSchema(TableName.SecretV2).as("secretEncryptedValue"),
+          db.ref("encryptedComment").withSchema(TableName.SecretV2).as("secretEncryptedComment"),
+          db.ref("reminderNote").withSchema(TableName.SecretV2).as("secretReminderNote"),
+          db.ref("reminderRepeatDays").withSchema(TableName.SecretV2).as("secretReminderRepeatDays"),
+          db.ref("skipMultilineEncoding").withSchema(TableName.SecretV2).as("secretSkipMultilineEncoding"),
+          db.ref("metadata").withSchema(TableName.SecretV2).as("secretMetadata"),
+          db.ref("userId").withSchema(TableName.SecretV2).as("secretUserId"),
+          db.ref("folderId").withSchema(TableName.SecretV2).as("secretFolderId"),
+          db.ref("createdAt").withSchema(TableName.SecretV2).as("secretCreatedAt"),
+          db.ref("updatedAt").withSchema(TableName.SecretV2).as("secretUpdatedAt"),
+          db.ref("id").withSchema(TableName.SecretTag).as("tagId"),
+          db.ref("color").withSchema(TableName.SecretTag).as("tagColor"),
+          db.ref("slug").withSchema(TableName.SecretTag).as("tagSlug"),
+          db.ref("id").withSchema(TableName.ResourceMetadata).as("metadataId"),
+          db.ref("key").withSchema(TableName.ResourceMetadata).as("metadataKey"),
+          db.ref("value").withSchema(TableName.ResourceMetadata).as("metadataValue")
+        );
+
+      const secretRotations = await extendedQuery;
+
+      if (!secretRotations.length) return [];
+
+      const foldersWithPath = await folderDAL.findSecretPathByFolderIds(
+        filter.projectId,
+        secretRotations.map((rotation) => rotation.folderId),
+        tx
+      );
+
+      const folderRecord: Record<string, (typeof foldersWithPath)[number]> = {};
+
+      foldersWithPath.forEach((folder) => {
+        if (folder) folderRecord[folder.id] = folder;
+      });
+
+      return sqlNestRelationships({
+        data: secretRotations.map((rotation) => expandSecretRotation(rotation, folderRecord[rotation.folderId])),
+        key: "id",
+        parentMapper: (el) => SecretRotationV2Schema.parse(el),
+        childrenMapper: [
+          {
+            key: "secretId",
+            label: "secrets" as const,
+            mapper: ({
+              secretId,
+              secretKey,
+              secretVersion,
+              secretType,
+              secretEncryptedValue,
+              secretEncryptedComment,
+              secretReminderNote,
+              secretReminderRepeatDays,
+              secretSkipMultilineEncoding,
+              secretMetadata,
+              secretUserId,
+              secretFolderId,
+              secretCreatedAt,
+              secretUpdatedAt
+            }) => ({
+              id: secretId,
+              key: secretKey,
+              version: secretVersion,
+              type: secretType,
+              encryptedValue: secretEncryptedValue,
+              encryptedComment: secretEncryptedComment,
+              reminderNote: secretReminderNote,
+              reminderRepeatDays: secretReminderRepeatDays,
+              skipMultilineEncoding: secretSkipMultilineEncoding,
+              metadata: secretMetadata,
+              userId: secretUserId,
+              folderId: secretFolderId,
+              createdAt: secretCreatedAt,
+              updatedAt: secretUpdatedAt
+            }),
+            childrenMapper: [
+              {
+                key: "tagId",
+                label: "tags" as const,
+                mapper: ({ tagId: id, tagColor: color, tagSlug: slug }) => ({
+                  id,
+                  color,
+                  slug,
+                  name: slug
+                })
+              },
+              {
+                key: "metadataId",
+                label: "secretMetadata" as const,
+                mapper: ({ metadataKey, metadataValue, metadataId }) => ({
+                  id: metadataId,
+                  key: metadataKey,
+                  value: metadataValue
+                })
+              }
+            ]
+          }
+        ]
+      });
     } catch (error) {
       throw new DatabaseError({ error, name: "Find - Secret Rotation V2" });
     }
@@ -247,6 +387,7 @@ export const secretRotationV2DALFactory = (
     insertSecretMappings: secretRotationV2SecretMappingOrm.insertMany,
     updateSecretMappings: secretRotationV2SecretMappingOrm.update,
     findSecretMappingsByRotationId,
-    findRaw: secretRotationV2Orm.find
+    findRaw: secretRotationV2Orm.find,
+    findWithMappedSecrets
   };
 };

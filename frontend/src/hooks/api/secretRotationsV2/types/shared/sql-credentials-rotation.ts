@@ -5,7 +5,7 @@ export type TSqlCredentialsRotationParameters = {
   revokeStatement: string;
 };
 
-export type TSqlCredentialsGeneratedCredentials = {
+export type TSqlCredentialsRotationGeneratedCredentials = {
   username: string;
   password: string;
 };

@@ -18,8 +18,8 @@ export const BaseSecretRotationSchema = (type: SecretRotation) =>
       name: z.string(),
       id: z.string().uuid()
     }),
-    environment: z.object({ slug: z.string(), name: z.string(), id: z.string().uuid() }).nullable(),
-    folder: z.object({ id: z.string(), path: z.string() }).nullable()
+    environment: z.object({ slug: z.string(), name: z.string(), id: z.string().uuid() }),
+    folder: z.object({ id: z.string(), path: z.string() })
   });
 
 export const BaseCreateSecretRotationSchema = (type: SecretRotation) =>

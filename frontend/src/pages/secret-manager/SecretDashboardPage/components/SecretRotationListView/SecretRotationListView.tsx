@@ -3,14 +3,18 @@ import { RotateSecretRotationV2Modal } from "@app/components/secret-rotations-v2
 import { ViewSecretRotationV2GeneratedCredentialsModal } from "@app/components/secret-rotations-v2/ViewSecretRotationV2GeneratedCredentials";
 import { usePopUp } from "@app/hooks";
 import { TSecretRotationV2 } from "@app/hooks/api/secretRotationsV2";
+import { WsTag } from "@app/hooks/api/tags/types";
 
 import { SecretRotationItem } from "./SecretRotationItem";
 
 type Props = {
   secretRotations?: TSecretRotationV2[];
+  tags?: WsTag[];
+  isVisible?: boolean;
+  isProtectedBranch?: boolean;
 };
 
-export const SecretRotationListView = ({ secretRotations }: Props) => {
+export const SecretRotationListView = ({ secretRotations, ...secretProps }: Props) => {
   const { popUp, handlePopUpOpen, handlePopUpClose, handlePopUpToggle } = usePopUp([
     "editSecretRotation",
     "rotateSecretRotation",
@@ -28,6 +32,7 @@ export const SecretRotationListView = ({ secretRotations }: Props) => {
           onViewGeneratedCredentials={() =>
             handlePopUpOpen("viewSecretRotationGeneratedCredentials", secretRotation)
           }
+          {...secretProps}
         />
       ))}
       <EditSecretRotationV2Modal

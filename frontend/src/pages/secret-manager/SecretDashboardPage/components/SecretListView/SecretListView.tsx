@@ -28,6 +28,7 @@ type Props = {
   tags?: WsTag[];
   isVisible?: boolean;
   isProtectedBranch?: boolean;
+  isRotationView?: boolean;
 };
 
 export const SecretListView = ({
@@ -37,7 +38,8 @@ export const SecretListView = ({
   secretPath = "/",
   tags: wsTags = [],
   isVisible,
-  isProtectedBranch = false
+  isProtectedBranch = false,
+  isRotationView = false
 }: Props) => {
   const queryClient = useQueryClient();
   const { popUp, handlePopUpToggle, handlePopUpOpen, handlePopUpClose } = usePopUp([
@@ -326,6 +328,7 @@ export const SecretListView = ({
       ))}
       {secrets.map((secret) => (
         <SecretItem
+          isRotationSecret={isRotationView}
           environment={environment}
           secretPath={secretPath}
           tags={wsTags}

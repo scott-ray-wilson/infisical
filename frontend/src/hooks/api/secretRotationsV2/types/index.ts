@@ -56,7 +56,7 @@ export type TRotateSecretRotationV2DTO = {
   projectId: string;
 };
 
-export type TViewSecretRotationV2CredentialsDTO = {
+export type TViewSecretRotationV2GeneratedCredentialsDTO = {
   rotationId: string;
   type: SecretRotation;
 };

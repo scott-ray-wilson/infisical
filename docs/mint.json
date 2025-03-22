@@ -835,7 +835,7 @@
                 "api-reference/endpoints/secret-rotations/mssql-credentials/delete",
                 "api-reference/endpoints/secret-rotations/mssql-credentials/get-by-id",
                 "api-reference/endpoints/secret-rotations/mssql-credentials/get-by-name",
-                "api-reference/endpoints/secret-rotations/mssql-credentials/get-credentials-by-id",
+                "api-reference/endpoints/secret-rotations/mssql-credentials/get-generated-credentials-by-id",
                 "api-reference/endpoints/secret-rotations/mssql-credentials/list",
                 "api-reference/endpoints/secret-rotations/mssql-credentials/rotate",
                 "api-reference/endpoints/secret-rotations/mssql-credentials/update"
@@ -848,7 +848,7 @@
                 "api-reference/endpoints/secret-rotations/postgres-credentials/delete",
                 "api-reference/endpoints/secret-rotations/postgres-credentials/get-by-id",
                 "api-reference/endpoints/secret-rotations/postgres-credentials/get-by-name",
-                "api-reference/endpoints/secret-rotations/postgres-credentials/get-credentials-by-id",
+                "api-reference/endpoints/secret-rotations/postgres-credentials/get-generated-credentials-by-id",
                 "api-reference/endpoints/secret-rotations/postgres-credentials/list",
                 "api-reference/endpoints/secret-rotations/postgres-credentials/rotate",
                 "api-reference/endpoints/secret-rotations/postgres-credentials/update"

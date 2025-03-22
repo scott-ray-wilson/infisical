@@ -18,8 +18,6 @@ type ContentProps = {
 const Content = ({ secretRotation, onComplete }: ContentProps) => {
   const rotateSecrets = useRotateSecretRotationV2();
 
-  if (!secretRotation) return null;
-
   const { id: rotationId, type, projectId, folder } = secretRotation;
   const rotationType = SECRET_ROTATION_MAP[type].name;
 
@@ -72,7 +70,7 @@ const Content = ({ secretRotation, onComplete }: ContentProps) => {
   );
 };
 
-export const RotateSecretRotationModal = ({ isOpen, onOpenChange, secretRotation }: Props) => {
+export const RotateSecretRotationV2Modal = ({ isOpen, onOpenChange, secretRotation }: Props) => {
   if (!secretRotation) return null;
 
   const rotationType = SECRET_ROTATION_MAP[secretRotation.type].name;

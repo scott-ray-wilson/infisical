@@ -407,7 +407,22 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             .optional(),
           folders: SecretFoldersSchema.array().optional(),
           dynamicSecrets: SanitizedDynamicSecretSchema.array().optional(),
-          secretRotations: SecretRotationV2Schema.array().optional(),
+          secretRotations: z
+            .intersection(
+              SecretRotationV2Schema,
+              z.object({
+                secrets: secretRawSchema
+                  .extend({
+                    secretValueHidden: z.boolean(),
+                    secretPath: z.string().optional(),
+                    secretMetadata: ResourceMetadataSchema.optional(),
+                    tags: SanitizedTagSchema.array().optional()
+                  })
+                  .array()
+              })
+            )
+            .array()
+            .optional(),
           secrets: secretRawSchema
             .extend({
               secretValueHidden: z.boolean(),

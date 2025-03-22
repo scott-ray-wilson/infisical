@@ -47,7 +47,6 @@ const Content = ({ secretRotation }: ContentProps) => {
     case SecretRotation.MsSqlCredentials:
       Component = (
         <ViewSqlRotationGeneratedCredentials
-          secretRotation={secretRotation}
           generatedCredentialsResponse={generatedCredentialsResponse!}
         />
       );

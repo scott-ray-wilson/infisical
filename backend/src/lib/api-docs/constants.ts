@@ -1796,7 +1796,7 @@ export const SecretRotations = {
   GET_BY_ID: (type: SecretRotation) => ({
     rotationId: `The ID of the ${SECRET_ROTATION_NAME_MAP[type]} Rotation to retrieve.`
   }),
-  GET_CREDENTIALS_BY_ID: (type: SecretRotation) => ({
+  GET_GENERATED_CREDENTIALS_BY_ID: (type: SecretRotation) => ({
     rotationId: `The ID of the ${SECRET_ROTATION_NAME_MAP[type]} Rotation to retrieve the credentials for.`
   }),
   GET_BY_NAME: (type: SecretRotation) => ({

@@ -1,10 +1,11 @@
 import { subject } from "@casl/ability";
-import { faClose, faEdit, faRotate } from "@fortawesome/free-solid-svg-icons";
+import { faAsterisk, faClose, faEdit, faRotate } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { AnimatePresence, motion } from "framer-motion";
 import { twMerge } from "tailwind-merge";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
+import { SecretRotationV2NextRotationBadge } from "@app/components/secret-rotations-v2/SecretRotationV2NextRotationBadge";
 import { IconButton, Tag, Tooltip } from "@app/components/v2";
 import { ProjectPermissionSub, useWorkspace } from "@app/context";
 import { ProjectPermissionSecretRotationActions } from "@app/context/ProjectPermissionContext/types";
@@ -16,10 +17,16 @@ type Props = {
   secretRotation: TSecretRotationV2;
   onEdit: () => void;
   onRotate: () => void;
+  onViewGeneratedCredentials: () => void;
 };
 
-export const SecretRotationItem = ({ secretRotation, onEdit, onRotate }: Props) => {
-  const { name, type, connection, environment, folder } = secretRotation;
+export const SecretRotationItem = ({
+  secretRotation,
+  onEdit,
+  onRotate,
+  onViewGeneratedCredentials
+}: Props) => {
+  const { name, type, connection, environment, folder, lastRotatedAt, interval } = secretRotation;
   const { currentWorkspace } = useWorkspace();
   const [isExpanded, setIsExpanded] = useToggle();
 
@@ -56,12 +63,35 @@ export const SecretRotationItem = ({ secretRotation, onEdit, onRotate }: Props) 
             />
             {rotationType}
           </Tag>
+          <SecretRotationV2NextRotationBadge className="mr-2" secretRotation={secretRotation} />
           <div
             key="actions"
             className="flex h-full flex-shrink-0 self-start transition-all group-hover:gap-x-2"
           >
             <ProjectPermissionCan
-              I={ProjectPermissionSecretRotationActions.Delete}
+              I={ProjectPermissionSecretRotationActions.ReadCredentials}
+              a={subject(ProjectPermissionSub.SecretRotation, {
+                environment: environment.slug,
+                secretPath: folder.path
+              })}
+              renderTooltip
+              allowedLabel="View Generated Credentials"
+            >
+              {(isAllowed) => (
+                <IconButton
+                  ariaLabel="view-generated-credentials"
+                  variant="plain"
+                  size="sm"
+                  isDisabled={!isAllowed}
+                  className="w-0 overflow-hidden p-0 group-hover:w-5"
+                  onClick={onViewGeneratedCredentials}
+                >
+                  <FontAwesomeIcon icon={faAsterisk} />
+                </IconButton>
+              )}
+            </ProjectPermissionCan>
+            <ProjectPermissionCan
+              I={ProjectPermissionSecretRotationActions.Rotate}
               a={subject(ProjectPermissionSub.SecretRotation, {
                 environment: environment.slug,
                 secretPath: folder.path
@@ -84,7 +114,6 @@ export const SecretRotationItem = ({ secretRotation, onEdit, onRotate }: Props) 
             </ProjectPermissionCan>
           </div>
         </div>
-
         <AnimatePresence mode="wait">
           <motion.div
             key="options"

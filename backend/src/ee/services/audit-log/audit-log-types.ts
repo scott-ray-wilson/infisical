@@ -296,7 +296,7 @@ export enum EventType {
 
   GET_SECRET_ROTATIONS = "get-secret-rotations",
   GET_SECRET_ROTATION = "get-secret-rotation",
-  GET_SECRET_ROTATION_CREDENTIALS = "get-secret-rotation-credentials",
+  GET_SECRET_ROTATION_GENERATED_CREDENTIALS = "get-secret-rotation-generated-credentials",
   CREATE_SECRET_ROTATION = "create-secret-rotation",
   UPDATE_SECRET_ROTATION = "update-secret-rotation",
   DELETE_SECRET_ROTATION = "delete-secret-rotation",
@@ -2324,7 +2324,7 @@ interface GetSecretRotationEvent {
 }
 
 interface GetSecretRotationCredentialsEvent {
-  type: EventType.GET_SECRET_ROTATION_CREDENTIALS;
+  type: EventType.GET_SECRET_ROTATION_GENERATED_CREDENTIALS;
   metadata: {
     type: SecretRotation;
     rotationId: string;

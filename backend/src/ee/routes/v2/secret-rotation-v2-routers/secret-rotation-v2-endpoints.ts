@@ -128,7 +128,9 @@ export const registerSecretRotationEndpoints = <
           type: EventType.GET_SECRET_ROTATION,
           metadata: {
             rotationId,
-            type
+            type,
+            secretPath: secretRotation.folder.path,
+            environment: secretRotation.environment.slug
           }
         }
       });
@@ -176,7 +178,9 @@ export const registerSecretRotationEndpoints = <
           type: EventType.GET_SECRET_ROTATION,
           metadata: {
             rotationId: secretRotation.id,
-            type
+            type,
+            secretPath: secretRotation.folder.path,
+            environment: secretRotation.environment.slug
           }
         }
       });
@@ -317,18 +321,18 @@ export const registerSecretRotationEndpoints = <
 
   server.route({
     method: "GET",
-    url: "/:rotationId/credentials",
+    url: "/:rotationId/generated-credentials",
     config: {
       rateLimit: readLimit
     },
     schema: {
-      description: `Get the active and inactive credentials for the specified ${rotationType} Rotation.`,
+      description: `Get the generated credentials for the specified ${rotationType} Rotation.`,
       params: z.object({
-        rotationId: z.string().uuid().describe(SecretRotations.GET_CREDENTIALS_BY_ID(type).rotationId)
+        rotationId: z.string().uuid().describe(SecretRotations.GET_GENERATED_CREDENTIALS_BY_ID(type).rotationId)
       }),
       response: {
         200: z.object({
-          credentials: generatedCredentialsSchema,
+          generatedCredentials: generatedCredentialsSchema,
           activeIndex: z.number(),
           rotationId: z.string().uuid(),
           type: z.literal(type)
@@ -339,28 +343,32 @@ export const registerSecretRotationEndpoints = <
     handler: async (req) => {
       const { rotationId } = req.params;
 
-      const { generatedCredentials, activeIndex, projectId } =
-        await server.services.secretRotationV2.findSecretRotationGeneratedCredentialsById(
-          {
-            rotationId,
-            type
-          },
-          req.permission
-        );
+      const {
+        generatedCredentials,
+        secretRotation: { activeIndex, projectId, folder, environment }
+      } = await server.services.secretRotationV2.findSecretRotationGeneratedCredentialsById(
+        {
+          rotationId,
+          type
+        },
+        req.permission
+      );
 
       await server.services.auditLog.createAuditLog({
         ...req.auditLogInfo,
         projectId,
         event: {
-          type: EventType.GET_SECRET_ROTATION_CREDENTIALS,
+          type: EventType.GET_SECRET_ROTATION_GENERATED_CREDENTIALS,
           metadata: {
             type,
-            rotationId
+            rotationId,
+            secretPath: folder.path,
+            environment: environment.slug
           }
         }
       });
 
-      return { credentials: generatedCredentials as C, activeIndex, rotationId, type };
+      return { generatedCredentials: generatedCredentials as C, activeIndex, rotationId, type };
     }
   });
 

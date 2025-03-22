@@ -6,13 +6,13 @@ import {
   TListSecretRotationV2Options,
   TSecretRotationV2Option,
   TViewSecretRotationGeneratedCredentialsResponse,
-  TViewSecretRotationV2CredentialsDTO
+  TViewSecretRotationV2GeneratedCredentialsDTO
 } from "@app/hooks/api/secretRotationsV2/types";
 
 export const secretRotationV2Keys = {
   all: ["secret-rotations-v2"] as const,
   options: () => [...secretRotationV2Keys.all, "options"] as const,
-  viewGeneratedCredentials: ({ type, rotationId }: TViewSecretRotationV2CredentialsDTO) =>
+  viewGeneratedCredentials: ({ type, rotationId }: TViewSecretRotationV2GeneratedCredentialsDTO) =>
     [...secretRotationV2Keys.all, type, rotationId] as const
 };
 
@@ -47,8 +47,8 @@ export const useSecretRotationV2Option = (type: SecretRotation) => {
   return { rotationOption, isPending };
 };
 
-export const useViewSecretRotationV2Credentials = (
-  { rotationId, type }: TViewSecretRotationV2CredentialsDTO,
+export const useViewSecretRotationV2GeneratedCredentials = (
+  { rotationId, type }: TViewSecretRotationV2GeneratedCredentialsDTO,
   options?: Omit<
     UseQueryOptions<
       TViewSecretRotationGeneratedCredentialsResponse,
@@ -63,7 +63,7 @@ export const useViewSecretRotationV2Credentials = (
     queryKey: secretRotationV2Keys.viewGeneratedCredentials({ rotationId, type }),
     queryFn: async () => {
       const { data } = await apiRequest.get<TViewSecretRotationGeneratedCredentialsResponse>(
-        `/api/v2/secret-rotations/${rotationId}/generated-credentials`
+        `/api/v2/secret-rotations/${type}/${rotationId}/generated-credentials`
       );
 
       return data;

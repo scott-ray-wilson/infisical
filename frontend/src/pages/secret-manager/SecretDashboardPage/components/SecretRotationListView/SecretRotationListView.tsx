@@ -1,5 +1,6 @@
 import { EditSecretRotationV2Modal } from "@app/components/secret-rotations-v2/EditSecretRotationV2Modal";
-import { RotateSecretRotationModal } from "@app/components/secret-rotations-v2/RotateSecretRotationV2Modal";
+import { RotateSecretRotationV2Modal } from "@app/components/secret-rotations-v2/RotateSecretRotationV2Modal";
+import { ViewSecretRotationV2GeneratedCredentialsModal } from "@app/components/secret-rotations-v2/ViewSecretRotationV2GeneratedCredentials";
 import { usePopUp } from "@app/hooks";
 import { TSecretRotationV2 } from "@app/hooks/api/secretRotationsV2";
 
@@ -12,7 +13,8 @@ type Props = {
 export const SecretRotationListView = ({ secretRotations }: Props) => {
   const { popUp, handlePopUpOpen, handlePopUpClose, handlePopUpToggle } = usePopUp([
     "editSecretRotation",
-    "rotateSecretRotation"
+    "rotateSecretRotation",
+    "viewSecretRotationGeneratedCredentials"
   ] as const);
 
   return (
@@ -23,6 +25,9 @@ export const SecretRotationListView = ({ secretRotations }: Props) => {
           secretRotation={secretRotation}
           onEdit={() => handlePopUpOpen("editSecretRotation", secretRotation)}
           onRotate={() => handlePopUpOpen("rotateSecretRotation", secretRotation)}
+          onViewGeneratedCredentials={() =>
+            handlePopUpOpen("viewSecretRotationGeneratedCredentials", secretRotation)
+          }
         />
       ))}
       <EditSecretRotationV2Modal
@@ -30,10 +35,17 @@ export const SecretRotationListView = ({ secretRotations }: Props) => {
         secretRotation={popUp.editSecretRotation.data as TSecretRotationV2}
         onOpenChange={(isOpen) => handlePopUpToggle("editSecretRotation", isOpen)}
       />
-      <RotateSecretRotationModal
+      <RotateSecretRotationV2Modal
         isOpen={popUp.rotateSecretRotation.isOpen}
         secretRotation={popUp.rotateSecretRotation.data as TSecretRotationV2}
         onOpenChange={(isOpen) => handlePopUpToggle("rotateSecretRotation", isOpen)}
+      />
+      <ViewSecretRotationV2GeneratedCredentialsModal
+        isOpen={popUp.viewSecretRotationGeneratedCredentials.isOpen}
+        secretRotation={popUp.viewSecretRotationGeneratedCredentials.data as TSecretRotationV2}
+        onOpenChange={(isOpen) =>
+          handlePopUpToggle("viewSecretRotationGeneratedCredentials", isOpen)
+        }
       />
     </>
   );

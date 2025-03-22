@@ -304,7 +304,10 @@ export const secretRotationV2ServiceFactory = ({
       kmsService
     });
 
-    return { generatedCredentials, activeIndex: secretRotation.activeIndex, projectId: secretRotation.projectId };
+    return {
+      generatedCredentials,
+      secretRotation: secretRotation as TSecretRotationV2
+    };
   };
 
   const findSecretRotationByName = async (
@@ -414,7 +417,7 @@ export const secretRotationV2ServiceFactory = ({
         const generatedCredentials = [newCredentials];
 
         const encryptedGeneratedCredentials = await encryptSecretRotationCredentials({
-          generatedCredentials: viewGeneratedCredentials,
+          generatedCredentials,
           projectId,
           kmsService
         });
@@ -677,7 +680,7 @@ export const secretRotationV2ServiceFactory = ({
 
         const encryptedUpdatedCredentials = await encryptSecretRotationCredentials({
           projectId,
-          viewGeneratedCredentials: updatedCredentials,
+          generatedCredentials: updatedCredentials,
           kmsService
         });
 

@@ -14,7 +14,7 @@ export type TSecretRotationV2Base = {
   projectId: string;
   rotationStatus: SecretRotationStatus | null;
   lastRotationJobId: string | null;
-  lastRotatedAt: Date | null;
+  lastRotatedAt: Date;
   rotationStatusMessage: string | null;
   connection: {
     app: AppConnection;

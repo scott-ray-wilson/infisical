@@ -513,7 +513,12 @@ const Page = () => {
                 />
               )}
               {canReadSecretRotations && Boolean(secretRotations?.length) && (
-                <SecretRotationListView secretRotations={secretRotations} />
+                <SecretRotationListView
+                  secretRotations={secretRotations}
+                  tags={tags}
+                  isVisible={isVisible}
+                  isProtectedBranch={isProtectedBranch}
+                />
               )}
               {canReadSecret && Boolean(secrets?.length) && (
                 <SecretListView

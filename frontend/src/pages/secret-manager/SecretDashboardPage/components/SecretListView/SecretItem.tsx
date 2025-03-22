@@ -48,6 +48,8 @@ import {
 import { ProjectPermissionSecretActions } from "@app/context/ProjectPermissionContext/types";
 import { Blur } from "@app/components/v2/Blur";
 import { hasSecretReadValueOrDescribePermission } from "@app/lib/fn/permission";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faKey, faRotate } from "@fortawesome/free-solid-svg-icons";
 import {
   FontAwesomeSpriteName,
   formSchema,
@@ -72,6 +74,7 @@ type Props = {
   environment: string;
   secretPath: string;
   handleSecretShare: () => void;
+  isRotationSecret?: boolean;
 };
 
 export const SecretItem = memo(
@@ -87,7 +90,8 @@ export const SecretItem = memo(
     onToggleSecretSelect,
     environment,
     secretPath,
-    handleSecretShare
+    handleSecretShare,
+    isRotationSecret = false
   }: Props) => {
     const { currentWorkspace } = useWorkspace();
     const { permission } = useProjectPermission();
@@ -221,29 +225,43 @@ export const SecretItem = memo(
         <div
           className={twMerge(
             "border-b border-mineshaft-600 bg-mineshaft-800 shadow-none hover:bg-mineshaft-700",
-            isDirty && "border-primary-400/50"
+            isDirty && "border-primary-400/50",
+            isRotationSecret && "bg-blue-500/5"
           )}
         >
           <div className="group flex">
             <div
               className={twMerge(
-                "flex h-11 w-11 items-center justify-center px-4 py-3",
+                "flex h-11 w-11 items-center justify-center px-4 py-3 text-mineshaft-300",
                 isDirty && "text-primary"
               )}
             >
-              <Checkbox
-                id={`checkbox-${secret.id}`}
-                isChecked={isSelected}
-                onCheckedChange={() => onToggleSecretSelect(secret)}
-                className={twMerge("ml-3 hidden group-hover:flex", isSelected && "flex")}
-              />
-              <FontAwesomeSymbol
-                className={twMerge(
-                  "ml-3 block h-3.5 w-3.5 group-hover:hidden",
-                  isSelected && "hidden"
-                )}
-                symbolName={FontAwesomeSpriteName.SecretKey}
-              />
+              {isRotationSecret ? (
+                <div className="relative">
+                  <FontAwesomeIcon icon={faKey} size="xs" className={twMerge("ml-3 h-3.5 w-3.5")} />
+                  <FontAwesomeIcon
+                    icon={faRotate}
+                    size="xs"
+                    className="absolute -bottom-[0.05rem] -right-[0.2rem] text-mineshaft-400"
+                  />
+                </div>
+              ) : (
+                <>
+                  <Checkbox
+                    id={`checkbox-${secret.id}`}
+                    isChecked={isSelected}
+                    onCheckedChange={() => onToggleSecretSelect(secret)}
+                    className={twMerge("ml-3 hidden group-hover:flex", isSelected && "flex")}
+                  />
+                  <FontAwesomeSymbol
+                    className={twMerge(
+                      "ml-3 block h-3.5 w-3.5 group-hover:hidden",
+                      isSelected && "hidden"
+                    )}
+                    symbolName={FontAwesomeSpriteName.SecretKey}
+                  />
+                </>
+              )}
             </div>
             <div className="flex h-11 w-80 flex-shrink-0 items-center px-4 py-2">
               <Controller

@@ -1521,7 +1521,8 @@ export const registerRoutes = async (
     secretVersionTagV2BridgeDAL,
     secretVersionV2BridgeDAL,
     keyStore,
-    resourceMetadataDAL
+    resourceMetadataDAL,
+    secretV2BridgeService
   });
 
   await superAdminService.initServerCfg();

@@ -2,47 +2,54 @@ import { useState } from "react";
 
 import { createNotification } from "@app/components/notifications";
 import { DeleteActionModal, Switch } from "@app/components/v2";
-import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
-import { TSecretSync, useDeleteSecretSync } from "@app/hooks/api/secretSyncs";
+import { SECRET_ROTATION_MAP } from "@app/helpers/secretRotationsV2";
+import { TSecretRotationV2 } from "@app/hooks/api/secretRotationsV2";
+import { useDeleteSecretRotationV2 } from "@app/hooks/api/secretRotationsV2/mutations";
 
 type Props = {
-  secretSync?: TSecretSync;
+  secretRotation?: TSecretRotationV2;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onComplete?: () => void;
 };
 
-export const DeleteSecretSyncModal = ({ isOpen, onOpenChange, secretSync, onComplete }: Props) => {
-  const deleteSync = useDeleteSecretSync();
-  const [removeSecrets, setRemoveSecrets] = useState(false);
+export const DeleteSecretRotationV2Modal = ({
+  isOpen,
+  onOpenChange,
+  secretRotation,
+  onComplete
+}: Props) => {
+  const deleteSecretRotation = useDeleteSecretRotationV2();
+  const [revokeGeneratedCredentials, setRevokeGeneratedCredentials] = useState(false);
+  const [deleteSecrets, setDeleteSecrets] = useState(false);
 
-  if (!secretSync) return null;
+  if (!secretRotation) return null;
 
-  const { id: syncId, name, destination, projectId } = secretSync;
+  const { id: rotationId, name, type, projectId, folder } = secretRotation;
 
-  const handleDeleteSecretSync = async () => {
-    const destinationName = SECRET_SYNC_MAP[destination].name;
+  const handleDeleteSecretRotation = async () => {
+    const rotationType = SECRET_ROTATION_MAP[type].name;
 
     try {
-      await deleteSync.mutateAsync({
-        syncId,
-        destination,
-        removeSecrets,
-        projectId
+      await deleteSecretRotation.mutateAsync({
+        rotationId,
+        type,
+        revokeGeneratedCredentials,
+        deleteSecrets,
+        projectId,
+        secretPath: folder.path
       });
 
       createNotification({
-        text: `Successfully removed ${destinationName} Sync`,
+        text: `Successfully deleted ${rotationType} Rotation`,
         type: "success"
       });
 
       if (onComplete) onComplete();
       onOpenChange(false);
-    } catch (err) {
-      console.error(err);
-
+    } catch {
       createNotification({
-        text: `Failed to remove ${destinationName} Sync`,
+        text: `Failed to delete ${rotationType} Rotation`,
         type: "error"
       });
     }
@@ -54,17 +61,27 @@ export const DeleteSecretSyncModal = ({ isOpen, onOpenChange, secretSync, onComp
       onChange={onOpenChange}
       title={`Are you sure want to delete ${name}?`}
       deleteKey={name}
-      onDeleteApproved={handleDeleteSecretSync}
+      onDeleteApproved={handleDeleteSecretRotation}
     >
       <Switch
         containerClassName="mt-4"
         className="bg-mineshaft-400/50 shadow-inner data-[state=checked]:bg-red/50"
         thumbClassName="bg-mineshaft-800"
-        isChecked={removeSecrets}
-        onCheckedChange={setRemoveSecrets}
-        id="remove-secrets"
+        isChecked={revokeGeneratedCredentials}
+        onCheckedChange={setRevokeGeneratedCredentials}
+        id="revoke-credentials"
       >
-        Remove Synced Secrets
+        Revoke Credentials
+      </Switch>
+      <Switch
+        containerClassName="mt-4"
+        className="bg-mineshaft-400/50 shadow-inner data-[state=checked]:bg-red/50"
+        thumbClassName="bg-mineshaft-800"
+        isChecked={deleteSecrets}
+        onCheckedChange={setDeleteSecrets}
+        id="delete-secrets"
+      >
+        Delete Secrets
       </Switch>
     </DeleteActionModal>
   );

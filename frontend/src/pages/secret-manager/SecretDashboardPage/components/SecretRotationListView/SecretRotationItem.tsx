@@ -23,6 +23,7 @@ type Props = {
   onEdit: () => void;
   onRotate: () => void;
   onViewGeneratedCredentials: () => void;
+  onDelete: () => void;
   tags?: WsTag[];
   isVisible?: boolean;
   isProtectedBranch?: boolean;
@@ -33,6 +34,7 @@ export const SecretRotationItem = ({
   onEdit,
   onRotate,
   onViewGeneratedCredentials,
+  onDelete,
   ...secretProps
 }: Props) => {
   const {
@@ -63,7 +65,7 @@ export const SecretRotationItem = ({
         </div>
         <div className="flex flex-grow items-center border-r border-mineshaft-600 py-2 pl-4 pr-2">
           <div className="flex w-full flex-wrap items-center gap-x-4">
-            <span>{secretRotation.name}</span>
+            <span>{name}</span>
             <Tag className="flex items-center gap-1 px-1.5 py-0 text-xs normal-case">
               <img
                 src={`/images/integrations/${image}`}
@@ -162,7 +164,7 @@ export const SecretRotationItem = ({
                   colorSchema="danger"
                   size="md"
                   className="opacity-0 group-hover:opacity-100"
-                  // onClick={() => onDeleteSecret(secret)}
+                  onClick={onDelete}
                   isDisabled={!isAllowed}
                 >
                   <FontAwesomeIcon icon={faClose} size="lg" />

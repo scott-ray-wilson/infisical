@@ -282,11 +282,14 @@ export const registerSecretRotationEndpoints = <
         rotationId: z.string().uuid().describe(SecretRotations.DELETE(type).rotationId)
       }),
       querystring: z.object({
-        removeSecrets: z
+        deleteSecrets: z
           .enum(["true", "false"])
-          .default("false")
           .transform((value) => value === "true")
-          .describe(SecretRotations.DELETE(type).removeSecrets)
+          .describe(SecretRotations.DELETE(type).deleteSecrets),
+        revokeGeneratedCredentials: z
+          .enum(["true", "false"])
+          .transform((value) => value === "true")
+          .describe(SecretRotations.DELETE(type).revokeGeneratedCredentials)
       }),
       response: {
         200: z.object({ secretRotation: responseSchema })
@@ -295,10 +298,10 @@ export const registerSecretRotationEndpoints = <
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
       const { rotationId } = req.params;
-      const { removeSecrets } = req.query;
+      const { deleteSecrets, revokeGeneratedCredentials } = req.query;
 
       const secretRotation = (await server.services.secretRotationV2.deleteSecretRotation(
-        { type, rotationId, removeSecrets },
+        { type, rotationId, deleteSecrets, revokeGeneratedCredentials },
         req.permission
       )) as T;
 
@@ -310,7 +313,8 @@ export const registerSecretRotationEndpoints = <
           metadata: {
             type,
             rotationId,
-            removeSecrets
+            deleteSecrets,
+            revokeGeneratedCredentials
           }
         }
       });

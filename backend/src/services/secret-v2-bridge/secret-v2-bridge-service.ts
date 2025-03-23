@@ -1901,16 +1901,19 @@ export const secretV2BridgeServiceFactory = ({
     });
   };
 
-  const deleteManySecret = async ({
-    secrets: inputSecrets,
-    secretPath,
-    environment,
-    projectId,
-    actor,
-    actorId,
-    actorAuthMethod,
-    actorOrgId
-  }: TDeleteManySecretDTO) => {
+  const deleteManySecret = async (
+    {
+      secrets: inputSecrets,
+      secretPath,
+      environment,
+      projectId,
+      actor,
+      actorId,
+      actorAuthMethod,
+      actorOrgId
+    }: TDeleteManySecretDTO,
+    transaction?: Knex
+  ) => {
     const { permission } = await permissionService.getProjectPermission({
       actor,
       actorId,
@@ -1970,20 +1973,33 @@ export const secretV2BridgeServiceFactory = ({
       );
     });
 
-    const secretsDeleted = await secretDAL.transaction(async (tx) =>
-      fnSecretBulkDelete({
-        secretDAL,
-        secretQueueService,
-        inputSecrets: inputSecrets.map(({ type, secretKey }) => ({
-          secretKey,
-          type: type || SecretType.Shared
-        })),
-        projectId,
-        folderId,
-        actorId,
-        tx
-      })
-    );
+    const secretsDeleted = transaction
+      ? await fnSecretBulkDelete({
+          secretDAL,
+          secretQueueService,
+          inputSecrets: inputSecrets.map(({ type, secretKey }) => ({
+            secretKey,
+            type: type || SecretType.Shared
+          })),
+          projectId,
+          folderId,
+          actorId,
+          tx: transaction
+        })
+      : await secretDAL.transaction(async (tx) =>
+          fnSecretBulkDelete({
+            secretDAL,
+            secretQueueService,
+            inputSecrets: inputSecrets.map(({ type, secretKey }) => ({
+              secretKey,
+              type: type || SecretType.Shared
+            })),
+            projectId,
+            folderId,
+            actorId,
+            tx
+          })
+        );
 
     // await snapshotService.performSnapshot(folderId);
     await secretQueueService.syncSecrets({

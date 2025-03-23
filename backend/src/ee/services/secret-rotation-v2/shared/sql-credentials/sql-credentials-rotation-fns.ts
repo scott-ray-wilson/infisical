@@ -4,6 +4,7 @@ import { Knex } from "knex";
 
 import { SecretType } from "@app/db/schemas";
 import { DatabaseError } from "@app/lib/errors";
+import { logger } from "@app/lib/logger";
 import { alphaNumericNanoId } from "@app/lib/nanoid";
 import { getSqlConnectionClient } from "@app/services/app-connection/shared/sql";
 
@@ -157,7 +158,7 @@ export const sqlCredentialsRotationFactory = (
   };
 
   const revoke = async (
-    credentialsToRevoke: TSqlCredentialsRotationGeneratedCredentials[number],
+    credentialsToRevoke: TSqlCredentialsRotationGeneratedCredentials,
     callback: () => Promise<TSqlCredentialsRotation>
   ) => {
     const {
@@ -168,11 +169,15 @@ export const sqlCredentialsRotationFactory = (
     const client = await getSqlConnectionClient(connection);
 
     try {
-      const revokeCredentialsStatement = handlebars.compile(revokeStatement, { noEscape: true })({
-        username: credentialsToRevoke.username
-      });
+      let revokeStatements = "";
 
-      const secretRotation = await processStatements(revokeCredentialsStatement, client, callback);
+      credentialsToRevoke.forEach((credentials) => {
+        revokeStatements += handlebars.compile(revokeStatement, { noEscape: true })({
+          username: credentials.username
+        });
+      });
+      logger.warn(revokeStatements);
+      const secretRotation = await processStatements(revokeStatements, client, async () => callback());
 
       return secretRotation;
     } finally {

@@ -67,7 +67,8 @@ export type TUpdateSecretRotationV2DTO = Partial<Omit<TCreateSecretRotationV2DTO
 export type TDeleteSecretRotationV2DTO = {
   type: SecretRotation;
   rotationId: string;
-  removeSecrets: boolean;
+  deleteSecrets: boolean;
+  revokeGeneratedCredentials: boolean;
 };
 
 export type TGetDashboardSecretRotationV2Count = {

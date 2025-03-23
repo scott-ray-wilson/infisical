@@ -61,6 +61,7 @@ import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-fold
 import { TSecretTagDALFactory } from "@app/services/secret-tag/secret-tag-dal";
 import { TSecretV2BridgeDALFactory } from "@app/services/secret-v2-bridge/secret-v2-bridge-dal";
 import { reshapeBridgeSecret } from "@app/services/secret-v2-bridge/secret-v2-bridge-fns";
+import { TSecretV2BridgeServiceFactory } from "@app/services/secret-v2-bridge/secret-v2-bridge-service";
 import { TSecretVersionV2DALFactory } from "@app/services/secret-v2-bridge/secret-version-dal";
 import { TSecretVersionV2TagDALFactory } from "@app/services/secret-v2-bridge/secret-version-tag-dal";
 
@@ -76,6 +77,7 @@ export type TSecretRotationV2ServiceFactoryDep = {
   auditLogService: Pick<TAuditLogServiceFactory, "createAuditLog">;
   keyStore: Pick<TKeyStoreFactory, "acquireLock" | "setItemWithExpiry" | "getItem">;
   folderDAL: TSecretFolderDALFactory;
+  secretV2BridgeService: Pick<TSecretV2BridgeServiceFactory, "deleteManySecret">;
   secretV2BridgeDAL: Pick<
     TSecretV2BridgeDALFactory,
     | "findByFolderId"
@@ -107,7 +109,7 @@ type TRotationFactory = (rotation: Pick<TSecretRotationV2WithConnection, "connec
     callback: (newCredentials: TSecretRotationV2GeneratedCredentials[number]) => Promise<TSecretRotationV2>
   ) => Promise<TSecretRotationV2>;
   revoke: (
-    generatedCredentials: TSecretRotationV2GeneratedCredentials[number],
+    generatedCredentials: TSecretRotationV2GeneratedCredentials,
     callback: () => Promise<TSecretRotationV2>
   ) => Promise<TSecretRotationV2>;
   rotate: (
@@ -145,7 +147,8 @@ export const secretRotationV2ServiceFactory = ({
   secretVersionTagDAL,
   secretVersionV2BridgeDAL,
   secretVersionTagV2BridgeDAL,
-  resourceMetadataDAL
+  resourceMetadataDAL,
+  secretV2BridgeService
 }: TSecretRotationV2ServiceFactoryDep) => {
   const $createManySecretsRawFn = createManySecretsRawFnFactory({
     projectDAL,
@@ -600,7 +603,7 @@ export const secretRotationV2ServiceFactory = ({
   };
 
   const deleteSecretRotation = async (
-    { type, rotationId, removeSecrets }: TDeleteSecretRotationV2DTO,
+    { type, rotationId, deleteSecrets, revokeGeneratedCredentials }: TDeleteSecretRotationV2DTO,
     actor: OrgServiceActor
   ) => {
     const plan = await licenseService.getPlan(actor.orgId);
@@ -617,20 +620,22 @@ export const secretRotationV2ServiceFactory = ({
         message: `Could not find ${SECRET_ROTATION_NAME_MAP[type]} Rotation with ID "${rotationId}"`
       });
 
+    const { folder, environment, projectId, encryptedGeneratedCredentials, connection, parameters } = secretRotation;
+
     const { permission } = await permissionService.getProjectPermission({
       actor: actor.type,
       actorId: actor.id,
       actorAuthMethod: actor.authMethod,
       actorOrgId: actor.orgId,
       actionProjectType: ActionProjectType.SecretManager,
-      projectId: secretRotation.projectId
+      projectId
     });
 
     ForbiddenError.from(permission).throwUnlessCan(
       ProjectPermissionSecretRotationActions.Delete,
       subject(ProjectPermissionSub.SecretRotation, {
-        environment: secretRotation.environment.slug,
-        secretPath: secretRotation.folder.path
+        environment: environment.slug,
+        secretPath: folder.path
       })
     );
 
@@ -639,19 +644,51 @@ export const secretRotationV2ServiceFactory = ({
         message: `Secret sync with ID "${secretRotation.id}" is not configured for ${SECRET_ROTATION_NAME_MAP[type]}`
       });
 
-    if (removeSecrets) {
-      // TODO: get secrets to determine remove permissions
-      // ForbiddenError.from(permission).throwUnlessCan(
-      //   ProjectPermissionSecretRotationActions.RemoveSecrets,
-      //   ProjectPermissionSub.SecretRotations
-      // );
-      // TODO: remove secrets
-    } else {
-      // TODO delete relations
-      // TODO revoke creds
-    }
+    const deleteTransaction = secretRotationV2DAL.transaction(async (tx) => {
+      const secretMappings = await secretRotationV2DAL.findSecretMappingsByRotationId(secretRotation.id);
 
-    await secretRotationV2DAL.deleteById(rotationId);
+      if (deleteSecrets) {
+        await secretV2BridgeService.deleteManySecret(
+          {
+            secretPath: folder.path,
+            environment: environment.slug,
+            projectId,
+            actorAuthMethod: actor.authMethod,
+            actorOrgId: actor.orgId,
+            actor: actor.type,
+            actorId: actor.id,
+            secrets: secretMappings.map(({ secretKey }) => ({
+              secretKey,
+              type: SecretType.Shared
+            }))
+          },
+          tx
+        );
+      }
+
+      const deletedRotation = await secretRotationV2DAL.deleteById(rotationId, tx);
+
+      return deletedRotation as TSecretRotationV2;
+    });
+
+    if (revokeGeneratedCredentials) {
+      const appConnection = await decryptAppConnection(connection, kmsService);
+
+      const rotationFactory = SECRET_ROTATION_FACTORY_MAP[type]({
+        parameters,
+        connection: appConnection
+      } as TSecretRotationV2WithConnection);
+
+      const generatedCredentials = await decryptSecretRotationCredentials({
+        encryptedGeneratedCredentials,
+        projectId,
+        kmsService
+      });
+
+      await rotationFactory.revoke(generatedCredentials, () => deleteTransaction);
+    } else {
+      await deleteTransaction;
+    }
 
     return secretRotation as TSecretRotationV2;
   };

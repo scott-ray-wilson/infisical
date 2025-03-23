@@ -414,6 +414,8 @@ export const secretV2BridgeServiceFactory = ({
       });
       if (!sharedSecretToModify)
         throw new NotFoundError({ message: `Secret with name ${inputSecret.secretName} not found` });
+      if (sharedSecretToModify.isRotatedSecret && (inputSecret.newSecretName || inputSecret.secretValue))
+        throw new BadRequestError({ message: "Cannot update rotated secret name or value" });
       secretId = sharedSecretToModify.id;
       secret = sharedSecretToModify;
     }
@@ -1668,6 +1670,14 @@ export const secretV2BridgeServiceFactory = ({
               secretTags: el.tags.map((i) => i.slug)
             })
           );
+
+          logger.warn(el);
+          if (el.isRotatedSecret) {
+            const input = secretsToUpdateGroupByPath[secretPath].find((i) => i.secretKey === el.key);
+
+            if (input && (input.newSecretName || input.secretValue))
+              throw new BadRequestError({ message: `Cannot update rotated secret name or value: ${el.key}` });
+          }
         });
 
         // get all tags
@@ -2001,7 +2011,7 @@ export const secretV2BridgeServiceFactory = ({
           })
         );
 
-    // await snapshotService.performSnapshot(folderId);
+    await snapshotService.performSnapshot(folderId);
     await secretQueueService.syncSecrets({
       actor,
       actorId,

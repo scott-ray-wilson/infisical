@@ -41,6 +41,7 @@ const baseSecretRotationV2Query = ({
       db.ref("name").withSchema(TableName.Environment).as("envName"),
       db.ref("id").withSchema(TableName.Environment).as("envId"),
       db.ref("slug").withSchema(TableName.Environment).as("envSlug"),
+      db.ref("projectId").withSchema(TableName.Environment),
       // entire connection
       db.ref("name").withSchema(TableName.AppConnection).as("connectionName"),
       db.ref("method").withSchema(TableName.AppConnection).as("connectionMethod"),
@@ -159,7 +160,7 @@ export const secretRotationV2DALFactory = (
   };
 
   const findWithMappedSecrets = async (
-    filter: Parameters<(typeof secretRotationV2Orm)["find"]>[0] & { projectId: string },
+    filter: Parameters<(typeof secretRotationV2Orm)["find"]>[0],
     options?: TSecretRotationFindOptions,
     tx?: Knex
   ) => {
@@ -211,7 +212,7 @@ export const secretRotationV2DALFactory = (
       if (!secretRotations.length) return [];
 
       const foldersWithPath = await folderDAL.findSecretPathByFolderIds(
-        filter.projectId,
+        secretRotations[0].projectId, // scott: only used in individual project context
         secretRotations.map((rotation) => rotation.folderId),
         tx
       );
@@ -244,7 +245,8 @@ export const secretRotationV2DALFactory = (
               secretUserId,
               secretFolderId,
               secretCreatedAt,
-              secretUpdatedAt
+              secretUpdatedAt,
+              id
             }) => ({
               id: secretId,
               key: secretKey,
@@ -259,7 +261,9 @@ export const secretRotationV2DALFactory = (
               userId: secretUserId,
               folderId: secretFolderId,
               createdAt: secretCreatedAt,
-              updatedAt: secretUpdatedAt
+              updatedAt: secretUpdatedAt,
+              rotationId: id,
+              isRotatedSecret: true
             }),
             childrenMapper: [
               {

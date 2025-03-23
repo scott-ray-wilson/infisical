@@ -19,6 +19,7 @@ export const BaseSecretRotationSchema = (type: SecretRotation) =>
       id: z.string().uuid()
     }),
     environment: z.object({ slug: z.string(), name: z.string(), id: z.string().uuid() }),
+    projectId: z.string(),
     folder: z.object({ id: z.string(), path: z.string() })
   });
 

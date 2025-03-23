@@ -371,6 +371,23 @@ export const ActionBar = ({
               <DropdownMenuItem
                 onClick={(e) => {
                   e.preventDefault();
+                  onToggleRowType(RowType.SecretRotation);
+                }}
+                icon={
+                  filter?.include[RowType.SecretRotation] && (
+                    <FontAwesomeIcon icon={faCheckCircle} />
+                  )
+                }
+                iconPos="right"
+              >
+                <div className="flex items-center gap-2">
+                  <FontAwesomeIcon icon={faRotate} className="text-mineshaft-400" />
+                  <span>Secret Rotations</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
                   onToggleRowType(RowType.Secret);
                 }}
                 icon={filter?.include[RowType.Secret] && <FontAwesomeIcon icon={faCheckCircle} />}

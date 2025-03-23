@@ -281,8 +281,11 @@ const Page = () => {
       (secrets?.length || 0) -
       (dynamicSecrets?.length || 0) -
       (secretRotations?.length || 0) -
-      (new Set(secretRotations?.flatMap((rotation) => rotation.secrets.map((secret) => secret.key)))
-        .size || 0),
+      (new Set(
+        secretRotations?.flatMap((rotation) =>
+          rotation.secrets.filter((secret) => Boolean(secret)).map((secret) => secret!.key)
+        )
+      ).size || 0),
     0
   );
   const isNotEmpty = Boolean(
@@ -379,6 +382,8 @@ const Page = () => {
   const selectedSecretActions = useSelectedSecretActions();
 
   const allRowsSelectedOnPage = useMemo(() => {
+    if (!secrets?.length) return { isChecked: false, isIndeterminate: false };
+
     if (secrets?.every((secret) => selectedSecrets[secret.id]))
       return { isChecked: true, isIndeterminate: false };
 

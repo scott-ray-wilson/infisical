@@ -1,7 +1,8 @@
 import path from "node:path";
 
 import { TableName, TSecretFolders, TSecretsV2 } from "@app/db/schemas";
-import { ForbiddenRequestError, NotFoundError } from "@app/lib/errors";
+import { DatabaseErrorCode } from "@app/lib/error-codes";
+import { BadRequestError, DatabaseError, ForbiddenRequestError, NotFoundError } from "@app/lib/errors";
 import { groupBy } from "@app/lib/fn";
 import { logger } from "@app/lib/logger";
 
@@ -331,25 +332,39 @@ export const fnSecretBulkDelete = async ({
   secretDAL,
   secretQueueService
 }: TFnSecretBulkDelete) => {
-  const deletedSecrets = await secretDAL.deleteMany(
-    inputSecrets.map(({ type, secretKey }) => ({
-      key: secretKey,
-      type
-    })),
-    folderId,
-    actorId,
-    tx
-  );
+  try {
+    const deletedSecrets = await secretDAL.deleteMany(
+      inputSecrets.map(({ type, secretKey }) => ({
+        key: secretKey,
+        type
+      })),
+      folderId,
+      actorId,
+      tx
+    );
 
-  await Promise.allSettled(
-    deletedSecrets
-      .filter(({ reminderRepeatDays }) => Boolean(reminderRepeatDays))
-      .map(({ id, reminderRepeatDays }) =>
-        secretQueueService.removeSecretReminder({ secretId: id, repeatDays: reminderRepeatDays as number })
-      )
-  );
+    await Promise.allSettled(
+      deletedSecrets
+        .filter(({ reminderRepeatDays }) => Boolean(reminderRepeatDays))
+        .map(({ id, reminderRepeatDays }) =>
+          secretQueueService.removeSecretReminder({ secretId: id, repeatDays: reminderRepeatDays as number })
+        )
+    );
 
-  return deletedSecrets;
+    return deletedSecrets;
+  } catch (err) {
+    if (err instanceof DatabaseError) {
+      const error = err.error as { code: string; table: string };
+      if (
+        error.code === DatabaseErrorCode.ForeignKeyViolation &&
+        error.table === TableName.SecretRotationV2SecretMapping
+      ) {
+        throw new BadRequestError({ message: "Cannot delete rotated secrets" });
+      }
+    }
+
+    throw err;
+  }
 };
 
 // Introduce a new interface for mapping parent IDs to their children
@@ -666,6 +681,8 @@ export const reshapeBridgeSecret = (
       name: string;
     }[];
     secretMetadata?: ResourceMetadataDTO;
+    isRotatedSecret?: boolean;
+    rotationId?: string;
   },
   secretValueHidden: boolean
 ) => ({
@@ -695,7 +712,8 @@ export const reshapeBridgeSecret = (
   secretMetadata: secret.secretMetadata,
   createdAt: secret.createdAt,
   updatedAt: secret.updatedAt,
-
+  isRotatedSecret: secret.isRotatedSecret,
+  rotationId: secret.rotationId,
   ...(secretValueHidden
     ? {
         secretValue: INFISICAL_SECRET_VALUE_HIDDEN_MASK,

@@ -45,6 +45,8 @@ export type TRotateSecretRotationV2 = TFindSecretRotationV2ByIdDTO;
 
 export type TFindSecretRotationV2ByNameDTO = {
   rotationName: string;
+  secretPath: string;
+  environment: string;
   projectId: string;
   type: SecretRotation;
 };

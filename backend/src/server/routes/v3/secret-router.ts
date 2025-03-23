@@ -2044,6 +2044,7 @@ export const registerSecretRouter = async (server: FastifyZodProvider) => {
             secretValue: z
               .string()
               .transform((val) => (val.at(-1) === "\n" ? `${val.trim()}\n` : val.trim()))
+              .optional()
               .describe(RAW_SECRETS.UPDATE.secretValue),
             secretPath: z
               .string()

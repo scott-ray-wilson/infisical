@@ -155,7 +155,21 @@ export const registerSecretRotationEndpoints = <
           .describe(SecretRotations.GET_BY_NAME(type).rotationName)
       }),
       querystring: z.object({
-        projectId: z.string().trim().min(1, "Project ID required").describe(SecretRotations.GET_BY_NAME(type).projectId)
+        projectId: z
+          .string()
+          .trim()
+          .min(1, "Project ID required")
+          .describe(SecretRotations.GET_BY_NAME(type).projectId),
+        secretPath: z
+          .string()
+          .trim()
+          .min(1, "Secret path required")
+          .describe(SecretRotations.GET_BY_NAME(type).projectId),
+        environment: z
+          .string()
+          .trim()
+          .min(1, "Environment required")
+          .describe(SecretRotations.GET_BY_NAME(type).projectId)
       }),
       response: {
         200: z.object({ secretRotation: responseSchema })
@@ -164,10 +178,10 @@ export const registerSecretRotationEndpoints = <
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
       const { rotationName } = req.params;
-      const { projectId } = req.query;
+      const { projectId, secretPath, environment } = req.query;
 
       const secretRotation = (await server.services.secretRotationV2.findSecretRotationByName(
-        { rotationName, projectId, type },
+        { rotationName, projectId, type, secretPath, environment },
         req.permission
       )) as T;
 
@@ -179,8 +193,8 @@ export const registerSecretRotationEndpoints = <
           metadata: {
             rotationId: secretRotation.id,
             type,
-            secretPath: secretRotation.folder.path,
-            environment: secretRotation.environment.slug
+            secretPath,
+            environment
           }
         }
       });

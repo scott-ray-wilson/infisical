@@ -317,7 +317,7 @@ export const secretRotationV2ServiceFactory = ({
   };
 
   const findSecretRotationByName = async (
-    { type, rotationName, projectId }: TFindSecretRotationV2ByNameDTO,
+    { type, rotationName, secretPath, environment, projectId }: TFindSecretRotationV2ByNameDTO,
     actor: OrgServiceActor
   ) => {
     const plan = await licenseService.getPlan(actor.orgId);
@@ -327,10 +327,17 @@ export const secretRotationV2ServiceFactory = ({
         message: "Failed to access secret rotation due to plan restriction. Upgrade plan to access secret rotations."
       });
 
-    // we prevent conflicting names within a project
+    const folder = await folderDAL.findBySecretPath(projectId, environment, secretPath);
+
+    if (!folder)
+      throw new BadRequestError({
+        message: `Could not find folder with path "${secretPath}" in environment "${environment}" for project with ID "${projectId}"`
+      });
+
+    // we prevent conflicting names within a folder
     const secretRotation = await secretRotationV2DAL.findOne({
       name: rotationName,
-      projectId
+      folderId: folder.id
     });
 
     if (!secretRotation)
@@ -344,7 +351,7 @@ export const secretRotationV2ServiceFactory = ({
       actorAuthMethod: actor.authMethod,
       actorOrgId: actor.orgId,
       actionProjectType: ActionProjectType.SecretManager,
-      projectId: secretRotation.projectId
+      projectId
     });
 
     ForbiddenError.from(permission).throwUnlessCan(
@@ -961,7 +968,8 @@ export const secretRotationV2ServiceFactory = ({
     const secretRotations = await secretRotationV2DAL.findWithMappedSecrets(
       {
         $in: { folderId: folders.map((folder) => folder.id) },
-        $search: search ? { name: `%${search}%` } : undefined
+        $search: search ? { name: `%${search}%` } : undefined,
+        projectId
       },
       {
         limit,

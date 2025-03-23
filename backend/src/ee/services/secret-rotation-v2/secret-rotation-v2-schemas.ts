@@ -58,16 +58,6 @@ export const BaseUpdateSecretRotationSchema = (type: SecretRotation) =>
       .max(256, "Description cannot exceed 256 characters")
       .nullish()
       .describe(SecretRotations.UPDATE(type).description),
-    environment: slugSchema({ field: "environment", max: 64 })
-      .describe(SecretRotations.UPDATE(type).environment)
-      .optional(),
-    secretPath: z
-      .string()
-      .trim()
-      .min(1, "Secret path required")
-      .transform(removeTrailingSlash)
-      .describe(SecretRotations.UPDATE(type).secretPath)
-      .optional(),
     isAutoRotationEnabled: z.boolean().optional().describe(SecretRotations.UPDATE(type).isAutoRotationEnabled),
     interval: z.coerce.number().min(1).optional().describe(SecretRotations.UPDATE(type).interval)
   });

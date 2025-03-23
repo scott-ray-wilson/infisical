@@ -1,5 +1,11 @@
 import { subject } from "@casl/ability";
-import { faAsterisk, faClose, faEdit, faRotate } from "@fortawesome/free-solid-svg-icons";
+import {
+  faAsterisk,
+  faChevronDown,
+  faClose,
+  faEdit,
+  faRotate
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { AnimatePresence, motion } from "framer-motion";
 import { twMerge } from "tailwind-merge";
@@ -10,6 +16,7 @@ import { IconButton, Tag, Tooltip } from "@app/components/v2";
 import { ProjectPermissionSub } from "@app/context";
 import { ProjectPermissionSecretRotationActions } from "@app/context/ProjectPermissionContext/types";
 import { SECRET_ROTATION_MAP } from "@app/helpers/secretRotationsV2";
+import { useToggle } from "@app/hooks";
 import { TSecretRotationV2 } from "@app/hooks/api/secretRotationsV2";
 import { SecretV3RawSanitized } from "@app/hooks/api/secrets/types";
 import { WsTag } from "@app/hooks/api/tags/types";
@@ -50,10 +57,12 @@ export const SecretRotationItem = ({
   } = secretRotation;
 
   const { name: rotationType, image } = SECRET_ROTATION_MAP[type];
+  const [isExpanded, setIsExpanded] = useToggle(true);
 
   return (
     <>
       <div
+        onClick={() => setIsExpanded.toggle()}
         className={twMerge(
           "group flex cursor-pointer border-b border-mineshaft-600 hover:bg-mineshaft-700"
         )}
@@ -61,7 +70,7 @@ export const SecretRotationItem = ({
         tabIndex={0}
       >
         <div className="text- flex w-11 items-center py-2 pl-5 text-mineshaft-400">
-          <FontAwesomeIcon icon={faRotate} />
+          <FontAwesomeIcon icon={isExpanded ? faChevronDown : faRotate} />
         </div>
         <div className="flex flex-grow items-center border-r border-mineshaft-600 py-2 pl-4 pr-2">
           <div className="flex w-full flex-wrap items-center gap-x-4">
@@ -174,15 +183,19 @@ export const SecretRotationItem = ({
           </motion.div>
         </AnimatePresence>
       </div>
-      <SecretListView
-        isRotationView
-        secrets={secrets.filter((secret) => Boolean(secret)) as SecretV3RawSanitized[]}
-        environment={environment.slug}
-        workspaceId={projectId}
-        secretPath={folder.path}
-        {...secretProps}
-      />
-      <SecretNoAccessListView count={secrets.filter((secret) => !secret).length} />
+      {isExpanded && (
+        <>
+          <SecretListView
+            isRotationView
+            secrets={secrets.filter((secret) => Boolean(secret)) as SecretV3RawSanitized[]}
+            environment={environment.slug}
+            workspaceId={projectId}
+            secretPath={folder.path}
+            {...secretProps}
+          />
+          <SecretNoAccessListView count={secrets.filter((secret) => !secret).length} />
+        </>
+      )}
     </>
   );
 };

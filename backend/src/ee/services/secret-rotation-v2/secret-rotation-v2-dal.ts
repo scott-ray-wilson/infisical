@@ -21,16 +21,18 @@ type TSecretRotationFindFilter = Parameters<typeof buildFindFilter<TSecretRotati
 type TSecretRotationFindOptions = TFindOpt<TSecretRotationsV2>;
 
 const baseSecretRotationV2Query = ({
-  filter,
+  filter = {},
   options,
   db,
   tx
 }: {
   db: TDbClient;
-  filter?: TSecretRotationFindFilter;
+  filter?: { projectId?: string } & TSecretRotationFindFilter;
   options?: TSecretRotationFindOptions;
   tx?: Knex;
 }) => {
+  const { projectId, ...filters } = filter;
+
   const query = (tx || db.replicaNode())(TableName.SecretRotationV2)
     .leftJoin(TableName.SecretFolder, `${TableName.SecretRotationV2}.folderId`, `${TableName.SecretFolder}.id`)
     .leftJoin(TableName.Environment, `${TableName.SecretFolder}.envId`, `${TableName.Environment}.id`)
@@ -57,7 +59,11 @@ const baseSecretRotationV2Query = ({
 
   if (filter) {
     /* eslint-disable @typescript-eslint/no-misused-promises */
-    void query.where(buildFindFilter(prependTableNameToFindFilter(TableName.SecretRotationV2, filter)));
+    void query.where(buildFindFilter(prependTableNameToFindFilter(TableName.SecretRotationV2, filters)));
+  }
+
+  if (projectId) {
+    void query.where(`${TableName.Environment}.projectId`, projectId);
   }
 
   if (options) {
@@ -160,7 +166,7 @@ export const secretRotationV2DALFactory = (
   };
 
   const findWithMappedSecrets = async (
-    filter: Parameters<(typeof secretRotationV2Orm)["find"]>[0],
+    filter: Parameters<(typeof secretRotationV2Orm)["find"]>[0] & { projectId: string },
     options?: TSecretRotationFindOptions,
     tx?: Knex
   ) => {
@@ -188,7 +194,6 @@ export const secretRotationV2DALFactory = (
           db.ref("secretKey").withSchema(TableName.SecretRotationV2SecretMapping), // TODO: maybe remove key from mapping
           db.ref("version").withSchema(TableName.SecretV2).as("secretVersion"),
           db.ref("type").withSchema(TableName.SecretV2).as("secretType"),
-          // db.ref("key").withSchema(TableName.SecretV2).as("secretKey"),
           db.ref("encryptedValue").withSchema(TableName.SecretV2).as("secretEncryptedValue"),
           db.ref("encryptedComment").withSchema(TableName.SecretV2).as("secretEncryptedComment"),
           db.ref("reminderNote").withSchema(TableName.SecretV2).as("secretReminderNote"),
@@ -212,7 +217,7 @@ export const secretRotationV2DALFactory = (
       if (!secretRotations.length) return [];
 
       const foldersWithPath = await folderDAL.findSecretPathByFolderIds(
-        secretRotations[0].projectId, // scott: only used in individual project context
+        filter.projectId,
         secretRotations.map((rotation) => rotation.folderId),
         tx
       );

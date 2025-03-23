@@ -11,7 +11,7 @@ type Props = {
 export const ViewSqlRotationGeneratedCredentials = ({
   generatedCredentialsResponse: { generatedCredentials, activeIndex }
 }: Props) => {
-  const inactiveIndex = activeIndex + (1 % generatedCredentials.length);
+  const inactiveIndex = activeIndex === 0 ? 1 : 0;
 
   const activeCredentials = generatedCredentials[activeIndex];
   const inactiveCredentials = generatedCredentials[inactiveIndex];

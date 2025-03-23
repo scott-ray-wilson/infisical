@@ -1806,7 +1806,9 @@ export const SecretRotations = {
   }),
   GET_BY_NAME: (type: SecretRotation) => ({
     rotationName: `The name of the ${SECRET_ROTATION_NAME_MAP[type]} Rotation to retrieve.`,
-    projectId: `The ID of the project the ${SECRET_ROTATION_NAME_MAP[type]} Rotation is associated with.`
+    projectId: `The ID of the project the ${SECRET_ROTATION_NAME_MAP[type]} Rotation is located in.`,
+    secretPath: `The secret path the ${SECRET_ROTATION_NAME_MAP[type]} Rotation is located at.`,
+    environment: `The environment the ${SECRET_ROTATION_NAME_MAP[type]} Rotation is located in.`
   }),
   CREATE: (type: SecretRotation) => {
     const destinationName = SECRET_ROTATION_NAME_MAP[type];

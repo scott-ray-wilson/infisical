@@ -226,7 +226,7 @@ export const SecretItem = memo(
           className={twMerge(
             "border-b border-mineshaft-600 bg-mineshaft-800 shadow-none hover:bg-mineshaft-700",
             isDirty && "border-primary-400/50",
-            isRotationSecret && "bg-blue-500/5"
+            isRotationSecret && "bg-mineshaft-700/60"
           )}
         >
           <div className="group flex">

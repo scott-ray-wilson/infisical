@@ -351,6 +351,24 @@ export const secretRotationV2DALFactory = (
     return expandSecretRotation(secretRotation, folderWithPath);
   };
 
+  const deleteById = async (rotationId: string, tx?: Knex) => {
+    const secretRotation = (await baseSecretRotationV2Query({
+      filter: { id: rotationId },
+      db,
+      tx
+    }).first())!;
+
+    await secretRotationV2Orm.deleteById(rotationId, tx);
+
+    const [folderWithPath] = await folderDAL.findSecretPathByFolderIds(
+      secretRotation.projectId,
+      [secretRotation.folderId],
+      tx
+    );
+
+    return expandSecretRotation(secretRotation, folderWithPath);
+  };
+
   const findOne = async (filter: Parameters<(typeof secretRotationV2Orm)["findOne"]>[0], tx?: Knex) => {
     try {
       const secretRotation = await baseSecretRotationV2Query({ filter, db, tx }).first();
@@ -383,6 +401,7 @@ export const secretRotationV2DALFactory = (
     create,
     findById,
     updateById,
+    deleteById,
     findOne,
     insertSecretMappings: secretRotationV2SecretMappingOrm.insertMany,
     updateSecretMappings: secretRotationV2SecretMappingOrm.update,

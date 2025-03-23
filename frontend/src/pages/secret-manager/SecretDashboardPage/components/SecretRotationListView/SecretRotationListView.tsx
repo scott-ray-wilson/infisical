@@ -1,3 +1,4 @@
+import { DeleteSecretRotationV2Modal } from "@app/components/secret-rotations-v2/DeleteSecretRotationV2Modal";
 import { EditSecretRotationV2Modal } from "@app/components/secret-rotations-v2/EditSecretRotationV2Modal";
 import { RotateSecretRotationV2Modal } from "@app/components/secret-rotations-v2/RotateSecretRotationV2Modal";
 import { ViewSecretRotationV2GeneratedCredentialsModal } from "@app/components/secret-rotations-v2/ViewSecretRotationV2GeneratedCredentials";
@@ -18,7 +19,8 @@ export const SecretRotationListView = ({ secretRotations, ...secretProps }: Prop
   const { popUp, handlePopUpOpen, handlePopUpClose, handlePopUpToggle } = usePopUp([
     "editSecretRotation",
     "rotateSecretRotation",
-    "viewSecretRotationGeneratedCredentials"
+    "viewSecretRotationGeneratedCredentials",
+    "deleteSecretRotation"
   ] as const);
 
   return (
@@ -32,6 +34,7 @@ export const SecretRotationListView = ({ secretRotations, ...secretProps }: Prop
           onViewGeneratedCredentials={() =>
             handlePopUpOpen("viewSecretRotationGeneratedCredentials", secretRotation)
           }
+          onDelete={() => handlePopUpOpen("deleteSecretRotation", secretRotation)}
           {...secretProps}
         />
       ))}
@@ -51,6 +54,11 @@ export const SecretRotationListView = ({ secretRotations, ...secretProps }: Prop
         onOpenChange={(isOpen) =>
           handlePopUpToggle("viewSecretRotationGeneratedCredentials", isOpen)
         }
+      />
+      <DeleteSecretRotationV2Modal
+        isOpen={popUp.deleteSecretRotation.isOpen}
+        secretRotation={popUp.deleteSecretRotation.data as TSecretRotationV2}
+        onOpenChange={(isOpen) => handlePopUpToggle("deleteSecretRotation", isOpen)}
       />
     </>
   );

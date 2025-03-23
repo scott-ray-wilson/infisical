@@ -1832,7 +1832,8 @@ export const SecretRotations = {
   },
   DELETE: (type: SecretRotation) => ({
     rotationId: `The ID of the ${SECRET_ROTATION_NAME_MAP[type]} Rotation to be deleted.`,
-    removeSecrets: `Whether the secrets belonging to this rotation should be deleted.`
+    deleteSecrets: `Whether the secrets belonging to this rotation should be deleted.`,
+    revokeGeneratedCredentials: `Whether the generated credentials associated with this rotation should be revoked.`
   }),
   ROTATE: (type: SecretRotation) => ({
     rotationId: `The ID of the ${SECRET_ROTATION_NAME_MAP[type]} Rotation to rotate credentials for.`

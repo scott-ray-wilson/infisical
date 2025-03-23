@@ -59,6 +59,11 @@ export type TRotateSecretRotationV2DTO = {
   projectId: string;
 };
 
+export type TDeleteSecretRotationV2DTO = TRotateSecretRotationV2DTO & {
+  revokeGeneratedCredentials: boolean;
+  deleteSecrets: boolean;
+};
+
 export type TViewSecretRotationV2GeneratedCredentialsDTO = {
   rotationId: string;
   type: SecretRotation;

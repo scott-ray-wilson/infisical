@@ -415,10 +415,10 @@ export const secretRotationV2ServiceFactory = ({
       connection: appConnection
     } as TSecretRotationV2WithConnection);
 
-    // throws if any invalid
-    await rotationFactory.throwOnInvalidParameters();
-
     try {
+      // throws if any invalid
+      await rotationFactory.throwOnInvalidParameters();
+
       const secretRotation = await rotationFactory.issue(async (newCredentials) => {
         const generatedCredentials = [newCredentials];
 
@@ -433,8 +433,7 @@ export const secretRotationV2ServiceFactory = ({
             {
               folderId: folder.id,
               ...params,
-              encryptedGeneratedCredentials,
-              projectId
+              encryptedGeneratedCredentials
             },
             tx
           )) as TSecretRotationV2;
@@ -477,6 +476,10 @@ export const secretRotationV2ServiceFactory = ({
           case DatabaseErrorCode.SyntaxError:
             throw new BadRequestError({
               message: `One or more of the SQL parameter statements contains a syntax error`
+            });
+          case DatabaseErrorCode.InsufficientPrivilege:
+            throw new BadRequestError({
+              message: "Insufficient privilege to execute one or more of the SQL parameter statements"
             });
           default:
             throw err;
@@ -562,18 +565,18 @@ export const secretRotationV2ServiceFactory = ({
       folderId = newFolder.id;
     }
 
-    if (params.parameters) {
-      const appConnection = await decryptAppConnection(secretRotation.connection, kmsService);
-
-      const rotationFactory = SECRET_ROTATION_FACTORY_MAP[type]({
-        parameters: params.parameters,
-        connection: appConnection
-      } as TSecretRotationV2WithConnection);
-
-      await rotationFactory.throwOnInvalidParameters();
-    }
-
     try {
+      if (params.parameters) {
+        const appConnection = await decryptAppConnection(secretRotation.connection, kmsService);
+
+        const rotationFactory = SECRET_ROTATION_FACTORY_MAP[type]({
+          parameters: params.parameters,
+          connection: appConnection
+        } as TSecretRotationV2WithConnection);
+
+        await rotationFactory.throwOnInvalidParameters();
+      }
+
       const updatedSecretRotation = await secretRotationV2DAL.updateById(rotationId, {
         ...params,
         folderId
@@ -592,6 +595,10 @@ export const secretRotationV2ServiceFactory = ({
           case DatabaseErrorCode.SyntaxError:
             throw new BadRequestError({
               message: `One or more of the SQL parameter statements contains a syntax error`
+            });
+          case DatabaseErrorCode.InsufficientPrivilege:
+            throw new BadRequestError({
+              message: "Insufficient privilege to execute one or more of the SQL parameter statements"
             });
           default:
             throw err;
@@ -954,8 +961,7 @@ export const secretRotationV2ServiceFactory = ({
     const secretRotations = await secretRotationV2DAL.findWithMappedSecrets(
       {
         $in: { folderId: folders.map((folder) => folder.id) },
-        $search: search ? { name: `%${search}%` } : undefined,
-        projectId
+        $search: search ? { name: `%${search}%` } : undefined
       },
       {
         limit,

@@ -28,7 +28,6 @@ type Props = {
   tags?: WsTag[];
   isVisible?: boolean;
   isProtectedBranch?: boolean;
-  isRotationView?: boolean;
 };
 
 export const SecretListView = ({
@@ -38,8 +37,7 @@ export const SecretListView = ({
   secretPath = "/",
   tags: wsTags = [],
   isVisible,
-  isProtectedBranch = false,
-  isRotationView = false
+  isProtectedBranch = false
 }: Props) => {
   const queryClient = useQueryClient();
   const { popUp, handlePopUpToggle, handlePopUpOpen, handlePopUpClose } = usePopUp([
@@ -81,7 +79,8 @@ export const SecretListView = ({
       skipMultilineEncoding,
       newKey,
       secretId,
-      secretMetadata
+      secretMetadata,
+      isRotatedSecret
     }: Partial<{
       value: string;
       comment: string;
@@ -92,6 +91,7 @@ export const SecretListView = ({
       newKey: string;
       secretId: string;
       secretMetadata?: { key: string; value: string }[];
+      isRotatedSecret?: boolean;
     }> = {}
   ) => {
     if (operation === "delete") {
@@ -112,14 +112,16 @@ export const SecretListView = ({
         workspaceId,
         secretPath,
         secretKey: key,
-        secretValue: value || "",
+        ...(!isRotatedSecret && {
+          newSecretName: newKey,
+          secretValue: value || ""
+        }),
         type,
         tagIds: tags,
         secretComment: comment,
         secretReminderRepeatDays: reminderRepeatDays,
         secretReminderNote: reminderNote,
         skipMultilineEncoding,
-        newSecretName: newKey,
         secretMetadata
       });
       return;
@@ -215,7 +217,8 @@ export const SecretListView = ({
             secretId: orgSecret.id,
             newKey: hasKeyChanged ? key : undefined,
             skipMultilineEncoding: modSecret.skipMultilineEncoding,
-            secretMetadata
+            secretMetadata,
+            isRotatedSecret: orgSecret.isRotatedSecret
           });
           if (cb) cb();
         }
@@ -328,7 +331,6 @@ export const SecretListView = ({
       ))}
       {secrets.map((secret) => (
         <SecretItem
-          isRotationSecret={isRotationView}
           environment={environment}
           secretPath={secretPath}
           tags={wsTags}

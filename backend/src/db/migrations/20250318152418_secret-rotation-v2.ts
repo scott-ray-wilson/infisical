@@ -17,8 +17,8 @@ export async function up(knex: Knex): Promise<void> {
       t.integer("activeIndex").notNullable().defaultTo(0);
       // we're including projectId in addition to folder ID because we allow folderId to be null (if the folder
       // is deleted), to preserve configuration
-      t.string("projectId").notNullable();
-      t.foreign("projectId").references("id").inTable(TableName.Project).onDelete("CASCADE");
+      // t.string("projectId").notNullable();
+      // t.foreign("projectId").references("id").inTable(TableName.Project).onDelete("CASCADE");
       t.uuid("folderId").notNullable();
       t.foreign("folderId").references("id").inTable(TableName.SecretFolder).onDelete("CASCADE");
       t.uuid("connectionId").notNullable();
@@ -33,7 +33,7 @@ export async function up(knex: Knex): Promise<void> {
     await createOnUpdateTrigger(knex, TableName.SecretRotationV2);
 
     await knex.schema.alterTable(TableName.SecretRotationV2, (t) => {
-      t.unique(["projectId", "name"]);
+      t.unique(["folderId", "name"]);
     });
   }
 
@@ -42,7 +42,7 @@ export async function up(knex: Knex): Promise<void> {
       t.uuid("id", { primaryKey: true }).defaultTo(knex.fn.uuid());
       t.string("secretKey").notNullable();
       t.uuid("secretId").notNullable();
-      t.foreign("secretId").references("id").inTable(TableName.SecretV2).onDelete("CASCADE");
+      t.foreign("secretId").references("id").inTable(TableName.SecretV2).deferrable("deferred");
       t.uuid("rotationId").notNullable();
       t.foreign("rotationId").references("id").inTable(TableName.SecretRotationV2).onDelete("CASCADE");
     });

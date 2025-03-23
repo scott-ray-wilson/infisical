@@ -74,7 +74,6 @@ type Props = {
   environment: string;
   secretPath: string;
   handleSecretShare: () => void;
-  isRotationSecret?: boolean;
 };
 
 export const SecretItem = memo(
@@ -90,11 +89,11 @@ export const SecretItem = memo(
     onToggleSecretSelect,
     environment,
     secretPath,
-    handleSecretShare,
-    isRotationSecret = false
+    handleSecretShare
   }: Props) => {
     const { currentWorkspace } = useWorkspace();
     const { permission } = useProjectPermission();
+    const { isRotatedSecret } = secret;
 
     const {
       handleSubmit,
@@ -136,7 +135,8 @@ export const SecretItem = memo(
     });
 
     const isReadOnly =
-      hasSecretReadValueOrDescribePermission(
+      isRotatedSecret ||
+      (hasSecretReadValueOrDescribePermission(
         permission,
         ProjectPermissionSecretActions.DescribeSecret,
         {
@@ -146,16 +146,15 @@ export const SecretItem = memo(
           secretTags: selectedTagSlugs
         }
       ) &&
-      permission.cannot(
-        ProjectPermissionSecretActions.Edit,
-        subject(ProjectPermissionSub.Secrets, {
-          environment,
-          secretPath,
-          secretName,
-          secretTags: selectedTagSlugs
-        })
-      );
-
+        permission.cannot(
+          ProjectPermissionSecretActions.Edit,
+          subject(ProjectPermissionSub.Secrets, {
+            environment,
+            secretPath,
+            secretName,
+            secretTags: selectedTagSlugs
+          })
+        ));
     const { secretValueHidden } = secret;
 
     const [isSecValueCopied, setIsSecValueCopied] = useToggle(false);
@@ -226,7 +225,7 @@ export const SecretItem = memo(
           className={twMerge(
             "border-b border-mineshaft-600 bg-mineshaft-800 shadow-none hover:bg-mineshaft-700",
             isDirty && "border-primary-400/50",
-            isRotationSecret && "bg-mineshaft-700/60"
+            isRotatedSecret && "bg-mineshaft-700/60"
           )}
         >
           <div className="group flex">
@@ -236,7 +235,7 @@ export const SecretItem = memo(
                 isDirty && "text-primary"
               )}
             >
-              {isRotationSecret ? (
+              {secret.isRotatedSecret ? (
                 <div className="relative">
                   <FontAwesomeIcon icon={faKey} size="xs" className={twMerge("ml-3 h-3.5 w-3.5")} />
                   <FontAwesomeIcon
@@ -600,7 +599,7 @@ export const SecretItem = memo(
                       secretTags: selectedTagSlugs
                     })}
                     renderTooltip
-                    allowedLabel="Delete"
+                    allowedLabel={isRotatedSecret ? "Cannot Delete Rotated Secret" : "Delete"} // just using label for isRotatedSecret, disabled below
                   >
                     {(isAllowed) => (
                       <IconButton
@@ -610,7 +609,7 @@ export const SecretItem = memo(
                         size="md"
                         className="p-0 opacity-0 group-hover:opacity-100"
                         onClick={() => onDeleteSecret(secret)}
-                        isDisabled={!isAllowed}
+                        isDisabled={!isAllowed || isRotatedSecret}
                       >
                         <FontAwesomeSymbol
                           symbolName={FontAwesomeSpriteName.Close}

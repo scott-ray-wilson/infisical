@@ -258,9 +258,9 @@ export const sqlCredentialsRotationFactory = (
         await tx.raw(revokeCredentialsStatement);
         throw new Error(VALIDATION_PASSED_MESSAGE);
       });
-    } catch (e) {
-      if ((e as Error).message !== VALIDATION_PASSED_MESSAGE) {
-        throw new DatabaseError({ error: e, name: "Validate SQL Parameters" });
+    } catch (error) {
+      if ((error as Error).message !== VALIDATION_PASSED_MESSAGE) {
+        throw new DatabaseError({ error, name: "Validate Secret Rotation SQL Statements" });
       }
     }
   };

@@ -44,17 +44,7 @@ export const SecretRotationItem = ({
   onDelete,
   ...secretProps
 }: Props) => {
-  const {
-    name,
-    type,
-    connection,
-    environment,
-    folder,
-    lastRotatedAt,
-    interval,
-    projectId,
-    secrets
-  } = secretRotation;
+  const { name, type, environment, folder, projectId, secrets } = secretRotation;
 
   const { name: rotationType, image } = SECRET_ROTATION_MAP[type];
   const [isExpanded, setIsExpanded] = useToggle(true);
@@ -62,13 +52,18 @@ export const SecretRotationItem = ({
   return (
     <>
       <div
+        role="button"
         onClick={() => {
           setIsExpanded.toggle();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            setIsExpanded.toggle();
+          }
         }}
         className={twMerge(
           "group flex cursor-pointer border-b border-mineshaft-600 hover:bg-mineshaft-700"
         )}
-        role="button"
         tabIndex={0}
       >
         <div className="text- flex w-11 items-center py-2 pl-5 text-mineshaft-400">
@@ -188,7 +183,6 @@ export const SecretRotationItem = ({
       {isExpanded && (
         <>
           <SecretListView
-            isRotationView
             secrets={secrets.filter((secret) => Boolean(secret)) as SecretV3RawSanitized[]}
             environment={environment.slug}
             workspaceId={projectId}

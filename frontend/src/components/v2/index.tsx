@@ -23,6 +23,7 @@ export * from "./Input";
 export * from "./Menu";
 export * from "./Modal";
 export * from "./NoticeBanner";
+export * from "./NoticeBannerV2";
 export * from "./PageHeader";
 export * from "./Pagination";
 export * from "./Popoverv2";

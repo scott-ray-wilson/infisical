@@ -15,10 +15,6 @@ export async function up(knex: Knex): Promise<void> {
       t.binary("encryptedGeneratedCredentials").notNullable();
       t.boolean("isAutoRotationEnabled").notNullable().defaultTo(true);
       t.integer("activeIndex").notNullable().defaultTo(0);
-      // we're including projectId in addition to folder ID because we allow folderId to be null (if the folder
-      // is deleted), to preserve configuration
-      // t.string("projectId").notNullable();
-      // t.foreign("projectId").references("id").inTable(TableName.Project).onDelete("CASCADE");
       t.uuid("folderId").notNullable();
       t.foreign("folderId").references("id").inTable(TableName.SecretFolder).onDelete("CASCADE");
       t.uuid("connectionId").notNullable();
@@ -28,6 +24,7 @@ export async function up(knex: Knex): Promise<void> {
       t.string("rotationStatusMessage", 1024);
       t.string("lastRotationJobId");
       t.datetime("lastRotatedAt");
+      t.datetime("scheduledRotationAt").nullable();
     });
 
     await createOnUpdateTrigger(knex, TableName.SecretRotationV2);

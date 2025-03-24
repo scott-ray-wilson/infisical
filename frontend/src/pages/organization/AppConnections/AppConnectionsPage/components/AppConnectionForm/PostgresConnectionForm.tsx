@@ -93,7 +93,7 @@ export const PostgresConnectionForm = ({ appConnection, onSubmit }: Props) => {
           )}
         />
         <SqlConnectionFields />
-        <div className="mt-8 flex items-center">
+        <div className="mt-6 flex items-center">
           <Button
             className="mr-4"
             size="sm"

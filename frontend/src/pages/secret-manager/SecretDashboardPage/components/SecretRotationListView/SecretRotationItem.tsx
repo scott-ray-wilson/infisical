@@ -62,7 +62,9 @@ export const SecretRotationItem = ({
   return (
     <>
       <div
-        onClick={() => setIsExpanded.toggle()}
+        onClick={() => {
+          setIsExpanded.toggle();
+        }}
         className={twMerge(
           "group flex cursor-pointer border-b border-mineshaft-600 hover:bg-mineshaft-700"
         )}

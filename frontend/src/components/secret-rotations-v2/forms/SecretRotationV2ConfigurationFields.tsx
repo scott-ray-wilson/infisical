@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
+import { addDays } from "date-fns";
 
 import { DatePicker, FormControl, Input, Switch } from "@app/components/v2";
 
@@ -7,9 +8,11 @@ import { TSecretRotationV2Form } from "./schemas";
 import { SecretRotationV2ConnectionField } from "./SecretRotationV2ConnectionField";
 
 export const SecretRotationV2ConfigurationFields = () => {
-  const { control } = useFormContext<TSecretRotationV2Form>();
+  const { control, watch } = useFormContext<TSecretRotationV2Form>();
   const [open, setOpen] = useState(false);
   const [datetime, setDateTime] = useState<Date | undefined>(new Date());
+
+  const interval = watch("interval");
 
   return (
     <>
@@ -17,17 +20,6 @@ export const SecretRotationV2ConfigurationFields = () => {
         Configure the connection rotation strategy for this Secret Rotation.
       </p>
       <SecretRotationV2ConnectionField />
-      <DatePicker
-        value={datetime}
-        onChange={(date) => setDateTime(date)}
-        popUpContentProps={{
-          side: "right"
-        }}
-        popUpProps={{
-          open,
-          onOpenChange: setOpen
-        }}
-      />
       <Controller
         render={({ field: { value, onChange }, fieldState: { error } }) => (
           <FormControl
@@ -47,6 +39,19 @@ export const SecretRotationV2ConfigurationFields = () => {
         control={control}
         name="interval"
       />
+      <FormControl label="Schedule Next Rotation">
+        <DatePicker
+          value={addDays(datetime, Number(interval))}
+          onChange={(date) => setDateTime(date)}
+          popUpContentProps={{
+            side: "right"
+          }}
+          popUpProps={{
+            open,
+            onOpenChange: setOpen
+          }}
+        />
+      </FormControl>
       <Controller
         control={control}
         name="isAutoRotationEnabled"

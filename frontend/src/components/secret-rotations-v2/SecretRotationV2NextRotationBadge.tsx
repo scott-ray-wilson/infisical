@@ -13,10 +13,10 @@ type Props = {
 };
 
 export const SecretRotationV2NextRotationBadge = ({ secretRotation, className }: Props) => {
-  const { lastRotatedAt, interval } = secretRotation;
+  const { lastRotatedAt, interval, createdAt } = secretRotation;
 
   const rotationDate = addDays(lastRotatedAt, interval);
-  const daysToRotation = differenceInDays(rotationDate, new Date());
+  const daysToRotation = differenceInDays(rotationDate ?? createdAt, new Date());
 
   let variant: BadgeProps["variant"];
   let label: string;

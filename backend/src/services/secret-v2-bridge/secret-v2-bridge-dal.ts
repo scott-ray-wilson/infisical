@@ -419,8 +419,8 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
             void bd.whereIn(`${TableName.SecretV2}.key`, filters.keys);
           }
 
-          if (filters?.excludeSecretIds) {
-            void bd.whereNotIn(`${TableName.SecretV2}.id`, filters.excludeSecretIds);
+          if (filters?.excludeRotatedSecrets) {
+            void bd.whereNull(`rotationId`);
           }
         })
         .where((bd) => {

@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 
-import { FormControl, Input, Switch } from "@app/components/v2";
+import { DatePicker, FormControl, Input, Switch } from "@app/components/v2";
 
 import { TSecretRotationV2Form } from "./schemas";
 import { SecretRotationV2ConnectionField } from "./SecretRotationV2ConnectionField";
 
 export const SecretRotationV2ConfigurationFields = () => {
   const { control } = useFormContext<TSecretRotationV2Form>();
+  const [open, setOpen] = useState(false);
+  const [datetime, setDateTime] = useState<Date | undefined>(new Date());
 
   return (
     <>
@@ -14,6 +17,17 @@ export const SecretRotationV2ConfigurationFields = () => {
         Configure the connection rotation strategy for this Secret Rotation.
       </p>
       <SecretRotationV2ConnectionField />
+      <DatePicker
+        value={datetime}
+        onChange={(date) => setDateTime(date)}
+        popUpContentProps={{
+          side: "right"
+        }}
+        popUpProps={{
+          open,
+          onOpenChange: setOpen
+        }}
+      />
       <Controller
         render={({ field: { value, onChange }, fieldState: { error } }) => (
           <FormControl

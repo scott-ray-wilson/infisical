@@ -656,8 +656,6 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
 
       try {
         if (includeSecrets) {
-          const excludeSecretIds = secretRotations?.flatMap((rotation) => rotation.secrets.map((secret) => secret.id));
-
           totalSecretCount = await server.services.secret.getSecretsCount({
             actorId: req.permission.id,
             actor: req.permission.type,
@@ -688,7 +686,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
                 limit: remainingLimit,
                 offset: adjustedOffset,
                 tagSlugs: tags,
-                excludeSecretIds
+                excludeRotatedSecrets: includeSecretRotations
               })
             ).secrets;
 

@@ -76,6 +76,7 @@ import { secretRotationDALFactory } from "@app/ee/services/secret-rotation/secre
 import { secretRotationQueueFactory } from "@app/ee/services/secret-rotation/secret-rotation-queue";
 import { secretRotationServiceFactory } from "@app/ee/services/secret-rotation/secret-rotation-service";
 import { secretRotationV2DALFactory } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-dal";
+import { secretRotationV2QueueServiceFactory } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-queue";
 import { secretRotationV2ServiceFactory } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-service";
 import { gitAppDALFactory } from "@app/ee/services/secret-scanning/git-app-dal";
 import { gitAppInstallSessionDALFactory } from "@app/ee/services/secret-scanning/git-app-install-session-dal";
@@ -1508,6 +1509,12 @@ export const registerRoutes = async (
     keyStore,
     resourceMetadataDAL,
     secretV2BridgeService
+  });
+
+  await secretRotationV2QueueServiceFactory({
+    secretRotationV2Service,
+    secretRotationV2DAL,
+    queueService
   });
 
   await superAdminService.initServerCfg();

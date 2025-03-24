@@ -219,13 +219,29 @@ export const SecretItem = memo(
       setIsSecValueCopied.on();
     };
 
+    const [spin, setRemove] = useToggle(false);
+
     return (
       <form onSubmit={handleSubmit(handleFormSubmit)}>
         <div
+          onClick={
+            isRotatedSecret
+              ? undefined
+              : () => {
+                  setRemove.on();
+                  setTimeout(() => setRemove.off(), 1100);
+                }
+          }
+          style={{
+            animationDuration: "2s",
+            animationIterationCount: "1",
+            animationTimingFunction: "linear"
+          }}
           className={twMerge(
             "border-b border-mineshaft-600 bg-mineshaft-800 shadow-none hover:bg-mineshaft-700",
             isDirty && "border-primary-400/50",
-            isRotatedSecret && "bg-mineshaft-700/60"
+            isRotatedSecret && "bg-mineshaft-700/60",
+            spin && "z-50 animate-spin"
           )}
         >
           <div className="group flex">

@@ -13,12 +13,13 @@ import {
   sqlNestRelationships,
   TFindOpt
 } from "@app/lib/knex";
+import { logger } from "@app/lib/logger";
 import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-folder-dal";
 
 export type TSecretRotationV2DALFactory = ReturnType<typeof secretRotationV2DALFactory>;
 
 type TSecretRotationFindFilter = Parameters<typeof buildFindFilter<TSecretRotationsV2>>[0];
-type TSecretRotationFindOptions = TFindOpt<TSecretRotationsV2>;
+type TSecretRotationFindOptions = TFindOpt<TSecretRotationsV2, true, "name">;
 
 const baseSecretRotationV2Query = ({
   filter = {},
@@ -34,8 +35,8 @@ const baseSecretRotationV2Query = ({
   const { projectId, ...filters } = filter;
 
   const query = (tx || db.replicaNode())(TableName.SecretRotationV2)
-    .leftJoin(TableName.SecretFolder, `${TableName.SecretRotationV2}.folderId`, `${TableName.SecretFolder}.id`)
-    .leftJoin(TableName.Environment, `${TableName.SecretFolder}.envId`, `${TableName.Environment}.id`)
+    .join(TableName.SecretFolder, `${TableName.SecretRotationV2}.folderId`, `${TableName.SecretFolder}.id`)
+    .join(TableName.Environment, `${TableName.SecretFolder}.envId`, `${TableName.Environment}.id`)
     .join(TableName.AppConnection, `${TableName.SecretRotationV2}.connectionId`, `${TableName.AppConnection}.id`)
     .select(selectAllTableCols(TableName.SecretRotationV2))
     .select(
@@ -165,8 +166,41 @@ export const secretRotationV2DALFactory = (
     }
   };
 
+  const findWithMappedSecretsCount = async (
+    {
+      search,
+      projectId,
+      ...filter
+    }: Parameters<(typeof secretRotationV2Orm)["find"]>[0] & { projectId: string; search?: string },
+    tx?: Knex
+  ) => {
+    const query = (tx || db.replicaNode())(TableName.SecretRotationV2)
+      .join(TableName.SecretFolder, `${TableName.SecretRotationV2}.folderId`, `${TableName.SecretFolder}.id`)
+      .join(TableName.Environment, `${TableName.SecretFolder}.envId`, `${TableName.Environment}.id`)
+      .join(
+        TableName.SecretRotationV2SecretMapping,
+        `${TableName.SecretRotationV2SecretMapping}.rotationId`,
+        `${TableName.SecretRotationV2}.id`
+      )
+      .where(`${TableName.Environment}.projectId`, projectId)
+      .where(buildFindFilter(prependTableNameToFindFilter(TableName.SecretRotationV2, filter)))
+      .countDistinct(`${TableName.SecretRotationV2}.name`);
+
+    if (search) {
+      void query
+        .whereILike(`${TableName.SecretRotationV2SecretMapping}.secretKey`, `%${search}%`)
+        .orWhereILike(`${TableName.SecretRotationV2}.name`, `%${search}%`);
+    }
+
+    const result = await query;
+
+    logger.warn(result, "result");
+
+    return Number(result[0]?.count ?? 0);
+  };
+
   const findWithMappedSecrets = async (
-    filter: Parameters<(typeof secretRotationV2Orm)["find"]>[0] & { projectId: string },
+    { search, ...filter }: Parameters<(typeof secretRotationV2Orm)["find"]>[0] & { projectId: string; search?: string },
     options?: TSecretRotationFindOptions,
     tx?: Knex
   ) => {
@@ -191,7 +225,7 @@ export const secretRotationV2DALFactory = (
         .leftJoin(TableName.ResourceMetadata, `${TableName.SecretV2}.id`, `${TableName.ResourceMetadata}.secretId`)
         .select(
           db.ref("secretId").withSchema(TableName.SecretRotationV2SecretMapping),
-          db.ref("secretKey").withSchema(TableName.SecretRotationV2SecretMapping), // TODO: maybe remove key from mapping
+          db.ref("secretKey").withSchema(TableName.SecretRotationV2SecretMapping),
           db.ref("version").withSchema(TableName.SecretV2).as("secretVersion"),
           db.ref("type").withSchema(TableName.SecretV2).as("secretType"),
           db.ref("encryptedValue").withSchema(TableName.SecretV2).as("secretEncryptedValue"),
@@ -212,7 +246,15 @@ export const secretRotationV2DALFactory = (
           db.ref("value").withSchema(TableName.ResourceMetadata).as("metadataValue")
         );
 
+      if (search) {
+        void extendedQuery
+          .whereILike(`${TableName.SecretRotationV2SecretMapping}.secretKey`, `%${search}%`)
+          .orWhereILike(`${TableName.SecretRotationV2}.name`, `%${search}%`);
+      }
+
       const secretRotations = await extendedQuery;
+
+      logger.warn(secretRotations, "secretRotations");
 
       if (!secretRotations.length) return [];
 
@@ -416,6 +458,7 @@ export const secretRotationV2DALFactory = (
     updateSecretMappings: secretRotationV2SecretMappingOrm.update,
     findSecretMappingsByRotationId,
     findRaw: secretRotationV2Orm.find,
-    findWithMappedSecrets
+    findWithMappedSecrets,
+    findWithMappedSecretsCount
   };
 };

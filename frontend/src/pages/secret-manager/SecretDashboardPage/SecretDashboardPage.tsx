@@ -289,6 +289,7 @@ const Page = () => {
       folders?.length ||
       imports?.length ||
       dynamicSecrets?.length ||
+      secretRotations?.length ||
       noAccessSecretCount
   );
 

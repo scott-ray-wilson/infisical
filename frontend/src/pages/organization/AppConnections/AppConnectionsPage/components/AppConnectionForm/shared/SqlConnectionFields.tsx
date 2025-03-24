@@ -4,7 +4,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { FormControl, Input, SecretInput, Switch, TextArea, Tooltip } from "@app/components/v2";
 
-export const SqlConnectionFields = () => {
+type Props = {
+  isPlatformManaged: boolean;
+};
+
+export const SqlConnectionFields = ({ isPlatformManaged }: Props) => {
   const { control } = useFormContext();
 
   return (
@@ -21,7 +25,7 @@ export const SqlConnectionFields = () => {
               isError={Boolean(error?.message)}
               label="Host"
             >
-              <Input {...field} />
+              <Input {...field} isDisabled={isPlatformManaged} />
             </FormControl>
           )}
         />
@@ -36,7 +40,7 @@ export const SqlConnectionFields = () => {
               isError={Boolean(error?.message)}
               label="Database Name"
             >
-              <Input {...field} />
+              <Input {...field} isDisabled={isPlatformManaged} />
             </FormControl>
           )}
         />
@@ -51,7 +55,7 @@ export const SqlConnectionFields = () => {
               isError={Boolean(error?.message)}
               label="Port"
             >
-              <Input type="number" {...field} />
+              <Input type="number" {...field} isDisabled={isPlatformManaged} />
             </FormControl>
           )}
         />
@@ -68,7 +72,7 @@ export const SqlConnectionFields = () => {
               label="Username"
               className="flex-1"
             >
-              <Input {...field} />
+              <Input {...field} isDisabled={isPlatformManaged} />
             </FormControl>
           )}
         />
@@ -87,6 +91,7 @@ export const SqlConnectionFields = () => {
                 containerClassName="text-gray-400 w-full group-focus-within:!border-primary-400/50 border border-mineshaft-500 bg-mineshaft-900 px-2.5 py-1.5"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
+                isDisabled={isPlatformManaged}
               />
             </FormControl>
           )}
@@ -103,40 +108,43 @@ export const SqlConnectionFields = () => {
             label="CA (SSL)"
             isOptional
           >
-            <TextArea className="!resize-none" {...field} />
+            <TextArea className="!resize-none" {...field} isDisabled={isPlatformManaged} />
           </FormControl>
         )}
       />
-      <Controller
-        name="isPlatformManaged"
-        control={control}
-        render={({ field: { value, onChange }, fieldState: { error } }) => (
-          <FormControl isError={Boolean(error?.message)} errorText={error?.message}>
-            <Switch
-              className="bg-mineshaft-400/50 shadow-inner data-[state=checked]:bg-green/80"
-              id="platform-managed"
-              thumbClassName="bg-mineshaft-800"
-              isChecked={value}
-              onCheckedChange={onChange}
-            >
-              <p className="w-[8.6rem]">
-                Platform Managed
-                <Tooltip
-                  className="max-w-md"
-                  content={
-                    <p>
-                      If enabled, Infisical will manage the credentials of this App Connection by
-                      updating the password on creation.
-                    </p>
-                  }
-                >
-                  <FontAwesomeIcon icon={faQuestionCircle} size="sm" className="ml-1" />
-                </Tooltip>
-              </p>
-            </Switch>
-          </FormControl>
-        )}
-      />
+      {!isPlatformManaged && (
+        <Controller
+          name="isPlatformManaged"
+          control={control}
+          render={({ field: { value, onChange }, fieldState: { error } }) => (
+            <FormControl isError={Boolean(error?.message)} errorText={error?.message}>
+              <Switch
+                className="bg-mineshaft-400/50 shadow-inner data-[state=checked]:bg-green/80"
+                id="platform-managed"
+                thumbClassName="bg-mineshaft-800"
+                isChecked={value}
+                onCheckedChange={onChange}
+                isDisabled={isPlatformManaged}
+              >
+                <p className="w-[8.6rem]">
+                  Platform Managed
+                  <Tooltip
+                    className="max-w-md"
+                    content={
+                      <p>
+                        If enabled, Infisical will manage the credentials of this App Connection by
+                        updating the password on creation.
+                      </p>
+                    }
+                  >
+                    <FontAwesomeIcon icon={faQuestionCircle} size="sm" className="ml-1" />
+                  </Tooltip>
+                </p>
+              </Switch>
+            </FormControl>
+          )}
+        />
+      )}
     </>
   );
 };

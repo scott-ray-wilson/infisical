@@ -965,9 +965,11 @@ export const secretRotationV2ServiceFactory = ({
       });
     }
 
+    const folderIds = folders.map((folder) => folder.id);
+
     const secretRotations = await secretRotationV2DAL.findWithMappedSecrets(
       {
-        $in: { folderId: folders.map((folder) => folder.id) },
+        $in: { folderId: folderIds },
         $search: search ? { name: `%${search}%` } : undefined,
         projectId
       },
@@ -977,6 +979,12 @@ export const secretRotationV2ServiceFactory = ({
         sort: orderBy ? [[orderBy, orderDirection]] : undefined
       }
     );
+
+    const personalSecrets = await secretV2BridgeDAL.find({
+      $in: { folderId: folderIds },
+      type: SecretType.Personal,
+      userId: actor.id
+    });
 
     const { decryptor: secretManagerDecryptor } = await kmsService.createCipherPairWithDataKey({
       type: KmsDataKey.SecretManager,

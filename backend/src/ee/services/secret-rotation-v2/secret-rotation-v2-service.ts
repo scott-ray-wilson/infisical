@@ -1,7 +1,7 @@
 import { ForbiddenError, subject } from "@casl/ability";
 import { AxiosError } from "axios";
 
-import { ActionProjectType, SecretType } from "@app/db/schemas";
+import { ActionProjectType, SecretType, TableName } from "@app/db/schemas";
 import { TAuditLogServiceFactory } from "@app/ee/services/audit-log/audit-log-service";
 import { AuditLogInfo, EventType } from "@app/ee/services/audit-log/audit-log-types";
 import { TLicenseServiceFactory } from "@app/ee/services/license/license-service";
@@ -41,6 +41,7 @@ import { sqlCredentialsRotationFactory } from "@app/ee/services/secret-rotation-
 import { TKeyStoreFactory } from "@app/keystore/keystore";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
 import { BadRequestError, DatabaseError, NotFoundError } from "@app/lib/errors";
+import { logger } from "@app/lib/logger";
 import { OrderByDirection, OrgServiceActor } from "@app/lib/types";
 import { decryptAppConnection } from "@app/services/app-connection/app-connection-fns";
 import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
@@ -912,12 +913,15 @@ export const secretRotationV2ServiceFactory = ({
       });
     }
 
-    const secretRotations = await secretRotationV2DAL.findRaw(
-      { $in: { folderId: folders.map((folder) => folder.id) }, $search: search ? { name: `%${search}%` } : undefined },
-      { countDistinct: "name" }
-    );
+    const count = await secretRotationV2DAL.findWithMappedSecretsCount({
+      $in: { folderId: folders.map((folder) => folder.id) },
+      search,
+      projectId
+    });
 
-    return Number(secretRotations[0]?.count ?? 0);
+    logger.warn(`here service ${count}`);
+
+    return count;
   };
 
   const getDashboardSecretRotations = async (
@@ -970,7 +974,7 @@ export const secretRotationV2ServiceFactory = ({
     const secretRotations = await secretRotationV2DAL.findWithMappedSecrets(
       {
         $in: { folderId: folderIds },
-        $search: search ? { name: `%${search}%` } : undefined,
+        search,
         projectId
       },
       {
@@ -981,9 +985,33 @@ export const secretRotationV2ServiceFactory = ({
     );
 
     const personalSecrets = await secretV2BridgeDAL.find({
-      $in: { folderId: folderIds },
-      type: SecretType.Personal,
-      userId: actor.id
+      $in: {
+        folderId: folderIds,
+        [`${TableName.SecretV2}.key` as "key"]: secretRotations.flatMap((rotation) =>
+          rotation.secrets.map((secret) => secret.key)
+        )
+      },
+      [`${TableName.SecretV2}.type` as "type"]: SecretType.Personal,
+      [`${TableName.SecretV2}.userId` as "userId"]: actor.id
+    });
+
+    logger.warn(personalSecrets, "personalSecrets");
+
+    const personalMap = Object.fromEntries(
+      personalSecrets.map((secret) => [secret.folderId, [] as typeof personalSecrets])
+    );
+    personalSecrets.forEach((secret) => personalMap[secret.folderId].push(secret));
+
+    const modifiedSecretRotations = secretRotations.map((rotation) => {
+      const rotationSecretKeys = rotation.secrets.map((secret) => secret.key);
+
+      return {
+        ...rotation,
+        secrets: [
+          ...rotation.secrets,
+          ...(personalMap[rotation.folderId] ?? []).filter((secret) => rotationSecretKeys.includes(secret.key))
+        ]
+      };
     });
 
     const { decryptor: secretManagerDecryptor } = await kmsService.createCipherPairWithDataKey({
@@ -991,7 +1019,7 @@ export const secretRotationV2ServiceFactory = ({
       projectId
     });
 
-    const decryptedSecretRotations = secretRotations.map(({ secrets, ...rotation }) => {
+    const decryptedSecretRotations = modifiedSecretRotations.map(({ secrets, ...rotation }) => {
       const decryptedSecrets = secrets.map((secret) => {
         const canDescribeSecret = hasSecretReadValueOrDescribePermission(
           permission,
@@ -1000,7 +1028,9 @@ export const secretRotationV2ServiceFactory = ({
             environment: rotation.environment.slug,
             secretPath: rotation.folder.path,
             secretName: secret.key,
-            secretTags: secret.tags.map((i) => i.slug)
+            // TODO: scott/akhil our mapper seems to not propagate children's children types
+            // @ts-expect-error eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-assignment
+            secretTags: (secret.tags as { slug: string; name: string; color: string }[]).map((i) => i.slug)
           }
         );
 
@@ -1015,7 +1045,9 @@ export const secretRotationV2ServiceFactory = ({
             environment: rotation.environment.slug,
             secretPath: rotation.folder.path,
             secretName: secret.key,
-            secretTags: secret.tags.map((i) => i.slug)
+            // TODO: scott/akhil our mapper seems to not propagate children's children types
+            // @ts-expect-error eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-assignment
+            secretTags: (secret.tags as { slug: string; name: string; color: string }[]).map((i) => i.slug)
           }
         );
 

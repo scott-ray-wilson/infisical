@@ -12,6 +12,7 @@ import { SecretRotationV2Schema } from "@app/ee/services/secret-rotation-v2/secr
 import { DASHBOARD } from "@app/lib/api-docs";
 import { BadRequestError } from "@app/lib/errors";
 import { removeTrailingSlash } from "@app/lib/fn";
+import { logger } from "@app/lib/logger";
 import { OrderByDirection } from "@app/lib/types";
 import { secretsLimit } from "@app/server/config/rateLimiter";
 import { getTelemetryDistinctId } from "@app/server/lib/telemetry";
@@ -629,7 +630,9 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           req.permission
         );
 
+        logger.warn(`here 1 ${totalSecretRotationCount}`);
         if (remainingLimit > 0 && totalSecretRotationCount > adjustedOffset) {
+          logger.warn("here 2");
           secretRotations = await server.services.secretRotationV2.getDashboardSecretRotations(
             {
               projectId,

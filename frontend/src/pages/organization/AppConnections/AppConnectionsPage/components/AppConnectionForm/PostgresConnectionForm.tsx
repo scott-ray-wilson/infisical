@@ -11,7 +11,11 @@ import {
   genericAppConnectionFieldsSchema,
   GenericAppConnectionsFields
 } from "./GenericAppConnectionFields";
-import { BaseSqlUsernameAndPasswordConnectionSchema, SqlConnectionFields } from "./shared";
+import {
+  BaseSqlUsernameAndPasswordConnectionSchema,
+  PlatformManagedNoticeBanner,
+  SqlConnectionFields
+} from "./shared";
 
 type Props = {
   appConnection?: TPostgresConnection;
@@ -57,6 +61,8 @@ export const PostgresConnectionForm = ({ appConnection, onSubmit }: Props) => {
     formState: { isSubmitting, isDirty }
   } = form;
 
+  const isPlatformManaged = appConnection?.isPlatformManaged ?? false;
+
   return (
     <FormProvider {...form}>
       <form onSubmit={handleSubmit(onSubmit)}>
@@ -92,24 +98,28 @@ export const PostgresConnectionForm = ({ appConnection, onSubmit }: Props) => {
             </FormControl>
           )}
         />
-        <SqlConnectionFields />
-        <div className="mt-6 flex items-center">
-          <Button
-            className="mr-4"
-            size="sm"
-            type="submit"
-            colorSchema="secondary"
-            isLoading={isSubmitting}
-            isDisabled={isSubmitting || !isDirty}
-          >
-            {isUpdate ? "Update Credentials" : "Connect to Database"}
-          </Button>
-          <ModalClose asChild>
-            <Button colorSchema="secondary" variant="plain">
-              Cancel
+        <SqlConnectionFields isPlatformManaged={isPlatformManaged} />
+        {isPlatformManaged ? (
+          <PlatformManagedNoticeBanner />
+        ) : (
+          <div className="mt-6 flex items-center">
+            <Button
+              className="mr-4"
+              size="sm"
+              type="submit"
+              colorSchema="secondary"
+              isLoading={isSubmitting}
+              isDisabled={isSubmitting || !isDirty}
+            >
+              {isUpdate ? "Update Credentials" : "Connect to Database"}
             </Button>
-          </ModalClose>
-        </div>
+            <ModalClose asChild>
+              <Button colorSchema="secondary" variant="plain">
+                Cancel
+              </Button>
+            </ModalClose>
+          </div>
+        )}
       </form>
     </FormProvider>
   );

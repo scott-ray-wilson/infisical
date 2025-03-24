@@ -135,8 +135,7 @@ export const SecretItem = memo(
     });
 
     const isReadOnly =
-      isRotatedSecret ||
-      (hasSecretReadValueOrDescribePermission(
+      hasSecretReadValueOrDescribePermission(
         permission,
         ProjectPermissionSecretActions.DescribeSecret,
         {
@@ -146,15 +145,15 @@ export const SecretItem = memo(
           secretTags: selectedTagSlugs
         }
       ) &&
-        permission.cannot(
-          ProjectPermissionSecretActions.Edit,
-          subject(ProjectPermissionSub.Secrets, {
-            environment,
-            secretPath,
-            secretName,
-            secretTags: selectedTagSlugs
-          })
-        ));
+      permission.cannot(
+        ProjectPermissionSecretActions.Edit,
+        subject(ProjectPermissionSub.Secrets, {
+          environment,
+          secretPath,
+          secretName,
+          secretTags: selectedTagSlugs
+        })
+      );
     const { secretValueHidden } = secret;
 
     const [isSecValueCopied, setIsSecValueCopied] = useToggle(false);
@@ -219,29 +218,13 @@ export const SecretItem = memo(
       setIsSecValueCopied.on();
     };
 
-    const [spin, setRemove] = useToggle(false);
-
     return (
       <form onSubmit={handleSubmit(handleFormSubmit)}>
         <div
-          onClick={
-            isRotatedSecret
-              ? undefined
-              : () => {
-                  setRemove.on();
-                  setTimeout(() => setRemove.off(), 1100);
-                }
-          }
-          style={{
-            animationDuration: "2s",
-            animationIterationCount: "1",
-            animationTimingFunction: "linear"
-          }}
           className={twMerge(
             "border-b border-mineshaft-600 bg-mineshaft-800 shadow-none hover:bg-mineshaft-700",
             isDirty && "border-primary-400/50",
-            isRotatedSecret && "bg-mineshaft-700/60",
-            spin && "z-50 animate-spin"
+            isRotatedSecret && "bg-mineshaft-700/60"
           )}
         >
           <div className="group flex">
@@ -285,7 +268,7 @@ export const SecretItem = memo(
                 render={({ field, fieldState: { error } }) => (
                   <Input
                     autoComplete="off"
-                    isReadOnly={isReadOnly}
+                    isReadOnly={isReadOnly || isRotatedSecret}
                     autoCapitalization={currentWorkspace?.autoCapitalization}
                     variant="plain"
                     isDisabled={isOverriden}
@@ -327,7 +310,7 @@ export const SecretItem = memo(
                   control={control}
                   render={({ field }) => (
                     <InfisicalSecretInput
-                      isReadOnly={isReadOnly}
+                      isReadOnly={isReadOnly || isRotatedSecret}
                       key="secret-value"
                       isVisible={isVisible}
                       environment={environment}

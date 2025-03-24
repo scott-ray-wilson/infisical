@@ -142,22 +142,20 @@ export const AppConnectionRow = ({
                     </DropdownMenuItem>
                   )}
                 </OrgPermissionCan>
-                {!isPlatformManaged && (
-                  <OrgPermissionCan
-                    I={OrgPermissionAppConnectionActions.Edit}
-                    a={OrgPermissionSubjects.AppConnections}
-                  >
-                    {(isAllowed: boolean) => (
-                      <DropdownMenuItem
-                        isDisabled={!isAllowed}
-                        icon={<FontAwesomeIcon icon={faAsterisk} />}
-                        onClick={() => onEditCredentials(appConnection)}
-                      >
-                        Edit Credentials
-                      </DropdownMenuItem>
-                    )}
-                  </OrgPermissionCan>
-                )}
+                <OrgPermissionCan
+                  I={OrgPermissionAppConnectionActions.Edit}
+                  a={OrgPermissionSubjects.AppConnections}
+                >
+                  {(isAllowed: boolean) => (
+                    <DropdownMenuItem
+                      isDisabled={!isAllowed}
+                      icon={<FontAwesomeIcon icon={faAsterisk} />}
+                      onClick={() => onEditCredentials(appConnection)}
+                    >
+                      {isPlatformManaged ? "View" : "Edit"} Credentials
+                    </DropdownMenuItem>
+                  )}
+                </OrgPermissionCan>
                 <OrgPermissionCan
                   I={OrgPermissionAppConnectionActions.Delete}
                   a={OrgPermissionSubjects.AppConnections}

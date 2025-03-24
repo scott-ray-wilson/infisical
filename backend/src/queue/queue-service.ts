@@ -8,7 +8,6 @@ import {
   TScanFullRepoEventPayload,
   TScanPushEventPayload
 } from "@app/ee/services/secret-scanning/secret-scanning-queue/secret-scanning-queue-types";
-import { getConfig } from "@app/lib/config/env";
 import { logger } from "@app/lib/logger";
 import {
   TFailedIntegrationSyncEmailsPayload,
@@ -44,7 +43,8 @@ export enum QueueName {
   ProjectV3Migration = "project-v3-migration",
   AccessTokenStatusUpdate = "access-token-status-update",
   ImportSecretsFromExternalSource = "import-secrets-from-external-source",
-  AppConnectionSecretSync = "app-connection-secret-sync"
+  AppConnectionSecretSync = "app-connection-secret-sync",
+  SecretRotationV2 = "secret-rotation-v2"
 }
 
 export enum QueueJobs {
@@ -73,7 +73,9 @@ export enum QueueJobs {
   SecretSyncSyncSecrets = "secret-sync-sync-secrets",
   SecretSyncImportSecrets = "secret-sync-import-secrets",
   SecretSyncRemoveSecrets = "secret-sync-remove-secrets",
-  SecretSyncSendActionFailedNotifications = "secret-sync-send-action-failed-notifications"
+  SecretSyncSendActionFailedNotifications = "secret-sync-send-action-failed-notifications",
+  SecretRotationV2Rotate = "secret-rotation-v2-rotate",
+  SecretRotationV2QueueRotations = "secret-rotation-v2-check"
 }
 
 export type TQueueJobTypes = {
@@ -213,6 +215,17 @@ export type TQueueJobTypes = {
         name: QueueJobs.SecretSyncSendActionFailedNotifications;
         payload: TQueueSendSecretSyncActionFailedNotificationsDTO;
       };
+  [QueueName.SecretRotationV2]:
+    | {
+        name: QueueJobs.SecretRotationV2QueueRotations;
+        payload: undefined;
+      }
+    | {
+        name: QueueJobs.SecretRotationV2Rotate;
+        payload: {
+          rotationId: string;
+        };
+      };
 };
 
 export type TQueueServiceFactory = ReturnType<typeof queueServiceFactory>;
@@ -247,15 +260,11 @@ export const queueServiceFactory = (
   >;
 
   const initialize = async () => {
-    const appCfg = getConfig();
-    if (appCfg.SHOULD_INIT_PG_QUEUE) {
-      logger.info("Initializing pg-queue...");
-      await pgBoss.start();
+    await pgBoss.start();
 
-      pgBoss.on("error", (error) => {
-        logger.error(error, "pg-queue error");
-      });
-    }
+    pgBoss.on("error", (error) => {
+      logger.error(error, "pg-queue error");
+    });
   };
 
   const start = <T extends QueueName>(
@@ -288,9 +297,9 @@ export const queueServiceFactory = (
       workerCount: number;
     }
   ) => {
-    if (queueContainerPg[jobName]) {
-      throw new Error(`${jobName} queue is already initialized`);
-    }
+    // if (queueContainerPg[jobName]) {
+    //   throw new Error(`${jobName} queue is already initialized`);
+    // }
 
     await pgBoss.createQueue(jobName);
     queueContainerPg[jobName] = true;
@@ -340,6 +349,15 @@ export const queueServiceFactory = (
       data,
       options: opts
     });
+  };
+
+  const schedulePg = async <T extends QueueName>(
+    job: TQueueJobTypes[T]["name"],
+    cron: string,
+    data: TQueueJobTypes[T]["payload"],
+    opts?: PgBoss.ScheduleOptions & { jobId?: string }
+  ) => {
+    await pgBoss.schedule(job, cron, data, opts);
   };
 
   const stopRepeatableJob = async <T extends QueueName>(
@@ -403,6 +421,7 @@ export const queueServiceFactory = (
     stopJobById,
     getRepeatableJobs,
     startPg,
-    queuePg
+    queuePg,
+    schedulePg
   };
 };

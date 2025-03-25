@@ -24,9 +24,9 @@ export const SecretRotationsV2Schema = z.object({
   updatedAt: z.date(),
   rotationInterval: z.number(),
   nextRotationAt: z.date(),
-  lastRotationStatus: z.string().nullable().optional(),
-  lastRotationMessage: z.string().nullable().optional(),
-  lastRotationJobId: z.string().nullable().optional(),
+  rotationStatus: z.string().nullable().optional(),
+  rotationMessage: z.string().nullable().optional(),
+  rotationJobId: z.string().nullable().optional(),
   lastRotatedAt: z.date().nullable().optional()
 });
 

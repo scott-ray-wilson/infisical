@@ -1,5 +1,4 @@
 import { ForbiddenError, subject } from "@casl/ability";
-import { AxiosError } from "axios";
 
 import { ActionProjectType, SecretType, TableName } from "@app/db/schemas";
 import { TAuditLogServiceFactory } from "@app/ee/services/audit-log/audit-log-service";
@@ -18,7 +17,8 @@ import {
   encryptSecretRotationCredentials,
   getInitialRotationAt,
   getNextRotationAt,
-  listSecretRotationOptions
+  listSecretRotationOptions,
+  parseRotationErrorMessage
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-fns";
 import {
   SECRET_ROTATION_CONNECTION_MAP,
@@ -41,7 +41,6 @@ import {
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-types";
 import { sqlCredentialsRotationFactory } from "@app/ee/services/secret-rotation-v2/shared/sql-credentials";
 import { TKeyStoreFactory } from "@app/keystore/keystore";
-import { getConfig } from "@app/lib/config/env";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
 import { BadRequestError, DatabaseError, NotFoundError } from "@app/lib/errors";
 import { logger } from "@app/lib/logger";
@@ -713,8 +712,6 @@ export const secretRotationV2ServiceFactory = ({
   };
 
   const rotateGeneratedCredentials = async (secretRotation: TSecretRotationV2Raw, auditLogInfo?: AuditLogInfo) => {
-    const appCfg = getConfig();
-
     const {
       connection,
       encryptedGeneratedCredentials,
@@ -761,9 +758,9 @@ export const secretRotationV2ServiceFactory = ({
               encryptedGeneratedCredentials: encryptedUpdatedCredentials,
               activeIndex: inactiveIndex,
               lastRotatedAt: new Date(),
-              lastRotationStatus: SecretRotationStatus.Success,
-              lastRotationJobId: null,
-              lastRotationMessage: null,
+              rotationStatus: SecretRotationStatus.Success,
+              // rotationJobId: null, TODO
+              rotationMessage: null,
               nextRotationAt: getNextRotationAt(rotationInterval, nextRotationAt)
             },
             tx
@@ -801,7 +798,7 @@ export const secretRotationV2ServiceFactory = ({
                 parameters: updatedRotation.parameters,
                 rotationStatus: SecretRotationStatus.Success,
                 occurredAt: new Date(),
-                rotationMessage: updatedRotation.lastRotationMessage
+                rotationMessage: updatedRotation.rotationMessage
                 // TODO: jobId
               }
             }
@@ -814,15 +811,9 @@ export const secretRotationV2ServiceFactory = ({
       return updatedSecretRotation;
     } catch (error) {
       const updatedRotation = (await secretRotationV2DAL.updateById(secretRotation.id, {
-        lastRotationStatus: SecretRotationStatus.Failed,
-        lastRotationJobId: null,
-        lastRotationMessage:
-          // eslint-disable-next-line no-nested-ternary
-          error instanceof AxiosError
-            ? error?.response?.data
-              ? JSON.stringify(error?.response?.data)
-              : error?.message
-            : (error as Error)?.message ?? "An unknown error occurred."
+        rotationStatus: SecretRotationStatus.Failed,
+        // rotationJobId: null, TODO
+        rotationMessage: parseRotationErrorMessage(error)
       })) as TSecretRotationV2;
 
       await auditLogService.createAuditLog({
@@ -843,7 +834,8 @@ export const secretRotationV2ServiceFactory = ({
             parameters: updatedRotation.parameters,
             rotationStatus: SecretRotationStatus.Failed,
             occurredAt: new Date(),
-            rotationMessage: updatedRotation.lastRotationMessage
+            rotationMessage: updatedRotation.rotationMessage
+            // todo: job Id
           }
         }
       });

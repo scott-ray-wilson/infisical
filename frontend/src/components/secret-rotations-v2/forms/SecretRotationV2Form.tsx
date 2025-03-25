@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { Tab } from "@headlessui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { addDays } from "date-fns";
+import { addDays, isEqual } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
 import { createNotification } from "@app/components/notifications";
@@ -102,18 +102,27 @@ export const SecretRotationV2Form = ({
     reValidateMode: "onChange"
   });
 
-  const onSubmit = async ({ environment, connection, ...formData }: TSecretRotationV2Form) => {
+  const onSubmit = async ({
+    environment,
+    connection,
+    nextRotationAt,
+    ...formData
+  }: TSecretRotationV2Form) => {
     const mutation = secretRotation
       ? updateSecretRotation.mutateAsync({
           rotationId: secretRotation.id,
           projectId: secretRotation.projectId,
-          ...formData
+          ...formData,
+          nextRotationAt: isEqual(nextRotationAt, secretRotation.nextRotationAt)
+            ? undefined
+            : nextRotationAt
         })
       : createSecretRotation.mutateAsync({
           ...formData,
           connectionId: connection.id,
           environment: environment.slug,
-          projectId: currentWorkspace.id
+          projectId: currentWorkspace.id,
+          nextRotationAt
         });
     try {
       const rotation = await mutation;

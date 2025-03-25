@@ -9,7 +9,7 @@ import { QueueJobs, QueueName, TQueueServiceFactory } from "@app/queue";
 
 type TSecretRotationV2QueueServiceFactoryDep = {
   queueService: TQueueServiceFactory;
-  secretRotationV2DAL: Pick<TSecretRotationV2DALFactory, "findSecretRotationsToScheduleForRotation" | "findById">;
+  secretRotationV2DAL: Pick<TSecretRotationV2DALFactory, "findSecretRotationsToQueue" | "findById">;
   secretRotationV2Service: Pick<TSecretRotationV2ServiceFactory, "rotateGeneratedCredentials">;
 };
 
@@ -28,7 +28,7 @@ export const secretRotationV2QueueServiceFactory = async ({
       try {
         const rotateBy = appCfg.isDevelopmentMode ? getNextUTCMinute() : getNextUTCMidnight();
 
-        const secretRotations = await secretRotationV2DAL.findSecretRotationsToScheduleForRotation(rotateBy);
+        const secretRotations = await secretRotationV2DAL.findSecretRotationsToQueue(rotateBy);
 
         const currentTime = new Date();
 

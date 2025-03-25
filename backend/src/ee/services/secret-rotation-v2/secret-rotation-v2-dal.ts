@@ -194,8 +194,7 @@ export const secretRotationV2DALFactory = (
 
     const result = await query;
 
-    logger.warn(result, "result");
-
+    // @ts-expect-error knex infers wrong type...
     return Number(result[0]?.count ?? 0);
   };
 
@@ -446,9 +445,10 @@ export const secretRotationV2DALFactory = (
     return secretMappings;
   };
 
-  const findSecretRotationsToScheduleForRotation = async (rotateBy: Date, tx?: Knex) => {
+  const findSecretRotationsToQueue = async (rotateBy: Date, tx?: Knex) => {
     const secretRotations = await (tx || db.replicaNode())(TableName.SecretRotationV2)
       .where(`${TableName.SecretRotationV2}.nextRotationAt`, "<", rotateBy)
+      .andWhere(`${TableName.SecretRotationV2}.isAutoRotationEnabled`, true)
       .select(selectAllTableCols(TableName.SecretRotationV2));
 
     return secretRotations;
@@ -468,6 +468,6 @@ export const secretRotationV2DALFactory = (
     findRaw: secretRotationV2Orm.find,
     findWithMappedSecrets,
     findWithMappedSecretsCount,
-    findSecretRotationsToScheduleForRotation
+    findSecretRotationsToQueue
   };
 };

@@ -21,9 +21,9 @@ export async function up(knex: Knex): Promise<void> {
       t.timestamps(true, true, true);
       t.integer("rotationInterval").notNullable();
       t.datetime("nextRotationAt").notNullable();
-      t.string("lastRotationStatus");
-      t.string("lastRotationMessage", 1024);
-      t.string("lastRotationJobId");
+      t.string("rotationStatus");
+      t.string("rotationMessage", 1024);
+      t.string("rotationJobId");
       t.datetime("lastRotatedAt");
     });
 

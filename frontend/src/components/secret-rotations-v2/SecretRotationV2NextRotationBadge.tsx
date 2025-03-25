@@ -1,4 +1,4 @@
-import { faRotate } from "@fortawesome/free-solid-svg-icons";
+import { faBan, faRotate } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { differenceInDays, format } from "date-fns";
 import { twMerge } from "tailwind-merge";
@@ -13,7 +13,19 @@ type Props = {
 };
 
 export const SecretRotationV2NextRotationBadge = ({ secretRotation, className }: Props) => {
-  const { nextRotationAt } = secretRotation;
+  const { nextRotationAt, isAutoRotationEnabled } = secretRotation;
+
+  if (!isAutoRotationEnabled) {
+    return (
+      <Badge
+        variant="primary"
+        className={twMerge("flex h-5 w-min items-center gap-1.5 whitespace-nowrap", className)}
+      >
+        <FontAwesomeIcon icon={faBan} />
+        Auto-Rotation Disabled
+      </Badge>
+    );
+  }
 
   const daysToRotation = differenceInDays(nextRotationAt, new Date());
 

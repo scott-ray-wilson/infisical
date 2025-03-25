@@ -5,21 +5,24 @@ import { SecretRotationV2ModalHeader } from "@app/components/secret-rotations-v2
 import { SecretRotationV2Select } from "@app/components/secret-rotations-v2/SecretRotationV2Select";
 import { Modal, ModalContent } from "@app/components/v2";
 import { SecretRotation, TSecretRotationV2 } from "@app/hooks/api/secretRotationsV2";
+import { WorkspaceEnv } from "@app/hooks/api/workspace/types";
+
+type SharedProps = {
+  secretPath: string;
+  environment?: string;
+  environments?: WorkspaceEnv[];
+};
 
 type Props = {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  secretPath: string;
-  environment: string;
-};
+} & SharedProps;
 
 type ContentProps = {
   onComplete: (secretRotation: TSecretRotationV2) => void;
   selectedRotation: SecretRotation | null;
   setSelectedRotation: (selectedRotation: SecretRotation | null) => void;
-  secretPath: string;
-  environment: string;
-};
+} & SharedProps;
 
 const Content = ({ setSelectedRotation, selectedRotation, ...props }: ContentProps) => {
   if (selectedRotation) {
@@ -35,20 +38,15 @@ const Content = ({ setSelectedRotation, selectedRotation, ...props }: ContentPro
   return <SecretRotationV2Select onSelect={setSelectedRotation} />;
 };
 
-export const CreateSecretRotationV2Modal = ({
-  onOpenChange,
-  secretPath,
-  environment,
-  ...props
-}: Props) => {
+export const CreateSecretRotationV2Modal = ({ onOpenChange, isOpen, ...props }: Props) => {
   const [selectedRotation, setSelectedRotation] = useState<SecretRotation | null>(null);
 
   return (
     <Modal
-      {...props}
-      onOpenChange={(isOpen) => {
-        if (!isOpen) setSelectedRotation(null);
-        onOpenChange(isOpen);
+      isOpen={isOpen}
+      onOpenChange={(open) => {
+        if (!open) setSelectedRotation(null);
+        onOpenChange(open);
       }}
     >
       <ModalContent
@@ -73,8 +71,7 @@ export const CreateSecretRotationV2Modal = ({
           }}
           selectedRotation={selectedRotation}
           setSelectedRotation={setSelectedRotation}
-          secretPath={secretPath}
-          environment={environment}
+          {...props}
         />
       </ModalContent>
     </Modal>

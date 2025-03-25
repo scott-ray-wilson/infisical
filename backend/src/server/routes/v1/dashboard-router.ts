@@ -102,12 +102,29 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         includeSecrets: booleanSchema.describe(DASHBOARD.SECRET_OVERVIEW_LIST.includeSecrets),
         includeFolders: booleanSchema.describe(DASHBOARD.SECRET_OVERVIEW_LIST.includeFolders),
         includeImports: booleanSchema.describe(DASHBOARD.SECRET_OVERVIEW_LIST.includeImports),
+        includeSecretRotations: booleanSchema.describe(DASHBOARD.SECRET_OVERVIEW_LIST.includeSecretRotations),
         includeDynamicSecrets: booleanSchema.describe(DASHBOARD.SECRET_OVERVIEW_LIST.includeDynamicSecrets)
       }),
       response: {
         200: z.object({
           folders: SecretFoldersSchema.extend({ environment: z.string() }).array().optional(),
           dynamicSecrets: SanitizedDynamicSecretSchema.extend({ environment: z.string() }).array().optional(),
+          secretRotations: z
+            .intersection(
+              SecretRotationV2Schema,
+              z.object({
+                secrets: secretRawSchema
+                  .extend({
+                    secretValueHidden: z.boolean(),
+                    secretPath: z.string().optional(),
+                    secretMetadata: ResourceMetadataSchema.optional(),
+                    tags: SanitizedTagSchema.array().optional()
+                  })
+                  .array()
+              })
+            )
+            .array()
+            .optional(),
           secrets: secretRawSchema
             .extend({
               secretValueHidden: z.boolean(),
@@ -126,6 +143,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             .optional(),
           totalFolderCount: z.number().optional(),
           totalDynamicSecretCount: z.number().optional(),
+          totalSecretRotationCount: z.number().optional(),
           totalSecretCount: z.number().optional(),
           totalImportCount: z.number().optional(),
           totalCount: z.number()
@@ -145,7 +163,8 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         includeFolders,
         includeSecrets,
         includeImports,
-        includeDynamicSecrets
+        includeDynamicSecrets,
+        includeSecretRotations
       } = req.query;
 
       const environments = req.query.environments.split(",");
@@ -167,10 +186,14 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       let dynamicSecrets:
         | Awaited<ReturnType<typeof server.services.dynamicSecret.listDynamicSecretsByEnvs>>
         | undefined;
+      let secretRotations:
+        | Awaited<ReturnType<typeof server.services.secretRotationV2.getDashboardSecretRotations>>
+        | undefined;
 
       let totalFolderCount: number | undefined;
       let totalDynamicSecretCount: number | undefined;
       let totalSecretCount: number | undefined;
+      let totalSecretRotationCount: number | undefined;
       let totalImportCount: number | undefined;
 
       if (includeImports) {
@@ -323,6 +346,56 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         }
       }
 
+      if (includeSecretRotations) {
+        totalSecretRotationCount = await server.services.secretRotationV2.getDashboardSecretRotationCount(
+          {
+            projectId,
+            search,
+            environments,
+            secretPath
+          },
+          req.permission
+        );
+
+        if (remainingLimit > 0 && totalSecretRotationCount > adjustedOffset) {
+          secretRotations = await server.services.secretRotationV2.getDashboardSecretRotations(
+            {
+              projectId,
+              search,
+              orderBy,
+              orderDirection,
+              environments,
+              secretPath,
+              limit: remainingLimit,
+              offset: adjustedOffset
+            },
+            req.permission
+          );
+
+          await server.services.auditLog.createAuditLog({
+            projectId,
+            ...req.auditLogInfo,
+            event: {
+              type: EventType.GET_SECRET_ROTATIONS,
+              metadata: {
+                count: secretRotations.length,
+                rotationIds: secretRotations.map((rotation) => rotation.id),
+                secretPath,
+                environment: environments.join(",")
+              }
+            }
+          });
+
+          // get the count of unique dynamic secret names to properly adjust remaining limit
+          const uniqueDynamicSecretsCount = new Set(secretRotations.map((rotation) => rotation.name)).size;
+
+          remainingLimit -= uniqueDynamicSecretsCount;
+          adjustedOffset = 0;
+        } else {
+          adjustedOffset = Math.max(0, adjustedOffset - totalSecretRotationCount);
+        }
+      }
+
       if (includeSecrets) {
         // this is the unique count, ie duplicate secrets across envs only count as 1
         totalSecretCount = await server.services.secret.getSecretsCountMultiEnv({
@@ -394,14 +467,20 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       return {
         folders,
         dynamicSecrets,
+        secretRotations,
         secrets,
         imports,
         totalFolderCount,
         totalDynamicSecretCount,
         totalImportCount,
         totalSecretCount,
+        totalSecretRotationCount,
         totalCount:
-          (totalFolderCount ?? 0) + (totalDynamicSecretCount ?? 0) + (totalSecretCount ?? 0) + (totalImportCount ?? 0)
+          (totalFolderCount ?? 0) +
+          (totalDynamicSecretCount ?? 0) +
+          (totalSecretCount ?? 0) +
+          (totalImportCount ?? 0) +
+          (totalSecretRotationCount ?? 0)
       };
     }
   });

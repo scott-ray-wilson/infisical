@@ -15,11 +15,16 @@ export type DashboardProjectSecretsOverviewResponse = {
   totalFolderCount?: number;
   totalDynamicSecretCount?: number;
   totalImportCount?: number;
+  secretRotations?: (TSecretRotationV2 & {
+    secrets: (SecretV3Raw | null)[];
+  })[];
+  totalSecretRotationCount?: number;
   totalCount: number;
   totalUniqueSecretsInPage: number;
   totalUniqueDynamicSecretsInPage: number;
   totalUniqueFoldersInPage: number;
   totalUniqueSecretImportsInPage: number;
+  totalUniqueSecretRotationsInPage: number;
 };
 
 export type DashboardProjectSecretsDetailsResponse = {
@@ -44,9 +49,12 @@ export type DashboardProjectSecretsByKeys = {
 
 export type DashboardProjectSecretsOverview = Omit<
   DashboardProjectSecretsOverviewResponse,
-  "secrets"
+  "secrets" | "secretRotations"
 > & {
   secrets?: SecretV3RawSanitized[];
+  secretRotations?: (TSecretRotationV2 & {
+    secrets: (SecretV3RawSanitized | null)[];
+  })[];
 };
 
 export type DashboardProjectSecretsDetails = Omit<

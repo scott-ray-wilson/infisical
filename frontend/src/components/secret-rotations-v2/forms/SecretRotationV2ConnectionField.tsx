@@ -14,9 +14,10 @@ import { TSecretRotationV2Form } from "./schemas";
 
 type Props = {
   onChange?: VoidFunction;
+  isUpdate: boolean;
 };
 
-export const SecretRotationV2ConnectionField = ({ onChange: callback }: Props) => {
+export const SecretRotationV2ConnectionField = ({ onChange: callback, isUpdate }: Props) => {
   const { permission } = useOrgPermission();
   const { control, watch } = useFormContext<TSecretRotationV2Form>();
 
@@ -43,6 +44,7 @@ export const SecretRotationV2ConnectionField = ({ onChange: callback }: Props) =
             isError={Boolean(error)}
             errorText={error?.message}
             label={`${connectionName} Connection`}
+            helperText={isUpdate ? "Cannot be updated" : undefined}
           >
             <FilterableSelect
               value={value}
@@ -52,6 +54,7 @@ export const SecretRotationV2ConnectionField = ({ onChange: callback }: Props) =
               }}
               isLoading={isPending}
               options={availableConnections}
+              isDisabled={isUpdate}
               placeholder="Select connection..."
               getOptionLabel={(option) => option.name}
               getOptionValue={(option) => option.id}
@@ -61,7 +64,7 @@ export const SecretRotationV2ConnectionField = ({ onChange: callback }: Props) =
         control={control}
         name="connection"
       />
-      {availableConnections?.length === 0 && (
+      {!isUpdate && availableConnections?.length === 0 && (
         <p className="-mt-2.5 mb-2.5 text-xs text-yellow">
           <FontAwesomeIcon className="mr-1" size="xs" icon={faInfoCircle} />
           {canCreateConnection ? (

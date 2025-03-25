@@ -46,7 +46,14 @@ export const BaseCreateSecretRotationSchema = (type: SecretRotation) =>
       .optional()
       .default(true)
       .describe(SecretRotations.CREATE(type).isAutoRotationEnabled),
-    interval: z.coerce.number().min(1).describe(SecretRotations.CREATE(type).interval)
+    rotationInterval: z.coerce.number().min(1).describe(SecretRotations.CREATE(type).interval),
+    nextRotationAt: z.coerce
+      .date()
+      .optional()
+      .refine((rotateAt) => (rotateAt ? rotateAt.getTime() > Date.now() : true), {
+        message: "Scheduled rotation must be for a future datetime"
+      })
+      .describe(SecretRotations.CREATE(type).nextRotationAt)
   });
 
 export const BaseUpdateSecretRotationSchema = (type: SecretRotation) =>
@@ -59,5 +66,12 @@ export const BaseUpdateSecretRotationSchema = (type: SecretRotation) =>
       .nullish()
       .describe(SecretRotations.UPDATE(type).description),
     isAutoRotationEnabled: z.boolean().optional().describe(SecretRotations.UPDATE(type).isAutoRotationEnabled),
-    interval: z.coerce.number().min(1).optional().describe(SecretRotations.UPDATE(type).interval)
+    rotationInterval: z.coerce.number().min(1).optional().describe(SecretRotations.UPDATE(type).interval),
+    nextRotationAt: z.coerce
+      .date()
+      .optional()
+      .refine((scheduledRotationAt) => (scheduledRotationAt ? scheduledRotationAt.getTime() > Date.now() : true), {
+        message: "Scheduled rotation must be for a future datetime"
+      })
+      .describe(SecretRotations.UPDATE(type).nextRotationAt)
   });

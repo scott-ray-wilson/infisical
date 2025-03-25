@@ -16,6 +16,8 @@ import { SecretRotation, SecretRotationStatus } from "@app/ee/services/secret-ro
 import {
   decryptSecretRotationCredentials,
   encryptSecretRotationCredentials,
+  getInitialRotationAt,
+  getNextRotationAt,
   listSecretRotationOptions
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-fns";
 import {
@@ -39,6 +41,7 @@ import {
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-types";
 import { sqlCredentialsRotationFactory } from "@app/ee/services/secret-rotation-v2/shared/sql-credentials";
 import { TKeyStoreFactory } from "@app/keystore/keystore";
+import { getConfig } from "@app/lib/config/env";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
 import { BadRequestError, DatabaseError, NotFoundError } from "@app/lib/errors";
 import { logger } from "@app/lib/logger";
@@ -441,6 +444,7 @@ export const secretRotationV2ServiceFactory = ({
             {
               folderId: folder.id,
               ...params,
+              nextRotationAt: getInitialRotationAt(params.rotationInterval, params.nextRotationAt),
               encryptedGeneratedCredentials
             },
             tx
@@ -709,9 +713,20 @@ export const secretRotationV2ServiceFactory = ({
   };
 
   const rotateGeneratedCredentials = async (secretRotation: TSecretRotationV2Raw, auditLogInfo?: AuditLogInfo) => {
-    try {
-      const { connection, encryptedGeneratedCredentials, activeIndex, projectId, type, parameters } = secretRotation;
+    const appCfg = getConfig();
 
+    const {
+      connection,
+      encryptedGeneratedCredentials,
+      activeIndex,
+      projectId,
+      type,
+      parameters,
+      nextRotationAt,
+      rotationInterval
+    } = secretRotation;
+
+    try {
       const appConnection = await decryptAppConnection(connection, kmsService);
 
       const generatedCredentials = await decryptSecretRotationCredentials({
@@ -746,9 +761,10 @@ export const secretRotationV2ServiceFactory = ({
               encryptedGeneratedCredentials: encryptedUpdatedCredentials,
               activeIndex: inactiveIndex,
               lastRotatedAt: new Date(),
-              rotationStatus: SecretRotationStatus.Success,
+              lastRotationStatus: SecretRotationStatus.Success,
               lastRotationJobId: null,
-              rotationStatusMessage: null
+              lastRotationMessage: null,
+              nextRotationAt: getNextRotationAt(rotationInterval, nextRotationAt)
             },
             tx
           )) as TSecretRotationV2;
@@ -783,9 +799,10 @@ export const secretRotationV2ServiceFactory = ({
                 connectionId: updatedRotation.connectionId,
                 folderId: updatedRotation.folderId,
                 parameters: updatedRotation.parameters,
-                rotationStatus: updatedRotation.rotationStatus,
+                rotationStatus: SecretRotationStatus.Success,
                 occurredAt: new Date(),
-                rotationStatusMessage: updatedRotation.rotationStatusMessage
+                rotationMessage: updatedRotation.lastRotationMessage
+                // TODO: jobId
               }
             }
           });
@@ -797,9 +814,9 @@ export const secretRotationV2ServiceFactory = ({
       return updatedSecretRotation;
     } catch (error) {
       const updatedRotation = (await secretRotationV2DAL.updateById(secretRotation.id, {
-        rotationStatus: SecretRotationStatus.Failed,
+        lastRotationStatus: SecretRotationStatus.Failed,
         lastRotationJobId: null,
-        rotationStatusMessage:
+        lastRotationMessage:
           // eslint-disable-next-line no-nested-ternary
           error instanceof AxiosError
             ? error?.response?.data
@@ -824,9 +841,9 @@ export const secretRotationV2ServiceFactory = ({
             connectionId: updatedRotation.connectionId,
             folderId: updatedRotation.folderId,
             parameters: updatedRotation.parameters,
-            rotationStatus: updatedRotation.rotationStatus,
+            rotationStatus: SecretRotationStatus.Failed,
             occurredAt: new Date(),
-            rotationStatusMessage: updatedRotation.rotationStatusMessage
+            rotationMessage: updatedRotation.lastRotationMessage
           }
         }
       });

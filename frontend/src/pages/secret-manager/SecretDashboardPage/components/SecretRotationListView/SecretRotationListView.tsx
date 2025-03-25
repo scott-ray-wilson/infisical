@@ -16,7 +16,7 @@ type Props = {
 };
 
 export const SecretRotationListView = ({ secretRotations, ...secretProps }: Props) => {
-  const { popUp, handlePopUpOpen, handlePopUpClose, handlePopUpToggle } = usePopUp([
+  const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp([
     "editSecretRotation",
     "rotateSecretRotation",
     "viewSecretRotationGeneratedCredentials",

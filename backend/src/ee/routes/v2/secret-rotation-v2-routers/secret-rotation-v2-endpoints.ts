@@ -37,7 +37,8 @@ export const registerSecretRotationEndpoints = <
     parameters: I["parameters"];
     description?: string | null;
     isAutoRotationEnabled?: boolean;
-    interval: number;
+    rotationInterval: number;
+    nextRotationAt?: Date;
   }>;
   updateSchema: z.ZodType<{
     connectionId?: string;
@@ -47,7 +48,8 @@ export const registerSecretRotationEndpoints = <
     parameters?: I["parameters"];
     description?: string | null;
     isAutoRotationEnabled?: boolean;
-    interval?: number;
+    rotationInterval?: number;
+    nextRotationAt?: Date;
   }>;
   responseSchema: z.ZodTypeAny;
   generatedCredentialsSchema: z.ZodTypeAny;

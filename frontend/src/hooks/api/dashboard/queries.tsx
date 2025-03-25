@@ -378,7 +378,7 @@ export const useGetProjectSecretsQuickSearch = (
         tags
       }),
     select: useCallback((data: Awaited<ReturnType<typeof fetchProjectSecretsQuickSearch>>) => {
-      const { secrets, folders, dynamicSecrets } = data;
+      const { secrets, folders, dynamicSecrets, secretRotations } = data;
 
       const groupedFolders = groupBy(folders, (folder) => folder.path);
       const groupedSecrets = groupBy(
@@ -390,11 +390,16 @@ export const useGetProjectSecretsQuickSearch = (
         (dynamicSecret) =>
           `${dynamicSecret.path === "/" ? "" : dynamicSecret.path}/${dynamicSecret.name}`
       );
+      const groupedRotations = groupBy(
+        secretRotations,
+        (rotation) => `${rotation.folder.path === "/" ? "" : rotation.folder.path}/${rotation.name}`
+      );
 
       return {
         folders: groupedFolders,
         secrets: groupedSecrets,
-        dynamicSecrets: groupedDynamicSecrets
+        dynamicSecrets: groupedDynamicSecrets,
+        secretRotations: groupedRotations
       };
     }, []),
     placeholderData: (previousData) => previousData

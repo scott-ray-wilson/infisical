@@ -246,9 +246,11 @@ export const secretRotationV2DALFactory = (
         );
 
       if (search) {
-        void extendedQuery
-          .whereILike(`${TableName.SecretRotationV2SecretMapping}.secretKey`, `%${search}%`)
-          .orWhereILike(`${TableName.SecretRotationV2}.name`, `%${search}%`);
+        void extendedQuery.where((query) => {
+          void query
+            .whereILike(`${TableName.SecretRotationV2SecretMapping}.secretKey`, `%${search}%`)
+            .orWhereILike(`${TableName.SecretRotationV2}.name`, `%${search}%`);
+        });
       }
 
       const secretRotations = await extendedQuery;

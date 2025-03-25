@@ -1,19 +1,58 @@
-import { faBan, faRotate } from "@fortawesome/free-solid-svg-icons";
+import { faBan, faRotate, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { differenceInDays, format } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
 import { Tooltip } from "@app/components/v2";
 import { Badge, BadgeProps } from "@app/components/v2/Badge/Badge";
-import { TSecretRotationV2 } from "@app/hooks/api/secretRotationsV2";
+import { SecretRotationStatus, TSecretRotationV2 } from "@app/hooks/api/secretRotationsV2";
 
 type Props = {
   secretRotation: TSecretRotationV2;
   className?: string;
 };
 
-export const SecretRotationV2NextRotationBadge = ({ secretRotation, className }: Props) => {
-  const { nextRotationAt, isAutoRotationEnabled } = secretRotation;
+export const SecretRotationV2StatusBadge = ({ secretRotation, className }: Props) => {
+  const { nextRotationAt, isAutoRotationEnabled, rotationStatus, rotationMessage } = secretRotation;
+
+  if (rotationStatus === SecretRotationStatus.Failed) {
+    let errorMessage = rotationMessage;
+    if (rotationMessage) {
+      try {
+        errorMessage = JSON.stringify(JSON.parse(rotationMessage), null, 2);
+      } catch {
+        errorMessage = rotationMessage;
+      }
+    }
+
+    return (
+      <Tooltip
+        position="left"
+        className="max-w-sm"
+        content={
+          <div className="flex flex-col gap-2 whitespace-normal py-1">
+            <div>
+              <div className="mb-2 flex self-start text-red">
+                <FontAwesomeIcon icon={faXmark} className="ml-1 pr-1.5 pt-0.5 text-sm" />
+                <div className="text-xs">Failure Reason</div>
+              </div>
+              <div className="break-words rounded bg-mineshaft-600 p-2 text-xs">{errorMessage}</div>
+            </div>
+          </div>
+        }
+      >
+        <div>
+          <Badge
+            variant="danger"
+            className={twMerge("flex h-5 w-min items-center gap-1.5 whitespace-nowrap", className)}
+          >
+            <FontAwesomeIcon icon={faXmark} />
+            Rotation Failed
+          </Badge>
+        </div>
+      </Tooltip>
+    );
+  }
 
   if (!isAutoRotationEnabled) {
     return (

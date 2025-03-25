@@ -2,12 +2,18 @@ import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { addDays } from "date-fns";
 
-import { DatePicker, FormControl, Input, Switch } from "@app/components/v2";
+import { DatePicker, FilterableSelect, FormControl, Input, Switch } from "@app/components/v2";
+import { WorkspaceEnv } from "@app/hooks/api/workspace/types";
 
 import { TSecretRotationV2Form } from "./schemas";
 import { SecretRotationV2ConnectionField } from "./SecretRotationV2ConnectionField";
 
-export const SecretRotationV2ConfigurationFields = () => {
+type Props = {
+  isUpdate: boolean;
+  environments?: WorkspaceEnv[];
+};
+
+export const SecretRotationV2ConfigurationFields = ({ isUpdate, environments }: Props) => {
   const { control, watch, setValue } = useFormContext<TSecretRotationV2Form>();
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -18,7 +24,26 @@ export const SecretRotationV2ConfigurationFields = () => {
       <p className="mb-4 text-sm text-bunker-300">
         Configure the connection rotation strategy for this Secret Rotation.
       </p>
-      <SecretRotationV2ConnectionField />
+      {!isUpdate && environments && (
+        <Controller
+          control={control}
+          name="environment"
+          render={({ field: { value, onChange }, fieldState: { error } }) => (
+            <FormControl label="Environment" isError={Boolean(error)} errorText={error?.message}>
+              <FilterableSelect
+                value={value}
+                onChange={onChange}
+                options={environments}
+                placeholder="Select an environment..."
+                getOptionLabel={(option) => option?.name}
+                getOptionValue={(option) => option?.id}
+              />
+            </FormControl>
+          )}
+        />
+      )}
+
+      <SecretRotationV2ConnectionField isUpdate={isUpdate} />
       <Controller
         render={({ field: { value, onChange }, fieldState: { error } }) => (
           <FormControl

@@ -113,9 +113,9 @@ export const SecretSyncReviewFields = () => {
           <SecretSyncLabel label="Append Suffix">{appendSuffix}</SecretSyncLabel> */}
           {AdditionalSyncOptionsFieldsComponent}
           {disableSecretDeletion && (
-            <SecretSyncLabel label="Secret Deletion">
+            <GenericFieldLabel label="Secret Deletion">
               <Badge variant="primary">Disabled</Badge>
-            </SecretSyncLabel>
+            </GenericFieldLabel>
           )}
         </div>
       </div>

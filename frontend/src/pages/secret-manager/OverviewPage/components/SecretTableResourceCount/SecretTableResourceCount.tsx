@@ -85,7 +85,7 @@ export const SecretTableResourceCount = ({
           }
         >
           <div className="flex items-center gap-2 pl-2">
-            <FontAwesomeIcon icon={faRotate} className="text-green-700" />
+            <FontAwesomeIcon icon={faRotate} className="text-mineshaft-400" />
             <span>{secretRotationCount}</span>
           </div>
         </Tooltip>

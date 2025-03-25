@@ -1,7 +1,7 @@
 import { AppConnection } from "@app/hooks/api/appConnections/enums";
 import { SecretRotationStatus } from "@app/hooks/api/secretRotationsV2";
 
-export type TSecretRotationBase = {
+export type TSecretRotationV2Base = {
   id: string;
   name: string;
   description?: string | null;
@@ -30,4 +30,11 @@ export type TSecretRotationBase = {
     id: string;
     path: string;
   };
+};
+
+export type TSecretRotationV2GeneratedCredentialsResponseBase<U, T> = {
+  activeIndex: 0 | 1;
+  generatedCredentials: [T, T | undefined];
+  type: U;
+  rotationId: string;
 };

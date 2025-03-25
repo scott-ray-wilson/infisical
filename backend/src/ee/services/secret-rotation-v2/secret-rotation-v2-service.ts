@@ -414,7 +414,7 @@ export const secretRotationV2ServiceFactory = ({
         const generatedCredentials = [newCredentials];
 
         const encryptedGeneratedCredentials = await encryptSecretRotationCredentials({
-          generatedCredentials,
+          generatedCredentials: viewGeneratedCredentials,
           projectId,
           kmsService
         });
@@ -677,7 +677,7 @@ export const secretRotationV2ServiceFactory = ({
 
         const encryptedUpdatedCredentials = await encryptSecretRotationCredentials({
           projectId,
-          generatedCredentials: updatedCredentials,
+          viewGeneratedCredentials: updatedCredentials,
           kmsService
         });
 

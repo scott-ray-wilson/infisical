@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { CreateSecretRotationForm } from "@app/components/secret-rotations-v2/forms";
+import { SecretRotationV2Form } from "@app/components/secret-rotations-v2/forms";
 import { SecretRotationV2ModalHeader } from "@app/components/secret-rotations-v2/SecretRotationV2ModalHeader";
 import { SecretRotationV2Select } from "@app/components/secret-rotations-v2/SecretRotationV2Select";
 import { Modal, ModalContent } from "@app/components/v2";
@@ -24,7 +24,7 @@ type ContentProps = {
 const Content = ({ setSelectedRotation, selectedRotation, ...props }: ContentProps) => {
   if (selectedRotation) {
     return (
-      <CreateSecretRotationForm
+      <SecretRotationV2Form
         onCancel={() => setSelectedRotation(null)}
         type={selectedRotation}
         {...props}

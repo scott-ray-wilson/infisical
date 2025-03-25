@@ -2360,7 +2360,7 @@ interface RotateSecretRotationEvent {
     jobId?: string;
     occurredAt: Date;
     rotationStatus: SecretRotationStatus;
-    rotationMessage?: string | null;
+    rotationMessage?: string | null | undefined;
   };
 }
 

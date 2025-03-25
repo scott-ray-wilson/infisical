@@ -2,9 +2,11 @@ import { subject } from "@casl/ability";
 import {
   faAsterisk,
   faChevronDown,
+  faCircleXmark,
   faClose,
   faEdit,
-  faRotate
+  faRotate,
+  faXmark
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { AnimatePresence, motion } from "framer-motion";
@@ -12,12 +14,12 @@ import { twMerge } from "tailwind-merge";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
 import { SecretRotationV2NextRotationBadge } from "@app/components/secret-rotations-v2/SecretRotationV2NextRotationBadge";
-import { IconButton, Tag, Tooltip } from "@app/components/v2";
+import { Badge, IconButton, Tag, Tooltip } from "@app/components/v2";
 import { ProjectPermissionSub } from "@app/context";
 import { ProjectPermissionSecretRotationActions } from "@app/context/ProjectPermissionContext/types";
 import { SECRET_ROTATION_MAP } from "@app/helpers/secretRotationsV2";
 import { useToggle } from "@app/hooks";
-import { TSecretRotationV2 } from "@app/hooks/api/secretRotationsV2";
+import { SecretRotationStatus, TSecretRotationV2 } from "@app/hooks/api/secretRotationsV2";
 import { SecretV3RawSanitized } from "@app/hooks/api/secrets/types";
 import { WsTag } from "@app/hooks/api/tags/types";
 import {
@@ -44,10 +46,20 @@ export const SecretRotationItem = ({
   onDelete,
   ...secretProps
 }: Props) => {
-  const { name, type, environment, folder, projectId, secrets } = secretRotation;
+  const { name, type, environment, folder, projectId, secrets, rotationStatus, rotationMessage } =
+    secretRotation;
 
   const { name: rotationType, image } = SECRET_ROTATION_MAP[type];
   const [isExpanded, setIsExpanded] = useToggle(true);
+
+  let errorMessage = rotationMessage;
+  if (rotationMessage) {
+    try {
+      errorMessage = JSON.stringify(JSON.parse(rotationMessage), null, 2);
+    } catch {
+      errorMessage = rotationMessage;
+    }
+  }
 
   return (
     <>
@@ -84,7 +96,37 @@ export const SecretRotationItem = ({
               {rotationType}
             </Tag>
           </div>
-          <SecretRotationV2NextRotationBadge className="mx-2" secretRotation={secretRotation} />
+          {rotationStatus === SecretRotationStatus.Failed ? (
+            <Tooltip
+              position="left"
+              className="max-w-sm"
+              content={
+                <div className="flex flex-col gap-2 whitespace-normal py-1">
+                  <div>
+                    <div className="mb-2 flex self-start text-red">
+                      <FontAwesomeIcon icon={faXmark} className="ml-1 pr-1.5 pt-0.5 text-sm" />
+                      <div className="text-xs">Failure Reason</div>
+                    </div>
+                    <div className="break-words rounded bg-mineshaft-600 p-2 text-xs">
+                      {errorMessage}
+                    </div>
+                  </div>
+                </div>
+              }
+            >
+              <div>
+                <Badge
+                  variant="danger"
+                  className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap"
+                >
+                  <FontAwesomeIcon icon={faCircleXmark} />
+                  Rotation Failed
+                </Badge>
+              </div>
+            </Tooltip>
+          ) : (
+            <SecretRotationV2NextRotationBadge className="mx-2" secretRotation={secretRotation} />
+          )}
           <div
             key="actions"
             className="flex h-full flex-shrink-0 self-start transition-all group-hover:gap-x-2"

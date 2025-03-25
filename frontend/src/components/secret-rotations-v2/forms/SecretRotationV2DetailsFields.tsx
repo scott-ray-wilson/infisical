@@ -20,7 +20,7 @@ export const SecretRotationV2DetailsFields = () => {
             errorText={error?.message}
             label="Name"
           >
-            <Input value={value} onChange={onChange} placeholder="my-secret-rotation" />
+            <Input autoFocus value={value} onChange={onChange} placeholder="my-secret-rotation" />
           </FormControl>
         )}
         control={control}

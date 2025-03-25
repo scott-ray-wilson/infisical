@@ -41,7 +41,7 @@ export const SecretRotationV2ModalHeader = ({ type, isConfigured }: Props) => {
         <p className="text-sm leading-4 text-mineshaft-400">
           {isConfigured
             ? `Edit ${destinationDetails.name} Rotation`
-            : `Rotate ${destinationDetails.name} secrets`}
+            : `Rotate ${destinationDetails.name}`}
         </p>
       </div>
     </div>

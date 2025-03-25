@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Tab } from "@headlessui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { twMerge } from "tailwind-merge";
@@ -10,6 +8,7 @@ import { createNotification } from "@app/components/notifications";
 import { SecretRotationV2ConfigurationFields } from "@app/components/secret-rotations-v2/forms/SecretRotationV2ConfigurationFields";
 import { SecretRotationV2DetailsFields } from "@app/components/secret-rotations-v2/forms/SecretRotationV2DetailsFields";
 import { SecretRotationV2ParametersFields } from "@app/components/secret-rotations-v2/forms/SecretRotationV2ParametersFields/SecretRotationV2ParametersFields";
+import { SecretRotationV2ReviewFields } from "@app/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields";
 import { Button } from "@app/components/v2";
 import { useWorkspace } from "@app/context";
 import { SECRET_ROTATION_MAP } from "@app/helpers/secretRotationsV2";
@@ -41,12 +40,16 @@ const FORM_TABS: { name: string; key: string; fields: (keyof TSecretRotationV2Fo
   { name: "Review", key: "review", fields: [] }
 ];
 
-export const CreateSecretRotationForm = ({ type, onComplete, onCancel }: Props) => {
+export const CreateSecretRotationForm = ({
+  type,
+  onComplete,
+  onCancel,
+  environment: envSlug,
+  secretPath
+}: Props) => {
   const createSecretSync = useCreateSecretRotationV2();
   const { currentWorkspace } = useWorkspace();
   const { name: rotationType } = SECRET_ROTATION_MAP[type];
-
-  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const [selectedTabIndex, setSelectedTabIndex] = useState(0);
 
@@ -58,8 +61,9 @@ export const CreateSecretRotationForm = ({ type, onComplete, onCancel }: Props) 
       type,
       isAutoRotationEnabled: true,
       interval: 30,
-      parameters: rotationOption!.parametersTemplate
-      // TODO: template parameters
+      parameters: rotationOption!.parametersTemplate,
+      environment: currentWorkspace?.environments.find((env) => env.slug === envSlug),
+      secretPath
     },
     reValidateMode: "onChange"
   });
@@ -79,8 +83,6 @@ export const CreateSecretRotationForm = ({ type, onComplete, onCancel }: Props) 
       });
       onComplete(secretRotation);
     } catch (err: any) {
-      console.error(err);
-      setShowConfirmation(false);
       createNotification({
         title: `Failed to add ${rotationType} Rotation`,
         text: err.message,
@@ -98,7 +100,7 @@ export const CreateSecretRotationForm = ({ type, onComplete, onCancel }: Props) 
     setSelectedTabIndex((prev) => prev - 1);
   };
 
-  const { handleSubmit, trigger, control } = formMethods;
+  const { handleSubmit, trigger } = formMethods;
 
   const isStepValid = async (index: number) => trigger(FORM_TABS[index].fields);
 
@@ -106,7 +108,7 @@ export const CreateSecretRotationForm = ({ type, onComplete, onCancel }: Props) 
 
   const handleNext = async () => {
     if (isFinalStep) {
-      setShowConfirmation(true);
+      handleSubmit(onSubmit)();
       return;
     }
 
@@ -126,42 +128,6 @@ export const CreateSecretRotationForm = ({ type, onComplete, onCancel }: Props) 
 
     return isEnabled;
   };
-
-  if (showConfirmation)
-    return (
-      <>
-        <div className="flex flex-col rounded-sm border border-l-[2px] border-mineshaft-600 border-l-primary bg-mineshaft-700/80 px-4 py-3">
-          <div className="mb-1 flex items-center text-sm">
-            <FontAwesomeIcon icon={faInfoCircle} size="sm" className="mr-1.5 text-primary" />
-            Secret Sync Behavior
-          </div>
-          <p className="mt-1 text-sm text-bunker-200">
-            Secret Syncs are the source of truth for connected third-party services. Any secret,
-            including associated data, not present or imported in Infisical before syncing will be
-            overwritten, and changes made directly in the connected service outside of infisical may
-            also be overwritten by future syncs.
-          </p>
-        </div>
-        <div className="mt-4 flex gap-4">
-          <Button
-            isDisabled={createSecretSync.isPending}
-            isLoading={createSecretSync.isPending}
-            onClick={handleSubmit(onSubmit)}
-            colorSchema="secondary"
-          >
-            I Understand
-          </Button>
-          <Button
-            isDisabled={createSecretSync.isPending}
-            variant="plain"
-            onClick={() => setShowConfirmation(false)}
-            colorSchema="secondary"
-          >
-            Cancel
-          </Button>
-        </div>
-      </>
-    );
 
   return (
     <form className={twMerge(isFinalStep && "max-h-[70vh] overflow-y-auto")}>
@@ -198,7 +164,9 @@ export const CreateSecretRotationForm = ({ type, onComplete, onCancel }: Props) 
             <Tab.Panel>
               <SecretRotationV2DetailsFields />
             </Tab.Panel>
-            <Tab.Panel>{/* <SecretSyncDetailsFields /> */}</Tab.Panel>
+            <Tab.Panel>
+              <SecretRotationV2ReviewFields />
+            </Tab.Panel>
           </Tab.Panels>
         </Tab.Group>
       </FormProvider>

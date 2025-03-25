@@ -16,6 +16,7 @@ export * from "./EmptyState";
 export * from "./FilterableSelect";
 export * from "./FontAwesomeSymbol";
 export * from "./FormControl";
+export * from "./GenericFieldLabel";
 export * from "./HoverCardv2";
 export * from "./IconButton";
 export * from "./Input";

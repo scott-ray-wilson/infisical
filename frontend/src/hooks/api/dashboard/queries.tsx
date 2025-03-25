@@ -188,7 +188,7 @@ export const useGetProjectSecretsOverview = (
         environments
       }),
     select: useCallback((data: Awaited<ReturnType<typeof fetchProjectSecretsOverview>>) => {
-      const { secrets, ...select } = data;
+      const { secrets, secretRotations, ...select } = data;
       const uniqueSecrets = secrets ? unique(secrets, (i) => i.secretKey) : [];
 
       const uniqueFolders = select.folders ? unique(select.folders, (i) => i.name) : [];
@@ -197,11 +197,18 @@ export const useGetProjectSecretsOverview = (
         ? unique(select.dynamicSecrets, (i) => i.name)
         : [];
 
+      const uniqueSecretRotations = secretRotations ? unique(secretRotations, (i) => i.name) : [];
+
       return {
         ...select,
         secrets: secrets ? mergePersonalSecrets(secrets) : undefined,
+        secretRotations: secretRotations?.map((rotation) => ({
+          ...rotation,
+          secrets: mergePersonalSecrets(rotation.secrets)
+        })),
         totalUniqueSecretsInPage: uniqueSecrets.length,
         totalUniqueDynamicSecretsInPage: uniqueDynamicSecrets.length,
+        totalUniqueSecretRotationsInPage: uniqueSecretRotations.length,
         totalUniqueFoldersInPage: uniqueFolders.length
       };
     }, []),

@@ -22,6 +22,7 @@ import {
   useCreateSecretRotationV2,
   useUpdateSecretRotationV2
 } from "@app/hooks/api/secretRotationsV2/mutations";
+import { WorkspaceEnv } from "@app/hooks/api/workspace/types";
 
 import { SecretRotationV2FormSchema, TSecretRotationV2Form } from "./schemas";
 
@@ -30,7 +31,8 @@ type Props = {
   type: SecretRotation;
   onCancel: () => void;
   secretPath: string;
-  environment: string;
+  environment?: string;
+  environments?: WorkspaceEnv[];
   secretRotation?: TSecretRotationV2;
 };
 
@@ -38,7 +40,13 @@ const FORM_TABS: { name: string; key: string; fields: (keyof TSecretRotationV2Fo
   {
     name: "Configuration",
     key: "configuration",
-    fields: ["isAutoRotationEnabled", "rotationInterval", "connection", "nextRotationAt"]
+    fields: [
+      "isAutoRotationEnabled",
+      "environment",
+      "rotationInterval",
+      "connection",
+      "nextRotationAt"
+    ]
   },
   { name: "Parameters", key: "parameters", fields: ["parameters"] },
   { name: "Details", key: "details", fields: ["name", "description"] },
@@ -71,7 +79,8 @@ export const SecretRotationV2Form = ({
   onCancel,
   environment: envSlug,
   secretPath,
-  secretRotation
+  secretRotation,
+  environments
 }: Props) => {
   const createSecretRotation = useCreateSecretRotationV2();
   const updateSecretRotation = useUpdateSecretRotationV2();
@@ -206,7 +215,10 @@ export const SecretRotationV2Form = ({
           </Tab.List>
           <Tab.Panels>
             <Tab.Panel>
-              <SecretRotationV2ConfigurationFields />
+              <SecretRotationV2ConfigurationFields
+                isUpdate={Boolean(secretRotation)}
+                environments={environments}
+              />
             </Tab.Panel>
             <Tab.Panel>
               <SecretRotationV2ParametersFields />

@@ -13,7 +13,8 @@ import {
   faFolderPlus,
   faKey,
   faList,
-  faPlus
+  faPlus,
+  faRotate
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Link, useNavigate, useRouter, useSearch } from "@tanstack/react-router";
@@ -22,6 +23,11 @@ import { twMerge } from "tailwind-merge";
 import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
 import { createNotification } from "@app/components/notifications";
 import { ProjectPermissionCan } from "@app/components/permissions";
+import { CreateSecretRotationV2Modal } from "@app/components/secret-rotations-v2";
+import { DeleteSecretRotationV2Modal } from "@app/components/secret-rotations-v2/DeleteSecretRotationV2Modal";
+import { EditSecretRotationV2Modal } from "@app/components/secret-rotations-v2/EditSecretRotationV2Modal";
+import { RotateSecretRotationV2Modal } from "@app/components/secret-rotations-v2/RotateSecretRotationV2Modal";
+import { ViewSecretRotationV2GeneratedCredentialsModal } from "@app/components/secret-rotations-v2/ViewSecretRotationV2GeneratedCredentials";
 import {
   Button,
   Checkbox,
@@ -56,6 +62,7 @@ import {
   useSubscription,
   useWorkspace
 } from "@app/context";
+import { ProjectPermissionSecretRotationActions } from "@app/context/ProjectPermissionContext/types";
 import { useDebounce, usePagination, usePopUp, useResetPageHelper } from "@app/hooks";
 import {
   useCreateFolder,
@@ -70,9 +77,16 @@ import { DashboardSecretsOrderBy } from "@app/hooks/api/dashboard/types";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { useUpdateFolderBatch } from "@app/hooks/api/secretFolders/queries";
 import { TUpdateFolderBatchDTO } from "@app/hooks/api/secretFolders/types";
+import { TSecretRotationV2 } from "@app/hooks/api/secretRotationsV2";
 import { SecretType, SecretV3RawSanitized, TSecretFolder } from "@app/hooks/api/types";
 import { ProjectType, ProjectVersion } from "@app/hooks/api/workspace/types";
-import { useDynamicSecretOverview, useFolderOverview, useSecretOverview } from "@app/hooks/utils";
+import {
+  useDynamicSecretOverview,
+  useFolderOverview,
+  useSecretOverview,
+  useSecretRotationOverview
+} from "@app/hooks/utils";
+import { SecretOverviewSecretRotationRow } from "@app/pages/secret-manager/OverviewPage/components/SecretOverviewSecretRotationRow";
 
 import { CreateDynamicSecretForm } from "../SecretDashboardPage/components/ActionBar/CreateDynamicSecretForm";
 import { FolderForm } from "../SecretDashboardPage/components/ActionBar/FolderForm";
@@ -97,6 +111,7 @@ export enum EntryType {
 enum RowType {
   Folder = "folder",
   DynamicSecret = "dynamic",
+  SecretRotation = "rotation",
   Secret = "secret"
 }
 
@@ -107,6 +122,7 @@ type Filter = {
 const DEFAULT_FILTER_STATE = {
   [RowType.Folder]: true,
   [RowType.DynamicSecret]: true,
+  [RowType.SecretRotation]: true,
   [RowType.Secret]: true
 };
 
@@ -192,6 +208,15 @@ export const OverviewPage = () => {
       })
     )
   );
+  const userAvailableSecretRotationEnvs = userAvailableEnvs.filter((env) =>
+    permission.can(
+      ProjectPermissionSecretRotationActions.Create,
+      subject(ProjectPermissionSub.SecretRotation, {
+        environment: env.slug,
+        secretPath
+      })
+    )
+  );
 
   const [visibleEnvs, setVisibleEnvs] = useState(userAvailableEnvs);
 
@@ -216,6 +241,7 @@ export const OverviewPage = () => {
       includeFolders: filter.folder,
       includeDynamicSecrets: filter.dynamic,
       includeSecrets: filter.secret,
+      includeSecretRotations: filter.rotation,
       search: debouncedSearchFilter,
       limit,
       offset
@@ -227,13 +253,16 @@ export const OverviewPage = () => {
     secrets,
     folders,
     dynamicSecrets,
+    secretRotations,
     totalFolderCount,
     totalSecretCount,
     totalDynamicSecretCount,
+    totalSecretRotationCount,
     totalCount = 0,
     totalUniqueFoldersInPage,
     totalUniqueSecretsInPage,
-    totalUniqueDynamicSecretsInPage
+    totalUniqueDynamicSecretsInPage,
+    totalUniqueSecretRotationsInPage
   } = overview ?? {};
 
   useResetPageHelper({
@@ -247,6 +276,13 @@ export const OverviewPage = () => {
 
   const { dynamicSecretNames, isDynamicSecretPresentInEnv } =
     useDynamicSecretOverview(dynamicSecrets);
+
+  const {
+    secretRotationNames,
+    isSecretRotationPresentInEnv,
+    getSecretRotationByName,
+    getSecretRotationStatusesByName
+  } = useSecretRotationOverview(secretRotations);
 
   const { secKeys, getSecretByKey, getEnvSecretKeyCount } = useSecretOverview(secrets);
   const { data: tags } = useGetWsTags(
@@ -265,6 +301,11 @@ export const OverviewPage = () => {
     "misc",
     "updateFolder",
     "addDynamicSecret",
+    "addSecretRotation",
+    "editSecretRotation",
+    "rotateSecretRotation",
+    "viewSecretRotationGeneratedCredentials",
+    "deleteSecretRotation",
     "upgradePlan"
   ] as const);
 
@@ -796,6 +837,21 @@ export const OverviewPage = () => {
                   <DropdownMenuItem
                     onClick={(e) => {
                       e.preventDefault();
+                      handleToggleRowType(RowType.SecretRotation);
+                    }}
+                    icon={
+                      filter[RowType.SecretRotation] && <FontAwesomeIcon icon={faCheckCircle} />
+                    }
+                    iconPos="right"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FontAwesomeIcon icon={faRotate} className="text-mineshaft-400" />
+                      <span>Secret Rotations</span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.preventDefault();
                       handleToggleRowType(RowType.Secret);
                     }}
                     icon={filter[RowType.Secret] && <FontAwesomeIcon icon={faCheckCircle} />}
@@ -902,6 +958,29 @@ export const OverviewPage = () => {
                           isFullWidth
                         >
                           Add Dynamic Secret
+                        </Button>
+                      </Tooltip>
+                      <Tooltip
+                        content={
+                          userAvailableSecretRotationEnvs.length === 0 ? "Access restricted" : ""
+                        }
+                      >
+                        <Button
+                          leftIcon={<FontAwesomeIcon icon={faRotate} className="pr-2" />}
+                          onClick={() => {
+                            if (subscription?.secretRotation) {
+                              handlePopUpOpen("addSecretRotation");
+                              handlePopUpClose("misc");
+                              return;
+                            }
+                            handlePopUpOpen("upgradePlan");
+                          }}
+                          isDisabled={userAvailableSecretRotationEnvs.length === 0}
+                          variant="outline_bg"
+                          className="h-10 text-left"
+                          isFullWidth
+                        >
+                          Add Secret Rotation
                         </Button>
                       </Tooltip>
                     </div>
@@ -1093,6 +1172,29 @@ export const OverviewPage = () => {
                         key={`overview-${dynamicSecretName}-${index + 1}`}
                       />
                     ))}
+                    {secretRotationNames.map((secretRotationName, index) => (
+                      <SecretOverviewSecretRotationRow
+                        secretRotationName={secretRotationName}
+                        isSecretRotationInEnv={isSecretRotationPresentInEnv}
+                        environments={visibleEnvs}
+                        getSecretRotationByName={getSecretRotationByName}
+                        getSecretRotationStatusesByName={getSecretRotationStatusesByName}
+                        key={`overview-${secretRotationName}-${index + 1}`}
+                        scrollOffset={scrollOffset}
+                        onEdit={(secretRotation) =>
+                          handlePopUpOpen("editSecretRotation", secretRotation)
+                        }
+                        onRotate={(secretRotation) =>
+                          handlePopUpOpen("rotateSecretRotation", secretRotation)
+                        }
+                        onViewGeneratedCredentials={(secretRotation) =>
+                          handlePopUpOpen("viewSecretRotationGeneratedCredentials", secretRotation)
+                        }
+                        onDelete={(secretRotation) =>
+                          handlePopUpOpen("deleteSecretRotation", secretRotation)
+                        }
+                      />
+                    ))}
                     {secKeys.map((key, index) => (
                       <SecretOverviewTableRow
                         isSelected={Boolean(selectedEntries.secret[key])}
@@ -1116,7 +1218,8 @@ export const OverviewPage = () => {
                         (page * perPage > totalCount ? totalCount % perPage : perPage) -
                           (totalUniqueFoldersInPage || 0) -
                           (totalUniqueDynamicSecretsInPage || 0) -
-                          (totalUniqueSecretsInPage || 0),
+                          (totalUniqueSecretsInPage || 0) -
+                          (totalUniqueSecretRotationsInPage || 0),
                         0
                       )}
                     />
@@ -1156,6 +1259,7 @@ export const OverviewPage = () => {
                   dynamicSecretCount={totalDynamicSecretCount}
                   secretCount={totalSecretCount}
                   folderCount={totalFolderCount}
+                  secretRotationCount={totalSecretRotationCount}
                 />
               }
               className="rounded-b-md border-t border-solid border-t-mineshaft-600"
@@ -1227,6 +1331,34 @@ export const OverviewPage = () => {
           }
         />
       )}
+      <CreateSecretRotationV2Modal
+        secretPath={secretPath}
+        environments={userAvailableSecretRotationEnvs}
+        isOpen={popUp.addSecretRotation.isOpen}
+        onOpenChange={(isOpen) => handlePopUpToggle("addSecretRotation", isOpen)}
+      />
+      <EditSecretRotationV2Modal
+        isOpen={popUp.editSecretRotation.isOpen}
+        secretRotation={popUp.editSecretRotation.data as TSecretRotationV2}
+        onOpenChange={(isOpen) => handlePopUpToggle("editSecretRotation", isOpen)}
+      />
+      <RotateSecretRotationV2Modal
+        isOpen={popUp.rotateSecretRotation.isOpen}
+        secretRotation={popUp.rotateSecretRotation.data as TSecretRotationV2}
+        onOpenChange={(isOpen) => handlePopUpToggle("rotateSecretRotation", isOpen)}
+      />
+      <ViewSecretRotationV2GeneratedCredentialsModal
+        isOpen={popUp.viewSecretRotationGeneratedCredentials.isOpen}
+        secretRotation={popUp.viewSecretRotationGeneratedCredentials.data as TSecretRotationV2}
+        onOpenChange={(isOpen) =>
+          handlePopUpToggle("viewSecretRotationGeneratedCredentials", isOpen)
+        }
+      />
+      <DeleteSecretRotationV2Modal
+        isOpen={popUp.deleteSecretRotation.isOpen}
+        secretRotation={popUp.deleteSecretRotation.data as TSecretRotationV2}
+        onOpenChange={(isOpen) => handlePopUpToggle("deleteSecretRotation", isOpen)}
+      />
     </div>
   );
 };

@@ -70,6 +70,7 @@ export type TGetDashboardProjectSecretsOverviewDTO = {
   includeFolders?: boolean;
   includeDynamicSecrets?: boolean;
   includeImports?: boolean;
+  includeSecretRotations?: boolean;
   environments: string[];
 };
 

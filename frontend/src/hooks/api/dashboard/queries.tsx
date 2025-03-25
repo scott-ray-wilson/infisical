@@ -230,6 +230,7 @@ export const useGetProjectSecretsDetails = (
     viewSecretValue,
     includeImports,
     includeDynamicSecrets,
+    includeSecretRotations,
     tags
   }: TGetDashboardProjectSecretsDetailsDTO,
   options?: Omit<
@@ -260,6 +261,7 @@ export const useGetProjectSecretsDetails = (
       includeFolders,
       includeImports,
       includeDynamicSecrets,
+      includeSecretRotations,
       tags
     }),
     queryFn: () =>
@@ -277,6 +279,7 @@ export const useGetProjectSecretsDetails = (
         includeFolders,
         includeImports,
         includeDynamicSecrets,
+        includeSecretRotations,
         tags
       }),
     select: useCallback(

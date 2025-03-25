@@ -25,7 +25,10 @@ import {
   useProjectPermission,
   useWorkspace
 } from "@app/context";
-import { ProjectPermissionSecretActions } from "@app/context/ProjectPermissionContext/types";
+import {
+  ProjectPermissionSecretActions,
+  ProjectPermissionSecretRotationActions
+} from "@app/context/ProjectPermissionContext/types";
 import { useDebounce, usePagination, usePopUp, useResetPageHelper } from "@app/hooks";
 import {
   useGetImportedSecretsSingleEnv,
@@ -39,6 +42,7 @@ import { DashboardSecretsOrderBy } from "@app/hooks/api/dashboard/types";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { ProjectType } from "@app/hooks/api/workspace/types";
 import { hasSecretReadValueOrDescribePermission } from "@app/lib/fn/permission";
+import { SecretRotationListView } from "@app/pages/secret-manager/SecretDashboardPage/components/SecretRotationListView";
 
 import { SecretTableResourceCount } from "../OverviewPage/components/SecretTableResourceCount";
 import { SecretV2MigrationSection } from "../OverviewPage/components/SecretV2MigrationSection";
@@ -137,6 +141,11 @@ const Page = () => {
     subject(ProjectPermissionSub.DynamicSecrets, { environment, secretPath })
   );
 
+  const canReadSecretRotations = permission.can(
+    ProjectPermissionSecretRotationActions.Read,
+    subject(ProjectPermissionSub.SecretRotation, { environment, secretPath })
+  );
+
   const canDoReadRollback = permission.can(
     ProjectPermissionActions.Read,
     ProjectPermissionSub.SecretRollback
@@ -150,7 +159,8 @@ const Page = () => {
       [RowType.Folder]: true,
       [RowType.Import]: true,
       [RowType.DynamicSecret]: true,
-      [RowType.Secret]: true
+      [RowType.Secret]: true,
+      [RowType.SecretRotation]: true
     }
   };
 
@@ -194,6 +204,7 @@ const Page = () => {
     viewSecretValue: canReadSecretValue,
     includeDynamicSecrets: canReadDynamicSecret && filter.include.dynamic,
     includeSecrets: canReadSecret && filter.include.secret,
+    includeSecretRotations: canReadSecretRotations && filter.include.rotation,
     tags: filter.tags
   });
 
@@ -500,6 +511,9 @@ const Page = () => {
                   secretPath={secretPath}
                   dynamicSecrets={dynamicSecrets}
                 />
+              )}
+              {canReadSecretRotations && Boolean(secretRotations?.length) && (
+                <SecretRotationListView secretRotations={secretRotations} />
               )}
               {canReadSecret && Boolean(secrets?.length) && (
                 <SecretListView

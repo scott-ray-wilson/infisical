@@ -1,3 +1,6 @@
+import { addDays, addMinutes } from "date-fns";
+
+import { getConfig } from "@app/lib/config/env";
 import { KmsDataKey } from "@app/services/kms/kms-types";
 
 import { MSSQL_CREDENTIALS_ROTATION_LIST_OPTION } from "./mssql-credentials";
@@ -13,6 +16,70 @@ const SECRET_ROTATION_LIST_OPTIONS: Record<SecretRotation, TSecretRotationV2List
 
 export const listSecretRotationOptions = () => {
   return Object.values(SECRET_ROTATION_LIST_OPTIONS).sort((a, b) => a.name.localeCompare(b.name));
+};
+
+export const getNextUTCMidnight = (date: Date = new Date()) =>
+  new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate() + 1, // Add 1 day to get tomorrow
+      0,
+      0,
+      0,
+      0
+    )
+  );
+
+export const getNextUTCMinute = (date: Date = new Date()) =>
+  new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+      date.getUTCHours(),
+      date.getUTCMinutes() + 1, // Add 1 minute to get the next minute
+      0,
+      0
+    )
+  );
+
+export const getInitialRotationAt = (rotationInterval: number, nextRotationAt?: Date) => {
+  const appCfg = getConfig();
+
+  if (appCfg.isDevelopmentMode) {
+    return getNextUTCMinute(addMinutes(new Date(), rotationInterval));
+  }
+
+  if (nextRotationAt) return nextRotationAt;
+
+  return getNextUTCMidnight(addDays(new Date(), rotationInterval));
+};
+
+const differenceInMinutes = (startDate: Date, endDate: Date) => {
+  const diff = endDate.getTime() - startDate.getTime();
+  return diff / (1000 * 60);
+};
+
+const differenceInDays = (startDate: Date, endDate: Date) => {
+  const diff = endDate.getTime() - startDate.getTime();
+  return diff / (1000 * 60 * 60 * 24);
+};
+
+export const getNextRotationAt = (rotationInterval: number, currentRotationAt: Date) => {
+  const appCfg = getConfig();
+  const now = new Date();
+
+  if (appCfg.isDevelopmentMode) {
+    const minutesDifference = differenceInMinutes(currentRotationAt, now);
+    const intervalsPassed = Math.ceil(minutesDifference / rotationInterval);
+
+    return addMinutes(currentRotationAt, intervalsPassed * rotationInterval);
+  }
+
+  const daysDifference = differenceInDays(currentRotationAt, now);
+  const intervalsPassed = Math.ceil(daysDifference / rotationInterval);
+  return addDays(currentRotationAt, intervalsPassed * rotationInterval);
 };
 
 export const encryptSecretRotationCredentials = async ({

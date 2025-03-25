@@ -10,7 +10,6 @@ export async function up(knex: Knex): Promise<void> {
       t.string("name", 32).notNullable();
       t.string("description");
       t.string("type").notNullable();
-      t.integer("interval").notNullable();
       t.jsonb("parameters").notNullable();
       t.binary("encryptedGeneratedCredentials").notNullable();
       t.boolean("isAutoRotationEnabled").notNullable().defaultTo(true);
@@ -20,11 +19,12 @@ export async function up(knex: Knex): Promise<void> {
       t.uuid("connectionId").notNullable();
       t.foreign("connectionId").references("id").inTable(TableName.AppConnection);
       t.timestamps(true, true, true);
-      t.string("rotationStatus");
-      t.string("rotationStatusMessage", 1024);
+      t.integer("rotationInterval").notNullable();
+      t.datetime("nextRotationAt").notNullable();
+      t.string("lastRotationStatus");
+      t.string("lastRotationMessage", 1024);
       t.string("lastRotationJobId");
       t.datetime("lastRotatedAt");
-      t.datetime("scheduledRotationAt").nullable();
     });
 
     await createOnUpdateTrigger(knex, TableName.SecretRotationV2);

@@ -14,7 +14,6 @@ export const SecretRotationsV2Schema = z.object({
   name: z.string(),
   description: z.string().nullable().optional(),
   type: z.string(),
-  interval: z.number(),
   parameters: z.unknown(),
   encryptedGeneratedCredentials: zodBuffer,
   isAutoRotationEnabled: z.boolean().default(true),
@@ -23,8 +22,10 @@ export const SecretRotationsV2Schema = z.object({
   connectionId: z.string().uuid(),
   createdAt: z.date(),
   updatedAt: z.date(),
-  rotationStatus: z.string().nullable().optional(),
-  rotationStatusMessage: z.string().nullable().optional(),
+  rotationInterval: z.number(),
+  nextRotationAt: z.date(),
+  lastRotationStatus: z.string().nullable().optional(),
+  lastRotationMessage: z.string().nullable().optional(),
   lastRotationJobId: z.string().nullable().optional(),
   lastRotatedAt: z.date().nullable().optional()
 });

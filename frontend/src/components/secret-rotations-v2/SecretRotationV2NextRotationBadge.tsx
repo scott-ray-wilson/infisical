@@ -1,6 +1,6 @@
 import { faRotate } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { addDays, differenceInDays, format } from "date-fns";
+import { differenceInDays, format } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
 import { Tooltip } from "@app/components/v2";
@@ -13,10 +13,9 @@ type Props = {
 };
 
 export const SecretRotationV2NextRotationBadge = ({ secretRotation, className }: Props) => {
-  const { lastRotatedAt, interval, createdAt } = secretRotation;
+  const { nextRotationAt } = secretRotation;
 
-  const rotationDate = addDays(lastRotatedAt ?? createdAt, interval);
-  const daysToRotation = differenceInDays(rotationDate, new Date());
+  const daysToRotation = differenceInDays(nextRotationAt, new Date());
 
   let variant: BadgeProps["variant"];
   let label: string;
@@ -25,19 +24,19 @@ export const SecretRotationV2NextRotationBadge = ({ secretRotation, className }:
   if (daysToRotation >= 7) {
     variant = "success";
     label = `Rotates in ${daysToRotation} Days`;
-    tooltipContent = `Rotates on ${format(rotationDate, "MM/dd/yyyy")} at ${format(rotationDate, "hh:mm aa")}.`;
+    tooltipContent = `Rotates on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
   } else if (daysToRotation < 0) {
     variant = "danger";
     label = "Rotation Past Due";
-    tooltipContent = `Rotation due on ${format(rotationDate, "MM/dd/yyyy")} at ${format(rotationDate, "hh:mm aa")}.`;
+    tooltipContent = `Rotation due on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
   } else if (daysToRotation === 0) {
     variant = "primary";
     label = "Rotates Today";
-    tooltipContent = `Rotates at ${format(rotationDate, "hh:mm aa")}.`;
+    tooltipContent = `Rotates at ${format(nextRotationAt, "hh:mm aa")}.`;
   } else {
     variant = "primary";
-    label = `Rotates in ${daysToRotation} Days`;
-    tooltipContent = `Rotates on ${format(rotationDate, "MM/dd/yyyy")} at ${format(rotationDate, "hh:mm aa")}.`;
+    label = `Rotates in ${daysToRotation} Day${daysToRotation > 1 ? "s" : ""}`;
+    tooltipContent = `Rotates on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
   }
 
   return (

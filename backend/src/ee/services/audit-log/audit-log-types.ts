@@ -2,7 +2,7 @@ import {
   TCreateProjectTemplateDTO,
   TUpdateProjectTemplateDTO
 } from "@app/ee/services/project-template/project-template-types";
-import { SecretRotation } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-enums";
+import { SecretRotation, SecretRotationStatus } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-enums";
 import {
   TCreateSecretRotationV2DTO,
   TDeleteSecretRotationV2DTO,
@@ -2355,13 +2355,12 @@ interface DeleteSecretRotationEvent {
 
 interface RotateSecretRotationEvent {
   type: EventType.ROTATE_SECRET_ROTATION;
-  metadata: Pick<
-    TSecretRotationV2,
-    "parameters" | "type" | "rotationStatus" | "connectionId" | "folderId" | "rotationStatusMessage"
-  > & {
+  metadata: Pick<TSecretRotationV2, "parameters" | "type" | "connectionId" | "folderId"> & {
     rotationId: string;
     jobId?: string;
     occurredAt: Date;
+    rotationStatus: SecretRotationStatus;
+    rotationMessage?: string | null;
   };
 }
 

@@ -9,5 +9,6 @@ export const BaseSecretRotationSchema = z.object({
   environment: z.object({ slug: z.string(), id: z.string(), name: z.string() }),
   secretPath: z.string().min(1, "Secret path required"),
   isAutoRotationEnabled: z.boolean(),
-  interval: z.coerce.number()
+  rotationInterval: z.coerce.number(),
+  nextRotationAt: z.coerce.date()
 });

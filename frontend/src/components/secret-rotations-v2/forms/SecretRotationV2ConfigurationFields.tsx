@@ -8,11 +8,10 @@ import { TSecretRotationV2Form } from "./schemas";
 import { SecretRotationV2ConnectionField } from "./SecretRotationV2ConnectionField";
 
 export const SecretRotationV2ConfigurationFields = () => {
-  const { control, watch } = useFormContext<TSecretRotationV2Form>();
-  const [open, setOpen] = useState(false);
-  const [datetime, setDateTime] = useState<Date | undefined>(new Date());
+  const { control, watch, setValue } = useFormContext<TSecretRotationV2Form>();
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const interval = watch("interval");
+  const nextRotationAt = watch("nextRotationAt");
 
   return (
     <>
@@ -30,28 +29,45 @@ export const SecretRotationV2ConfigurationFields = () => {
             <Input
               value={value}
               type="number"
-              onChange={onChange}
+              onChange={(newValue) => {
+                setValue(
+                  "nextRotationAt",
+                  addDays(nextRotationAt, Number(newValue.target.value) - value)
+                );
+                onChange(newValue);
+              }}
               min={1}
               placeholder="my-secret-rotation"
             />
           </FormControl>
         )}
         control={control}
-        name="interval"
+        name="rotationInterval"
       />
-      <FormControl label="Schedule Next Rotation">
-        <DatePicker
-          value={addDays(datetime, Number(interval))}
-          onChange={(date) => setDateTime(date)}
-          popUpContentProps={{
-            side: "right"
-          }}
-          popUpProps={{
-            open,
-            onOpenChange: setOpen
-          }}
-        />
-      </FormControl>
+      <Controller
+        render={({ field: { value, onChange }, fieldState: { error } }) => (
+          <FormControl
+            label="Schedule Next Rotation"
+            isError={Boolean(error)}
+            errorText={error?.message}
+          >
+            <DatePicker
+              defaultMonth={value}
+              value={value}
+              onChange={onChange}
+              popUpContentProps={{
+                side: "right"
+              }}
+              popUpProps={{
+                open: showDatePicker,
+                onOpenChange: setShowDatePicker
+              }}
+            />
+          </FormControl>
+        )}
+        control={control}
+        name="nextRotationAt"
+      />
       <Controller
         control={control}
         name="isAutoRotationEnabled"

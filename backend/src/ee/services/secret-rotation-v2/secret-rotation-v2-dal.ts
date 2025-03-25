@@ -446,6 +446,14 @@ export const secretRotationV2DALFactory = (
     return secretMappings;
   };
 
+  const findSecretRotationsToScheduleForRotation = async (rotateBy: Date, tx?: Knex) => {
+    const secretRotations = await (tx || db.replicaNode())(TableName.SecretRotationV2)
+      .where(`${TableName.SecretRotationV2}.nextRotationAt`, "<", rotateBy)
+      .select(selectAllTableCols(TableName.SecretRotationV2));
+
+    return secretRotations;
+  };
+
   return {
     ...secretRotationV2Orm,
     find,
@@ -459,6 +467,7 @@ export const secretRotationV2DALFactory = (
     findSecretMappingsByRotationId,
     findRaw: secretRotationV2Orm.find,
     findWithMappedSecrets,
-    findWithMappedSecretsCount
+    findWithMappedSecretsCount,
+    findSecretRotationsToScheduleForRotation
   };
 };

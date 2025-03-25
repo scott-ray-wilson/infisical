@@ -38,11 +38,12 @@ export type TCreateSecretRotationV2DTO = DiscriminativePick<
   | "connectionId"
   | "type"
   | "isAutoRotationEnabled"
-  | "interval"
+  | "rotationInterval"
+  | "nextRotationAt"
 > & { environment: string; secretPath: string; projectId: string };
 
 export type TUpdateSecretRotationV2DTO = Partial<
-  Omit<TCreateSecretRotationV2DTO, "type" | "projectId" | "secretPath" | "projectId">
+  Omit<TCreateSecretRotationV2DTO, "type" | "secretPath" | "projectId">
 > & {
   type: SecretRotation;
   rotationId: string;

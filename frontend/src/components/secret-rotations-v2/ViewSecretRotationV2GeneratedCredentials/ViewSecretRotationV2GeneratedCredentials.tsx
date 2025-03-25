@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { faRotate } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { addDays, format } from "date-fns";
+import { format } from "date-fns";
 
 import { Modal, ModalContent, Spinner } from "@app/components/v2";
 import { SECRET_ROTATION_MAP } from "@app/helpers/secretRotationsV2";
@@ -24,7 +24,7 @@ type ContentProps = {
 };
 
 const Content = ({ secretRotation }: ContentProps) => {
-  const { id: rotationId, type } = secretRotation;
+  const { id: rotationId, type, nextRotationAt } = secretRotation;
 
   const { data: generatedCredentialsResponse, isPending } =
     useViewSecretRotationV2GeneratedCredentials({
@@ -60,13 +60,7 @@ const Content = ({ secretRotation }: ContentProps) => {
       {Component}
       <div className="flex items-center gap-x-1.5 text-sm text-mineshaft-300">
         <FontAwesomeIcon icon={faRotate} className="text-mineshaft-400" />
-        <span>
-          Next rotation occurs on:{" "}
-          {format(
-            addDays(new Date(secretRotation.lastRotatedAt), secretRotation.interval),
-            "MM/dd/yyyy HH:mm aa"
-          )}
-        </span>
+        <span>Next rotation occurs on: {format(nextRotationAt, "MM/dd/yyyy HH:mm aa")}</span>
       </div>
     </div>
   );

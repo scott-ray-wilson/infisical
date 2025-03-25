@@ -91,3 +91,17 @@ export type TGetDashboardSecretRotationsV2 = {
   limit: number;
   offset: number;
 };
+
+export type TQuickSearchSecretRotationsV2Filters = {
+  offset?: number;
+  limit?: number;
+  orderBy?: SecretsOrderBy;
+  orderDirection?: OrderByDirection;
+  search?: string;
+};
+
+export type TQuickSearchSecretRotationsV2 = {
+  projectId: string;
+  folderMappings: { folderId: string; path: string; environment: string }[];
+  filters: TQuickSearchSecretRotationsV2Filters;
+};

@@ -32,6 +32,7 @@ import {
   TGetDashboardSecretRotationsV2,
   TGetDashboardSecretRotationV2Count,
   TListSecretRotationsV2ByProjectId,
+  TQuickSearchSecretRotationsV2,
   TRotateSecretRotationV2,
   TSecretRotationV2,
   TSecretRotationV2GeneratedCredentials,
@@ -979,6 +980,7 @@ export const secretRotationV2ServiceFactory = ({
     }
 
     const folderIds = folders.map((folder) => folder.id);
+    logger.warn(`secretPath: ${secretPath}, environments: ${environments.join(",")} ${folderIds.join(",")}`);
 
     const secretRotations = await secretRotationV2DAL.findWithMappedSecrets(
       {
@@ -1003,8 +1005,6 @@ export const secretRotationV2ServiceFactory = ({
       [`${TableName.SecretV2}.type` as "type"]: SecretType.Personal,
       [`${TableName.SecretV2}.userId` as "userId"]: actor.id
     });
-
-    logger.warn(personalSecrets, "personalSecrets");
 
     const personalMap = Object.fromEntries(
       personalSecrets.map((secret) => [secret.folderId, [] as typeof personalSecrets])
@@ -1088,6 +1088,42 @@ export const secretRotationV2ServiceFactory = ({
     })[];
   };
 
+  const getQuickSearchSecretRotations = async (
+    { folderMappings, filters: { search, ...options }, projectId }: TQuickSearchSecretRotationsV2,
+    actor: OrgServiceActor
+  ) => {
+    const { permission } = await permissionService.getProjectPermission({
+      actor: actor.type,
+      actorId: actor.id,
+      projectId,
+      actorAuthMethod: actor.authMethod,
+      actorOrgId: actor.orgId,
+      actionProjectType: ActionProjectType.SecretManager
+    });
+
+    const userAccessibleFolderMappings = folderMappings.filter(({ path, environment }) =>
+      permission.can(
+        ProjectPermissionSecretRotationActions.Read,
+        subject(ProjectPermissionSub.SecretRotation, { environment, secretPath: path })
+      )
+    );
+
+    const secretRotations = await secretRotationV2DAL.find(
+      {
+        projectId,
+        $search: {
+          name: `%${search}%`
+        },
+        $in: {
+          folderId: userAccessibleFolderMappings.map(({ folderId }) => folderId)
+        }
+      },
+      options
+    );
+
+    return secretRotations as TSecretRotationV2[];
+  };
+
   return {
     listSecretRotationOptions,
     listSecretRotationsByProjectId,
@@ -1100,6 +1136,7 @@ export const secretRotationV2ServiceFactory = ({
     rotateSecretRotation,
     rotateGeneratedCredentials,
     getDashboardSecretRotationCount,
-    getDashboardSecretRotations
+    getDashboardSecretRotations,
+    getQuickSearchSecretRotations
   };
 };

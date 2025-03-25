@@ -12,7 +12,6 @@ import { SecretRotationV2Schema } from "@app/ee/services/secret-rotation-v2/secr
 import { DASHBOARD } from "@app/lib/api-docs";
 import { BadRequestError } from "@app/lib/errors";
 import { removeTrailingSlash } from "@app/lib/fn";
-import { logger } from "@app/lib/logger";
 import { OrderByDirection } from "@app/lib/types";
 import { secretsLimit } from "@app/server/config/rateLimiter";
 import { getTelemetryDistinctId } from "@app/server/lib/telemetry";
@@ -578,9 +577,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           req.permission
         );
 
-        logger.warn(`here 1 ${totalSecretRotationCount}`);
         if (remainingLimit > 0 && totalSecretRotationCount > adjustedOffset) {
-          logger.warn("here 2");
           secretRotations = await server.services.secretRotationV2.getDashboardSecretRotations(
             {
               projectId,
@@ -782,7 +779,8 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
               tags: SanitizedTagSchema.array().optional()
             })
             .array()
-            .optional()
+            .optional(),
+          secretRotations: SecretRotationV2Schema.array().optional()
         })
       }
     },
@@ -846,6 +844,19 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             req.permission
           );
 
+      const secretRotations = searchHasTags
+        ? []
+        : await server.services.secretRotationV2.getQuickSearchSecretRotations(
+            {
+              projectId,
+              folderMappings,
+              filters: sharedFilters
+            },
+            req.permission
+          );
+
+      // TODO: audit logs for rotations
+
       for await (const environment of environments) {
         const secretCountForEnv = secrets.filter((secret) => secret.environment === environment).length;
 
@@ -890,6 +901,9 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           searchPath
             ? dynamicSecrets.filter((dynamicSecret) => dynamicSecret.path.endsWith(searchPath))
             : dynamicSecrets
+        ),
+        secretRotations: sliceQuickSearch(
+          searchPath ? secretRotations.filter((rotation) => rotation.folder.path.endsWith(searchPath)) : secretRotations
         ),
         folders: searchHasTags
           ? []

@@ -1817,7 +1817,8 @@ export const SecretRotations = {
         APP_CONNECTION_NAME_MAP[SECRET_ROTATION_CONNECTION_MAP[type]]
       } Connection to use for rotation.`,
       isAutoRotationEnabled: `Whether secrets should be automatically rotated when the specified interval has elapsed.`,
-      interval: `The interval, in days, to automatically rotate secrets.`
+      interval: `The interval, in days, to automatically rotate secrets.`,
+      nextRotationAt: `The date and time the next rotation should occur at. Automatically calculated based on the last rotation time and the specified rotation interval if not manually overridden.`
     };
   },
   UPDATE: (type: SecretRotation) => {
@@ -1829,7 +1830,8 @@ export const SecretRotations = {
       secretPath: `The updated folder path to move the rotation to.`,
       description: `The updated description of the ${typeName} Rotation.`,
       isAutoRotationEnabled: `Whether secrets should be automatically rotated when the specified interval has elapsed.`,
-      interval: `The interval, in days, to automatically rotate secrets.`
+      interval: `The updated interval, in days, to automatically rotate secrets.`,
+      nextRotationAt: `The updated date and time the next rotation should occur at. Automatically calculated based on the last rotation time and the specified rotation interval if not manually overridden.`
     };
   },
   DELETE: (type: SecretRotation) => ({

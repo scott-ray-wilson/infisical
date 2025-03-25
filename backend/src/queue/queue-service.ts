@@ -343,6 +343,15 @@ export const queueServiceFactory = (
     });
   };
 
+  const queueAfterPg = async <T extends QueueName>(
+    job: TQueueJobTypes[T]["name"],
+    data: TQueueJobTypes[T]["payload"],
+    opts: PgBoss.SendOptions & { jobId?: string },
+    after: Date
+  ) => {
+    await pgBoss.sendAfter(job, data ?? {}, opts, after);
+  };
+
   const schedulePg = async <T extends QueueName>(
     job: TQueueJobTypes[T]["name"],
     cron: string,
@@ -414,6 +423,7 @@ export const queueServiceFactory = (
     getRepeatableJobs,
     startPg,
     queuePg,
-    schedulePg
+    schedulePg,
+    queueAfterPg
   };
 };

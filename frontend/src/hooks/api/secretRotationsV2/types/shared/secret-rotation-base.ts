@@ -10,7 +10,8 @@ export type TSecretRotationV2Base = {
   createdAt: string;
   updatedAt: string;
   isAutoRotationEnabled: boolean;
-  interval: number;
+  rotationInterval: number;
+  nextRotationAt: Date;
   projectId: string;
   rotationStatus: SecretRotationStatus | null;
   lastRotationJobId: string | null;

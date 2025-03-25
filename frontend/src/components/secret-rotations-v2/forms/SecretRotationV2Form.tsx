@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { Tab } from "@headlessui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { addDays } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
 import { createNotification } from "@app/components/notifications";
@@ -37,12 +38,32 @@ const FORM_TABS: { name: string; key: string; fields: (keyof TSecretRotationV2Fo
   {
     name: "Configuration",
     key: "configuration",
-    fields: ["isAutoRotationEnabled", "interval", "connection"]
+    fields: ["isAutoRotationEnabled", "rotationInterval", "connection", "nextRotationAt"]
   },
   { name: "Parameters", key: "parameters", fields: ["parameters"] },
   { name: "Details", key: "details", fields: ["name", "description"] },
   { name: "Review", key: "review", fields: [] }
 ];
+
+const DEFAULT_ROTATION_INTERVAL = 30;
+
+const getInitialRotationAt = () => {
+  const now = new Date();
+
+  const nextRotation = addDays(now, DEFAULT_ROTATION_INTERVAL);
+
+  return new Date(
+    Date.UTC(
+      nextRotation.getUTCFullYear(),
+      nextRotation.getUTCMonth(),
+      nextRotation.getUTCDate() + 1, // Ceil to next UTC midnight
+      0,
+      0,
+      0,
+      0
+    )
+  );
+};
 
 export const SecretRotationV2Form = ({
   type,
@@ -72,7 +93,8 @@ export const SecretRotationV2Form = ({
       : {
           type,
           isAutoRotationEnabled: true,
-          interval: 30,
+          rotationInterval: DEFAULT_ROTATION_INTERVAL,
+          nextRotationAt: getInitialRotationAt(),
           parameters: rotationOption!.parametersTemplate,
           environment: currentWorkspace?.environments.find((env) => env.slug === envSlug),
           secretPath

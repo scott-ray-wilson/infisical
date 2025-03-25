@@ -53,12 +53,13 @@ export type TFindSecretRotationV2ByNameDTO = {
 
 export type TCreateSecretRotationV2DTO = Pick<
   TSecretRotationV2,
-  "parameters" | "description" | "interval" | "name" | "connectionId" | "projectId"
+  "parameters" | "description" | "rotationInterval" | "name" | "connectionId" | "projectId"
 > & {
   type: SecretRotation;
   secretPath: string;
   environment: string;
   isAutoRotationEnabled?: boolean;
+  nextRotationAt?: Date;
 };
 
 export type TUpdateSecretRotationV2DTO = Partial<Omit<TCreateSecretRotationV2DTO, "projectId" | "connectionId">> & {

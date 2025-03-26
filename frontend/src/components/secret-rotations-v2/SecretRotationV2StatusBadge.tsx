@@ -1,6 +1,6 @@
 import { faBan, faRotate, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { differenceInDays, format } from "date-fns";
+import { addDays, format, formatDistanceToNow } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
 import { Tooltip } from "@app/components/v2";
@@ -13,7 +13,13 @@ type Props = {
 };
 
 export const SecretRotationV2StatusBadge = ({ secretRotation, className }: Props) => {
-  const { nextRotationAt, isAutoRotationEnabled, rotationStatus, rotationMessage } = secretRotation;
+  const {
+    lastRotatedAt,
+    isAutoRotationEnabled,
+    rotationStatus,
+    rotationMessage,
+    rotationInterval
+  } = secretRotation;
 
   if (rotationStatus === SecretRotationStatus.Failed) {
     let errorMessage = rotationMessage;
@@ -66,7 +72,9 @@ export const SecretRotationV2StatusBadge = ({ secretRotation, className }: Props
     );
   }
 
-  const daysToRotation = differenceInDays(nextRotationAt, new Date());
+  const nextRotationAt = addDays(lastRotatedAt, rotationInterval);
+  console.log(nextRotationAt, new Date(lastRotatedAt), rotationInterval);
+  const daysToRotation = (nextRotationAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
 
   let variant: BadgeProps["variant"];
   let label: string;
@@ -74,28 +82,31 @@ export const SecretRotationV2StatusBadge = ({ secretRotation, className }: Props
 
   if (daysToRotation >= 7) {
     variant = "success";
-    label = `Rotates in ${daysToRotation} Days`;
-    tooltipContent = `Rotates on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
+    label = `Rotates ${formatDistanceToNow(nextRotationAt, { addSuffix: true })}`;
+    tooltipContent = `Rotates ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
   } else if (daysToRotation < 0) {
     variant = "danger";
     label = "Rotation Past Due";
     tooltipContent = `Rotation due on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
-  } else if (daysToRotation === 0) {
+  } else if (daysToRotation < 1) {
     variant = "primary";
-    label = "Rotates Today";
-    tooltipContent = `Rotates at ${format(nextRotationAt, "hh:mm aa")}.`;
+    label = `Rotates ${formatDistanceToNow(nextRotationAt, { addSuffix: true })}`;
+    tooltipContent = `Rotates on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
   } else {
     variant = "primary";
-    label = `Rotates in ${daysToRotation} Day${daysToRotation > 1 ? "s" : ""}`;
+    label = `Rotates ${formatDistanceToNow(nextRotationAt, { addSuffix: true })}`;
     tooltipContent = `Rotates on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
   }
 
   return (
-    <Tooltip className="max-w-lg" content={tooltipContent}>
+    <Tooltip className="max-w-lg capitalize" content={tooltipContent}>
       <div>
         <Badge
           variant={variant}
-          className={twMerge("flex h-5 w-min items-center gap-1.5 whitespace-nowrap", className)}
+          className={twMerge(
+            "flex h-5 w-min items-center gap-1.5 whitespace-nowrap capitalize",
+            className
+          )}
         >
           <FontAwesomeIcon icon={faRotate} />
           {label}

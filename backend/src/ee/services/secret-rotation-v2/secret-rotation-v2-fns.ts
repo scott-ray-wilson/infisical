@@ -10,7 +10,8 @@ import { TSecretRotationV2ServiceFactoryDep } from "./secret-rotation-v2-service
 import {
   TSecretRotationV2,
   TSecretRotationV2GeneratedCredentials,
-  TSecretRotationV2ListItem
+  TSecretRotationV2ListItem,
+  TSecretRotationV2Raw
 } from "./secret-rotation-v2-types";
 
 const SECRET_ROTATION_LIST_OPTIONS: Record<SecretRotation, TSecretRotationV2ListItem> = {
@@ -104,6 +105,25 @@ export const decryptSecretRotationCredentials = async ({
   });
 
   return JSON.parse(decryptedPlainTextBlob.toString()) as TSecretRotationV2GeneratedCredentials;
+};
+
+export const decryptSecretRotation = async (
+  secretRotation: TSecretRotationV2Raw,
+  kmsService: TSecretRotationV2ServiceFactoryDep["kmsService"]
+) => {
+  const { decryptor } = await kmsService.createCipherPairWithDataKey({
+    type: KmsDataKey.SecretManager,
+    projectId: secretRotation.projectId
+  });
+
+  const decryptedPlainTextBlob = decryptor({
+    cipherTextBlob: secretRotation.encryptedLastRotationMessage
+  });
+
+  return {
+    ...secretRotation,
+    lastRotationMessage: decryptedPlainTextBlob.toString()
+  } as TSecretRotationV2;
 };
 
 const MAX_MESSAGE_LENGTH = 1024;

@@ -17,6 +17,7 @@ export const BaseSecretRotationSchema = (type: SecretRotation) =>
     type: true,
     parameters: true,
     encryptedGeneratedCredentials: true,
+    encryptedLastRotationMessage: true,
     rotateAtUtc: true
   }).extend({
     connection: z.object({
@@ -27,7 +28,8 @@ export const BaseSecretRotationSchema = (type: SecretRotation) =>
     environment: z.object({ slug: z.string(), name: z.string(), id: z.string().uuid() }),
     projectId: z.string(),
     folder: z.object({ id: z.string(), path: z.string() }),
-    rotateAtUtc: RotateAtUtcSchema
+    rotateAtUtc: RotateAtUtcSchema,
+    lastRotationMessage: z.string().nullish()
   });
 
 export const BaseCreateSecretRotationSchema = (type: SecretRotation) =>

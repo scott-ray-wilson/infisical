@@ -1,8 +1,10 @@
 import { useFormContext } from "react-hook-form";
+import { format } from "date-fns";
 
 import { TSecretRotationV2Form } from "@app/components/secret-rotations-v2/forms/schemas";
 import { SqlRotationReviewFields } from "@app/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields/shared";
 import { GenericFieldLabel } from "@app/components/v2";
+import { getRotateAtLocal } from "@app/helpers/secretRotationsV2";
 import { SecretRotation } from "@app/hooks/api/secretRotationsV2";
 
 const COMPONENT_MAP: Record<SecretRotation, React.FC> = {
@@ -13,7 +15,16 @@ const COMPONENT_MAP: Record<SecretRotation, React.FC> = {
 export const SecretRotationV2ReviewFields = () => {
   const { watch } = useFormContext<TSecretRotationV2Form>();
 
-  const { environment, secretPath, connection, type, name, description } = watch();
+  const {
+    environment,
+    secretPath,
+    connection,
+    type,
+    name,
+    description,
+    rotationInterval,
+    rotateAtUtc
+  } = watch();
 
   const Component = COMPONENT_MAP[type];
 
@@ -27,6 +38,12 @@ export const SecretRotationV2ReviewFields = () => {
           <GenericFieldLabel label="Connection">{connection.name}</GenericFieldLabel>
           <GenericFieldLabel label="Environment">{environment.name}</GenericFieldLabel>
           <GenericFieldLabel label="Secret Path">{secretPath}</GenericFieldLabel>
+          <GenericFieldLabel label="Rotation Interval">
+            {rotationInterval} Day{rotationInterval > 1 ? "s" : ""}
+          </GenericFieldLabel>
+          <GenericFieldLabel label="Rotate At">
+            {format(getRotateAtLocal(rotateAtUtc), "hh:mm aa")}
+          </GenericFieldLabel>
         </div>
       </div>
       <div className="flex flex-col gap-3">

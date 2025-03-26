@@ -1,8 +1,8 @@
-import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
-import { addDays } from "date-fns";
+import { format, setHours, setMinutes } from "date-fns";
 
-import { DatePicker, FilterableSelect, FormControl, Input, Switch } from "@app/components/v2";
+import { FilterableSelect, FormControl, Input, Switch } from "@app/components/v2";
+import { getRotateAtLocal } from "@app/helpers/secretRotationsV2";
 import { WorkspaceEnv } from "@app/hooks/api/workspace/types";
 
 import { TSecretRotationV2Form } from "./schemas";
@@ -14,10 +14,9 @@ type Props = {
 };
 
 export const SecretRotationV2ConfigurationFields = ({ isUpdate, environments }: Props) => {
-  const { control, watch, setValue } = useFormContext<TSecretRotationV2Form>();
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const { control, watch } = useFormContext<TSecretRotationV2Form>();
 
-  const nextRotationAt = watch("nextRotationAt");
+  console.log(watch("rotateAtUtc"));
 
   return (
     <>
@@ -54,13 +53,7 @@ export const SecretRotationV2ConfigurationFields = ({ isUpdate, environments }: 
             <Input
               value={value}
               type="number"
-              onChange={(newValue) => {
-                setValue(
-                  "nextRotationAt",
-                  addDays(nextRotationAt, Number(newValue.target.value) - value)
-                );
-                onChange(newValue);
-              }}
+              onChange={onChange}
               min={1}
               placeholder="my-secret-rotation"
             />
@@ -70,28 +63,30 @@ export const SecretRotationV2ConfigurationFields = ({ isUpdate, environments }: 
         name="rotationInterval"
       />
       <Controller
-        render={({ field: { value, onChange }, fieldState: { error } }) => (
-          <FormControl
-            label="Schedule Next Rotation"
-            isError={Boolean(error)}
-            errorText={error?.message}
-          >
-            <DatePicker
-              defaultMonth={value}
-              value={value}
-              onChange={onChange}
-              popUpContentProps={{
-                side: "right"
-              }}
-              popUpProps={{
-                open: showDatePicker,
-                onOpenChange: setShowDatePicker
-              }}
-            />
-          </FormControl>
-        )}
+        render={({ field: { value, onChange }, fieldState: { error } }) => {
+          return (
+            <FormControl label="Rotate At" isError={Boolean(error)} errorText={error?.message}>
+              <Input
+                type="time"
+                value={format(getRotateAtLocal(value), "HH:mm")}
+                onChange={(e) => {
+                  const time = e.target.value;
+                  if (time) {
+                    const [hours, minutes] = time.split(":").map((str) => parseInt(str, 10));
+                    const newSelectedDate = setHours(setMinutes(new Date(), minutes), hours);
+                    onChange({
+                      hours: newSelectedDate.getUTCHours(),
+                      minutes: newSelectedDate.getUTCMinutes()
+                    });
+                  }
+                }}
+                className="bg-mineshaft-700 text-white [color-scheme:dark]"
+              />
+            </FormControl>
+          );
+        }}
         control={control}
-        name="nextRotationAt"
+        name="rotateAtUtc"
       />
       <Controller
         control={control}

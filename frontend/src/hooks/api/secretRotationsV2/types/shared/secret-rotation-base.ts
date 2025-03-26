@@ -11,11 +11,15 @@ export type TSecretRotationV2Base = {
   updatedAt: string;
   isAutoRotationEnabled: boolean;
   rotationInterval: number;
-  nextRotationAt: Date;
+  rotateAtUtc: {
+    hours: number;
+    minutes: number;
+  };
   projectId: string;
   rotationStatus: SecretRotationStatus | null;
-  rotationJobId: string | null;
+  lastRotationJobId: string | null;
   lastRotatedAt: Date;
+  lastRotationAttemptedAt: Date;
   rotationMessage?: string | null;
   connection: {
     app: AppConnection;

@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { faRotate } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { format } from "date-fns";
+import { addDays, format } from "date-fns";
 
 import { Modal, ModalContent, Spinner } from "@app/components/v2";
 import { SECRET_ROTATION_MAP } from "@app/helpers/secretRotationsV2";
@@ -24,7 +24,8 @@ type ContentProps = {
 };
 
 const Content = ({ secretRotation }: ContentProps) => {
-  const { id: rotationId, type, nextRotationAt } = secretRotation;
+  const { id: rotationId, type, lastRotationAttemptedAt, rotationInterval } = secretRotation;
+  const nextRotationAt = addDays(lastRotationAttemptedAt, rotationInterval);
 
   const { data: generatedCredentialsResponse, isPending } =
     useViewSecretRotationV2GeneratedCredentials({

@@ -42,6 +42,7 @@ import { sqlCredentialsRotationFactory } from "@app/ee/services/secret-rotation-
 import { TKeyStoreFactory } from "@app/keystore/keystore";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
 import { BadRequestError, DatabaseError, NotFoundError } from "@app/lib/errors";
+import { logger } from "@app/lib/logger";
 import { OrderByDirection, OrgServiceActor } from "@app/lib/types";
 import { decryptAppConnection } from "@app/services/app-connection/app-connection-fns";
 import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
@@ -809,6 +810,9 @@ export const secretRotationV2ServiceFactory = ({
 
       return updatedSecretRotation;
     } catch (error) {
+      // TODO: remove
+      logger.error(error);
+
       // TODO: redact message if sensitive for logs
       const errorMessage = parseRotationErrorMessage(error);
 
@@ -1036,7 +1040,7 @@ export const secretRotationV2ServiceFactory = ({
       projectId
     });
 
-    const decryptedSecretRotations = modifiedSecretRotations.map(({ secrets, ...rotation }) => {
+    const secretRotationsWithSecrets = modifiedSecretRotations.map(({ secrets, ...rotation }) => {
       const decryptedSecrets = secrets.map((secret) => {
         const canDescribeSecret = hasSecretReadValueOrDescribePermission(
           permission,
@@ -1085,13 +1089,20 @@ export const secretRotationV2ServiceFactory = ({
         );
       });
 
+      const lastRotationMessage = rotation.encryptedLastRotationMessage
+        ? secretManagerDecryptor({
+            cipherTextBlob: rotation.encryptedLastRotationMessage
+          }).toString()
+        : null;
+
       return {
         ...rotation,
+        lastRotationMessage,
         secrets: decryptedSecrets
       };
     });
 
-    return decryptedSecretRotations as (TSecretRotationV2 & {
+    return secretRotationsWithSecrets as (TSecretRotationV2 & {
       secrets: Awaited<ReturnType<typeof reshapeBridgeSecret>>[];
     })[];
   };

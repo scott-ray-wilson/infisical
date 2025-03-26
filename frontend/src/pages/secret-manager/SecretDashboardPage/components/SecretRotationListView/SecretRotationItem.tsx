@@ -44,8 +44,7 @@ export const SecretRotationItem = ({
   onDelete,
   ...secretProps
 }: Props) => {
-  const { name, type, environment, folder, projectId, secrets, rotationStatus, rotationMessage } =
-    secretRotation;
+  const { name, type, environment, folder, projectId, secrets } = secretRotation;
 
   const { name: rotationType, image } = SECRET_ROTATION_MAP[type];
   const [isExpanded, setIsExpanded] = useToggle(true);

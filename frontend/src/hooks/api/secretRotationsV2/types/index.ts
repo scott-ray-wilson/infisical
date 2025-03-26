@@ -39,7 +39,7 @@ export type TCreateSecretRotationV2DTO = DiscriminativePick<
   | "type"
   | "isAutoRotationEnabled"
   | "rotationInterval"
-  | "nextRotationAt"
+  | "rotateAtUtc"
 > & { environment: string; secretPath: string; projectId: string };
 
 export type TUpdateSecretRotationV2DTO = Partial<

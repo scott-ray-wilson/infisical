@@ -2,7 +2,6 @@ import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { Tab } from "@headlessui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { addDays, isEqual } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
 import { createNotification } from "@app/components/notifications";
@@ -45,7 +44,7 @@ const FORM_TABS: { name: string; key: string; fields: (keyof TSecretRotationV2Fo
       "environment",
       "rotationInterval",
       "connection",
-      "nextRotationAt"
+      "rotateAtUtc"
     ]
   },
   { name: "Parameters", key: "parameters", fields: ["parameters"] },
@@ -54,24 +53,6 @@ const FORM_TABS: { name: string; key: string; fields: (keyof TSecretRotationV2Fo
 ];
 
 const DEFAULT_ROTATION_INTERVAL = 30;
-
-const getInitialRotationAt = () => {
-  const now = new Date();
-
-  const nextRotation = addDays(now, DEFAULT_ROTATION_INTERVAL);
-
-  return new Date(
-    Date.UTC(
-      nextRotation.getUTCFullYear(),
-      nextRotation.getUTCMonth(),
-      nextRotation.getUTCDate() + 1, // Ceil to next UTC midnight
-      0,
-      0,
-      0,
-      0
-    )
-  );
-};
 
 export const SecretRotationV2Form = ({
   type,
@@ -103,7 +84,10 @@ export const SecretRotationV2Form = ({
           type,
           isAutoRotationEnabled: true,
           rotationInterval: DEFAULT_ROTATION_INTERVAL,
-          nextRotationAt: getInitialRotationAt(),
+          rotateAtUtc: {
+            hours: 0,
+            minutes: 0
+          },
           parameters: rotationOption!.parametersTemplate,
           environment: currentWorkspace?.environments.find((env) => env.slug === envSlug),
           secretPath
@@ -114,24 +98,21 @@ export const SecretRotationV2Form = ({
   const onSubmit = async ({
     environment,
     connection,
-    nextRotationAt,
+
     ...formData
   }: TSecretRotationV2Form) => {
     const mutation = secretRotation
       ? updateSecretRotation.mutateAsync({
           rotationId: secretRotation.id,
           projectId: secretRotation.projectId,
-          ...formData,
-          nextRotationAt: isEqual(nextRotationAt, secretRotation.nextRotationAt)
-            ? undefined
-            : nextRotationAt
+          ...formData
         })
       : createSecretRotation.mutateAsync({
           ...formData,
+
           connectionId: connection.id,
           environment: environment.slug,
-          projectId: currentWorkspace.id,
-          nextRotationAt
+          projectId: currentWorkspace.id
         });
     try {
       const rotation = await mutation;

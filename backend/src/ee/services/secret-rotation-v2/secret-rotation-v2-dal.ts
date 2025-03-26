@@ -272,7 +272,10 @@ export const secretRotationV2DALFactory = (
       return sqlNestRelationships({
         data: secretRotations.map((rotation) => expandSecretRotation(rotation, folderRecord[rotation.folderId])),
         key: "id",
-        parentMapper: (el) => SecretRotationV2Schema.parse(el),
+        parentMapper: (el) => ({
+          ...SecretRotationV2Schema.parse(el),
+          encryptedLastRotationMessage: el.encryptedLastRotationMessage
+        }),
         childrenMapper: [
           {
             key: "secretId",

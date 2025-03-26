@@ -12,6 +12,7 @@ export const mockQueue = (): TQueueServiceFactory => {
     },
     queuePg: async () => {},
     queueAfterPg: async () => {},
+    schedulePg: async () => {},
     initialize: async () => {},
     shutdown: async () => undefined,
     stopRepeatableJob: async () => true,

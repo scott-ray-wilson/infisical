@@ -7,11 +7,17 @@ import { SecretRotations } from "@app/lib/api-docs";
 import { removeTrailingSlash } from "@app/lib/fn";
 import { slugSchema } from "@app/server/lib/schemas";
 
+const RotateAtUtcSchema = z.object({
+  hours: z.number().min(0).max(23),
+  minutes: z.number().min(0).max(59)
+});
+
 export const BaseSecretRotationSchema = (type: SecretRotation) =>
   SecretRotationsV2Schema.omit({
     type: true,
     parameters: true,
-    encryptedGeneratedCredentials: true
+    encryptedGeneratedCredentials: true,
+    rotateAtUtc: true
   }).extend({
     connection: z.object({
       app: z.literal(SECRET_ROTATION_CONNECTION_MAP[type]),
@@ -20,7 +26,8 @@ export const BaseSecretRotationSchema = (type: SecretRotation) =>
     }),
     environment: z.object({ slug: z.string(), name: z.string(), id: z.string().uuid() }),
     projectId: z.string(),
-    folder: z.object({ id: z.string(), path: z.string() })
+    folder: z.object({ id: z.string(), path: z.string() }),
+    rotateAtUtc: RotateAtUtcSchema
   });
 
 export const BaseCreateSecretRotationSchema = (type: SecretRotation) =>
@@ -46,14 +53,8 @@ export const BaseCreateSecretRotationSchema = (type: SecretRotation) =>
       .optional()
       .default(true)
       .describe(SecretRotations.CREATE(type).isAutoRotationEnabled),
-    rotationInterval: z.coerce.number().min(1).describe(SecretRotations.CREATE(type).interval),
-    nextRotationAt: z.coerce
-      .date()
-      .optional()
-      .refine((rotateAt) => (rotateAt ? rotateAt.getTime() > Date.now() : true), {
-        message: "Scheduled rotation must be for a future datetime"
-      })
-      .describe(SecretRotations.CREATE(type).nextRotationAt)
+    rotationInterval: z.coerce.number().min(1).describe(SecretRotations.CREATE(type).rotationInterval),
+    rotateAtUtc: RotateAtUtcSchema.optional().describe(SecretRotations.CREATE(type).rotateAtUtc)
   });
 
 export const BaseUpdateSecretRotationSchema = (type: SecretRotation) =>
@@ -66,12 +67,6 @@ export const BaseUpdateSecretRotationSchema = (type: SecretRotation) =>
       .nullish()
       .describe(SecretRotations.UPDATE(type).description),
     isAutoRotationEnabled: z.boolean().optional().describe(SecretRotations.UPDATE(type).isAutoRotationEnabled),
-    rotationInterval: z.coerce.number().min(1).optional().describe(SecretRotations.UPDATE(type).interval),
-    nextRotationAt: z.coerce
-      .date()
-      .optional()
-      .refine((scheduledRotationAt) => (scheduledRotationAt ? scheduledRotationAt.getTime() > Date.now() : true), {
-        message: "Scheduled rotation must be for a future datetime"
-      })
-      .describe(SecretRotations.UPDATE(type).nextRotationAt)
+    rotationInterval: z.coerce.number().min(1).optional().describe(SecretRotations.UPDATE(type).rotationInterval),
+    rotateAtUtc: RotateAtUtcSchema.optional().describe(SecretRotations.UPDATE(type).rotateAtUtc)
   });

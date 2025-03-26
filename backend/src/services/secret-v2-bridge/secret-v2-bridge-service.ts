@@ -1685,7 +1685,6 @@ export const secretV2BridgeServiceFactory = ({
             })
           );
 
-          logger.warn(el);
           if (el.isRotatedSecret) {
             const input = secretsToUpdateGroupByPath[secretPath].find((i) => i.secretKey === el.key);
 

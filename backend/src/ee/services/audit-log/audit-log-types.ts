@@ -2359,8 +2359,8 @@ interface RotateSecretRotationEvent {
     rotationId: string;
     jobId?: string;
     occurredAt: Date;
-    rotationStatus: SecretRotationStatus;
-    rotationMessage?: string | null | undefined;
+    status: SecretRotationStatus;
+    message?: string | null | undefined;
   };
 }
 

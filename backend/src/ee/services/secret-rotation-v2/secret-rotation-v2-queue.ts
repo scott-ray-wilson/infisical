@@ -1,8 +1,11 @@
-import { isAfter } from "date-fns";
-
 import { TSecretRotationV2DALFactory } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-dal";
-import { getNextUTCMidnight, getNextUTCMinute } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-fns";
+import {
+  getNextUTCMidnight,
+  getNextUTCMinute,
+  getRotateAt
+} from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-fns";
 import { TSecretRotationV2ServiceFactory } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-service";
+import { TSecretRotationV2 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-types";
 import { getConfig } from "@app/lib/config/env";
 import { logger } from "@app/lib/logger";
 import { QueueJobs, QueueName, TQueueServiceFactory } from "@app/queue";
@@ -33,19 +36,19 @@ export const secretRotationV2QueueServiceFactory = async ({
         const currentTime = new Date();
 
         logger.info(
-          `secretRotationV2Queue: Queue Rotations [currentTime=${currentTime.toISOString()}] [count=${
+          `secretRotationV2Queue: Queue Rotations [currentTime=${currentTime.toISOString()}] [rotateBy=${rotateBy.toISOString()}] [count=${
             secretRotations.length
           }]`
         );
 
         for await (const rotation of secretRotations) {
-          const scheduledRotation = new Date(rotation.nextRotationAt);
+          const rotateAt = getRotateAt(rotation.rotateAtUtc as TSecretRotationV2["rotateAtUtc"], currentTime);
 
-          if (isAfter(rotation.nextRotationAt, currentTime)) {
+          if (rotateAt.getTime() > currentTime.getTime()) {
             logger.info(
               `secretRotationV2Queue: Queue Rotation After [rotationId=${
                 rotation.id
-              }] [scheduledRotation=${scheduledRotation.toISOString()}]`
+              }] [rotateAt=${rotateAt.toISOString()}]`
             );
             await queueService.queueAfterPg(
               QueueJobs.SecretRotationV2Rotate,
@@ -55,13 +58,13 @@ export const secretRotationV2QueueServiceFactory = async ({
                 retryLimit: 5,
                 retryBackoff: true
               },
-              scheduledRotation
+              rotateAt
             );
           } else {
             logger.info(
-              `secretRotationV2Queue: Queue Rotation [rotationId=${
-                rotation.id
-              }] [scheduledRotation=${scheduledRotation.toISOString()}]`
+              `secretRotationV2Queue: Queue Rotation [rotationId=${rotation.id}] [lastRotatedAt=${new Date(
+                rotation.lastRotatedAt
+              ).toISOString()}] [rotateAt=${rotateAt.toISOString()}]`
             );
             await queueService.queuePg(
               QueueJobs.SecretRotationV2Rotate,

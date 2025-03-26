@@ -1,5 +1,4 @@
 import { AxiosError } from "axios";
-import { addDays, addMinutes } from "date-fns";
 
 import { getConfig } from "@app/lib/config/env";
 import { KmsDataKey } from "@app/services/kms/kms-types";
@@ -8,7 +7,11 @@ import { MSSQL_CREDENTIALS_ROTATION_LIST_OPTION } from "./mssql-credentials";
 import { POSTGRES_CREDENTIALS_ROTATION_LIST_OPTION } from "./postgres-credentials";
 import { SecretRotation } from "./secret-rotation-v2-enums";
 import { TSecretRotationV2ServiceFactoryDep } from "./secret-rotation-v2-service";
-import { TSecretRotationV2GeneratedCredentials, TSecretRotationV2ListItem } from "./secret-rotation-v2-types";
+import {
+  TSecretRotationV2,
+  TSecretRotationV2GeneratedCredentials,
+  TSecretRotationV2ListItem
+} from "./secret-rotation-v2-types";
 
 const SECRET_ROTATION_LIST_OPTIONS: Record<SecretRotation, TSecretRotationV2ListItem> = {
   [SecretRotation.PostgresCredentials]: POSTGRES_CREDENTIALS_ROTATION_LIST_OPTION,
@@ -17,6 +20,22 @@ const SECRET_ROTATION_LIST_OPTIONS: Record<SecretRotation, TSecretRotationV2List
 
 export const listSecretRotationOptions = () => {
   return Object.values(SECRET_ROTATION_LIST_OPTIONS).sort((a, b) => a.name.localeCompare(b.name));
+};
+
+export const getRotateAt = ({ hours, minutes }: TSecretRotationV2["rotateAtUtc"], currentTime: Date) => {
+  const appCfg = getConfig();
+
+  return new Date(
+    Date.UTC(
+      currentTime.getUTCFullYear(),
+      currentTime.getUTCMonth(),
+      currentTime.getUTCDate(),
+      appCfg.isDevelopmentMode ? currentTime.getUTCHours() : hours,
+      appCfg.isDevelopmentMode ? currentTime.getUTCMinutes() : minutes,
+      appCfg.isDevelopmentMode ? minutes : 0,
+      0
+    )
+  );
 };
 
 export const getNextUTCMidnight = (date: Date = new Date()) =>
@@ -44,44 +63,6 @@ export const getNextUTCMinute = (date: Date = new Date()) =>
       0
     )
   );
-
-export const getInitialRotationAt = (rotationInterval: number, nextRotationAt?: Date) => {
-  const appCfg = getConfig();
-
-  if (appCfg.isDevelopmentMode) {
-    return getNextUTCMinute(addMinutes(new Date(), rotationInterval));
-  }
-
-  if (nextRotationAt) return nextRotationAt;
-
-  return getNextUTCMidnight(addDays(new Date(), rotationInterval));
-};
-
-const differenceInMinutes = (startDate: Date, endDate: Date) => {
-  const diff = endDate.getTime() - startDate.getTime();
-  return diff / (1000 * 60);
-};
-
-const differenceInDays = (startDate: Date, endDate: Date) => {
-  const diff = endDate.getTime() - startDate.getTime();
-  return diff / (1000 * 60 * 60 * 24);
-};
-
-export const getNextRotationAt = (rotationInterval: number, currentRotationAt: Date) => {
-  const appCfg = getConfig();
-  const now = new Date();
-
-  if (appCfg.isDevelopmentMode) {
-    const minutesDifference = differenceInMinutes(currentRotationAt, now);
-    const intervalsPassed = Math.ceil(minutesDifference / rotationInterval);
-
-    return addMinutes(currentRotationAt, intervalsPassed * rotationInterval);
-  }
-
-  const daysDifference = differenceInDays(currentRotationAt, now);
-  const intervalsPassed = Math.ceil(daysDifference / rotationInterval);
-  return addDays(currentRotationAt, intervalsPassed * rotationInterval);
-};
 
 export const encryptSecretRotationCredentials = async ({
   projectId,

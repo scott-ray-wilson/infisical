@@ -101,12 +101,15 @@ export const SecretRotationItem = ({
             >
               {(isAllowed) => (
                 <IconButton
-                  ariaLabel="view-generated-credentials"
+                  ariaLabel="View generated credentials"
                   variant="plain"
                   size="sm"
                   isDisabled={!isAllowed}
                   className="w-0 overflow-hidden p-0 group-hover:w-5"
-                  onClick={onViewGeneratedCredentials}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewGeneratedCredentials();
+                  }}
                 >
                   <FontAwesomeIcon icon={faAsterisk} />
                 </IconButton>
@@ -123,12 +126,15 @@ export const SecretRotationItem = ({
             >
               {(isAllowed) => (
                 <IconButton
-                  ariaLabel="rotate-secrets"
+                  ariaLabel="Rotate secrets"
                   variant="plain"
                   size="sm"
                   isDisabled={!isAllowed}
                   className="w-0 overflow-hidden p-0 group-hover:w-5"
-                  onClick={onRotate}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRotate();
+                  }}
                 >
                   <FontAwesomeIcon icon={faRotate} />
                 </IconButton>
@@ -158,7 +164,10 @@ export const SecretRotationItem = ({
                 variant="plain"
                 size="md"
                 className="opacity-0 group-hover:opacity-100"
-                onClick={onEdit}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
               >
                 <FontAwesomeIcon icon={faEdit} />
               </IconButton>
@@ -174,12 +183,15 @@ export const SecretRotationItem = ({
             >
               {(isAllowed) => (
                 <IconButton
-                  ariaLabel="delete-value"
+                  ariaLabel="Delete rotation"
                   variant="plain"
                   colorSchema="danger"
                   size="md"
                   className="opacity-0 group-hover:opacity-100"
-                  onClick={onDelete}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete();
+                  }}
                   isDisabled={!isAllowed}
                 >
                   <FontAwesomeIcon icon={faClose} size="lg" />

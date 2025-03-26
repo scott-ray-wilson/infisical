@@ -15,8 +15,6 @@ import { SecretRotation, SecretRotationStatus } from "@app/ee/services/secret-ro
 import {
   decryptSecretRotationCredentials,
   encryptSecretRotationCredentials,
-  getInitialRotationAt,
-  getNextRotationAt,
   listSecretRotationOptions,
   parseRotationErrorMessage
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-fns";
@@ -44,7 +42,6 @@ import { sqlCredentialsRotationFactory } from "@app/ee/services/secret-rotation-
 import { TKeyStoreFactory } from "@app/keystore/keystore";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
 import { BadRequestError, DatabaseError, NotFoundError } from "@app/lib/errors";
-import { logger } from "@app/lib/logger";
 import { OrderByDirection, OrgServiceActor } from "@app/lib/types";
 import { decryptAppConnection } from "@app/services/app-connection/app-connection-fns";
 import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
@@ -375,7 +372,13 @@ export const secretRotationV2ServiceFactory = ({
   };
 
   const createSecretRotation = async (
-    { projectId, secretPath, environment, ...params }: TCreateSecretRotationV2DTO,
+    {
+      projectId,
+      secretPath,
+      environment,
+      rotateAtUtc = { hours: 0, minutes: 0 },
+      ...params
+    }: TCreateSecretRotationV2DTO,
     actor: OrgServiceActor
   ) => {
     const plan = await licenseService.getPlan(actor.orgId);
@@ -427,8 +430,9 @@ export const secretRotationV2ServiceFactory = ({
     } as TSecretRotationV2WithConnection);
 
     try {
-      // throws if any invalid
       await rotationFactory.throwOnInvalidParameters();
+
+      const currentTime = new Date();
 
       const secretRotation = await rotationFactory.issue(async (newCredentials) => {
         const generatedCredentials = [newCredentials];
@@ -444,8 +448,11 @@ export const secretRotationV2ServiceFactory = ({
             {
               folderId: folder.id,
               ...params,
-              nextRotationAt: getInitialRotationAt(params.rotationInterval, params.nextRotationAt),
-              encryptedGeneratedCredentials
+              encryptedGeneratedCredentials,
+              rotateAtUtc,
+              rotationStatus: SecretRotationStatus.Success,
+              lastRotationAttemptedAt: currentTime,
+              lastRotatedAt: currentTime
             },
             tx
           )) as TSecretRotationV2;
@@ -713,16 +720,7 @@ export const secretRotationV2ServiceFactory = ({
   };
 
   const rotateGeneratedCredentials = async (secretRotation: TSecretRotationV2Raw, auditLogInfo?: AuditLogInfo) => {
-    const {
-      connection,
-      encryptedGeneratedCredentials,
-      activeIndex,
-      projectId,
-      type,
-      parameters,
-      nextRotationAt,
-      rotationInterval
-    } = secretRotation;
+    const { connection, encryptedGeneratedCredentials, activeIndex, projectId, type, parameters } = secretRotation;
 
     try {
       const appConnection = await decryptAppConnection(connection, kmsService);
@@ -759,10 +757,10 @@ export const secretRotationV2ServiceFactory = ({
               encryptedGeneratedCredentials: encryptedUpdatedCredentials,
               activeIndex: inactiveIndex,
               lastRotatedAt: new Date(),
+              lastRotationAttemptedAt: new Date(),
               rotationStatus: SecretRotationStatus.Success,
               // rotationJobId: null, TODO
-              rotationMessage: null,
-              nextRotationAt: getNextRotationAt(rotationInterval, nextRotationAt)
+              encryptedLastRotationMessage: null
             },
             tx
           )) as TSecretRotationV2;
@@ -797,10 +795,10 @@ export const secretRotationV2ServiceFactory = ({
                 connectionId: updatedRotation.connectionId,
                 folderId: updatedRotation.folderId,
                 parameters: updatedRotation.parameters,
-                rotationStatus: SecretRotationStatus.Success,
+                status: SecretRotationStatus.Success,
                 occurredAt: new Date(),
-                rotationMessage: updatedRotation.rotationMessage
-                // TODO: jobId
+                message: null
+                // TODO: jobId, mapping
               }
             }
           });
@@ -811,10 +809,23 @@ export const secretRotationV2ServiceFactory = ({
 
       return updatedSecretRotation;
     } catch (error) {
+      // TODO: redact message if sensitive for logs
+      const errorMessage = parseRotationErrorMessage(error);
+
+      const { encryptor } = await kmsService.createCipherPairWithDataKey({
+        type: KmsDataKey.SecretManager,
+        projectId
+      });
+
+      const { cipherTextBlob: encryptedMessage } = encryptor({
+        plainText: Buffer.from(errorMessage)
+      });
+
       const updatedRotation = (await secretRotationV2DAL.updateById(secretRotation.id, {
         rotationStatus: SecretRotationStatus.Failed,
         // rotationJobId: null, TODO
-        rotationMessage: parseRotationErrorMessage(error)
+        lastRotationAttemptedAt: new Date(),
+        encryptedLastRotationMessage: encryptedMessage
       })) as TSecretRotationV2;
 
       await auditLogService.createAuditLog({
@@ -833,10 +844,10 @@ export const secretRotationV2ServiceFactory = ({
             connectionId: updatedRotation.connectionId,
             folderId: updatedRotation.folderId,
             parameters: updatedRotation.parameters,
-            rotationStatus: SecretRotationStatus.Failed,
-            occurredAt: new Date(),
-            rotationMessage: updatedRotation.rotationMessage
-            // todo: job Id
+            occurredAt: updatedRotation.lastRotationAttemptedAt,
+            status: SecretRotationStatus.Failed,
+            message: errorMessage
+            // todo: job Id and mapping
           }
         }
       });
@@ -929,8 +940,6 @@ export const secretRotationV2ServiceFactory = ({
       projectId
     });
 
-    logger.warn(`here service ${count}`);
-
     return count;
   };
 
@@ -980,7 +989,6 @@ export const secretRotationV2ServiceFactory = ({
     }
 
     const folderIds = folders.map((folder) => folder.id);
-    logger.warn(`secretPath: ${secretPath}, environments: ${environments.join(",")} ${folderIds.join(",")}`);
 
     const secretRotations = await secretRotationV2DAL.findWithMappedSecrets(
       {

@@ -8,6 +8,7 @@ import {
   TScanFullRepoEventPayload,
   TScanPushEventPayload
 } from "@app/ee/services/secret-scanning/secret-scanning-queue/secret-scanning-queue-types";
+import { getConfig } from "@app/lib/config/env";
 import { logger } from "@app/lib/logger";
 import {
   TFailedIntegrationSyncEmailsPayload,
@@ -242,6 +243,7 @@ export const queueServiceFactory = (
   const pgBoss = new PgBoss({
     connectionString: dbConnectionUrl,
     archiveCompletedAfterSeconds: 60,
+    cronMonitorIntervalSeconds: 1,
     archiveFailedAfterSeconds: 1000, // we want to keep failed jobs for a longer time so that it can be retried
     deleteAfterSeconds: 30,
     ssl: dbRootCert

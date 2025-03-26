@@ -28,7 +28,8 @@ export const SecretRotationsV2Schema = z.object({
   lastRotationAttemptedAt: z.date(),
   lastRotatedAt: z.date(),
   encryptedLastRotationMessage: zodBuffer.nullable().optional(),
-  lastRotationJobId: z.string().nullable().optional()
+  lastRotationJobId: z.string().nullable().optional(),
+  isLastRotationManual: z.boolean().default(true)
 });
 
 export type TSecretRotationsV2 = z.infer<typeof SecretRotationsV2Schema>;

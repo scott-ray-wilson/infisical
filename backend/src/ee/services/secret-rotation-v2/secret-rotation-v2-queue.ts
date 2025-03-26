@@ -25,11 +25,15 @@ export const secretRotationV2QueueServiceFactory = async ({
 }: TSecretRotationV2QueueServiceFactoryDep) => {
   const appCfg = getConfig();
 
+  if (appCfg.isRotationDevelopmentMode) {
+    logger.warn("Secret Rotation V2 is in development mode.");
+  }
+
   await queueService.startPg<QueueName.SecretRotationV2>(
     QueueJobs.SecretRotationV2QueueRotations,
     async () => {
       try {
-        const rotateBy = appCfg.isDevelopmentMode ? getNextUTCMinute() : getNextUTCMidnight();
+        const rotateBy = appCfg.isRotationDevelopmentMode ? getNextUTCMinute() : getNextUTCMidnight();
 
         const secretRotations = await secretRotationV2DAL.findSecretRotationsToQueue(rotateBy);
 
@@ -98,7 +102,7 @@ export const secretRotationV2QueueServiceFactory = async ({
 
         if (!secretRotation) throw new Error(`Secret rotation ${rotationId} not found`);
 
-        await secretRotationV2Service.rotateGeneratedCredentials(secretRotation);
+        await secretRotationV2Service.rotateGeneratedCredentials(secretRotation, { jobId: job.id });
 
         logger.info(`secretRotationV2Queue: Secrets Rotated [rotationId=${job.data?.rotationId}]`);
       } catch (error) {
@@ -114,7 +118,7 @@ export const secretRotationV2QueueServiceFactory = async ({
 
   await queueService.schedulePg(
     QueueJobs.SecretRotationV2QueueRotations,
-    appCfg.isDevelopmentMode ? "* * * * *" : "0 0 * * *",
+    appCfg.isRotationDevelopmentMode ? "* * * * *" : "0 0 * * *",
     undefined,
     { tz: "UTC" }
   );

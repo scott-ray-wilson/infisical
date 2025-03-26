@@ -1,3 +1,4 @@
+import { AuditLogInfo } from "@app/ee/services/audit-log/audit-log-types";
 import { TSqlCredentialsRotationGeneratedCredentials } from "@app/ee/services/secret-rotation-v2/shared/sql-credentials/sql-credentials-rotation-types";
 import { OrderByDirection } from "@app/lib/types";
 import { SecretsOrderBy } from "@app/services/secret/secret-types";
@@ -41,9 +42,9 @@ export type TFindSecretRotationV2ByIdDTO = {
   type: SecretRotation;
 };
 
-export type TRotateSecretRotationV2 = TFindSecretRotationV2ByIdDTO;
+export type TRotateSecretRotationV2 = TFindSecretRotationV2ByIdDTO & { auditLogInfo: AuditLogInfo };
 
-type TRotateAtUtc = { hours: number; minutes: number };
+export type TRotateAtUtc = { hours: number; minutes: number };
 
 export type TFindSecretRotationV2ByNameDTO = {
   rotationName: string;

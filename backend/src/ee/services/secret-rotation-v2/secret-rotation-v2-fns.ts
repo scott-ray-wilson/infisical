@@ -1,11 +1,15 @@
 import { AxiosError } from "axios";
+import { addDays, addMinutes } from "date-fns";
+import { undefined } from "zod";
 
 import { getConfig } from "@app/lib/config/env";
+import { DatabaseError } from "@app/lib/errors";
+import { logger } from "@app/lib/logger";
 import { KmsDataKey } from "@app/services/kms/kms-types";
 
 import { MSSQL_CREDENTIALS_ROTATION_LIST_OPTION } from "./mssql-credentials";
 import { POSTGRES_CREDENTIALS_ROTATION_LIST_OPTION } from "./postgres-credentials";
-import { SecretRotation } from "./secret-rotation-v2-enums";
+import { SecretRotation, SecretRotationStatus } from "./secret-rotation-v2-enums";
 import { TSecretRotationV2ServiceFactoryDep } from "./secret-rotation-v2-service";
 import {
   TSecretRotationV2,
@@ -31,9 +35,9 @@ export const getRotateAt = ({ hours, minutes }: TSecretRotationV2["rotateAtUtc"]
       currentTime.getUTCFullYear(),
       currentTime.getUTCMonth(),
       currentTime.getUTCDate(),
-      appCfg.isDevelopmentMode ? currentTime.getUTCHours() : hours,
-      appCfg.isDevelopmentMode ? currentTime.getUTCMinutes() : minutes,
-      appCfg.isDevelopmentMode ? minutes : 0,
+      appCfg.isRotationDevelopmentMode ? currentTime.getUTCHours() : hours,
+      appCfg.isRotationDevelopmentMode ? currentTime.getUTCMinutes() : minutes,
+      appCfg.isRotationDevelopmentMode ? minutes : 0,
       0
     )
   );
@@ -108,21 +112,39 @@ export const decryptSecretRotationCredentials = async ({
 };
 
 export const decryptSecretRotation = async (
-  secretRotation: TSecretRotationV2Raw,
+  { encryptedLastRotationMessage, ...secretRotation }: TSecretRotationV2Raw,
   kmsService: TSecretRotationV2ServiceFactoryDep["kmsService"]
 ) => {
+  const appCfg = getConfig();
+
   const { decryptor } = await kmsService.createCipherPairWithDataKey({
     type: KmsDataKey.SecretManager,
     projectId: secretRotation.projectId
   });
 
-  const decryptedPlainTextBlob = decryptor({
-    cipherTextBlob: secretRotation.encryptedLastRotationMessage
-  });
+  const lastRotationMessage = encryptedLastRotationMessage
+    ? decryptor({
+        cipherTextBlob: encryptedLastRotationMessage
+      }).toString()
+    : null;
+
+  const modifier = appCfg.isRotationDevelopmentMode ? addMinutes : addDays;
+  const nextUtcInterval = appCfg.isRotationDevelopmentMode ? getNextUTCMinute() : getNextUTCMidnight();
 
   return {
     ...secretRotation,
-    lastRotationMessage: decryptedPlainTextBlob.toString()
+    lastRotationMessage,
+    nextRotationAt: secretRotation.isAutoRotationEnabled
+      ? getRotateAt(
+          secretRotation.rotateAtUtc as TSecretRotationV2["rotateAtUtc"],
+          secretRotation.rotationStatus === SecretRotationStatus.Success
+            ? modifier(
+                secretRotation.lastRotatedAt,
+                secretRotation.rotationInterval + (secretRotation.isLastRotationManual ? 1 : 0)
+              )
+            : nextUtcInterval
+        )
+      : undefined
   } as TSecretRotationV2;
 };
 
@@ -131,9 +153,11 @@ const MAX_MESSAGE_LENGTH = 1024;
 export const parseRotationErrorMessage = (err: unknown): string => {
   let errorMessage: string;
 
-  // TODO: db error?
+  logger.warn(err);
 
-  if (err instanceof AxiosError) {
+  if (err instanceof DatabaseError) {
+    errorMessage = (err.error as { message: string }).message ?? "An unknown error occurred.";
+  } else if (err instanceof AxiosError) {
     errorMessage = err?.response?.data
       ? JSON.stringify(err?.response?.data)
       : err?.message ?? "An unknown error occurred.";

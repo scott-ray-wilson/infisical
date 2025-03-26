@@ -3,7 +3,6 @@ import { Knex } from "knex";
 import { TDbClient } from "@app/db";
 import { TableName } from "@app/db/schemas";
 import { TSecretRotationsV2 } from "@app/db/schemas/secret-rotations-v2";
-import { SecretRotationV2Schema } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-union-schema";
 import { getConfig } from "@app/lib/config/env";
 import { DatabaseError } from "@app/lib/errors";
 import {
@@ -270,12 +269,9 @@ export const secretRotationV2DALFactory = (
       });
 
       return sqlNestRelationships({
-        data: secretRotations.map((rotation) => expandSecretRotation(rotation, folderRecord[rotation.folderId])),
+        data: secretRotations,
         key: "id",
-        parentMapper: (el) => ({
-          ...SecretRotationV2Schema.parse(el),
-          encryptedLastRotationMessage: el.encryptedLastRotationMessage
-        }),
+        parentMapper: (rotation) => expandSecretRotation(rotation, folderRecord[rotation.folderId]),
         childrenMapper: [
           {
             key: "secretId",
@@ -452,7 +448,11 @@ export const secretRotationV2DALFactory = (
     const appCfg = getConfig();
     const secretRotations = await (tx || db.replicaNode())(TableName.SecretRotationV2)
       .whereRaw(
-        `"lastRotatedAt" + ("rotationInterval" * INTERVAL '1 ${appCfg.isDevelopmentMode ? "minute" : "day"}') < ?`,
+        `"lastRotatedAt" + ("rotationInterval" * INTERVAL '1 ${
+          appCfg.isRotationDevelopmentMode ? "minute" : "day"
+        }') + (CASE WHEN "isLastRotationManual" = true THEN INTERVAL '1 ${
+          appCfg.isRotationDevelopmentMode ? "minute" : "day"
+        }' ELSE INTERVAL '0 day' END) < ?`,
         [rotateBy]
       )
       .andWhere(`${TableName.SecretRotationV2}.isAutoRotationEnabled`, true)

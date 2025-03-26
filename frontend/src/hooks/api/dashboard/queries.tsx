@@ -145,6 +145,7 @@ export const useGetProjectSecretsOverview = (
     includeFolders,
     includeImports,
     includeDynamicSecrets,
+    includeSecretRotations,
     environments
   }: TGetDashboardProjectSecretsOverviewDTO,
   options?: Omit<
@@ -173,6 +174,7 @@ export const useGetProjectSecretsOverview = (
       includeFolders,
       includeImports,
       includeDynamicSecrets,
+      includeSecretRotations,
       environments
     }),
     queryFn: () =>
@@ -188,6 +190,7 @@ export const useGetProjectSecretsOverview = (
         includeFolders,
         includeImports,
         includeDynamicSecrets,
+        includeSecretRotations,
         environments
       }),
     select: useCallback((data: Awaited<ReturnType<typeof fetchProjectSecretsOverview>>) => {

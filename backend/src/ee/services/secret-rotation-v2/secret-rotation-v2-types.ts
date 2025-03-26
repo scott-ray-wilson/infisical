@@ -43,6 +43,8 @@ export type TFindSecretRotationV2ByIdDTO = {
 
 export type TRotateSecretRotationV2 = TFindSecretRotationV2ByIdDTO;
 
+type TRotateAtUtc = { hours: number; minutes: number };
+
 export type TFindSecretRotationV2ByNameDTO = {
   rotationName: string;
   secretPath: string;
@@ -59,7 +61,7 @@ export type TCreateSecretRotationV2DTO = Pick<
   secretPath: string;
   environment: string;
   isAutoRotationEnabled?: boolean;
-  nextRotationAt?: Date;
+  rotateAtUtc?: TRotateAtUtc;
 };
 
 export type TUpdateSecretRotationV2DTO = Partial<Omit<TCreateSecretRotationV2DTO, "projectId" | "connectionId">> & {

@@ -189,9 +189,7 @@ export const SecretOverviewTableRow = ({
                       const secret = getSecretByKey(slug, secretKey);
                       const isCreatable = !secret;
 
-                      const isImportedSecret = secret
-                        ? false
-                        : isImportedSecretPresentInEnv(slug, secretKey);
+                      const isImportedSecret = isImportedSecretPresentInEnv(slug, secretKey);
                       const importedSecret = getImportedSecretByKey(slug, secretKey);
 
                       return (
@@ -218,7 +216,7 @@ export const SecretOverviewTableRow = ({
                                 </Tooltip>
                               )}
                               {secret?.valueOverride && (
-                                <Tooltip content="Personal Overridden">
+                                <Tooltip content="Personal Override">
                                   <FontAwesomeIcon icon={faCodeBranch} />
                                 </Tooltip>
                               )}

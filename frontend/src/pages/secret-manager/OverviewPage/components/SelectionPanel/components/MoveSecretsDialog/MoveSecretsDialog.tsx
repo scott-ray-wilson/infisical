@@ -156,7 +156,10 @@ const Content = ({
     );
 
     Object.values(secrets).forEach((secretRecord) =>
-      Object.entries(secretRecord).map(([env, secret]) => secretsByEnv[env].push(secret))
+      Object.entries(secretRecord).forEach(([env, secret]) => {
+        if (secret.isRotatedSecret) return;
+        secretsByEnv[env].push(secret);
+      })
     );
 
     // eslint-disable-next-line no-restricted-syntax
@@ -193,7 +196,7 @@ const Content = ({
           destinationEnvironment: environment.slug,
           destinationSecretPath: value.secretPath,
           projectId,
-          secretIds: secretsToMove.map((sec) => sec.id)
+          secretIds: secretsToMove.filter((sec) => !sec.isRotatedSecret).map((sec) => sec.id)
         });
 
         let message = "";

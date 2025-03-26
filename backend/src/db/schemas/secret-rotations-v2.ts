@@ -23,11 +23,12 @@ export const SecretRotationsV2Schema = z.object({
   createdAt: z.date(),
   updatedAt: z.date(),
   rotationInterval: z.number(),
-  nextRotationAt: z.date(),
-  rotationStatus: z.string().nullable().optional(),
-  rotationMessage: z.string().nullable().optional(),
-  rotationJobId: z.string().nullable().optional(),
-  lastRotatedAt: z.date().nullable().optional()
+  rotateAtUtc: z.unknown(),
+  rotationStatus: z.string(),
+  lastRotationAttemptedAt: z.date(),
+  lastRotatedAt: z.date(),
+  encryptedLastRotationMessage: zodBuffer.nullable().optional(),
+  lastRotationJobId: z.string().nullable().optional()
 });
 
 export type TSecretRotationsV2 = z.infer<typeof SecretRotationsV2Schema>;

@@ -20,11 +20,12 @@ export async function up(knex: Knex): Promise<void> {
       t.foreign("connectionId").references("id").inTable(TableName.AppConnection);
       t.timestamps(true, true, true);
       t.integer("rotationInterval").notNullable();
-      t.datetime("nextRotationAt").notNullable();
-      t.string("rotationStatus");
-      t.string("rotationMessage", 1024);
-      t.string("rotationJobId");
-      t.datetime("lastRotatedAt");
+      t.jsonb("rotateAtUtc").notNullable(); // { hours: number; minutes: number }
+      t.string("rotationStatus").notNullable();
+      t.datetime("lastRotationAttemptedAt").notNullable();
+      t.datetime("lastRotatedAt").notNullable();
+      t.binary("encryptedLastRotationMessage"); // we encrypt this because it may contain sensitive info (SQL errors showing credentials)
+      t.string("lastRotationJobId");
     });
 
     await createOnUpdateTrigger(knex, TableName.SecretRotationV2);
@@ -37,7 +38,7 @@ export async function up(knex: Knex): Promise<void> {
   if (!(await knex.schema.hasTable(TableName.SecretRotationV2SecretMapping))) {
     await knex.schema.createTable(TableName.SecretRotationV2SecretMapping, (t) => {
       t.uuid("id", { primaryKey: true }).defaultTo(knex.fn.uuid());
-      t.string("secretKey").notNullable();
+      t.string("secretKey").notNullable(); // TODO: maybe remove?
       t.uuid("secretId").notNullable();
       t.foreign("secretId").references("id").inTable(TableName.SecretV2).deferrable("deferred");
       t.uuid("rotationId").notNullable();

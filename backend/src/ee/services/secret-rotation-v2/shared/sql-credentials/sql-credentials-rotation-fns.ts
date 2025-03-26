@@ -4,7 +4,6 @@ import { Knex } from "knex";
 
 import { SecretType } from "@app/db/schemas";
 import { DatabaseError } from "@app/lib/errors";
-import { logger } from "@app/lib/logger";
 import { alphaNumericNanoId } from "@app/lib/nanoid";
 import { getSqlConnectionClient } from "@app/services/app-connection/shared/sql";
 
@@ -176,7 +175,7 @@ export const sqlCredentialsRotationFactory = (
           username: credentials.username
         });
       });
-      logger.warn(revokeStatements);
+
       const secretRotation = await processStatements(revokeStatements, client, async () => callback());
 
       return secretRotation;

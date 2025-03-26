@@ -4,6 +4,7 @@ import { TDbClient } from "@app/db";
 import { TableName } from "@app/db/schemas";
 import { TSecretRotationsV2 } from "@app/db/schemas/secret-rotations-v2";
 import { SecretRotationV2Schema } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-union-schema";
+import { getConfig } from "@app/lib/config/env";
 import { DatabaseError } from "@app/lib/errors";
 import {
   buildFindFilter,
@@ -13,7 +14,6 @@ import {
   sqlNestRelationships,
   TFindOpt
 } from "@app/lib/knex";
-import { logger } from "@app/lib/logger";
 import { TSecretFolderDALFactory } from "@app/services/secret-folder/secret-folder-dal";
 
 export type TSecretRotationV2DALFactory = ReturnType<typeof secretRotationV2DALFactory>;
@@ -255,8 +255,6 @@ export const secretRotationV2DALFactory = (
 
       const secretRotations = await extendedQuery;
 
-      logger.warn(secretRotations, "secretRotations");
-
       if (!secretRotations.length) return [];
 
       const foldersWithPath = await folderDAL.findSecretPathByFolderIds(
@@ -448,8 +446,12 @@ export const secretRotationV2DALFactory = (
   };
 
   const findSecretRotationsToQueue = async (rotateBy: Date, tx?: Knex) => {
+    const appCfg = getConfig();
     const secretRotations = await (tx || db.replicaNode())(TableName.SecretRotationV2)
-      .where(`${TableName.SecretRotationV2}.nextRotationAt`, "<", rotateBy)
+      .whereRaw(
+        `"lastRotatedAt" + ("rotationInterval" * INTERVAL '1 ${appCfg.isDevelopmentMode ? "minute" : "day"}') < ?`,
+        [rotateBy]
+      )
       .andWhere(`${TableName.SecretRotationV2}.isAutoRotationEnabled`, true)
       .select(selectAllTableCols(TableName.SecretRotationV2));
 

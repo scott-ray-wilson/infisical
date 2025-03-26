@@ -4,6 +4,7 @@ import { EventType } from "@app/ee/services/audit-log/audit-log-types";
 import { SecretRotation } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-enums";
 import { SECRET_ROTATION_NAME_MAP } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-maps";
 import {
+  TRotateAtUtc,
   TSecretRotationV2,
   TSecretRotationV2GeneratedCredentials,
   TSecretRotationV2Input
@@ -414,7 +415,8 @@ export const registerSecretRotationEndpoints = <
       const secretRotation = (await server.services.secretRotationV2.rotateSecretRotation(
         {
           rotationId,
-          type
+          type,
+          auditLogInfo: req.auditLogInfo
         },
         req.permission
       )) as T;

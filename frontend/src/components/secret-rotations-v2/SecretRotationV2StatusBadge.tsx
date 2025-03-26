@@ -1,6 +1,6 @@
 import { faBan, faRotate, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { addDays, format, formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
 import { Tooltip } from "@app/components/v2";
@@ -13,21 +13,16 @@ type Props = {
 };
 
 export const SecretRotationV2StatusBadge = ({ secretRotation, className }: Props) => {
-  const {
-    lastRotatedAt,
-    isAutoRotationEnabled,
-    rotationStatus,
-    rotationMessage,
-    rotationInterval
-  } = secretRotation;
+  const { isAutoRotationEnabled, rotationStatus, nextRotationAt, lastRotationMessage } =
+    secretRotation;
 
   if (rotationStatus === SecretRotationStatus.Failed) {
-    let errorMessage = rotationMessage;
-    if (rotationMessage) {
+    let errorMessage = lastRotationMessage;
+    if (lastRotationMessage) {
       try {
-        errorMessage = JSON.stringify(JSON.parse(rotationMessage), null, 2);
+        errorMessage = JSON.stringify(JSON.parse(lastRotationMessage), null, 2);
       } catch {
-        errorMessage = rotationMessage;
+        errorMessage = lastRotationMessage;
       }
     }
 
@@ -72,9 +67,8 @@ export const SecretRotationV2StatusBadge = ({ secretRotation, className }: Props
     );
   }
 
-  const nextRotationAt = addDays(lastRotatedAt, rotationInterval);
-  console.log(nextRotationAt, new Date(lastRotatedAt), rotationInterval);
-  const daysToRotation = (nextRotationAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
+  const daysToRotation =
+    (new Date(nextRotationAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24);
 
   let variant: BadgeProps["variant"];
   let label: string;

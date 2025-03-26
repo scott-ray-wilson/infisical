@@ -9,7 +9,6 @@ export type TSecretRotationV2Base = {
   connectionId: string;
   createdAt: string;
   updatedAt: string;
-  isAutoRotationEnabled: boolean;
   rotationInterval: number;
   rotateAtUtc: {
     hours: number;
@@ -18,9 +17,9 @@ export type TSecretRotationV2Base = {
   projectId: string;
   rotationStatus: SecretRotationStatus | null;
   lastRotationJobId: string | null;
-  lastRotatedAt: Date;
-  lastRotationAttemptedAt: Date;
-  rotationMessage?: string | null;
+  lastRotatedAt: string;
+  lastRotationAttemptedAt: string;
+  lastRotationMessage?: string | null;
   connection: {
     app: AppConnection;
     id: string;
@@ -35,7 +34,16 @@ export type TSecretRotationV2Base = {
     id: string;
     path: string;
   };
-};
+} & (
+  | {
+      nextRotationAt: string;
+      isAutoRotationEnabled: true;
+    }
+  | {
+      nextRotationAt?: null;
+      isAutoRotationEnabled: false;
+    }
+);
 
 export type TSecretRotationV2GeneratedCredentialsResponseBase<U, T> = {
   activeIndex: 0 | 1;

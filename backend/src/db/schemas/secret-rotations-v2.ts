@@ -15,6 +15,7 @@ export const SecretRotationsV2Schema = z.object({
   description: z.string().nullable().optional(),
   type: z.string(),
   parameters: z.unknown(),
+  secretsMapping: z.unknown(),
   encryptedGeneratedCredentials: zodBuffer,
   isAutoRotationEnabled: z.boolean().default(true),
   activeIndex: z.number().default(0),

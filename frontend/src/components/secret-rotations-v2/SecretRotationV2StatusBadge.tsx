@@ -79,9 +79,9 @@ export const SecretRotationV2StatusBadge = ({ secretRotation, className }: Props
     label = `Rotates ${formatDistanceToNow(nextRotationAt, { addSuffix: true })}`;
     tooltipContent = `Rotates ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
   } else if (daysToRotation < 0) {
-    variant = "danger";
-    label = "Rotation Past Due";
-    tooltipContent = `Rotation due on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
+    variant = "primary";
+    label = "Rotation Queueing";
+    tooltipContent = `Rotates on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
   } else if (daysToRotation < 1) {
     variant = "primary";
     label = `Rotates ${formatDistanceToNow(nextRotationAt, { addSuffix: true })}`;

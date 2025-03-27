@@ -53,11 +53,11 @@ export enum ProjectPermissionSecretSyncActions {
 
 export enum ProjectPermissionSecretRotationActions {
   Read = "read",
-  ReadCredentials = "read-credentials",
+  ReadGeneratedCredentials = "read-generated-credentials",
   Create = "create",
   Edit = "edit",
   Delete = "delete",
-  Rotate = "rotate"
+  RotateSecrets = "rotate-secrets"
 }
 
 export enum PermissionConditionOperators {

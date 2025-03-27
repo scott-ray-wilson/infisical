@@ -2354,7 +2354,7 @@ interface DeleteSecretRotationEvent {
 
 interface RotateSecretRotationEvent {
   type: EventType.ROTATE_SECRET_ROTATION;
-  metadata: Pick<TSecretRotationV2, "parameters" | "type" | "connectionId" | "folderId"> & {
+  metadata: Pick<TSecretRotationV2, "parameters" | "secretsMapping" | "type" | "connectionId" | "folderId"> & {
     rotationId: string;
     jobId?: string;
     occurredAt: Date;

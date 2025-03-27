@@ -61,7 +61,7 @@ export const CreateRotationForm = ({
         customProvider,
         secretPath: wizardData.current.output.secretPath,
         environment: wizardData.current.output.environment,
-        rotationInterval: wizardData.current.output.interval,
+        interval: wizardData.current.output.interval,
         inputs: wizardData.current.input,
         outputs: wizardData.current.output.secrets
       });

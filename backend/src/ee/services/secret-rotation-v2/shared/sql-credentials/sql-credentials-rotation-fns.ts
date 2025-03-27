@@ -2,7 +2,6 @@ import { randomInt } from "crypto";
 import handlebars from "handlebars";
 import { Knex } from "knex";
 
-import { SecretType } from "@app/db/schemas";
 import { DatabaseError } from "@app/lib/errors";
 import { alphaNumericNanoId } from "@app/lib/nanoid";
 import { getSqlConnectionClient } from "@app/services/app-connection/shared/sql";
@@ -264,30 +263,28 @@ export const sqlCredentialsRotationFactory = (
     }
   };
 
-  const formatActiveCredentialsAsSecrets = (
+  const getActiveSecretsPayload = (
     secretRotation: TSqlCredentialsRotation,
     generatedCredentials: TSqlCredentialsRotationGeneratedCredentials
   ) => {
     const {
-      parameters: { usernameSecretKey, passwordSecretKey },
+      secretsMapping: { username, password },
       activeIndex
     } = secretRotation;
 
     const secrets = [
       {
-        secretName: usernameSecretKey,
-        secretValue: generatedCredentials[activeIndex].username,
-        type: SecretType.Shared
+        key: username,
+        value: generatedCredentials[activeIndex].username
       },
       {
-        secretName: passwordSecretKey,
-        secretValue: generatedCredentials[activeIndex].password,
-        type: SecretType.Shared
+        key: password,
+        value: generatedCredentials[activeIndex].password
       }
     ];
 
     return secrets;
   };
 
-  return { issue, revoke, rotate, formatActiveCredentialsAsSecrets, throwOnInvalidParameters };
+  return { issue, revoke, rotate, getActiveSecretsPayload, throwOnInvalidParameters };
 };

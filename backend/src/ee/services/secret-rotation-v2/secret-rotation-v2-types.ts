@@ -56,7 +56,7 @@ export type TFindSecretRotationV2ByNameDTO = {
 
 export type TCreateSecretRotationV2DTO = Pick<
   TSecretRotationV2,
-  "parameters" | "description" | "rotationInterval" | "name" | "connectionId" | "projectId"
+  "parameters" | "secretsMapping" | "description" | "rotationInterval" | "name" | "connectionId" | "projectId"
 > & {
   type: SecretRotation;
   secretPath: string;
@@ -65,7 +65,9 @@ export type TCreateSecretRotationV2DTO = Pick<
   rotateAtUtc?: TRotateAtUtc;
 };
 
-export type TUpdateSecretRotationV2DTO = Partial<Omit<TCreateSecretRotationV2DTO, "projectId" | "connectionId">> & {
+export type TUpdateSecretRotationV2DTO = Partial<
+  Omit<TCreateSecretRotationV2DTO, "projectId" | "connectionId" | "secretPath" | "environment">
+> & {
   rotationId: string;
   type: SecretRotation;
 };

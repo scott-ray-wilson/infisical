@@ -243,7 +243,7 @@ export const queueServiceFactory = (
   const pgBoss = new PgBoss({
     connectionString: dbConnectionUrl,
     archiveCompletedAfterSeconds: 60,
-    cronMonitorIntervalSeconds: 1,
+    cronMonitorIntervalSeconds: 5,
     archiveFailedAfterSeconds: 1000, // we want to keep failed jobs for a longer time so that it can be retried
     deleteAfterSeconds: 30,
     ssl: dbRootCert
@@ -299,10 +299,6 @@ export const queueServiceFactory = (
       workerCount: number;
     }
   ) => {
-    // if (queueContainerPg[jobName]) {
-    //   throw new Error(`${jobName} queue is already initialized`);
-    // }
-
     await pgBoss.createQueue(jobName);
     queueContainerPg[jobName] = true;
 

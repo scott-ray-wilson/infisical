@@ -3,13 +3,12 @@ import {
   TSecretRotationV2Base,
   TSecretRotationV2GeneratedCredentialsResponseBase,
   TSqlCredentialsRotationGeneratedCredentials,
-  TSqlCredentialsRotationParameters
+  TSqlCredentialsRotationProperties
 } from "@app/hooks/api/secretRotationsV2/types/shared";
 
 export type TPostgresCredentialsRotation = TSecretRotationV2Base & {
   type: SecretRotation.PostgresCredentials;
-  parameters: TSqlCredentialsRotationParameters;
-};
+} & TSqlCredentialsRotationProperties;
 
 export type TPostgresCredentialsRotationGeneratedCredentialsResponse =
   TSecretRotationV2GeneratedCredentialsResponseBase<

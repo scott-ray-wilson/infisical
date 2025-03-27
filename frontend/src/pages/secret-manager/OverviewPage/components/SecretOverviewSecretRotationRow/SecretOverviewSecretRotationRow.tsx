@@ -156,7 +156,7 @@ export const SecretOverviewSecretRotationRow = ({
                                 </IconButton>
                               </Tooltip>
                               <ProjectPermissionCan
-                                I={ProjectPermissionSecretRotationActions.ReadCredentials}
+                                I={ProjectPermissionSecretRotationActions.ReadGeneratedCredentials}
                                 a={subject(ProjectPermissionSub.SecretRotation, {
                                   environment: secretRotation.environment.slug,
                                   secretPath: secretRotation.folder.path
@@ -177,7 +177,7 @@ export const SecretOverviewSecretRotationRow = ({
                                 )}
                               </ProjectPermissionCan>
                               <ProjectPermissionCan
-                                I={ProjectPermissionSecretRotationActions.Rotate}
+                                I={ProjectPermissionSecretRotationActions.RotateSecrets}
                                 a={subject(ProjectPermissionSub.SecretRotation, {
                                   environment: secretRotation.environment.slug,
                                   secretPath: secretRotation.folder.path

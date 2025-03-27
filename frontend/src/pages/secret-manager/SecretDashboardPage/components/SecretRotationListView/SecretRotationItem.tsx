@@ -90,7 +90,7 @@ export const SecretRotationItem = ({
             className="flex h-full flex-shrink-0 self-start transition-all group-hover:gap-x-2"
           >
             <ProjectPermissionCan
-              I={ProjectPermissionSecretRotationActions.ReadCredentials}
+              I={ProjectPermissionSecretRotationActions.ReadGeneratedCredentials}
               a={subject(ProjectPermissionSub.SecretRotation, {
                 environment: environment.slug,
                 secretPath: folder.path
@@ -115,7 +115,7 @@ export const SecretRotationItem = ({
               )}
             </ProjectPermissionCan>
             <ProjectPermissionCan
-              I={ProjectPermissionSecretRotationActions.Rotate}
+              I={ProjectPermissionSecretRotationActions.RotateSecrets}
               a={subject(ProjectPermissionSub.SecretRotation, {
                 environment: environment.slug,
                 secretPath: folder.path

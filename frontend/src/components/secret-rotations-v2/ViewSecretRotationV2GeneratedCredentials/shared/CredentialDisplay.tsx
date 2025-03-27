@@ -13,8 +13,8 @@ type Props = {
 
 export const CredentialDisplay = ({ children, label, isSensitive }: Props) => {
   const [showCredential, toggleShowCredential] = useReducer((prev) => !prev, !isSensitive);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [copyCredential, isCopyingCredential, setCopyCredential] = useTimedReset<string>({
+
+  const [, isCopyingCredential, setCopyCredential] = useTimedReset<string>({
     initialState: "Copy ID to clipboard"
   });
 

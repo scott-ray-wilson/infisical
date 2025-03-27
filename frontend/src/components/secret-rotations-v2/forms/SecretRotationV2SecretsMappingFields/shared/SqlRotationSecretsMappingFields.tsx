@@ -1,10 +1,10 @@
 import { Controller, useFormContext } from "react-hook-form";
 
 import { TSecretRotationV2Form } from "@app/components/secret-rotations-v2/forms/schemas";
-import { FormControl, TextArea } from "@app/components/v2";
+import { FormControl, Input } from "@app/components/v2";
 import { SecretRotation } from "@app/hooks/api/secretRotationsV2";
 
-export const SqlRotationParametersFields = () => {
+export const SqlRotationSecretsMappingFields = () => {
   const { control } = useFormContext<
     TSecretRotationV2Form & {
       type: SecretRotation.PostgresCredentials; // all sql rotations share these fields
@@ -18,40 +18,28 @@ export const SqlRotationParametersFields = () => {
           <FormControl
             isError={Boolean(error)}
             errorText={error?.message}
-            label="Issue Statement"
-            helperText="Username and password will be interpolated into this statement"
+            label="Username Secret Key"
+            tooltipText="The Name of the Secret that the username credentials will be mapped to."
           >
-            <TextArea
-              value={value}
-              className="!resize-none"
-              onChange={onChange}
-              placeholder="SQL statement to issue credentials..."
-              rows={4}
-            />
+            <Input value={value} onChange={onChange} placeholder="DB_USERNAME" />
           </FormControl>
         )}
         control={control}
-        name="parameters.issueStatement"
+        name="secretsMapping.username"
       />
       <Controller
         render={({ field: { value, onChange }, fieldState: { error } }) => (
           <FormControl
             isError={Boolean(error)}
             errorText={error?.message}
-            label="Revoke Statement"
-            helperText="Username and password will be interpolated into this statement"
+            label="Password Secret Key"
+            tooltipText="The Name of the secret that the password credentials will be mapped to."
           >
-            <TextArea
-              value={value}
-              className="!resize-none"
-              onChange={onChange}
-              placeholder="SQL statement to revoke credentials..."
-              rows={4}
-            />
+            <Input value={value} onChange={onChange} placeholder="DB_PASSWORD" />
           </FormControl>
         )}
         control={control}
-        name="parameters.revokeStatement"
+        name="secretsMapping.password"
       />
     </>
   );

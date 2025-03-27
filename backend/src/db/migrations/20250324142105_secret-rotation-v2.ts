@@ -11,6 +11,7 @@ export async function up(knex: Knex): Promise<void> {
       t.string("description");
       t.string("type").notNullable();
       t.jsonb("parameters").notNullable();
+      t.jsonb("secretsMapping").notNullable();
       t.binary("encryptedGeneratedCredentials").notNullable();
       t.boolean("isAutoRotationEnabled").notNullable().defaultTo(true);
       t.integer("activeIndex").notNullable().defaultTo(0);

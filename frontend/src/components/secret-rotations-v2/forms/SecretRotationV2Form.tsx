@@ -9,6 +9,7 @@ import { SecretRotationV2ConfigurationFields } from "@app/components/secret-rota
 import { SecretRotationV2DetailsFields } from "@app/components/secret-rotations-v2/forms/SecretRotationV2DetailsFields";
 import { SecretRotationV2ParametersFields } from "@app/components/secret-rotations-v2/forms/SecretRotationV2ParametersFields/SecretRotationV2ParametersFields";
 import { SecretRotationV2ReviewFields } from "@app/components/secret-rotations-v2/forms/SecretRotationV2ReviewFields";
+import { SecretRotationV2SecretsMappingFields } from "@app/components/secret-rotations-v2/forms/SecretRotationV2SecretsMappingFields/SecretRotationV2SecretsMappingFields";
 import { Button } from "@app/components/v2";
 import { useWorkspace } from "@app/context";
 import { SECRET_ROTATION_MAP } from "@app/helpers/secretRotationsV2";
@@ -48,6 +49,7 @@ const FORM_TABS: { name: string; key: string; fields: (keyof TSecretRotationV2Fo
     ]
   },
   { name: "Parameters", key: "parameters", fields: ["parameters"] },
+  { name: "Mappings", key: "secretsMapping", fields: ["secretsMapping"] },
   { name: "Details", key: "details", fields: ["name", "description"] },
   { name: "Review", key: "review", fields: [] }
 ];
@@ -88,9 +90,9 @@ export const SecretRotationV2Form = ({
             hours: 0,
             minutes: 0
           },
-          parameters: rotationOption!.parametersTemplate,
           environment: currentWorkspace?.environments.find((env) => env.slug === envSlug),
-          secretPath
+          secretPath,
+          ...rotationOption!.template
         },
     reValidateMode: "onChange"
   });
@@ -203,6 +205,9 @@ export const SecretRotationV2Form = ({
             </Tab.Panel>
             <Tab.Panel>
               <SecretRotationV2ParametersFields />
+            </Tab.Panel>
+            <Tab.Panel>
+              <SecretRotationV2SecretsMappingFields />
             </Tab.Panel>
             <Tab.Panel>
               <SecretRotationV2DetailsFields />

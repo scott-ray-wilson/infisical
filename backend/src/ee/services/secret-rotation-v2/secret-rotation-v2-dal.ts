@@ -436,6 +436,7 @@ export const secretRotationV2DALFactory = (
     }
   };
 
+  // TODO: remove?
   const findSecretMappingsByRotationId = async (rotationId: string) => {
     const secretMappings = await secretRotationV2SecretMappingOrm.find({
       rotationId

@@ -570,7 +570,10 @@ export const ActionBar = ({
                 </ProjectPermissionCan>
                 <ProjectPermissionCan
                   I={ProjectPermissionSecretRotationActions.Create}
-                  a={ProjectPermissionSub.SecretRotation}
+                  a={subject(ProjectPermissionSub.SecretRotation, {
+                    environment,
+                    secretPath
+                  })}
                 >
                   {(isAllowed) => (
                     <Button

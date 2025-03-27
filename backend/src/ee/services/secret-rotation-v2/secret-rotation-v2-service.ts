@@ -365,11 +365,6 @@ export const secretRotationV2ServiceFactory = ({
       subject(ProjectPermissionSub.SecretRotation, { environment, secretPath })
     );
 
-    ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionSecretActions.Create,
-      subject(ProjectPermissionSub.Secrets, { environment, secretPath })
-    );
-
     const folder = await folderDAL.findBySecretPath(projectId, environment, secretPath);
 
     if (!folder)
@@ -742,6 +737,8 @@ export const secretRotationV2ServiceFactory = ({
         parameters,
         connection: appConnection
       } as TSecretRotationV2WithConnection);
+
+      throw Error("test");
 
       const updatedSecretRotation = await rotationFactory.rotate(inactiveCredentials, async (newCredentials) => {
         const updatedCredentials = [...generatedCredentials];

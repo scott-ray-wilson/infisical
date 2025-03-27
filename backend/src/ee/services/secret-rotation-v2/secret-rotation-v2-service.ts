@@ -45,6 +45,7 @@ import { TSecretSnapshotServiceFactory } from "@app/ee/services/secret-snapshot/
 import { TKeyStoreFactory } from "@app/keystore/keystore";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
 import { BadRequestError, DatabaseError, NotFoundError } from "@app/lib/errors";
+import { logger } from "@app/lib/logger";
 import { OrderByDirection, OrgServiceActor } from "@app/lib/types";
 import { decryptAppConnection } from "@app/services/app-connection/app-connection-fns";
 import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
@@ -442,7 +443,6 @@ export const secretRotationV2ServiceFactory = ({
 
           await secretRotationV2DAL.insertSecretMappings(
             mappedSecrets.map((secret) => ({
-              secretKey: secret.key,
               secretId: secret.id,
               rotationId: createdRotation.id
             })),
@@ -504,7 +504,7 @@ export const secretRotationV2ServiceFactory = ({
         message: `Could not find ${SECRET_ROTATION_NAME_MAP[type]} Rotation with ID ${rotationId}`
       });
 
-    const { folder, environment, projectId, folderId, connection, secretsMapping } = secretRotation;
+    const { folder, environment, projectId, folderId, connection, secretsMapping, parameters } = secretRotation;
 
     const { permission } = await permissionService.getProjectPermission({
       actor: actor.type,
@@ -525,11 +525,11 @@ export const secretRotationV2ServiceFactory = ({
 
     if (secretRotation.connection.app !== SECRET_ROTATION_CONNECTION_MAP[type])
       throw new BadRequestError({
-        message: `Secret sync with ID "${secretRotation.id}" is not configured for ${SECRET_ROTATION_NAME_MAP[type]}`
+        message: `Secret Rotation with ID "${secretRotation.id}" is not configured for ${SECRET_ROTATION_NAME_MAP[type]}`
       });
 
     try {
-      if (payload.parameters) {
+      if (payload.parameters && !isEqual(payload.parameters, parameters)) {
         const appConnection = await decryptAppConnection(connection, kmsService);
 
         const rotationFactory = SECRET_ROTATION_FACTORY_MAP[type]({
@@ -542,6 +542,7 @@ export const secretRotationV2ServiceFactory = ({
 
       const updatedSecretRotation = await secretRotationV2DAL.transaction(async (tx) => {
         if (payload.secretsMapping && !isEqual(payload.secretsMapping, secretsMapping)) {
+          logger.warn({ secretsMapping, new: payload.secretsMapping }, `UPDATE MAPPINGS:`);
           // update mapped secrets names
           await fnSecretBulkUpdate({
             folderId,

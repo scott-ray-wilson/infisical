@@ -222,8 +222,8 @@ export const secretRotationV2DALFactory = (
         )
         .leftJoin(TableName.ResourceMetadata, `${TableName.SecretV2}.id`, `${TableName.ResourceMetadata}.secretId`)
         .select(
-          db.ref("secretId").withSchema(TableName.SecretRotationV2SecretMapping),
-          db.ref("secretKey").withSchema(TableName.SecretRotationV2SecretMapping),
+          db.ref("id").withSchema(TableName.SecretV2).as("secretId"),
+          db.ref("key").withSchema(TableName.SecretV2).as("secretKey"),
           db.ref("version").withSchema(TableName.SecretV2).as("secretVersion"),
           db.ref("type").withSchema(TableName.SecretV2).as("secretType"),
           db.ref("encryptedValue").withSchema(TableName.SecretV2).as("secretEncryptedValue"),
@@ -247,7 +247,7 @@ export const secretRotationV2DALFactory = (
       if (search) {
         void extendedQuery.where((query) => {
           void query
-            .whereILike(`${TableName.SecretRotationV2SecretMapping}.secretKey`, `%${search}%`)
+            .whereILike(`${TableName.SecretV2}.secretKey`, `%${search}%`)
             .orWhereILike(`${TableName.SecretRotationV2}.name`, `%${search}%`);
         });
       }
@@ -436,15 +436,6 @@ export const secretRotationV2DALFactory = (
     }
   };
 
-  // TODO: remove?
-  const findSecretMappingsByRotationId = async (rotationId: string) => {
-    const secretMappings = await secretRotationV2SecretMappingOrm.find({
-      rotationId
-    });
-
-    return secretMappings;
-  };
-
   const findSecretRotationsToQueue = async (rotateBy: Date, tx?: Knex) => {
     const appCfg = getConfig();
     const secretRotations = await (tx || db.replicaNode())(TableName.SecretRotationV2)
@@ -472,7 +463,6 @@ export const secretRotationV2DALFactory = (
     findOne,
     insertSecretMappings: secretRotationV2SecretMappingOrm.insertMany,
     updateSecretMappings: secretRotationV2SecretMappingOrm.update,
-    findSecretMappingsByRotationId,
     findRaw: secretRotationV2Orm.find,
     findWithMappedSecrets,
     findWithMappedSecretsCount,

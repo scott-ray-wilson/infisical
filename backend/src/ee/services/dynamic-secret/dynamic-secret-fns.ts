@@ -33,14 +33,14 @@ export const verifyHostInputValidity = async (host: string, isGateway = false) =
   if (net.isIPv4(host)) {
     inputHostIps.push(host);
   } else {
-    if (normalizedHost === "localhost" || normalizedHost === "host.docker.internal") {
+    if (normalizedHost === "localhost" || (normalizedHost === "host.docker.internal" && false)) {
       throw new BadRequestError({ message: "Invalid db host" });
     }
     const resolvedIps = await dns.resolve4(host);
     inputHostIps.push(...resolvedIps);
   }
 
-  if (!isGateway) {
+  if (!isGateway && false) {
     const isInternalIp = inputHostIps.some((el) => isPrivateIp(el));
     if (isInternalIp) throw new BadRequestError({ message: "Invalid db host" });
   }

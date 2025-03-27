@@ -24,7 +24,6 @@ import {
 import { SECRET_ROTATION_MAP } from "@app/helpers/secretRotationsV2";
 import { useToggle } from "@app/hooks";
 import { SecretRotationStatus, TSecretRotationV2 } from "@app/hooks/api/secretRotationsV2";
-import { SecretNoAccessOverviewTableRow } from "@app/pages/secret-manager/OverviewPage/components/SecretOverviewTableRow";
 import { getExpandedRowStyle } from "@app/pages/secret-manager/OverviewPage/components/utils";
 
 type Props = {
@@ -110,7 +109,9 @@ export const SecretOverviewSecretRotationRow = ({
 
           if (!secretRotation) return null;
 
-          const { name: rotationType, image } = SECRET_ROTATION_MAP[secretRotation.type];
+          const { type, secrets, environment, folder } = secretRotation;
+
+          const { name: rotationType, image } = SECRET_ROTATION_MAP[type];
 
           return (
             <Tr key={`secret-rotation-${slug}-${secretRotationName}`}>
@@ -118,7 +119,7 @@ export const SecretOverviewSecretRotationRow = ({
                 colSpan={totalCols}
                 className={`bg-bunker-600 px-0 py-0 ${isExpanded && "border-b-2 border-mineshaft-500"}`}
               >
-                <div className="ml-2 p-2" style={getExpandedRowStyle(scrollOffset)}>
+                <div style={getExpandedRowStyle(scrollOffset)} className="ml-2 p-2">
                   <TableContainer>
                     <table className="secret-table">
                       <thead className="!border-b">
@@ -158,8 +159,8 @@ export const SecretOverviewSecretRotationRow = ({
                               <ProjectPermissionCan
                                 I={ProjectPermissionSecretRotationActions.ReadGeneratedCredentials}
                                 a={subject(ProjectPermissionSub.SecretRotation, {
-                                  environment: secretRotation.environment.slug,
-                                  secretPath: secretRotation.folder.path
+                                  environment: environment.slug,
+                                  secretPath: folder.path
                                 })}
                                 renderTooltip
                                 allowedLabel="View Generated Credentials"
@@ -179,8 +180,8 @@ export const SecretOverviewSecretRotationRow = ({
                               <ProjectPermissionCan
                                 I={ProjectPermissionSecretRotationActions.RotateSecrets}
                                 a={subject(ProjectPermissionSub.SecretRotation, {
-                                  environment: secretRotation.environment.slug,
-                                  secretPath: secretRotation.folder.path
+                                  environment: environment.slug,
+                                  secretPath: folder.path
                                 })}
                                 renderTooltip
                                 allowedLabel="Rotate Secrets"
@@ -200,26 +201,29 @@ export const SecretOverviewSecretRotationRow = ({
                               <ProjectPermissionCan
                                 I={ProjectPermissionSecretRotationActions.Edit}
                                 a={subject(ProjectPermissionSub.SecretRotation, {
-                                  environment: secretRotation.environment.slug,
-                                  secretPath: secretRotation.folder.path
+                                  environment: environment.slug,
+                                  secretPath: folder.path
                                 })}
                                 renderTooltip
                                 allowedLabel="Edit"
                               >
-                                <IconButton
-                                  ariaLabel="Edit rotation"
-                                  variant="plain"
-                                  size="md"
-                                  onClick={() => onEdit(secretRotation)}
-                                >
-                                  <FontAwesomeIcon icon={faEdit} />
-                                </IconButton>
+                                {(isAllowed) => (
+                                  <IconButton
+                                    ariaLabel="Edit rotation"
+                                    variant="plain"
+                                    size="md"
+                                    isDisabled={!isAllowed}
+                                    onClick={() => onEdit(secretRotation)}
+                                  >
+                                    <FontAwesomeIcon icon={faEdit} />
+                                  </IconButton>
+                                )}
                               </ProjectPermissionCan>
                               <ProjectPermissionCan
                                 I={ProjectPermissionSecretRotationActions.Delete}
                                 a={subject(ProjectPermissionSub.SecretRotation, {
-                                  environment: secretRotation.environment.slug,
-                                  secretPath: secretRotation.folder.path
+                                  environment: environment.slug,
+                                  secretPath: folder.path
                                 })}
                                 renderTooltip
                                 allowedLabel="Delete"
@@ -242,44 +246,54 @@ export const SecretOverviewSecretRotationRow = ({
                         </tr>
                       </thead>
                       <tbody className="border-t-2 border-mineshaft-600">
-                        {secretRotation.secrets.map((secret) => {
-                          if (!secret)
-                            return (
-                              <SecretNoAccessOverviewTableRow
-                                environments={environments}
-                                count={1}
-                              />
-                            );
-
+                        {secrets.map((secret, index) => {
                           return (
-                            <tr
-                              key={`rotation-secret-${secret.id}`}
-                              className="hover:bg-mineshaft-700"
+                            <Tooltip
+                              className="max-w-sm"
+                              content={
+                                secret
+                                  ? undefined
+                                  : "You do not have permission to view this secret."
+                              }
                             >
-                              <td
-                                className="flex h-full items-center"
-                                style={{ padding: "0.5rem 1rem" }}
+                              <tr
+                                // eslint-disable-next-line react/no-array-index-key
+                                key={`rotation-secret-${secretRotation.id}-${index}`}
+                                className="!last:border-b-0 h-full hover:bg-mineshaft-700"
                               >
-                                {secret.key}
-                              </td>
-                              <td
-                                className="col-span-2 h-8 w-full"
-                                style={{ padding: "0.5rem 1rem" }}
-                              >
-                                {secret.secretValueHidden ? (
-                                  <Blur tooltipText="You do not have permission to read the value of this secret." />
-                                ) : (
-                                  <InfisicalSecretInput
-                                    isReadOnly
-                                    value={secret.value}
-                                    isVisible={isSecretVisible}
-                                    secretPath={secretRotation.folder.path}
-                                    environment={secretRotation.environment.slug}
-                                    onChange={() => {}}
-                                  />
-                                )}
-                              </td>
-                            </tr>
+                                <td
+                                  className="flex h-full items-center"
+                                  style={{ padding: "0.5rem 1rem" }}
+                                >
+                                  <span className={twMerge(!secret && "blur")}>
+                                    {secret?.key ?? "********"}
+                                  </span>
+                                </td>
+                                <td
+                                  className="col-span-2 h-full w-full"
+                                  style={{ padding: "0.5rem 1rem" }}
+                                >
+                                  {/* eslint-disable-next-line no-nested-ternary */}
+                                  {!secret ? (
+                                    <div className="h-full pl-4 blur">********</div>
+                                  ) : secret.secretValueHidden ? (
+                                    <Blur
+                                      className="py-0"
+                                      tooltipText="You do not have permission to read the value of this secret."
+                                    />
+                                  ) : (
+                                    <InfisicalSecretInput
+                                      isReadOnly
+                                      value={secret.value}
+                                      isVisible={isSecretVisible}
+                                      secretPath={secretRotation.folder.path}
+                                      environment={secretRotation.environment.slug}
+                                      onChange={() => {}}
+                                    />
+                                  )}
+                                </td>
+                              </tr>
+                            </Tooltip>
                           );
                         })}
                       </tbody>

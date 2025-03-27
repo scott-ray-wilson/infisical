@@ -158,18 +158,21 @@ export const SecretRotationItem = ({
               renderTooltip
               allowedLabel="Edit"
             >
-              <IconButton
-                ariaLabel="Edit rotation"
-                variant="plain"
-                size="md"
-                className="opacity-0 group-hover:opacity-100"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
-              >
-                <FontAwesomeIcon icon={faEdit} />
-              </IconButton>
+              {(isAllowed) => (
+                <IconButton
+                  ariaLabel="Edit rotation"
+                  variant="plain"
+                  size="md"
+                  isDisabled={!isAllowed}
+                  className="opacity-0 group-hover:opacity-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                >
+                  <FontAwesomeIcon icon={faEdit} />
+                </IconButton>
+              )}
             </ProjectPermissionCan>
             <ProjectPermissionCan
               I={ProjectPermissionSecretRotationActions.Delete}
@@ -209,7 +212,10 @@ export const SecretRotationItem = ({
             secretPath={folder.path}
             {...secretProps}
           />
-          <SecretNoAccessListView count={secrets.filter((secret) => !secret).length} />
+          <SecretNoAccessListView
+            isRotationView
+            count={secrets.filter((secret) => !secret).length}
+          />
         </>
       )}
     </>

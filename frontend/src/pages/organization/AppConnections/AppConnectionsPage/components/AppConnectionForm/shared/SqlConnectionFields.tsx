@@ -108,7 +108,7 @@ export const SqlConnectionFields = ({ isPlatformManaged }: Props) => {
             label="CA (SSL)"
             isOptional
           >
-            <TextArea className="!resize-none" {...field} isDisabled={isPlatformManaged} />
+            <TextArea className="!resize-none" rows={1} {...field} isDisabled={isPlatformManaged} />
           </FormControl>
         )}
       />

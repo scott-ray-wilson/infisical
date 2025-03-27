@@ -181,13 +181,14 @@ export const secretRotationV2DALFactory = (
         `${TableName.SecretRotationV2SecretMapping}.rotationId`,
         `${TableName.SecretRotationV2}.id`
       )
+      .join(TableName.SecretV2, `${TableName.SecretRotationV2SecretMapping}.secretId`, `${TableName.SecretV2}.id`)
       .where(`${TableName.Environment}.projectId`, projectId)
       .where(buildFindFilter(prependTableNameToFindFilter(TableName.SecretRotationV2, filter)))
       .countDistinct(`${TableName.SecretRotationV2}.name`);
 
     if (search) {
       void query
-        .whereILike(`${TableName.SecretRotationV2SecretMapping}.secretKey`, `%${search}%`)
+        .whereILike(`${TableName.SecretV2}.key`, `%${search}%`)
         .orWhereILike(`${TableName.SecretRotationV2}.name`, `%${search}%`);
     }
 
@@ -247,7 +248,7 @@ export const secretRotationV2DALFactory = (
       if (search) {
         void extendedQuery.where((query) => {
           void query
-            .whereILike(`${TableName.SecretV2}.secretKey`, `%${search}%`)
+            .whereILike(`${TableName.SecretV2}.key`, `%${search}%`)
             .orWhereILike(`${TableName.SecretRotationV2}.name`, `%${search}%`);
         });
       }

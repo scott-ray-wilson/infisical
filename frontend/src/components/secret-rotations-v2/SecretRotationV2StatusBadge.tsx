@@ -29,7 +29,7 @@ export const SecretRotationV2StatusBadge = ({ secretRotation, className }: Props
     return (
       <Tooltip
         position="left"
-        className="max-w-sm"
+        className="max-w-sm select-text"
         content={
           <div className="flex flex-col gap-2 whitespace-normal py-1">
             <div>
@@ -39,6 +39,12 @@ export const SecretRotationV2StatusBadge = ({ secretRotation, className }: Props
               </div>
               <div className="break-words rounded bg-mineshaft-600 p-2 text-xs">{errorMessage}</div>
             </div>
+            {nextRotationAt && (
+              <span className="text-xs text-mineshaft-300">
+                Next rotation attempt on {format(nextRotationAt, "MM/dd/yyyy")} at{" "}
+                {format(nextRotationAt, "h:mm aa")}.
+              </span>
+            )}
           </div>
         }
       >
@@ -79,23 +85,23 @@ export const SecretRotationV2StatusBadge = ({ secretRotation, className }: Props
   if (daysToRotation >= 7) {
     variant = "success";
     label = `Rotates ${formatDistanceToNow(nextRotationAt, { addSuffix: true })}`;
-    tooltipContent = `Rotates ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
+    tooltipContent = `Rotates ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "h:mm aa")}.`;
   } else if (daysToRotation < 0) {
     variant = "primary";
     label = "Rotation Queueing";
-    tooltipContent = `Rotates on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
+    tooltipContent = `Rotates on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "h:mm aa")}.`;
   } else if (daysToRotation < 1) {
     variant = "primary";
     label = `Rotates ${formatDistanceToNow(nextRotationAt, { addSuffix: true })}`;
-    tooltipContent = `Rotates on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
+    tooltipContent = `Rotates on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "h:mm aa")}.`;
   } else {
     variant = "primary";
     label = `Rotates ${formatDistanceToNow(nextRotationAt, { addSuffix: true })}`;
-    tooltipContent = `Rotates on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "hh:mm aa")}.`;
+    tooltipContent = `Rotates on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "h:mm aa")}.`;
   }
 
   return (
-    <Tooltip className="max-w-lg capitalize" content={tooltipContent}>
+    <Tooltip className="max-w-lg" content={tooltipContent}>
       <div>
         <Badge
           variant={variant}

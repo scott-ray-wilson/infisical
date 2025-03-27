@@ -300,7 +300,7 @@ export enum EventType {
   CREATE_SECRET_ROTATION = "create-secret-rotation",
   UPDATE_SECRET_ROTATION = "update-secret-rotation",
   DELETE_SECRET_ROTATION = "delete-secret-rotation",
-  ROTATE_SECRET_ROTATION = "rotate-secret-rotation"
+  SECRET_ROTATION_ROTATE_SECRETS = "secret-rotation-rotate-secrets"
 }
 
 interface UserActorMetadata {
@@ -2354,7 +2354,7 @@ interface DeleteSecretRotationEvent {
 }
 
 interface RotateSecretRotationEvent {
-  type: EventType.ROTATE_SECRET_ROTATION;
+  type: EventType.SECRET_ROTATION_ROTATE_SECRETS;
   metadata: Pick<TSecretRotationV2, "parameters" | "secretsMapping" | "type" | "connectionId" | "folderId"> & {
     rotationId: string;
     jobId?: string;

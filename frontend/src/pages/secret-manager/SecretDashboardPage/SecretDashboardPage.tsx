@@ -281,11 +281,7 @@ const Page = () => {
       (secrets?.length || 0) -
       (dynamicSecrets?.length || 0) -
       (secretRotations?.length || 0) -
-      (new Set(
-        secretRotations?.flatMap((rotation) =>
-          rotation.secrets.filter((secret) => Boolean(secret)).map((secret) => secret!.key)
-        )
-      ).size || 0),
+      (secretRotations?.flatMap((rotation) => rotation.secrets).length || 0),
     0
   );
   const isNotEmpty = Boolean(

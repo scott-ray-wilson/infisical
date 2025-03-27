@@ -110,7 +110,7 @@ export const decryptSecretRotationCredentials = async ({
   return JSON.parse(decryptedPlainTextBlob.toString()) as TSecretRotationV2GeneratedCredentials;
 };
 
-export const decryptSecretRotation = async (
+export const expandSecretRotation = async (
   { encryptedLastRotationMessage, ...secretRotation }: TSecretRotationV2Raw,
   kmsService: TSecretRotationV2ServiceFactoryDep["kmsService"]
 ) => {
@@ -130,16 +130,21 @@ export const decryptSecretRotation = async (
   const modifier = appCfg.isRotationDevelopmentMode ? addMinutes : addDays;
   const nextUtcInterval = appCfg.isRotationDevelopmentMode ? getNextUTCMinute() : getNextUTCMidnight();
 
+  const { rotateAtUtc, rotationStatus, rotationInterval, isLastRotationManual } = secretRotation;
+
+  const lastRotationAttemptedAt = new Date(secretRotation.lastRotationAttemptedAt);
+
   return {
     ...secretRotation,
     lastRotationMessage,
     nextRotationAt: secretRotation.isAutoRotationEnabled
       ? getRotateAt(
-          secretRotation.rotateAtUtc as TSecretRotationV2["rotateAtUtc"],
-          secretRotation.rotationStatus === SecretRotationStatus.Success
+          rotateAtUtc as TSecretRotationV2["rotateAtUtc"],
+          rotationStatus === SecretRotationStatus.Success &&
+            lastRotationAttemptedAt.getTime() > nextUtcInterval.getTime()
             ? modifier(
-                secretRotation.lastRotatedAt,
-                secretRotation.rotationInterval + (secretRotation.isLastRotationManual ? 1 : 0)
+                lastRotationAttemptedAt,
+                rotationInterval + (isLastRotationManual ? 1 : 0) // pad full day if manually rotated
               )
             : nextUtcInterval
         )

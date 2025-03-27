@@ -37,14 +37,10 @@ export const validateMsSqlConnectionCredentials = async (config: TMsSqlConnectio
     await client.raw(`SELECT 1`);
 
     return credentials;
-  } catch (e) {
-    if ((e as { number: number }).number === 15151) {
-      throw new BadRequestError({
-        message: `Cannot alter the login '${credentials.username}', because it does not exist or you do not have permission.`
-      });
-    }
-
-    throw new BadRequestError({ message: "Unable to validate connection - verify credentials" });
+  } catch (error) {
+    throw new BadRequestError({
+      message: (error as Error)?.message ?? "Unable to validate connection - verify credentials"
+    });
   } finally {
     await client.destroy();
   }

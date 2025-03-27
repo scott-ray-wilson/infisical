@@ -61,7 +61,10 @@ const Content = ({ secretRotation }: ContentProps) => {
       {nextRotationAt && (
         <div className="flex items-center gap-x-1.5 text-sm text-mineshaft-300">
           <FontAwesomeIcon icon={faRotate} className="text-mineshaft-400" />
-          <span>Next rotation occurs on: {format(nextRotationAt, "MM/dd/yyyy HH:mm aa")}</span>
+          <span>
+            Next rotation occurs on: {format(nextRotationAt, "MM/dd/yyyy")} at{" "}
+            {format(nextRotationAt, "h:mm aa")}
+          </span>
         </div>
       )}
     </div>

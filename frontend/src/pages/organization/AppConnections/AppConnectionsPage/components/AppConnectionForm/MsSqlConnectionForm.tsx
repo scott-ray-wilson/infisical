@@ -105,7 +105,7 @@ export const MsSqlConnectionForm = ({ appConnection, onSubmit }: Props) => {
         {isPlatformManaged ? (
           <PlatformManagedNoticeBanner />
         ) : (
-          <div className="mt-8 flex items-center">
+          <div className="mt-6 flex items-center">
             <Button
               className="mr-4"
               size="sm"

@@ -14,9 +14,9 @@ import {
 } from "@app/ee/services/permission/project-permission";
 import { SecretRotation, SecretRotationStatus } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-enums";
 import {
-  decryptSecretRotation,
   decryptSecretRotationCredentials,
   encryptSecretRotationCredentials,
+  expandSecretRotation,
   listSecretRotationOptions,
   parseRotationErrorMessage
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-fns";
@@ -44,7 +44,7 @@ import { sqlCredentialsRotationFactory } from "@app/ee/services/secret-rotation-
 import { TSecretSnapshotServiceFactory } from "@app/ee/services/secret-snapshot/secret-snapshot-service";
 import { TKeyStoreFactory } from "@app/keystore/keystore";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
-import { BadRequestError, DatabaseError, NotFoundError } from "@app/lib/errors";
+import { BadRequestError, DatabaseError, InternalServerError, NotFoundError } from "@app/lib/errors";
 import { logger } from "@app/lib/logger";
 import { OrderByDirection, OrgServiceActor } from "@app/lib/types";
 import { decryptAppConnection } from "@app/services/app-connection/app-connection-fns";
@@ -178,7 +178,7 @@ export const secretRotationV2ServiceFactory = ({
             })
           )
         )
-        .map((rotation) => decryptSecretRotation(rotation, kmsService))
+        .map((rotation) => expandSecretRotation(rotation, kmsService))
     );
   };
 
@@ -219,7 +219,7 @@ export const secretRotationV2ServiceFactory = ({
         message: `Secret Rotation with ID "${secretRotation.id}" is not configured for ${SECRET_ROTATION_NAME_MAP[type]}`
       });
 
-    return decryptSecretRotation(secretRotation, kmsService);
+    return expandSecretRotation(secretRotation, kmsService);
   };
 
   const findSecretRotationGeneratedCredentialsById = async (
@@ -326,7 +326,7 @@ export const secretRotationV2ServiceFactory = ({
         message: `Secret Rotation with ID "${secretRotation.id}" is not configured for ${SECRET_ROTATION_NAME_MAP[type]}`
       });
 
-    return decryptSecretRotation(secretRotation, kmsService);
+    return expandSecretRotation(secretRotation, kmsService);
   };
 
   const createSecretRotation = async (
@@ -462,7 +462,7 @@ export const secretRotationV2ServiceFactory = ({
         excludeReplication: true
       });
 
-      return await decryptSecretRotation(secretRotation as TSecretRotationV2Raw, kmsService);
+      return await expandSecretRotation(secretRotation as TSecretRotationV2Raw, kmsService);
     } catch (err) {
       if (err instanceof DatabaseError) {
         const error = err.error as { code: string; message: string };
@@ -474,6 +474,7 @@ export const secretRotationV2ServiceFactory = ({
             });
           case DatabaseErrorCode.SyntaxError:
           case DatabaseErrorCode.InsufficientPrivilege:
+          case DatabaseErrorCode.ErrorRequest:
             throw new BadRequestError({
               message: error.message
             });
@@ -580,7 +581,7 @@ export const secretRotationV2ServiceFactory = ({
         return secretRotationV2DAL.updateById(rotationId, payload, tx);
       });
 
-      return await decryptSecretRotation(updatedSecretRotation, kmsService);
+      return await expandSecretRotation(updatedSecretRotation, kmsService);
     } catch (err) {
       if (err instanceof DatabaseError) {
         const error = err.error as { code: string; message: string };
@@ -592,6 +593,7 @@ export const secretRotationV2ServiceFactory = ({
             });
           case DatabaseErrorCode.SyntaxError:
           case DatabaseErrorCode.InsufficientPrivilege:
+          case DatabaseErrorCode.ErrorRequest:
             throw new BadRequestError({
               message: error.message
             });
@@ -704,7 +706,7 @@ export const secretRotationV2ServiceFactory = ({
       await deleteTransaction;
     }
 
-    return decryptSecretRotation(secretRotation, kmsService);
+    return expandSecretRotation(secretRotation, kmsService);
   };
 
   const rotateGeneratedCredentials = async (
@@ -808,7 +810,7 @@ export const secretRotationV2ServiceFactory = ({
             }),
             projectId: updatedRotation.projectId,
             event: {
-              type: EventType.ROTATE_SECRET_ROTATION,
+              type: EventType.SECRET_ROTATION_ROTATE_SECRETS,
               metadata: {
                 type: updatedRotation.type,
                 rotationId: updatedRotation.id,
@@ -866,7 +868,7 @@ export const secretRotationV2ServiceFactory = ({
         }),
         projectId: updatedRotation.projectId,
         event: {
-          type: EventType.ROTATE_SECRET_ROTATION,
+          type: EventType.SECRET_ROTATION_ROTATE_SECRETS,
           metadata: {
             type: updatedRotation.type,
             rotationId: updatedRotation.id,
@@ -926,19 +928,37 @@ export const secretRotationV2ServiceFactory = ({
         message: `Secret Rotation with ID "${secretRotation.id}" is not configured for ${SECRET_ROTATION_NAME_MAP[type]}`
       });
 
-    const updatedRotation = await rotateGeneratedCredentials(secretRotation, { auditLogInfo });
+    try {
+      const updatedRotation = await rotateGeneratedCredentials(secretRotation, { auditLogInfo });
 
-    return decryptSecretRotation(updatedRotation as TSecretRotationV2Raw, kmsService);
+      return await expandSecretRotation(updatedRotation as TSecretRotationV2Raw, kmsService);
+    } catch (err) {
+      if (err instanceof DatabaseError) {
+        const error = err.error as { code: string; message: string };
+
+        switch (error.code) {
+          case DatabaseErrorCode.SyntaxError:
+          case DatabaseErrorCode.InsufficientPrivilege:
+          case DatabaseErrorCode.ErrorRequest:
+            throw new BadRequestError({
+              message: error.message
+            });
+          default:
+            throw err;
+        }
+      }
+
+      throw new InternalServerError({
+        message: (err as Error).message ?? "Failed to rotate secrets: check Rotation status for details."
+      });
+    }
   };
 
   const getDashboardSecretRotationCount = async (
     { projectId, environments, secretPath, search }: TGetDashboardSecretRotationV2Count,
     actor: OrgServiceActor
   ) => {
-    const plan = await licenseService.getPlan(actor.orgId);
-
-    // this is only used for dashboard so no need to throw
-    if (!plan.secretRotation) return 0;
+    // we don't check plan for dashboard like dynamic secret, actions will be prevented
 
     const { permission } = await permissionService.getProjectPermission({
       actor: actor.type,
@@ -989,10 +1009,7 @@ export const secretRotationV2ServiceFactory = ({
     }: TGetDashboardSecretRotationsV2,
     actor: OrgServiceActor
   ) => {
-    const plan = await licenseService.getPlan(actor.orgId);
-
-    // this is only used for dashboard so no need to throw
-    if (!plan.secretRotation) return [];
+    // we don't check plan for dashboard like dynamic secret, actions will be prevented
 
     const { permission } = await permissionService.getProjectPermission({
       actor: actor.type,
@@ -1056,7 +1073,7 @@ export const secretRotationV2ServiceFactory = ({
       secretRotations.map(async (rotation) => {
         const rotationSecretKeys = rotation.secrets.map((secret) => secret.key);
 
-        const decryptedRotation = await decryptSecretRotation(rotation, kmsService);
+        const decryptedRotation = await expandSecretRotation(rotation, kmsService);
 
         return {
           ...decryptedRotation,

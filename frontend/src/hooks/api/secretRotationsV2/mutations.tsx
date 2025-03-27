@@ -59,6 +59,10 @@ export const useRotateSecretRotationV2 = () => {
     onSuccess: (_, { projectId, secretPath }) =>
       queryClient.invalidateQueries({
         queryKey: dashboardKeys.getDashboardSecrets({ projectId, secretPath })
+      }),
+    onError: (_, { projectId, secretPath }) =>
+      queryClient.invalidateQueries({
+        queryKey: dashboardKeys.getDashboardSecrets({ projectId, secretPath })
       })
   });
 };

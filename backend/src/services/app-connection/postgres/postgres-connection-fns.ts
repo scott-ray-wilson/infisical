@@ -36,7 +36,9 @@ export const validatePostgresConnectionCredentials = async (config: TPostgresCon
 
     return credentials;
   } catch (e) {
-    throw new BadRequestError({ message: "Unable to validate connection - verify credentials" });
+    throw new BadRequestError({
+      message: (error as Error)?.message ?? "Unable to validate connection - verify credentials"
+    });
   } finally {
     await client.destroy();
   }

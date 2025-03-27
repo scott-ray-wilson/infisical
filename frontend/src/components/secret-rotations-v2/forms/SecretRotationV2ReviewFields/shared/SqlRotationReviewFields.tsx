@@ -23,12 +23,12 @@ export const SqlRotationReviewFields = () => {
           <span className="text-sm text-mineshaft-300">Parameters</span>
         </div>
         <div className="flex flex-wrap gap-x-8 gap-y-2">
-          <GenericFieldLabel label="Issue Statement">
+          <GenericFieldLabel className="w-full" label="Issue Statement">
             <pre className="max-h-[4rem] overflow-y-auto whitespace-pre-wrap rounded border border-mineshaft-600 bg-mineshaft-700 p-2 font-inter text-bunker-100">
               {issueStatement}
             </pre>
           </GenericFieldLabel>
-          <GenericFieldLabel label="Revoke Statement">
+          <GenericFieldLabel className="w-full" label="Revoke Statement">
             <pre className="max-h-[4rem] overflow-y-auto whitespace-pre-wrap rounded border border-mineshaft-600 bg-mineshaft-700 p-2 font-inter text-bunker-100">
               {revokeStatement}
             </pre>

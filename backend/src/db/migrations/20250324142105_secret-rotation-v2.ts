@@ -40,8 +40,9 @@ export async function up(knex: Knex): Promise<void> {
   if (!(await knex.schema.hasTable(TableName.SecretRotationV2SecretMapping))) {
     await knex.schema.createTable(TableName.SecretRotationV2SecretMapping, (t) => {
       t.uuid("id", { primaryKey: true }).defaultTo(knex.fn.uuid());
-      t.string("secretKey").notNullable(); // TODO: maybe remove?
       t.uuid("secretId").notNullable();
+      // scott: this is deferred to block secret deletion but not prevent folder/environment/project deletion
+      // ie, if rotation is being deleted as well we permit it, otherwise throw
       t.foreign("secretId").references("id").inTable(TableName.SecretV2).deferrable("deferred");
       t.uuid("rotationId").notNullable();
       t.foreign("rotationId").references("id").inTable(TableName.SecretRotationV2).onDelete("CASCADE");

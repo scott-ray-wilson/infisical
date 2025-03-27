@@ -1,6 +1,5 @@
 import { AxiosError } from "axios";
 import { addDays, addMinutes } from "date-fns";
-import { undefined } from "zod";
 
 import { getConfig } from "@app/lib/config/env";
 import { DatabaseError } from "@app/lib/errors";
@@ -144,7 +143,7 @@ export const decryptSecretRotation = async (
               )
             : nextUtcInterval
         )
-      : undefined
+      : null
   } as TSecretRotationV2;
 };
 

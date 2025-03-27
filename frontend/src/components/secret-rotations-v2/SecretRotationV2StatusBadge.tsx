@@ -58,8 +58,10 @@ export const SecretRotationV2StatusBadge = ({ secretRotation, className }: Props
   if (!isAutoRotationEnabled) {
     return (
       <Badge
-        variant="primary"
-        className={twMerge("flex h-5 w-min items-center gap-1.5 whitespace-nowrap", className)}
+        className={twMerge(
+          "flex h-5 w-min items-center gap-1.5 whitespace-nowrap bg-mineshaft-400/50 text-bunker-300",
+          className
+        )}
       >
         <FontAwesomeIcon icon={faBan} />
         Auto-Rotation Disabled

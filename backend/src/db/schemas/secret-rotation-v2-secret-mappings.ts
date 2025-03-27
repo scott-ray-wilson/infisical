@@ -9,7 +9,6 @@ import { TImmutableDBKeys } from "./models";
 
 export const SecretRotationV2SecretMappingsSchema = z.object({
   id: z.string().uuid(),
-  secretKey: z.string(),
   secretId: z.string().uuid(),
   rotationId: z.string().uuid()
 });

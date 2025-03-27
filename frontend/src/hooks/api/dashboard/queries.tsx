@@ -132,6 +132,21 @@ export const fetchDashboardProjectSecretsByKeys = async ({
   return data;
 };
 
+const mergePersonalRotationSecrets = (secrets: (SecretV3Raw | null)[]) => {
+  const actualSecrets: SecretV3Raw[] = [];
+  const dummySecrets: null[] = [];
+
+  secrets.forEach((secret) => {
+    if (secret !== null) {
+      actualSecrets.push(secret);
+    } else {
+      dummySecrets.push(secret);
+    }
+  });
+
+  return [...mergePersonalSecrets(actualSecrets), ...dummySecrets];
+};
+
 export const useGetProjectSecretsOverview = (
   {
     projectId,
@@ -209,10 +224,12 @@ export const useGetProjectSecretsOverview = (
       return {
         ...select,
         secrets: secrets ? mergePersonalSecrets(secrets) : undefined,
-        secretRotations: secretRotations?.map((rotation) => ({
-          ...rotation,
-          secrets: mergePersonalSecrets(rotation.secrets)
-        })),
+        secretRotations: secretRotations?.map((rotation) => {
+          return {
+            ...rotation,
+            secrets: mergePersonalRotationSecrets(rotation.secrets)
+          };
+        }),
         totalUniqueSecretsInPage: uniqueSecrets.length,
         totalUniqueDynamicSecretsInPage: uniqueDynamicSecrets.length,
         totalUniqueFoldersInPage: uniqueFolders.length,
@@ -297,7 +314,7 @@ export const useGetProjectSecretsDetails = (
         secrets: data.secrets ? mergePersonalSecrets(data.secrets) : undefined,
         secretRotations: data.secretRotations?.map((rotation) => ({
           ...rotation,
-          secrets: mergePersonalSecrets(rotation.secrets)
+          secrets: mergePersonalRotationSecrets(rotation.secrets)
         }))
       }),
       []

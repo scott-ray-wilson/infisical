@@ -969,13 +969,15 @@ export const secretRotationV2ServiceFactory = ({
       projectId
     });
 
-    // dashboard only so just filtering out inacessible envs
+    // dashboard only so just filtering out inaccessible envs
     const permissiveEnvironments = environments.filter((environment) =>
       permission.can(
         ProjectPermissionSecretRotationActions.Read,
         subject(ProjectPermissionSub.SecretRotation, { environment, secretPath })
       )
     );
+
+    if (!permissiveEnvironments.length) return 0;
 
     const folders = await folderDAL.findBySecretPathMultiEnv(projectId, permissiveEnvironments, secretPath);
 
@@ -1027,6 +1029,8 @@ export const secretRotationV2ServiceFactory = ({
         subject(ProjectPermissionSub.SecretRotation, { environment, secretPath })
       )
     );
+
+    if (!permissiveEnvironments.length) return [];
 
     const folders = await folderDAL.findBySecretPathMultiEnv(projectId, permissiveEnvironments, secretPath);
 
@@ -1163,12 +1167,14 @@ export const secretRotationV2ServiceFactory = ({
       actionProjectType: ActionProjectType.SecretManager
     });
 
-    const userAccessibleFolderMappings = folderMappings.filter(({ path, environment }) =>
+    const permissiveFolderMappings = folderMappings.filter(({ path, environment }) =>
       permission.can(
         ProjectPermissionSecretRotationActions.Read,
         subject(ProjectPermissionSub.SecretRotation, { environment, secretPath: path })
       )
     );
+
+    if (!permissiveFolderMappings.length) return [];
 
     const secretRotations = await secretRotationV2DAL.find(
       {
@@ -1177,7 +1183,7 @@ export const secretRotationV2ServiceFactory = ({
           name: `%${search}%`
         },
         $in: {
-          folderId: userAccessibleFolderMappings.map(({ folderId }) => folderId)
+          folderId: permissiveFolderMappings.map(({ folderId }) => folderId)
         }
       },
       options

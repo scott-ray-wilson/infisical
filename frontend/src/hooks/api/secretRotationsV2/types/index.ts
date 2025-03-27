@@ -19,7 +19,7 @@ export type TSecretRotationV2Option = {
   name: string;
   type: SecretRotation;
   connection: AppConnection;
-  parametersTemplate: TSecretRotationV2["parameters"];
+  template: Pick<TSecretRotationV2, "parameters" | "secretsMapping">;
 };
 
 export type TListSecretRotationV2Options = { secretRotationOptions: TSecretRotationV2Option[] };
@@ -34,6 +34,7 @@ export type TCreateSecretRotationV2DTO = DiscriminativePick<
   TSecretRotationV2,
   | "name"
   | "parameters"
+  | "secretsMapping"
   | "description"
   | "connectionId"
   | "type"

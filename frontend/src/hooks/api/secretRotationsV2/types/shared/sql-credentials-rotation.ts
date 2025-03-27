@@ -1,8 +1,12 @@
-export type TSqlCredentialsRotationParameters = {
-  usernameSecretKey: string;
-  passwordSecretKey: string;
-  issueStatement: string;
-  revokeStatement: string;
+export type TSqlCredentialsRotationProperties = {
+  parameters: {
+    issueStatement: string;
+    revokeStatement: string;
+  };
+  secretsMapping: {
+    username: string;
+    password: string;
+  };
 };
 
 export type TSqlCredentialsRotationGeneratedCredentials = {

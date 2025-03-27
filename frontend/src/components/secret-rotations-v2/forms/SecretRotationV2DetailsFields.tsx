@@ -35,7 +35,7 @@ export const SecretRotationV2DetailsFields = () => {
             label="Description"
           >
             <TextArea
-              value={value}
+              value={value ?? ""}
               onChange={onChange}
               placeholder="Describe the purpose of this rotation..."
               className="!resize-none"

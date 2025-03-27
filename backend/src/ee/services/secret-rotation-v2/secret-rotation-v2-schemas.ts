@@ -16,6 +16,7 @@ export const BaseSecretRotationSchema = (type: SecretRotation) =>
   SecretRotationsV2Schema.omit({
     type: true,
     parameters: true,
+    secretMappings: true,
     encryptedGeneratedCredentials: true,
     encryptedLastRotationMessage: true,
     rotateAtUtc: true,

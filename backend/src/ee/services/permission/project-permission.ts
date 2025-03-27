@@ -79,11 +79,11 @@ export enum ProjectPermissionSecretSyncActions {
 
 export enum ProjectPermissionSecretRotationActions {
   Read = "read",
-  ReadCredentials = "read-credentials",
+  ReadGeneratedCredentials = "read-generated-credentials",
   Create = "create",
   Edit = "edit",
   Delete = "delete",
-  Rotate = "rotate"
+  RotateSecrets = "rotate-secrets"
 }
 
 export enum ProjectPermissionKmipActions {
@@ -716,8 +716,8 @@ const buildAdminPermissionRules = () => {
       ProjectPermissionSecretRotationActions.Edit,
       ProjectPermissionSecretRotationActions.Delete,
       ProjectPermissionSecretRotationActions.Read,
-      ProjectPermissionSecretRotationActions.ReadCredentials,
-      ProjectPermissionSecretRotationActions.Rotate
+      ProjectPermissionSecretRotationActions.ReadGeneratedCredentials,
+      ProjectPermissionSecretRotationActions.RotateSecrets
     ],
     ProjectPermissionSub.SecretRotation
   );

@@ -46,14 +46,7 @@ export const SecretRotationV2ReviewFields = () => {
           </GenericFieldLabel>
         </div>
       </div>
-      <div className="flex flex-col gap-3">
-        <div className="w-full border-b border-mineshaft-600">
-          <span className="text-sm text-mineshaft-300">Parameters</span>
-        </div>
-        <div className="flex flex-wrap gap-x-8 gap-y-2">
-          <Component />
-        </div>
-      </div>
+      <Component />
       <div className="flex flex-col gap-3">
         <div className="w-full border-b border-mineshaft-600">
           <span className="text-sm text-mineshaft-300">Details</span>

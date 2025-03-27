@@ -1511,19 +1511,14 @@ export const registerRoutes = async (
     licenseService,
     kmsService,
     auditLogService,
-    projectDAL,
-    projectBotDAL,
     secretV2BridgeDAL,
-    secretDAL,
-    secretBlindIndexDAL,
     secretTagDAL,
-    secretVersionDAL,
-    secretVersionTagDAL,
     secretVersionTagV2BridgeDAL,
     secretVersionV2BridgeDAL,
     keyStore,
     resourceMetadataDAL,
-    secretV2BridgeService
+    snapshotService,
+    secretQueueService
   });
 
   await secretRotationV2QueueServiceFactory({

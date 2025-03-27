@@ -13,8 +13,6 @@ export const SqlCredentialsRotationGeneratedCredentialsSchema = z
   .max(2);
 
 export const SqlCredentialsRotationParametersSchema = z.object({
-  usernameSecretKey: SecretNameSchema.describe(SecretRotations.PARAMETERS.SQL_CREDENTIALS.usernameSecretKey),
-  passwordSecretKey: SecretNameSchema.describe(SecretRotations.PARAMETERS.SQL_CREDENTIALS.passwordSecretKey),
   issueStatement: z
     .string()
     .trim()
@@ -27,9 +25,18 @@ export const SqlCredentialsRotationParametersSchema = z.object({
     .describe(SecretRotations.PARAMETERS.SQL_CREDENTIALS.revokeStatement)
 });
 
-export const SqlCredentialsRotationParametersTemplateSchema = z.object({
-  usernameSecretKey: z.string(),
-  passwordSecretKey: z.string(),
-  issueStatement: z.string(),
-  revokeStatement: z.string()
+export const SqlCredentialsRotationSecretsMappingSchema = z.object({
+  username: SecretNameSchema.describe(SecretRotations.SECRETS_MAPPING.SQL_CREDENTIALS.username),
+  password: SecretNameSchema.describe(SecretRotations.SECRETS_MAPPING.SQL_CREDENTIALS.password)
+});
+
+export const SqlCredentialsRotationTemplateSchema = z.object({
+  parameters: z.object({
+    issueStatement: z.string(),
+    revokeStatement: z.string()
+  }),
+  secretsMapping: z.object({
+    username: z.string(),
+    password: z.string()
+  })
 });

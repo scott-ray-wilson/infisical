@@ -36,6 +36,7 @@ export const registerSecretRotationEndpoints = <
     projectId: string;
     connectionId: string;
     parameters: I["parameters"];
+    secretsMapping: I["secretsMapping"];
     description?: string | null;
     isAutoRotationEnabled?: boolean;
     rotationInterval: number;
@@ -47,6 +48,7 @@ export const registerSecretRotationEndpoints = <
     environment?: string;
     secretPath?: string;
     parameters?: I["parameters"];
+    secretsMapping?: I["secretsMapping"];
     description?: string | null;
     isAutoRotationEnabled?: boolean;
     rotationInterval?: number;

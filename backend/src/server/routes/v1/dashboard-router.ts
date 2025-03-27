@@ -120,6 +120,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
                     secretMetadata: ResourceMetadataSchema.optional(),
                     tags: SanitizedTagSchema.array().optional()
                   })
+                  .nullable()
                   .array()
               })
             )
@@ -549,6 +550,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
                     secretMetadata: ResourceMetadataSchema.optional(),
                     tags: SanitizedTagSchema.array().optional()
                   })
+                  .nullable()
                   .array()
               })
             )

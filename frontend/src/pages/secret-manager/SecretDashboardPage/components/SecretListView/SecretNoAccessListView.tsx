@@ -8,6 +8,7 @@ type Props = {
 };
 
 export const SecretNoAccessListView = ({ count }: Props) => {
+  console.log("COUNT", count);
   return (
     <>
       {Array.from(Array(count)).map((_, i) => (

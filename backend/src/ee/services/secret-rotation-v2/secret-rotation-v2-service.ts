@@ -550,7 +550,6 @@ export const secretRotationV2ServiceFactory = ({
             });
           case DatabaseErrorCode.SyntaxError:
           case DatabaseErrorCode.InsufficientPrivilege:
-          case DatabaseErrorCode.ErrorRequest:
             throw new BadRequestError({
               message: error.message
             });

@@ -2,11 +2,11 @@ import {
   TCreateProjectTemplateDTO,
   TUpdateProjectTemplateDTO
 } from "@app/ee/services/project-template/project-template-types";
-import { SecretRotation, SecretRotationStatus } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-enums";
+import { SecretRotation } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-enums";
 import {
   TCreateSecretRotationV2DTO,
   TDeleteSecretRotationV2DTO,
-  TSecretRotationV2,
+  TSecretRotationV2Raw,
   TUpdateSecretRotationV2DTO
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-types";
 import { SshCaStatus, SshCertType } from "@app/ee/services/ssh/ssh-certificate-authority-types";
@@ -2355,11 +2355,10 @@ interface DeleteSecretRotationEvent {
 
 interface RotateSecretRotationEvent {
   type: EventType.SECRET_ROTATION_ROTATE_SECRETS;
-  metadata: Pick<TSecretRotationV2, "parameters" | "secretsMapping" | "type" | "connectionId" | "folderId"> & {
+  metadata: Pick<TSecretRotationV2Raw, "parameters" | "secretsMapping" | "type" | "connectionId" | "folderId"> & {
     rotationId: string;
-    jobId?: string;
+    jobId?: string | undefined;
     occurredAt: Date;
-    status: SecretRotationStatus;
     message?: string | null | undefined;
   };
 }

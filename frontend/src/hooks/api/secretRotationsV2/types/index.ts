@@ -8,6 +8,7 @@ import {
   TPostgresCredentialsRotation,
   TPostgresCredentialsRotationGeneratedCredentialsResponse
 } from "@app/hooks/api/secretRotationsV2/types/postgres-credentials-rotation";
+import { TSqlOptionTemplate } from "@app/hooks/api/secretRotationsV2/types/shared";
 import { SecretV3RawSanitized } from "@app/hooks/api/secrets/types";
 import { DiscriminativePick } from "@app/types";
 
@@ -19,7 +20,7 @@ export type TSecretRotationV2Option = {
   name: string;
   type: SecretRotation;
   connection: AppConnection;
-  template: Pick<TSecretRotationV2, "parameters" | "secretsMapping">;
+  template: TSqlOptionTemplate;
 };
 
 export type TListSecretRotationV2Options = { secretRotationOptions: TSecretRotationV2Option[] };

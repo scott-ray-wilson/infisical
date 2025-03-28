@@ -150,7 +150,7 @@ export const expandSecretRotation = async (
     // eslint-disable-next-line no-nested-ternary
     nextRotationAt: secretRotation.isAutoRotationEnabled
       ? // we also check time in addition to status because service outages or if it was previously disabled
-        rotationStatus === SecretRotationStatus.Success && rotateAt.getTime() >= nextUtcInterval.getTime()
+        rotationStatus === SecretRotationStatus.Success && rotateAt.getTime() > nextUtcInterval.getTime()
         ? rotateAt
         : nextUtcInterval
       : null

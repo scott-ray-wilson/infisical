@@ -6,6 +6,7 @@ import {
   faEdit,
   faEye,
   faEyeSlash,
+  faInfoCircle,
   faRotate,
   faXmark
 } from "@fortawesome/free-solid-svg-icons";
@@ -104,12 +105,12 @@ export const SecretOverviewSecretRotationRow = ({
         })}
       </Tr>
       {isExpanded &&
-        environments.map(({ name, slug }) => {
+        environments.map(({ name: envName, slug }) => {
           const secretRotation = getSecretRotationByName(slug, secretRotationName);
 
           if (!secretRotation) return null;
 
-          const { type, secrets, environment, folder } = secretRotation;
+          const { type, secrets, environment, folder, description } = secretRotation;
 
           const { name: rotationType, image } = SECRET_ROTATION_MAP[type];
 
@@ -128,9 +129,9 @@ export const SecretOverviewSecretRotationRow = ({
                             style={{ padding: "0.5rem 1rem" }}
                             className="min-table-row min-w-[30vw] !border-r-0"
                           >
-                            <div className="flex w-full flex-wrap items-center gap-x-2">
-                              <span>{name}</span>
-                              <Tag className="flex items-center gap-1 px-1.5 py-0 text-xs normal-case">
+                            <div className="flex w-full flex-wrap items-center">
+                              <span>{envName}</span>
+                              <Tag className="mx-2.5 flex items-center gap-1 px-1.5 py-0 text-xs normal-case">
                                 <img
                                   src={`/images/integrations/${image}`}
                                   style={{
@@ -141,6 +142,14 @@ export const SecretOverviewSecretRotationRow = ({
                                 />
                                 {rotationType}
                               </Tag>
+                              {description && (
+                                <Tooltip content={description}>
+                                  <FontAwesomeIcon
+                                    icon={faInfoCircle}
+                                    className="text-mineshaft-400"
+                                  />
+                                </Tooltip>
+                              )}
                             </div>
                           </th>
                           <div className="absolute right-1 top-0.5 ml-auto mr-1 mt-1 w-min">

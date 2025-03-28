@@ -2,6 +2,7 @@ import { ForbiddenError, subject } from "@casl/ability";
 import Ajv from "ajv";
 
 import { ActionProjectType, ProjectVersion, TableName } from "@app/db/schemas";
+import { TDbProviderClients, TProviderFunctionTypes } from "@app/ee/services/secret-rotation/templates/types";
 import { decryptSymmetric128BitHexKeyUTF8 } from "@app/lib/crypto/encryption";
 import { BadRequestError, NotFoundError } from "@app/lib/errors";
 import { TProjectPermission } from "@app/lib/types";
@@ -144,6 +145,18 @@ export const secretRotationServiceFactory = ({
 
     const selectedTemplate = rotationTemplates.find(({ name }) => name === provider);
     if (!selectedTemplate) throw new NotFoundError({ message: `Provider with name '${provider}' not found` });
+
+    if (selectedTemplate.template.type === TProviderFunctionTypes.DB) {
+      if (
+        selectedTemplate.template.client === TDbProviderClients.MsSqlServer ||
+        selectedTemplate.template.client === TDbProviderClients.Pg
+      ) {
+        throw new BadRequestError({
+          message: `This version of Secret Rotation for '${selectedTemplate.template.client}' has been deprecated. Please see docs for new version.`
+        });
+      }
+    }
+
     const formattedInputs: Record<string, unknown> = {};
     Object.entries(inputs).forEach(([key, value]) => {
       const { type } = selectedTemplate.template.inputs.properties[key];
@@ -186,6 +199,16 @@ export const secretRotationServiceFactory = ({
       );
       let outputSecretMapping;
       if (shouldUseBridge) {
+        const secrets = await secretV2BridgeDAL.find({
+          $in: { [`${TableName.SecretV2}.id` as "id"]: Object.values(outputs).map((secretId) => secretId) }
+        });
+
+        secrets.forEach((secret) => {
+          if (secret.isRotatedSecret) {
+            throw new BadRequestError({ message: `Secret ${secret.key} is already used by another rotation.` });
+          }
+        });
+
         outputSecretMapping = await secretRotationDAL.secretOutputV2InsertMany(
           Object.entries(outputs).map(([key, secretId]) => ({ key, secretId, rotationId: doc.id })),
           tx

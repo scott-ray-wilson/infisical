@@ -4,6 +4,7 @@ import {
   faChevronDown,
   faClose,
   faEdit,
+  faInfoCircle,
   faRotate
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -12,7 +13,7 @@ import { twMerge } from "tailwind-merge";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
 import { SecretRotationV2StatusBadge } from "@app/components/secret-rotations-v2/SecretRotationV2StatusBadge";
-import { IconButton, Tag } from "@app/components/v2";
+import { IconButton, Tag, Tooltip } from "@app/components/v2";
 import { ProjectPermissionSub } from "@app/context";
 import { ProjectPermissionSecretRotationActions } from "@app/context/ProjectPermissionContext/types";
 import { SECRET_ROTATION_MAP } from "@app/helpers/secretRotationsV2";
@@ -44,7 +45,7 @@ export const SecretRotationItem = ({
   onDelete,
   ...secretProps
 }: Props) => {
-  const { name, type, environment, folder, projectId, secrets } = secretRotation;
+  const { name, type, environment, folder, projectId, secrets, description } = secretRotation;
 
   const { name: rotationType, image } = SECRET_ROTATION_MAP[type];
   const [isExpanded, setIsExpanded] = useToggle(true);
@@ -70,9 +71,9 @@ export const SecretRotationItem = ({
           <FontAwesomeIcon icon={isExpanded ? faChevronDown : faRotate} />
         </div>
         <div className="flex flex-grow items-center border-r border-mineshaft-600 py-2 pl-4 pr-2">
-          <div className="flex w-full flex-wrap items-center gap-x-4">
+          <div className="flex w-full flex-wrap items-center">
             <span>{name}</span>
-            <Tag className="flex items-center gap-1 px-1.5 py-0 text-xs normal-case">
+            <Tag className="mx-2.5 flex items-center gap-1 px-1.5 py-0 text-xs normal-case">
               <img
                 src={`/images/integrations/${image}`}
                 style={{
@@ -83,6 +84,11 @@ export const SecretRotationItem = ({
               />
               {rotationType}
             </Tag>
+            {description && (
+              <Tooltip content={description}>
+                <FontAwesomeIcon icon={faInfoCircle} className="text-mineshaft-400" />
+              </Tooltip>
+            )}
           </div>
           <SecretRotationV2StatusBadge className="mx-2" secretRotation={secretRotation} />
           <div

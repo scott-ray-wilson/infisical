@@ -18,7 +18,8 @@ export const rotationTemplates: TSecretRotationProviderTemplate[] = [
     title: "PostgreSQL",
     image: "postgres.png",
     description: "Rotate PostgreSQL/CockroachDB user credentials",
-    template: POSTGRES_TEMPLATE
+    template: POSTGRES_TEMPLATE,
+    deprecated: true
   },
   {
     name: "mysql",
@@ -32,7 +33,8 @@ export const rotationTemplates: TSecretRotationProviderTemplate[] = [
     title: "Microsoft SQL Server",
     image: "mssqlserver.png",
     description: "Rotate Microsoft SQL server user credentials",
-    template: MSSQL_TEMPLATE
+    template: MSSQL_TEMPLATE,
+    deprecated: true
   },
   {
     name: "aws-iam",

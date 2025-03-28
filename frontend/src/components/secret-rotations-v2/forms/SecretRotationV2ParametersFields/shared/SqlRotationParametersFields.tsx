@@ -1,8 +1,9 @@
 import { Controller, useFormContext } from "react-hook-form";
 
 import { TSecretRotationV2Form } from "@app/components/secret-rotations-v2/forms/schemas";
-import { FormControl, TextArea } from "@app/components/v2";
-import { SecretRotation } from "@app/hooks/api/secretRotationsV2";
+import { FormControl, Input } from "@app/components/v2";
+import { NoticeBannerV2 } from "@app/components/v2/NoticeBannerV2/NoticeBannerV2";
+import { SecretRotation, useSecretRotationV2Option } from "@app/hooks/api/secretRotationsV2";
 
 export const SqlRotationParametersFields = () => {
   const { control } = useFormContext<
@@ -11,48 +12,39 @@ export const SqlRotationParametersFields = () => {
     }
   >();
 
+  const { rotationOption } = useSecretRotationV2Option(SecretRotation.PostgresCredentials);
+
   return (
     <>
       <Controller
         render={({ field: { value, onChange }, fieldState: { error } }) => (
-          <FormControl
-            isError={Boolean(error)}
-            errorText={error?.message}
-            label="Issue Statement"
-            helperText="Username and password will be interpolated into this statement"
-          >
-            <TextArea
-              value={value}
-              className="!resize-none"
-              onChange={onChange}
-              placeholder="SQL statement to issue credentials..."
-              rows={4}
-            />
+          <FormControl isError={Boolean(error)} errorText={error?.message} label="Username 1">
+            <Input value={value} onChange={onChange} placeholder="infiscal_user_1" />
           </FormControl>
         )}
         control={control}
-        name="parameters.issueStatement"
+        name="parameters.username1"
       />
       <Controller
         render={({ field: { value, onChange }, fieldState: { error } }) => (
-          <FormControl
-            isError={Boolean(error)}
-            errorText={error?.message}
-            label="Revoke Statement"
-            helperText="Username and password will be interpolated into this statement"
-          >
-            <TextArea
-              value={value}
-              className="!resize-none"
-              onChange={onChange}
-              placeholder="SQL statement to revoke credentials..."
-              rows={4}
-            />
+          <FormControl isError={Boolean(error)} errorText={error?.message} label="Username 2">
+            <Input value={value} onChange={onChange} placeholder="infiscal_user_2" />
           </FormControl>
         )}
         control={control}
-        name="parameters.revokeStatement"
+        name="parameters.username2"
       />
+      <NoticeBannerV2 title="Example Create User Statement">
+        <p className="mb-3 text-sm text-mineshaft-300">
+          Infisical requires two database users to be created for rotation. Below is an example
+          statement for creating the required users. You may need to modify it to suit your needs.
+        </p>
+        <p className="text-sm">
+          <pre className="whitespace-pre-wrap rounded border border-mineshaft-700 bg-mineshaft-800 p-2 text-mineshaft-300">
+            {rotationOption!.template.createUserStatement}
+          </pre>
+        </p>
+      </NoticeBannerV2>
     </>
   );
 };

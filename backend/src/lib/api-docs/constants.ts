@@ -1850,13 +1850,13 @@ export const SecretRotations = {
   }),
   PARAMETERS: {
     SQL_CREDENTIALS: {
-      issueStatement: "The SQL statement to generate the credentials on rotation.",
-      revokeStatement: "The SQL statement to revoke expired credentials on rotation."
+      username1: "The username of the first login to rotate passwords for.",
+      username2: "The username of the second login to rotate passwords for."
     }
   },
   SECRETS_MAPPING: {
     SQL_CREDENTIALS: {
-      username: "The name of the secret that the generated username will be mapped to.",
+      username: "The name of the secret that the active username will be mapped to.",
       password: "The name of the secret that the generated password will be mapped to."
     }
   }

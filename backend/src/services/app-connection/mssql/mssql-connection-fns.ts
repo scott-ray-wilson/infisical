@@ -39,7 +39,7 @@ export const validateMsSqlConnectionCredentials = async (config: TMsSqlConnectio
     return credentials;
   } catch (error) {
     throw new BadRequestError({
-      message: (error as Error)?.message ?? "Unable to validate connection - verify credentials"
+      message: (error as Error)?.message ?? "Unable to validate connection: verify credentials"
     });
   } finally {
     await client.destroy();

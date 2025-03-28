@@ -7,10 +7,7 @@ export const MSSQL_CREDENTIALS_ROTATION_LIST_OPTION: TSecretRotationV2ListItem =
   type: SecretRotation.MsSqlCredentials,
   connection: AppConnection.MsSql,
   template: {
-    parameters: {
-      issueStatement: `CREATE LOGIN [{{username}}] WITH PASSWORD = '{{password}}'; CREATE USER [{{username}}] FOR LOGIN [{{username}}]; GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::dbo TO [{{username}}];`,
-      revokeStatement: `DROP USER [{{username}}]; DROP LOGIN [{{username}}];`
-    },
+    createUserStatement: `CREATE LOGIN [my-mssql-user] WITH PASSWORD = 'my-temporary-password'; CREATE USER [my-mssql-user] FOR LOGIN [my-mssql-user]; GRANT SELECT, INSERT, UPDATE, DELETE ON SCHEMA::dbo TO [my-mssql-user];`,
     secretsMapping: {
       username: "MSSQL_DB_USERNAME",
       password: "MSSQL_DB_PASSWORD"

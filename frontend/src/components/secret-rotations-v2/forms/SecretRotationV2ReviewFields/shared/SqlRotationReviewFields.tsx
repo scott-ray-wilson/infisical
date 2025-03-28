@@ -11,7 +11,7 @@ export const SqlRotationReviewFields = () => {
     }
   >();
 
-  const [{ issueStatement, revokeStatement }, { username, password }] = watch([
+  const [{ username1, username2 }, { username, password }] = watch([
     "parameters",
     "secretsMapping"
   ]);
@@ -23,16 +23,8 @@ export const SqlRotationReviewFields = () => {
           <span className="text-sm text-mineshaft-300">Parameters</span>
         </div>
         <div className="flex flex-wrap gap-x-8 gap-y-2">
-          <GenericFieldLabel className="w-full" label="Issue Statement">
-            <pre className="max-h-[4rem] overflow-y-auto whitespace-pre-wrap rounded border border-mineshaft-600 bg-mineshaft-700 p-2 font-inter text-bunker-100">
-              {issueStatement}
-            </pre>
-          </GenericFieldLabel>
-          <GenericFieldLabel className="w-full" label="Revoke Statement">
-            <pre className="max-h-[4rem] overflow-y-auto whitespace-pre-wrap rounded border border-mineshaft-600 bg-mineshaft-700 p-2 font-inter text-bunker-100">
-              {revokeStatement}
-            </pre>
-          </GenericFieldLabel>
+          <GenericFieldLabel label="Username1">{username1}</GenericFieldLabel>
+          <GenericFieldLabel label="Username2">{username2}</GenericFieldLabel>
         </div>
       </div>
       <div className="flex flex-col gap-3">

@@ -1,13 +1,16 @@
 import { randomInt } from "crypto";
-import handlebars from "handlebars";
 import { Knex } from "knex";
 
-import { DatabaseError } from "@app/lib/errors";
-import { alphaNumericNanoId } from "@app/lib/nanoid";
+import {
+  TRotationFactoryGetSecretsPayload,
+  TRotationFactoryIssueCredentials,
+  TRotationFactoryRevokeCredentials,
+  TRotationFactoryRotateCredentials
+} from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-types";
+import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import { getSqlConnectionClient } from "@app/services/app-connection/shared/sql";
 
 import {
-  TSqlCredentialsRotation,
   TSqlCredentialsRotationGeneratedCredentials,
   TSqlCredentialsRotationWithConnection
 } from "./sql-credentials-rotation-types";
@@ -22,8 +25,6 @@ const DEFAULT_PASSWORD_REQUIREMENTS = {
   },
   allowedSymbols: "-_.~!*"
 };
-
-const VALIDATION_PASSED_MESSAGE = "Validation passed";
 
 const generatePassword = () => {
   try {
@@ -97,194 +98,116 @@ const generatePassword = () => {
   }
 };
 
-const processStatements = async (statement: string, client: Knex, callback: () => Promise<TSqlCredentialsRotation>) => {
-  const queries = statement.split(";").filter(Boolean);
-
-  const rotation = await client.transaction(async (tx) => {
-    for await (const query of queries) {
-      try {
-        await tx.raw(query);
-      } catch (error) {
-        throw new DatabaseError({ error, name: "Process Secret Rotation SQL Statements" });
-      }
-    }
-    // update is done as callback to rollback issuance or revocation of credentials if update fails
-    const updatedRotation = await callback();
-
-    return updatedRotation;
-  });
-
-  return rotation;
+const SqlStatementMap: Record<
+  TSqlCredentialsRotationWithConnection["connection"]["app"],
+  (credentials: TSqlCredentialsRotationGeneratedCredentials[number]) => [string, Knex.RawBinding]
+> = {
+  [AppConnection.Postgres]: ({ username, password }) => [`ALTER USER ?? WITH PASSWORD '${password}';`, [username]],
+  [AppConnection.MsSql]: ({ username, password }) => [`ALTER USER ?? WITH PASSWORD '${password}';`, [username]]
 };
 
-const getUsernameAndPassword = () => {
-  const username = alphaNumericNanoId(32);
-  const password = generatePassword();
+export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRotationWithConnection) => {
+  const {
+    connection,
+    parameters: { username1, username2 },
+    activeIndex,
+    secretsMapping
+  } = secretRotation;
 
-  return { username, password };
-};
-
-export const sqlCredentialsRotationFactory = (
-  rotationConfig: Pick<TSqlCredentialsRotationWithConnection, "connection" | "parameters">
-) => {
-  const issue = async (
-    callback: (newCredentials: TSqlCredentialsRotationGeneratedCredentials[number]) => Promise<TSqlCredentialsRotation>
-  ) => {
-    const {
-      connection,
-      parameters: { issueStatement }
-    } = rotationConfig;
-
-    const { username, password } = getUsernameAndPassword();
-
-    const client = await getSqlConnectionClient(connection);
-
-    try {
-      const issueCredentialsStatement = handlebars.compile(issueStatement, { noEscape: true })({
+  const validateCredentials = async ({ username, password }: TSqlCredentialsRotationGeneratedCredentials[number]) => {
+    const client = await getSqlConnectionClient({
+      ...connection,
+      credentials: {
+        ...connection.credentials,
         username,
         password
-      });
-
-      const secretRotation = await processStatements(issueCredentialsStatement, client, async () =>
-        callback({ username, password })
-      );
-
-      return secretRotation;
-    } finally {
-      await client.destroy();
-    }
-  };
-
-  const revoke = async (
-    credentialsToRevoke: TSqlCredentialsRotationGeneratedCredentials,
-    callback: () => Promise<TSqlCredentialsRotation>
-  ) => {
-    const {
-      connection,
-      parameters: { revokeStatement }
-    } = rotationConfig;
-
-    const client = await getSqlConnectionClient(connection);
-
-    try {
-      let revokeStatements = "";
-
-      credentialsToRevoke.forEach((credentials) => {
-        revokeStatements += handlebars.compile(revokeStatement, { noEscape: true })({
-          username: credentials.username
-        });
-      });
-
-      const secretRotation = await processStatements(revokeStatements, client, async () => callback());
-
-      return secretRotation;
-    } finally {
-      await client.destroy();
-    }
-  };
-
-  const rotate = async (
-    credentialsToRevoke: TSqlCredentialsRotationGeneratedCredentials[number] | undefined,
-    callback: (newCredentials: TSqlCredentialsRotationGeneratedCredentials[number]) => Promise<TSqlCredentialsRotation>
-  ) => {
-    const {
-      connection,
-      parameters: { revokeStatement, issueStatement }
-    } = rotationConfig;
-
-    const client = await getSqlConnectionClient(connection);
-
-    const { username, password } = getUsernameAndPassword();
-
-    try {
-      const issueCredentialsStatement = handlebars
-        .compile(issueStatement, { noEscape: true })({
-          username,
-          password
-        })
-        .trim();
-
-      // TODO: see if needed
-      // if (!issueCredentialsStatement.endsWith(";")) {
-      //   issueCredentialsStatement += ";";
-      // }
-
-      const revokeCredentialsStatement = credentialsToRevoke
-        ? handlebars
-            .compile(revokeStatement, { noEscape: true })({
-              username: credentialsToRevoke.username
-            })
-            .trim()
-        : // no credentials to revoke on first rotation
-          "";
-
-      const secretRotation = await processStatements(
-        `${issueCredentialsStatement}${revokeCredentialsStatement}`,
-        client,
-        async () => callback({ username, password })
-      );
-
-      return secretRotation;
-    } finally {
-      await client.destroy();
-    }
-  };
-
-  const throwOnInvalidParameters = async () => {
-    const {
-      connection,
-      parameters: { issueStatement, revokeStatement } // username and password are validated at API-level
-    } = rotationConfig;
-
-    const client = await getSqlConnectionClient(connection);
-
-    // these are not commited, just using them to validate SQL syntax
-    const { username, password } = getUsernameAndPassword();
-
-    const issueCredentialsStatement = handlebars.compile(issueStatement, { noEscape: true })({
-      username,
-      password
-    });
-
-    const revokeCredentialsStatement = handlebars.compile(revokeStatement, { noEscape: true })({
-      username
-    });
-
-    try {
-      await client.transaction(async (tx) => {
-        await tx.raw(issueCredentialsStatement);
-        await tx.raw(revokeCredentialsStatement);
-        throw new Error(VALIDATION_PASSED_MESSAGE);
-      });
-    } catch (error) {
-      if ((error as Error).message !== VALIDATION_PASSED_MESSAGE) {
-        throw new DatabaseError({ error, name: "Validate Secret Rotation SQL Statements" });
       }
+    });
+
+    try {
+      await client.raw("SELECT 1");
+    } finally {
+      await client.destroy();
     }
   };
 
-  const getActiveSecretsPayload = (
-    secretRotation: TSqlCredentialsRotation,
-    generatedCredentials: TSqlCredentialsRotationGeneratedCredentials
-  ) => {
-    const {
-      secretsMapping: { username, password },
-      activeIndex
-    } = secretRotation;
+  const issueCredentials: TRotationFactoryIssueCredentials = async (callback) => {
+    const client = await getSqlConnectionClient(connection);
+
+    // For SQL, since we get existing users, we change both their passwords
+    // on issue to invalidate their existing passwords
+    const credentialsSet = [
+      { username: username1, password: generatePassword() },
+      { username: username2, password: generatePassword() }
+    ];
+
+    try {
+      return await client.transaction(async (tx) => {
+        for await (const credentials of credentialsSet) {
+          await tx.raw(...SqlStatementMap[connection.app](credentials));
+        }
+        return callback(credentialsSet[0]);
+      });
+    } finally {
+      await client.destroy();
+    }
+  };
+
+  const revokeCredentials: TRotationFactoryRevokeCredentials = async (credentialsToRevoke, callback) => {
+    const client = await getSqlConnectionClient(connection);
+
+    try {
+      return await client.transaction(async (tx) => {
+        for await (const { username } of credentialsToRevoke) {
+          // scott: invalidate previous passwords; alternatively we could drop the users but unless the
+          // master connection has these permissions it may fail
+          await tx.raw(...SqlStatementMap[connection.app]({ username, password: generatePassword() }));
+        }
+        return callback();
+      });
+    } finally {
+      await client.destroy();
+    }
+  };
+
+  const rotateCredentials: TRotationFactoryRotateCredentials = async (_, callback) => {
+    const client = await getSqlConnectionClient(connection);
+
+    // generate new password for the next active user
+    const credentials = { username: activeIndex === 0 ? username2 : username1, password: generatePassword() };
+
+    try {
+      return await client.transaction(async (tx) => {
+        await tx.raw(...SqlStatementMap[connection.app](credentials));
+        return callback(credentials);
+      });
+    } finally {
+      await client.destroy();
+    }
+  };
+
+  const getSecretsPayload: TRotationFactoryGetSecretsPayload = (generatedCredentials) => {
+    const { username, password } = secretsMapping;
 
     const secrets = [
       {
         key: username,
-        value: generatedCredentials[activeIndex].username
+        value: generatedCredentials.username
       },
       {
         key: password,
-        value: generatedCredentials[activeIndex].password
+        value: generatedCredentials.password
       }
     ];
 
     return secrets;
   };
 
-  return { issue, revoke, rotate, getActiveSecretsPayload, throwOnInvalidParameters };
+  return {
+    issueCredentials,
+    revokeCredentials,
+    rotateCredentials,
+    getSecretsPayload,
+    validateCredentials
+  };
 };

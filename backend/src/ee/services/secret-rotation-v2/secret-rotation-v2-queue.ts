@@ -102,6 +102,8 @@ export const secretRotationV2QueueServiceFactory = async ({
 
         if (!secretRotation) throw new Error(`Secret rotation ${rotationId} not found`);
 
+        // TODO: check that it hasn't be rotated since in between queue and now
+
         await secretRotationV2Service.rotateGeneratedCredentials(secretRotation, { jobId: job.id });
 
         logger.info(`secretRotationV2Queue: Secrets Rotated [rotationId=${job.data?.rotationId}]`);

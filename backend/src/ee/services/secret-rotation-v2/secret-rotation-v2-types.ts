@@ -110,3 +110,28 @@ export type TQuickSearchSecretRotationsV2 = {
   folderMappings: { folderId: string; path: string; environment: string }[];
   filters: TQuickSearchSecretRotationsV2Filters;
 };
+
+export type TRotationFactoryIssueCredentials = (
+  callback: (newCredentials: TSecretRotationV2GeneratedCredentials[number]) => Promise<TSecretRotationV2Raw>
+) => Promise<TSecretRotationV2Raw>;
+
+export type TRotationFactoryRevokeCredentials = (
+  generatedCredentials: TSecretRotationV2GeneratedCredentials,
+  callback: () => Promise<TSecretRotationV2Raw>
+) => Promise<TSecretRotationV2Raw>;
+
+export type TRotationFactoryRotateCredentials = (
+  credentialsToRevoke: TSecretRotationV2GeneratedCredentials[number] | undefined,
+  callback: (newCredentials: TSecretRotationV2GeneratedCredentials[number]) => Promise<TSecretRotationV2Raw>
+) => Promise<TSecretRotationV2Raw>;
+
+export type TRotationFactoryGetSecretsPayload = (
+  generatedCredentials: TSecretRotationV2GeneratedCredentials[number]
+) => { key: string; value: string }[];
+
+export type TRotationFactory = (secretRotation: TSecretRotationV2WithConnection) => {
+  issueCredentials: TRotationFactoryIssueCredentials;
+  revokeCredentials: TRotationFactoryRevokeCredentials;
+  rotateCredentials: TRotationFactoryRotateCredentials;
+  getSecretsPayload: TRotationFactoryGetSecretsPayload;
+};

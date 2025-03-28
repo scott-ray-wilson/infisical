@@ -40,7 +40,7 @@ export const validateHumanitecConnectionCredentials = async (config: THumanitecC
       });
     }
     throw new BadRequestError({
-      message: "Unable to validate connection - verify credentials"
+      message: "Unable to validate connection: verify credentials"
     });
   }
 

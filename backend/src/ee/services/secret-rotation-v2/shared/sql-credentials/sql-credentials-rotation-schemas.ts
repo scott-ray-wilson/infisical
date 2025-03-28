@@ -13,16 +13,16 @@ export const SqlCredentialsRotationGeneratedCredentialsSchema = z
   .max(2);
 
 export const SqlCredentialsRotationParametersSchema = z.object({
-  issueStatement: z
+  username1: z
     .string()
     .trim()
-    .min(1, "Issue Credentials SQL Statement Required")
-    .describe(SecretRotations.PARAMETERS.SQL_CREDENTIALS.issueStatement),
-  revokeStatement: z
+    .min(1, "Username1 Required")
+    .describe(SecretRotations.PARAMETERS.SQL_CREDENTIALS.username1),
+  username2: z
     .string()
     .trim()
-    .min(1, "Revoke Credentials SQL Statement Required")
-    .describe(SecretRotations.PARAMETERS.SQL_CREDENTIALS.revokeStatement)
+    .min(1, "Username2 Required")
+    .describe(SecretRotations.PARAMETERS.SQL_CREDENTIALS.username2)
 });
 
 export const SqlCredentialsRotationSecretsMappingSchema = z.object({
@@ -31,10 +31,7 @@ export const SqlCredentialsRotationSecretsMappingSchema = z.object({
 });
 
 export const SqlCredentialsRotationTemplateSchema = z.object({
-  parameters: z.object({
-    issueStatement: z.string(),
-    revokeStatement: z.string()
-  }),
+  createUserStatement: z.string(),
   secretsMapping: z.object({
     username: z.string(),
     password: z.string()

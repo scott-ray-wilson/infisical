@@ -11,15 +11,20 @@ import {
   faTrash
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { formatDistance } from "date-fns";
+import { twMerge } from "tailwind-merge";
 
 import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
 import { createNotification } from "@app/components/notifications";
 import { ProjectPermissionCan } from "@app/components/permissions";
 import {
+  Button,
   DeleteActionModal,
   EmptyState,
   IconButton,
+  Modal,
+  ModalContent,
   PageHeader,
   Skeleton,
   Spinner,
@@ -33,6 +38,7 @@ import {
   Tooltip,
   Tr
 } from "@app/components/v2";
+import { NoticeBannerV2 } from "@app/components/v2/NoticeBannerV2/NoticeBannerV2";
 import {
   ProjectPermissionSub,
   useProjectPermission,
@@ -48,6 +54,7 @@ import {
   useRestartSecretRotation
 } from "@app/hooks/api";
 import { TSecretRotationProviderTemplate } from "@app/hooks/api/types";
+import { ProjectType } from "@app/hooks/api/workspace/types";
 
 import { CreateRotationForm } from "./components/CreateRotationForm";
 
@@ -55,11 +62,14 @@ const Page = () => {
   const { currentWorkspace } = useWorkspace();
   const { permission } = useProjectPermission();
 
+  const navigate = useNavigate();
+
   const { popUp, handlePopUpOpen, handlePopUpToggle, handlePopUpClose } = usePopUp([
     "createRotation",
     "activeBot",
     "deleteRotation",
-    "upgradePlan"
+    "upgradePlan",
+    "secretRotationV2"
   ] as const);
   const workspaceId = currentWorkspace?.id || "";
   const canCreateRotation = permission.can(
@@ -157,6 +167,24 @@ const Page = () => {
           </span>
         </a>
       </PageHeader>
+      <NoticeBannerV2 title="Secret Rotations Update">
+        <p className="text-sm text-bunker-300">
+          Infisical is revamping it&#39;s Secret Rotation experience.
+        </p>
+        <p className="mt-2 text-sm text-bunker-300">
+          <span className="text-mineshaft-100">PostgreSQL</span> and{" "}
+          <span className="text-mineshaft-100">Microsoft SQL Server Rotations</span> can now be
+          created from the{" "}
+          <Link
+            className="text-mineshaft-300 underline decoration-primary underline-offset-2 hover:text-mineshaft-200"
+            to={`/${ProjectType.SecretManager}/$projectId/overview` as const}
+            params={{ projectId: currentWorkspace.id }}
+          >
+            Secret Manager Dashboard
+          </Link>{" "}
+          from the actions dropdown.
+        </p>
+      </NoticeBannerV2>
       <div className="mb-6">
         <div className="mb-2 mt-6 text-xl font-semibold text-gray-200">Rotated Secrets</div>
         <div className="flex flex-col space-y-2">
@@ -306,14 +334,30 @@ const Page = () => {
         {!isRotationProviderLoading &&
           secretRotationProviders?.providers.map((provider) => (
             <div
-              className="group relative flex h-32 cursor-pointer flex-row items-center justify-center rounded-md border border-mineshaft-600 bg-mineshaft-800 p-4 hover:border-primary/40 hover:bg-primary/10"
               key={`infisical-rotation-provider-${provider.name}`}
+              className={twMerge(
+                "group relative flex h-32 flex-row items-center justify-center rounded-md border border-mineshaft-600 bg-mineshaft-800 p-4",
+                provider.deprecated
+                  ? "opacity-50"
+                  : "cursor-pointer hover:border-primary/40 hover:bg-primary/10"
+              )}
               tabIndex={0}
               role="button"
               onKeyDown={(evt) => {
+                if (provider.deprecated) {
+                  handlePopUpOpen("secretRotationV2", provider.title);
+                  return;
+                }
                 if (evt.key === "Enter") handlePopUpOpen("createRotation", provider);
               }}
-              onClick={() => handleCreateRotation(provider)}
+              onClick={() => {
+                if (provider.deprecated) {
+                  handlePopUpOpen("secretRotationV2", provider.title);
+                  return;
+                }
+
+                handleCreateRotation(provider);
+              }}
             >
               <img
                 src={`/images/secretRotation/${provider.image}`}
@@ -325,7 +369,10 @@ const Page = () => {
                 {provider.title}
               </div>
               <div className="absolute right-1.5 top-1 opacity-0 transition-all group-hover:opacity-100">
-                <Tooltip content={provider.description} sideOffset={10}>
+                <Tooltip
+                  content={provider.deprecated ? undefined : provider.description}
+                  sideOffset={10}
+                >
                   <FontAwesomeIcon icon={faInfoCircle} className="text-primary" />
                 </Tooltip>
               </div>
@@ -363,6 +410,48 @@ const Page = () => {
         onOpenChange={(isOpen) => handlePopUpToggle("upgradePlan", isOpen)}
         text="You can add secret rotation if you switch to Infisical's Team plan."
       />
+      <Modal
+        isOpen={popUp.secretRotationV2.isOpen}
+        onOpenChange={(isOpen) => handlePopUpToggle("secretRotationV2", isOpen)}
+      >
+        <ModalContent
+          className="max-w-5xl"
+          title={`A new version of ${popUp.secretRotationV2.data} Rotations is available.`}
+        >
+          <div className="flex flex-col gap-2">
+            <p className="text-mineshaft-100">
+              Infisical is revamping it&#39;s Secret Rotation experience. Navigate to the{" "}
+              <Link
+                className="text-mineshaft-300 underline decoration-primary underline-offset-2 hover:text-mineshaft-200"
+                to={`/${ProjectType.SecretManager}/$projectId/overview` as const}
+                params={{ projectId: currentWorkspace.id }}
+              >
+                Secret Manager Dashboard
+              </Link>{" "}
+              to create a {popUp.secretRotationV2.data} Rotation.
+            </p>
+            <div className="overflow-clip rounded border border-mineshaft-600">
+              <img
+                src="/images/secretRotation/secret-rotations-v2-location.png"
+                alt="Secret Rotation V2 location"
+              />
+            </div>
+            <div className="mt-2 flex gap-2">
+              <Button
+                onClick={() =>
+                  navigate({
+                    to: `/${ProjectType.SecretManager}/$projectId/overview` as const,
+                    params: { projectId: currentWorkspace.id }
+                  })
+                }
+                colorSchema="secondary"
+              >
+                Navigate to Secret Manager
+              </Button>
+            </div>
+          </div>
+        </ModalContent>
+      </Modal>
     </div>
   );
 };

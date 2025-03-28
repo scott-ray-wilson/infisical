@@ -39,12 +39,7 @@ import {
   Tr
 } from "@app/components/v2";
 import { NoticeBannerV2 } from "@app/components/v2/NoticeBannerV2/NoticeBannerV2";
-import {
-  ProjectPermissionSub,
-  useProjectPermission,
-  useSubscription,
-  useWorkspace
-} from "@app/context";
+import { ProjectPermissionSub, useWorkspace } from "@app/context";
 import { ProjectPermissionSecretRotationActions } from "@app/context/ProjectPermissionContext/types";
 import { usePopUp } from "@app/hooks";
 import {
@@ -53,14 +48,10 @@ import {
   useGetSecretRotations,
   useRestartSecretRotation
 } from "@app/hooks/api";
-import { TSecretRotationProviderTemplate } from "@app/hooks/api/types";
 import { ProjectType } from "@app/hooks/api/workspace/types";
-
-import { CreateRotationForm } from "./components/CreateRotationForm";
 
 const Page = () => {
   const { currentWorkspace } = useWorkspace();
-  const { permission } = useProjectPermission();
 
   const navigate = useNavigate();
 
@@ -72,11 +63,6 @@ const Page = () => {
     "secretRotationV2"
   ] as const);
   const workspaceId = currentWorkspace?.id || "";
-  const canCreateRotation = permission.can(
-    ProjectPermissionSecretRotationActions.Create,
-    ProjectPermissionSub.SecretRotation
-  );
-  const { subscription } = useSubscription();
 
   const { data: secretRotationProviders, isPending: isRotationProviderLoading } =
     useGetSecretRotationProviders({ workspaceId });
@@ -135,18 +121,6 @@ const Page = () => {
     }
   };
 
-  const handleCreateRotation = async (provider: TSecretRotationProviderTemplate) => {
-    if (subscription && !subscription?.secretRotation) {
-      handlePopUpOpen("upgradePlan");
-      return;
-    }
-    if (!canCreateRotation) {
-      createNotification({ type: "error", text: "Access permission denied!!" });
-      return;
-    }
-    handlePopUpOpen("createRotation", provider);
-  };
-
   return (
     <div className="container mx-auto w-full max-w-7xl bg-bunker-800 text-white">
       <PageHeader
@@ -168,15 +142,13 @@ const Page = () => {
         </a>
       </PageHeader>
       <NoticeBannerV2 title="Secret Rotations Update">
-        <p className="text-sm text-bunker-300">
+        <p className="text-sm text-bunker-200">
           Infisical is revamping it&#39;s Secret Rotation experience.
         </p>
-        <p className="mt-2 text-sm text-bunker-300">
-          <span className="text-mineshaft-100">PostgreSQL</span> and{" "}
-          <span className="text-mineshaft-100">Microsoft SQL Server Rotations</span> can now be
-          created from the{" "}
+        <p className="mt-2 text-sm text-bunker-200">
+          Secret Rotations can now be created from the{" "}
           <Link
-            className="text-mineshaft-300 underline decoration-primary underline-offset-2 hover:text-mineshaft-200"
+            className="text-mineshaft-100 underline decoration-primary underline-offset-2 hover:text-mineshaft-200"
             to={`/${ProjectType.SecretManager}/$projectId/overview` as const}
             params={{ projectId: currentWorkspace.id }}
           >
@@ -336,27 +308,15 @@ const Page = () => {
             <div
               key={`infisical-rotation-provider-${provider.name}`}
               className={twMerge(
-                "group relative flex h-32 flex-row items-center justify-center rounded-md border border-mineshaft-600 bg-mineshaft-800 p-4",
-                provider.deprecated
-                  ? "opacity-50"
-                  : "cursor-pointer hover:border-primary/40 hover:bg-primary/10"
+                "group relative flex h-32 cursor-pointer flex-row items-center justify-center rounded-md border border-mineshaft-600 bg-mineshaft-800 p-4 hover:border-primary/40 hover:bg-primary/10"
               )}
               tabIndex={0}
               role="button"
-              onKeyDown={(evt) => {
-                if (provider.deprecated) {
-                  handlePopUpOpen("secretRotationV2", provider.title);
-                  return;
-                }
-                if (evt.key === "Enter") handlePopUpOpen("createRotation", provider);
+              onKeyDown={() => {
+                handlePopUpOpen("secretRotationV2", provider.title);
               }}
               onClick={() => {
-                if (provider.deprecated) {
-                  handlePopUpOpen("secretRotationV2", provider.title);
-                  return;
-                }
-
-                handleCreateRotation(provider);
+                handlePopUpOpen("secretRotationV2", provider.title);
               }}
             >
               <img
@@ -391,12 +351,6 @@ const Page = () => {
           </div>
         </a>
       </div>
-      <CreateRotationForm
-        isOpen={popUp.createRotation.isOpen}
-        workspaceId={workspaceId}
-        onToggle={(isOpen) => handlePopUpToggle("createRotation", isOpen)}
-        provider={(popUp.createRotation.data as TSecretRotationProviderTemplate) || {}}
-      />
       <DeleteActionModal
         isOpen={popUp.deleteRotation.isOpen}
         title="Are you sure want to delete this rotation?"
@@ -414,21 +368,18 @@ const Page = () => {
         isOpen={popUp.secretRotationV2.isOpen}
         onOpenChange={(isOpen) => handlePopUpToggle("secretRotationV2", isOpen)}
       >
-        <ModalContent
-          className="max-w-5xl"
-          title={`A new version of ${popUp.secretRotationV2.data} Rotations is available.`}
-        >
+        <ModalContent className="max-w-5xl" title="Secret Rotation Update">
           <div className="flex flex-col gap-2">
-            <p className="text-mineshaft-100">
+            <p className="text-mineshaft-200">
               Infisical is revamping it&#39;s Secret Rotation experience. Navigate to the{" "}
               <Link
-                className="text-mineshaft-300 underline decoration-primary underline-offset-2 hover:text-mineshaft-200"
+                className="text-mineshaft-100 underline decoration-primary underline-offset-2 hover:text-mineshaft-200"
                 to={`/${ProjectType.SecretManager}/$projectId/overview` as const}
                 params={{ projectId: currentWorkspace.id }}
               >
                 Secret Manager Dashboard
               </Link>{" "}
-              to create a {popUp.secretRotationV2.data} Rotation.
+              to create a Secret Rotations.
             </p>
             <div className="overflow-clip rounded border border-mineshaft-600">
               <img

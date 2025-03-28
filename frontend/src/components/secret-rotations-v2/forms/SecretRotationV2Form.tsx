@@ -222,11 +222,9 @@ export const SecretRotationV2Form = ({
         <Button onClick={handleNext} colorSchema="secondary">
           {isFinalStep ? `${secretRotation ? "Update" : "Create"} Secret Rotation` : "Next"}
         </Button>
-        {selectedTabIndex > 0 && (
-          <Button onClick={handlePrev} colorSchema="secondary">
-            Back
-          </Button>
-        )}
+        <Button onClick={handlePrev} colorSchema="secondary">
+          Back
+        </Button>
       </div>
     </form>
   );

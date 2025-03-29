@@ -225,6 +225,7 @@ export type TQueueJobTypes = {
         name: QueueJobs.SecretRotationV2Rotate;
         payload: {
           rotationId: string;
+          queuedAt: Date;
         };
       };
 };
@@ -294,7 +295,7 @@ export const queueServiceFactory = (
 
   const startPg = async <T extends QueueName>(
     jobName: QueueJobs,
-    jobsFn: (jobs: PgBoss.Job<TQueueJobTypes[T]["payload"]>[]) => Promise<void>,
+    jobsFn: (jobs: PgBoss.JobWithMetadata<TQueueJobTypes[T]["payload"]>[]) => Promise<void>,
     options: WorkOptions & {
       workerCount: number;
     }
@@ -304,7 +305,7 @@ export const queueServiceFactory = (
 
     await Promise.all(
       Array.from({ length: options.workerCount }).map(() =>
-        pgBoss.work<TQueueJobTypes[T]["payload"]>(jobName, options, jobsFn)
+        pgBoss.work<TQueueJobTypes[T]["payload"]>(jobName, { ...options, includeMetadata: true }, jobsFn)
       )
     );
   };
@@ -347,15 +348,6 @@ export const queueServiceFactory = (
       data,
       options: opts
     });
-  };
-
-  const queueAfterPg = async <T extends QueueName>(
-    job: TQueueJobTypes[T]["name"],
-    data: TQueueJobTypes[T]["payload"],
-    opts: PgBoss.SendOptions & { jobId?: string },
-    after: Date
-  ) => {
-    await pgBoss.sendAfter(job, data ?? {}, opts, after);
   };
 
   const schedulePg = async <T extends QueueName>(
@@ -429,7 +421,6 @@ export const queueServiceFactory = (
     getRepeatableJobs,
     startPg,
     queuePg,
-    schedulePg,
-    queueAfterPg
+    schedulePg
   };
 };

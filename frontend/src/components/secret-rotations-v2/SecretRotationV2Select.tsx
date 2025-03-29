@@ -24,65 +24,90 @@ export const SecretRotationV2Select = ({ onSelect }: Props) => {
 
   return (
     <div className="grid grid-cols-3 gap-2">
-      {/* TODO: remove placeholders as these are actually implemented */}
-      {secretRotationOptions
-        // @ts-expect-error placeholders for kubecon
-        ?.concat(
-          {
-            type: SecretRotation.MySqlCredentials
-          },
-          {
-            type: SecretRotation.SendGridApiKey
-          },
-          {
-            type: SecretRotation.AwsIamCredentials
-          }
-        )
-        .map(({ type, connection }) => {
-          const { image, name } = SECRET_ROTATION_MAP[type];
+      {secretRotationOptions?.map(({ type }) => {
+        const { image, name } = SECRET_ROTATION_MAP[type];
 
-          let size: number;
+        let size: number;
 
-          switch (type) {
-            case SecretRotation.MySqlCredentials:
-              size = 80;
-              break;
-            case SecretRotation.SendGridApiKey:
-            case SecretRotation.MsSqlCredentials:
-              size = 50;
-              break;
-            default:
-              size = 45;
-          }
+        switch (type) {
+          case SecretRotation.MsSqlCredentials:
+            size = 50;
+            break;
+          default:
+            size = 45;
+        }
 
-          return (
-            <button
-              type="button"
-              key={type}
-              onClick={() => {
-                if (!connection) {
-                  createNotification({
-                    type: "info",
-                    text: `${name} Rotation is under development. Please check back soon.`
-                  });
-                  return;
-                }
-                onSelect(type);
-              }}
-              className="group relative flex h-28 cursor-pointer flex-col items-center justify-center rounded-md border border-mineshaft-600 bg-mineshaft-700 p-4 duration-200 hover:bg-mineshaft-600"
-            >
-              <img
-                src={`/images/integrations/${image}`}
-                width={size}
-                className="mt-auto"
-                alt={`${name} logo`}
-              />
-              <div className="mt-auto max-w-xs text-center text-xs font-medium text-gray-300 duration-200 group-hover:text-gray-200">
-                {name}
-              </div>
-            </button>
-          );
-        })}
+        return (
+          <button
+            type="button"
+            key={type}
+            onClick={() => onSelect(type)}
+            className="group relative flex h-28 cursor-pointer flex-col items-center justify-center rounded-md border border-mineshaft-600 bg-mineshaft-700 p-4 duration-200 hover:bg-mineshaft-600"
+          >
+            <img
+              src={`/images/integrations/${image}`}
+              width={size}
+              className="mt-auto"
+              alt={`${name} logo`}
+            />
+            <div className="mt-auto max-w-xs text-center text-xs font-medium text-gray-300 duration-200 group-hover:text-gray-200">
+              {name}
+            </div>
+          </button>
+        );
+      })}
+      {/* templates for kubecon */}
+      {[
+        {
+          name: "MySQL Credentials",
+          image: "MySql.png"
+        },
+        {
+          name: "SendGrid API Key",
+          image: "SendGrid.png"
+        },
+        {
+          name: "AWS IAM User Credentials",
+          image: "Amazon Web Services.png"
+        }
+      ].map(({ name, image }) => {
+        let size: number;
+
+        switch (name) {
+          case "MySQL Credentials":
+            size = 80;
+            break;
+          case "SendGrid API Key":
+            size = 50;
+            break;
+          default:
+            size = 45;
+        }
+
+        return (
+          <button
+            type="button"
+            key={name}
+            onClick={() =>
+              createNotification({
+                type: "info",
+                text: `${name} Rotation is under development. Please check back soon.`
+              })
+            }
+            className="group relative flex h-28 cursor-pointer flex-col items-center justify-center rounded-md border border-mineshaft-600 bg-mineshaft-700 p-4 duration-200 hover:bg-mineshaft-600"
+          >
+            <img
+              src={`/images/integrations/${image}`}
+              width={size}
+              className="mt-auto"
+              alt={`${name} logo`}
+            />
+            <div className="mt-auto max-w-xs text-center text-xs font-medium text-gray-300 duration-200 group-hover:text-gray-200">
+              {name}
+            </div>
+          </button>
+        );
+      })}
       <Tooltip
         side="bottom"
         className="max-w-sm py-4"

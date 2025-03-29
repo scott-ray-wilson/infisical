@@ -1,3 +1,5 @@
+import { isAfter } from "date-fns";
+
 import { TSecretRotationV2DALFactory } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-dal";
 import {
   getNextUTCMidnight,
@@ -35,9 +37,9 @@ export const secretRotationV2QueueServiceFactory = async ({
       try {
         const rotateBy = appCfg.isRotationDevelopmentMode ? getNextUTCMinute() : getNextUTCMidnight();
 
-        const secretRotations = await secretRotationV2DAL.findSecretRotationsToQueue(rotateBy);
-
         const currentTime = new Date();
+
+        const secretRotations = await secretRotationV2DAL.findSecretRotationsToQueue(rotateBy);
 
         logger.info(
           `secretRotationV2Queue: Queue Rotations [currentTime=${currentTime.toISOString()}] [rotateBy=${rotateBy.toISOString()}] [count=${
@@ -48,41 +50,25 @@ export const secretRotationV2QueueServiceFactory = async ({
         for await (const rotation of secretRotations) {
           const rotateAt = getRotateAt(rotation.rotateAtUtc as TSecretRotationV2["rotateAtUtc"], currentTime);
 
-          if (rotateAt.getTime() > currentTime.getTime()) {
-            logger.info(
-              `secretRotationV2Queue: Queue Rotation After [rotationId=${
-                rotation.id
-              }] [rotateAt=${rotateAt.toISOString()}]`
-            );
-            await queueService.queueAfterPg(
-              QueueJobs.SecretRotationV2Rotate,
-              { rotationId: rotation.id },
-              {
-                jobId: `secret-rotation-v2-rotate-${rotation.id}`,
-                retryLimit: 5,
-                retryBackoff: true
-              },
-              rotateAt
-            );
-          } else {
-            logger.info(
-              `secretRotationV2Queue: Queue Rotation [rotationId=${rotation.id}] [lastRotatedAt=${new Date(
-                rotation.lastRotatedAt
-              ).toISOString()}] [rotateAt=${rotateAt.toISOString()}]`
-            );
-            await queueService.queuePg(
-              QueueJobs.SecretRotationV2Rotate,
-              { rotationId: rotation.id },
-              {
-                jobId: `secret-rotation-v2-rotate-${rotation.id}`,
-                retryLimit: 5,
-                retryBackoff: true
-              }
-            );
-          }
+          logger.info(
+            `secretRotationV2Queue: Queue Rotation [rotationId=${rotation.id}] [lastRotatedAt=${new Date(
+              rotation.lastRotatedAt
+            ).toISOString()}] [rotateAt=${rotateAt.toISOString()}]`
+          );
+          await queueService.queuePg(
+            QueueJobs.SecretRotationV2Rotate,
+            { rotationId: rotation.id, queuedAt: currentTime },
+            {
+              jobId: `secret-rotation-v2-rotate-${rotation.id}`,
+              retryLimit: 5,
+              retryBackoff: true,
+              startAfter: rotateAt
+            }
+          );
         }
       } catch (error) {
         logger.error(error, "secretRotationV2Queue: Queue Rotations Error:");
+        throw error;
       }
     },
     {
@@ -95,20 +81,32 @@ export const secretRotationV2QueueServiceFactory = async ({
   await queueService.startPg<QueueName.SecretRotationV2>(
     QueueJobs.SecretRotationV2Rotate,
     async ([job]) => {
-      try {
-        const { rotationId } = job.data!;
+      const { rotationId, queuedAt } = job.data!;
+      const { retryCount, retryLimit } = job;
 
+      const logDetails = `[rotationId=${job.data?.rotationId}] [jobId=${job.id}] attempt=[${retryCount}/${retryLimit}]`;
+
+      try {
         const secretRotation = await secretRotationV2DAL.findById(rotationId);
 
         if (!secretRotation) throw new Error(`Secret rotation ${rotationId} not found`);
 
-        // TODO: check that it hasn't be rotated since in between queue and now
+        if (isAfter(secretRotation.lastRotatedAt, queuedAt)) {
+          // rotated since being queued, skip rotation
+          logger.info(`secretRotationV2Queue: Skipping Rotation - Rotated Since Queue ${logDetails}`);
+          return;
+        }
 
-        await secretRotationV2Service.rotateGeneratedCredentials(secretRotation, { jobId: job.id });
+        await secretRotationV2Service.rotateGeneratedCredentials(secretRotation, {
+          jobId: job.id,
+          shouldSendNotification: true,
+          isFinalAttempt: retryCount === retryLimit
+        });
 
-        logger.info(`secretRotationV2Queue: Secrets Rotated [rotationId=${job.data?.rotationId}]`);
+        logger.info(`secretRotationV2Queue: Secrets Rotated ${logDetails}`);
       } catch (error) {
-        logger.error(`secretRotationV2Queue: Failed to Rotate Secrets [rotationId=${job.data?.rotationId}]`);
+        logger.error(`secretRotationV2Queue: Failed to Rotate Secrets ${logDetails}`);
+        throw error;
       }
     },
     {

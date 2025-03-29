@@ -3,7 +3,7 @@ import isEqual from "lodash.isequal";
 
 import { ActionProjectType, SecretType, TableName } from "@app/db/schemas";
 import { TAuditLogServiceFactory } from "@app/ee/services/audit-log/audit-log-service";
-import { AuditLogInfo, EventType } from "@app/ee/services/audit-log/audit-log-types";
+import { EventType } from "@app/ee/services/audit-log/audit-log-types";
 import { TLicenseServiceFactory } from "@app/ee/services/license/license-service";
 import { hasSecretReadValueOrDescribePermission } from "@app/ee/services/permission/permission-fns";
 import { TPermissionServiceFactory } from "@app/ee/services/permission/permission-service";
@@ -35,6 +35,7 @@ import {
   TQuickSearchSecretRotationsV2,
   TRotateSecretRotationV2,
   TRotationFactory,
+  TSecretRotationRotateGeneratedCredentials,
   TSecretRotationV2,
   TSecretRotationV2Raw,
   TSecretRotationV2WithConnection,
@@ -42,10 +43,9 @@ import {
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-types";
 import { sqlCredentialsRotationFactory } from "@app/ee/services/secret-rotation-v2/shared/sql-credentials";
 import { TSecretSnapshotServiceFactory } from "@app/ee/services/secret-snapshot/secret-snapshot-service";
-import { TKeyStoreFactory } from "@app/keystore/keystore";
+import { KeyStorePrefixes, TKeyStoreFactory } from "@app/keystore/keystore";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
 import { BadRequestError, DatabaseError, InternalServerError, NotFoundError } from "@app/lib/errors";
-import { logger } from "@app/lib/logger";
 import { OrderByDirection, OrgServiceActor } from "@app/lib/types";
 import { decryptAppConnection } from "@app/services/app-connection/app-connection-fns";
 import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
@@ -116,7 +116,8 @@ export const secretRotationV2ServiceFactory = ({
   kmsService,
   auditLogService,
   secretQueueService,
-  snapshotService
+  snapshotService,
+  keyStore
 }: TSecretRotationV2ServiceFactoryDep) => {
   const listSecretRotationsByProjectId = async (
     { projectId, type }: TListSecretRotationsV2ByProjectId,
@@ -511,7 +512,6 @@ export const secretRotationV2ServiceFactory = ({
     try {
       const updatedSecretRotation = await secretRotationV2DAL.transaction(async (tx) => {
         if (payload.secretsMapping && !isEqual(payload.secretsMapping, secretsMapping)) {
-          logger.warn({ secretsMapping, new: payload.secretsMapping }, `UPDATE MAPPINGS:`);
           // update mapped secrets names
           await fnSecretBulkUpdate({
             folderId,
@@ -561,6 +561,7 @@ export const secretRotationV2ServiceFactory = ({
                 throw new BadRequestError({
                   message: `A Secret Rotation with the name "${payload.name}" already exists at the secret path "${folder.path}"`
                 });
+              break;
             case TableName.SecretV2:
               if (payload.secretsMapping)
                 throw new BadRequestError({
@@ -568,6 +569,7 @@ export const secretRotationV2ServiceFactory = ({
                     folder.path
                   }": ${Object.values(payload.secretsMapping).join(", ")}`
                 });
+              break;
             default:
               throw err;
           }
@@ -673,12 +675,38 @@ export const secretRotationV2ServiceFactory = ({
 
   const rotateGeneratedCredentials = async (
     secretRotation: TSecretRotationV2Raw,
-    { auditLogInfo, jobId }: { auditLogInfo?: AuditLogInfo; jobId?: string }
+    {
+      auditLogInfo,
+      jobId,
+      shouldSendNotification,
+      isFinalAttempt = true
+    }: TSecretRotationRotateGeneratedCredentials = {}
   ) => {
-    const { connection, folder, environment, encryptedGeneratedCredentials, activeIndex, projectId, type, folderId } =
-      secretRotation;
+    const {
+      connection,
+      folder,
+      environment,
+      encryptedGeneratedCredentials,
+      activeIndex,
+      projectId,
+      type,
+      folderId,
+      id: rotationId,
+      parameters,
+      secretsMapping
+    } = secretRotation;
+
+    let lock: Awaited<ReturnType<typeof keyStore.acquireLock>>;
 
     try {
+      lock = await keyStore.acquireLock([KeyStorePrefixes.SecretRotationLock(rotationId)], 60 * 1000);
+    } catch (e) {
+      throw new InternalServerError({ message: "Rotation already in progress. Please try again in a few minutes." });
+    }
+
+    try {
+      // throw new Error("TEST ERROR");
+
       const appConnection = await decryptAppConnection(connection, kmsService);
 
       const generatedCredentials = await decryptSecretRotationCredentials({
@@ -763,16 +791,16 @@ export const secretRotationV2ServiceFactory = ({
             metadata: {}
           }
         }),
-        projectId: updatedRotation.projectId,
+        projectId,
         event: {
           type: EventType.SECRET_ROTATION_ROTATE_SECRETS,
           metadata: {
-            type: updatedRotation.type,
-            rotationId: updatedRotation.id,
-            connectionId: updatedRotation.connectionId,
-            folderId: updatedRotation.folderId,
-            parameters: updatedRotation.parameters,
-            secretsMapping: updatedRotation.secretsMapping,
+            type,
+            rotationId,
+            connectionId: connection.id,
+            folderId,
+            parameters,
+            secretsMapping,
             status: SecretRotationStatus.Success,
             occurredAt: new Date(),
             message: null,
@@ -792,23 +820,29 @@ export const secretRotationV2ServiceFactory = ({
 
       return updatedRotation;
     } catch (error) {
-      const errorMessage = parseRotationErrorMessage(error);
+      if (isFinalAttempt) {
+        const errorMessage = parseRotationErrorMessage(error);
 
-      const { encryptor } = await kmsService.createCipherPairWithDataKey({
-        type: KmsDataKey.SecretManager,
-        projectId
-      });
+        const { encryptor } = await kmsService.createCipherPairWithDataKey({
+          type: KmsDataKey.SecretManager,
+          projectId
+        });
 
-      const { cipherTextBlob: encryptedMessage } = encryptor({
-        plainText: Buffer.from(errorMessage)
-      });
+        const { cipherTextBlob: encryptedMessage } = encryptor({
+          plainText: Buffer.from(errorMessage)
+        });
 
-      const updatedRotation = await secretRotationV2DAL.updateById(secretRotation.id, {
-        rotationStatus: SecretRotationStatus.Failed,
-        lastRotationJobId: jobId,
-        lastRotationAttemptedAt: new Date(),
-        encryptedLastRotationMessage: encryptedMessage
-      });
+        await secretRotationV2DAL.updateById(secretRotation.id, {
+          rotationStatus: SecretRotationStatus.Failed,
+          lastRotationJobId: jobId,
+          lastRotationAttemptedAt: new Date(),
+          encryptedLastRotationMessage: encryptedMessage
+        });
+
+        if (shouldSendNotification) {
+          // TODO: email
+        }
+      }
 
       await auditLogService.createAuditLog({
         ...(auditLogInfo ?? {
@@ -817,25 +851,27 @@ export const secretRotationV2ServiceFactory = ({
             metadata: {}
           }
         }),
-        projectId: updatedRotation.projectId,
+        projectId,
         event: {
           type: EventType.SECRET_ROTATION_ROTATE_SECRETS,
           metadata: {
-            type: updatedRotation.type,
-            rotationId: updatedRotation.id,
-            connectionId: updatedRotation.connectionId,
-            folderId: updatedRotation.folderId,
-            parameters: updatedRotation.parameters,
-            secretsMapping: updatedRotation.secretsMapping,
+            type,
+            rotationId,
+            connectionId: connection.id,
+            folderId,
+            parameters,
+            secretsMapping,
             occurredAt: new Date(),
             status: SecretRotationStatus.Failed,
-            message: "See Rotation status for details",
+            message: isFinalAttempt ? "See Rotation status for details" : "Rotation will be re-attempted shortly...",
             jobId
           }
         }
       });
 
       throw error;
+    } finally {
+      await lock.release();
     }
   };
 

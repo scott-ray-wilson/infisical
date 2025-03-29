@@ -11,7 +11,6 @@ export const mockQueue = (): TQueueServiceFactory => {
       job[name] = jobData;
     },
     queuePg: async () => {},
-    queueAfterPg: async () => {},
     schedulePg: async () => {},
     initialize: async () => {},
     shutdown: async () => undefined,

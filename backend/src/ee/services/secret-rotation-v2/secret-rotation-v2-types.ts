@@ -135,3 +135,10 @@ export type TRotationFactory = (secretRotation: TSecretRotationV2WithConnection)
   rotateCredentials: TRotationFactoryRotateCredentials;
   getSecretsPayload: TRotationFactoryGetSecretsPayload;
 };
+
+export type TSecretRotationRotateGeneratedCredentials = {
+  auditLogInfo?: AuditLogInfo;
+  jobId?: string;
+  shouldSendNotification?: boolean;
+  isFinalAttempt?: boolean;
+};

@@ -47,6 +47,7 @@ import { KeyStorePrefixes, TKeyStoreFactory } from "@app/keystore/keystore";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
 import { BadRequestError, DatabaseError, InternalServerError, NotFoundError } from "@app/lib/errors";
 import { OrderByDirection, OrgServiceActor } from "@app/lib/types";
+import { QueueJobs, TQueueServiceFactory } from "@app/queue";
 import { decryptAppConnection } from "@app/services/app-connection/app-connection-fns";
 import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
 import { ActorType } from "@app/services/auth/auth-type";
@@ -90,6 +91,7 @@ export type TSecretRotationV2ServiceFactoryDep = {
   secretTagDAL: Pick<TSecretTagDALFactory, "saveTagsToSecretV2" | "deleteTagsToSecretV2" | "find">;
   secretQueueService: Pick<TSecretQueueFactory, "syncSecrets" | "removeSecretReminder">;
   snapshotService: Pick<TSecretSnapshotServiceFactory, "performSnapshot">;
+  queueService: Pick<TQueueServiceFactory, "queuePg">;
 };
 
 export type TSecretRotationV2ServiceFactory = ReturnType<typeof secretRotationV2ServiceFactory>;
@@ -117,8 +119,23 @@ export const secretRotationV2ServiceFactory = ({
   auditLogService,
   secretQueueService,
   snapshotService,
-  keyStore
+  keyStore,
+  queueService
 }: TSecretRotationV2ServiceFactoryDep) => {
+  const $queueSendSecretRotationStatusNotification = async (secretRotation: TSecretRotationV2Raw) => {
+    if (!appCfg.isSmtpConfigured) return;
+
+    await queueService.queuePg(
+      QueueJobs.SecretRotationV2SendNotification,
+      { secretRotation },
+      {
+        jobId: `secret-rotation-v2-notification-${secretRotation.id}`,
+        retryLimit: 5,
+        retryBackoff: true
+      }
+    );
+  };
+
   const listSecretRotationsByProjectId = async (
     { projectId, type }: TListSecretRotationsV2ByProjectId,
     actor: OrgServiceActor
@@ -696,16 +713,16 @@ export const secretRotationV2ServiceFactory = ({
       secretsMapping
     } = secretRotation;
 
-    let lock: Awaited<ReturnType<typeof keyStore.acquireLock>>;
+    let lock: Awaited<ReturnType<typeof keyStore.acquireLock>> | undefined;
 
     try {
-      lock = await keyStore.acquireLock([KeyStorePrefixes.SecretRotationLock(rotationId)], 60 * 1000);
-    } catch (e) {
-      throw new InternalServerError({ message: "Rotation already in progress. Please try again in a few minutes." });
-    }
-
-    try {
-      // throw new Error("TEST ERROR");
+      try {
+        lock = await keyStore.acquireLock([KeyStorePrefixes.SecretRotationLock(rotationId)], 60 * 1000);
+      } catch (e) {
+        throw new InternalServerError({
+          message: "Failed to acquire rotation lock."
+        });
+      }
 
       const appConnection = await decryptAppConnection(connection, kmsService);
 
@@ -832,7 +849,7 @@ export const secretRotationV2ServiceFactory = ({
           plainText: Buffer.from(errorMessage)
         });
 
-        await secretRotationV2DAL.updateById(secretRotation.id, {
+        const updatedRotation = await secretRotationV2DAL.updateById(secretRotation.id, {
           rotationStatus: SecretRotationStatus.Failed,
           lastRotationJobId: jobId,
           lastRotationAttemptedAt: new Date(),
@@ -840,7 +857,7 @@ export const secretRotationV2ServiceFactory = ({
         });
 
         if (shouldSendNotification) {
-          // TODO: email
+          await $queueSendSecretRotationStatusNotification(updatedRotation);
         }
       }
 
@@ -871,7 +888,7 @@ export const secretRotationV2ServiceFactory = ({
 
       throw error;
     } finally {
-      await lock.release();
+      await lock?.release();
     }
   };
 
@@ -914,6 +931,11 @@ export const secretRotationV2ServiceFactory = ({
       throw new BadRequestError({
         message: `Secret Rotation with ID "${secretRotation.id}" is not configured for ${SECRET_ROTATION_NAME_MAP[type]}`
       });
+
+    const isRotationOccurring = Boolean(await keyStore.getItem(KeyStorePrefixes.SecretRotationLock(secretRotation.id)));
+
+    if (isRotationOccurring)
+      throw new BadRequestError({ message: `A rotation is already in progress. Please try again shortly.` });
 
     try {
       const updatedRotation = await rotateGeneratedCredentials(secretRotation, { auditLogInfo });

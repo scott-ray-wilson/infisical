@@ -3,7 +3,6 @@ import { addDays, addMinutes } from "date-fns";
 
 import { getConfig } from "@app/lib/config/env";
 import { DatabaseError } from "@app/lib/errors";
-import { logger } from "@app/lib/logger";
 import { KmsDataKey } from "@app/services/kms/kms-types";
 
 import { MSSQL_CREDENTIALS_ROTATION_LIST_OPTION } from "./mssql-credentials";
@@ -161,8 +160,6 @@ const MAX_MESSAGE_LENGTH = 1024;
 
 export const parseRotationErrorMessage = (err: unknown): string => {
   let errorMessage: string;
-
-  logger.warn(err);
 
   if (err instanceof DatabaseError) {
     errorMessage = (err.error as { message: string }).message ?? "An unknown error occurred.";

@@ -1518,13 +1518,17 @@ export const registerRoutes = async (
     keyStore,
     resourceMetadataDAL,
     snapshotService,
-    secretQueueService
+    secretQueueService,
+    queueService
   });
 
   await secretRotationV2QueueServiceFactory({
     secretRotationV2Service,
     secretRotationV2DAL,
-    queueService
+    queueService,
+    projectDAL,
+    projectMembershipDAL,
+    smtpService
   });
 
   await superAdminService.initServerCfg();

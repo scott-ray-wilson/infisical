@@ -5,6 +5,10 @@ import PgBoss, { WorkOptions } from "pg-boss";
 import { SecretEncryptionAlgo, SecretKeyEncoding } from "@app/db/schemas";
 import { TCreateAuditLogDTO } from "@app/ee/services/audit-log/audit-log-types";
 import {
+  TSecretRotationRotateSecretsJobPayload,
+  TSecretRotationSendNotificationJobPayload
+} from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-types";
+import {
   TScanFullRepoEventPayload,
   TScanPushEventPayload
 } from "@app/ee/services/secret-scanning/secret-scanning-queue/secret-scanning-queue-types";
@@ -75,8 +79,9 @@ export enum QueueJobs {
   SecretSyncImportSecrets = "secret-sync-import-secrets",
   SecretSyncRemoveSecrets = "secret-sync-remove-secrets",
   SecretSyncSendActionFailedNotifications = "secret-sync-send-action-failed-notifications",
-  SecretRotationV2Rotate = "secret-rotation-v2-rotate",
-  SecretRotationV2QueueRotations = "secret-rotation-v2-check"
+  SecretRotationV2QueueRotations = "secret-rotation-v2-queue-rotations",
+  SecretRotationV2RotateSecrets = "secret-rotation-v2-rotate-secrets",
+  SecretRotationV2SendNotification = "secret-rotation-v2-send-notification"
 }
 
 export type TQueueJobTypes = {
@@ -222,11 +227,12 @@ export type TQueueJobTypes = {
         payload: undefined;
       }
     | {
-        name: QueueJobs.SecretRotationV2Rotate;
-        payload: {
-          rotationId: string;
-          queuedAt: Date;
-        };
+        name: QueueJobs.SecretRotationV2RotateSecrets;
+        payload: TSecretRotationRotateSecretsJobPayload;
+      }
+    | {
+        name: QueueJobs.SecretRotationV2SendNotification;
+        payload: TSecretRotationSendNotificationJobPayload;
       };
 };
 

@@ -23,8 +23,8 @@ export const SqlRotationReviewFields = () => {
           <span className="text-sm text-mineshaft-300">Parameters</span>
         </div>
         <div className="flex flex-wrap gap-x-8 gap-y-2">
-          <GenericFieldLabel label="Username1">{username1}</GenericFieldLabel>
-          <GenericFieldLabel label="Username2">{username2}</GenericFieldLabel>
+          <GenericFieldLabel label="Database Username 1">{username1}</GenericFieldLabel>
+          <GenericFieldLabel label="Database Username 2">{username2}</GenericFieldLabel>
         </div>
       </div>
       <div className="flex flex-col gap-3">

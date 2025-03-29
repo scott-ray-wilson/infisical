@@ -42,7 +42,7 @@ export const SecretRotationV2ReviewFields = () => {
             {rotationInterval} Day{rotationInterval > 1 ? "s" : ""}
           </GenericFieldLabel>
           <GenericFieldLabel label="Rotate At">
-            {format(getRotateAtLocal(rotateAtUtc), "hh:mm aa")}
+            {format(getRotateAtLocal(rotateAtUtc), "h:mm aa")}
           </GenericFieldLabel>
         </div>
       </div>

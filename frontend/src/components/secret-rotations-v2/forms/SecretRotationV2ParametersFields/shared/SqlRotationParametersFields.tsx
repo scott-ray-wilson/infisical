@@ -6,19 +6,25 @@ import { NoticeBannerV2 } from "@app/components/v2/NoticeBannerV2/NoticeBannerV2
 import { SecretRotation, useSecretRotationV2Option } from "@app/hooks/api/secretRotationsV2";
 
 export const SqlRotationParametersFields = () => {
-  const { control } = useFormContext<
+  const { control, watch } = useFormContext<
     TSecretRotationV2Form & {
       type: SecretRotation.PostgresCredentials; // all sql rotations share these fields
     }
   >();
 
-  const { rotationOption } = useSecretRotationV2Option(SecretRotation.PostgresCredentials);
+  const type = watch("type");
+
+  const { rotationOption } = useSecretRotationV2Option(type);
 
   return (
     <>
       <Controller
         render={({ field: { value, onChange }, fieldState: { error } }) => (
-          <FormControl isError={Boolean(error)} errorText={error?.message} label="Username 1">
+          <FormControl
+            isError={Boolean(error)}
+            errorText={error?.message}
+            label="Database Username 1"
+          >
             <Input value={value} onChange={onChange} placeholder="infiscal_user_1" />
           </FormControl>
         )}
@@ -27,7 +33,11 @@ export const SqlRotationParametersFields = () => {
       />
       <Controller
         render={({ field: { value, onChange }, fieldState: { error } }) => (
-          <FormControl isError={Boolean(error)} errorText={error?.message} label="Username 2">
+          <FormControl
+            isError={Boolean(error)}
+            errorText={error?.message}
+            label="Database Username 2"
+          >
             <Input value={value} onChange={onChange} placeholder="infiscal_user_2" />
           </FormControl>
         )}

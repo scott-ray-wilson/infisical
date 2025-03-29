@@ -440,12 +440,23 @@ export const secretRotationV2ServiceFactory = ({
       return await expandSecretRotation(secretRotation, kmsService);
     } catch (err) {
       if (err instanceof DatabaseError) {
-        const error = err.error as { code: string; message: string };
+        const error = err.error as { code: string; message: string; table: string };
 
         if (error.code === DatabaseErrorCode.UniqueViolation) {
-          throw new BadRequestError({
-            message: `A Secret Rotation with the name "${payload.name}" already exists at the secret path "${secretPath}"`
-          });
+          switch (error.table) {
+            case TableName.SecretRotationV2:
+              throw new BadRequestError({
+                message: `A Secret Rotation with the name "${payload.name}" already exists at the secret path "${secretPath}"`
+              });
+            case TableName.SecretV2:
+              throw new BadRequestError({
+                message: `One or more of the following secrets already exists at the secret path "${secretPath}": ${Object.values(
+                  payload.secretsMapping
+                ).join(", ")}`
+              });
+            default:
+              throw err;
+          }
         }
 
         throw err;
@@ -541,20 +552,25 @@ export const secretRotationV2ServiceFactory = ({
       return await expandSecretRotation(updatedSecretRotation, kmsService);
     } catch (err) {
       if (err instanceof DatabaseError) {
-        const error = err.error as { code: string; message: string };
+        const error = err.error as { code: string; message: string; table: string };
 
-        switch (error.code) {
-          case DatabaseErrorCode.UniqueViolation:
-            throw new BadRequestError({
-              message: `A Secret Rotation with the name "${payload.name}" already exists at the secret path "${secretRotation.folder.path}"`
-            });
-          case DatabaseErrorCode.SyntaxError:
-          case DatabaseErrorCode.InsufficientPrivilege:
-            throw new BadRequestError({
-              message: error.message
-            });
-          default:
-            throw err;
+        if (error.code === DatabaseErrorCode.UniqueViolation) {
+          switch (error.table) {
+            case TableName.SecretRotationV2:
+              if (payload.name)
+                throw new BadRequestError({
+                  message: `A Secret Rotation with the name "${payload.name}" already exists at the secret path "${folder.path}"`
+                });
+            case TableName.SecretV2:
+              if (payload.secretsMapping)
+                throw new BadRequestError({
+                  message: `One or more of the following secrets already exists at the secret path "${
+                    folder.path
+                  }": ${Object.values(payload.secretsMapping).join(", ")}`
+                });
+            default:
+              throw err;
+          }
         }
       }
 
@@ -868,21 +884,6 @@ export const secretRotationV2ServiceFactory = ({
 
       return await expandSecretRotation(updatedRotation, kmsService);
     } catch (err) {
-      if (err instanceof DatabaseError) {
-        const error = err.error as { code: string; message: string };
-
-        switch (error.code) {
-          case DatabaseErrorCode.SyntaxError:
-          case DatabaseErrorCode.InsufficientPrivilege:
-          case DatabaseErrorCode.ErrorRequest:
-            throw new BadRequestError({
-              message: error.message
-            });
-          default:
-            throw err;
-        }
-      }
-
       throw new InternalServerError({
         message: (err as Error).message ?? "Failed to rotate secrets: check Rotation status for details."
       });

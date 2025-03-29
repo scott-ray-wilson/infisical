@@ -7,7 +7,7 @@ export const POSTGRES_CREDENTIALS_ROTATION_LIST_OPTION: TSecretRotationV2ListIte
   type: SecretRotation.PostgresCredentials,
   connection: AppConnection.Postgres,
   template: {
-    createUserStatement: `CREATE USER "my-pg-user" WITH ENCRYPTED PASSWORD 'temporary-password'; GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "my-pg-user";`,
+    createUserStatement: `CREATE USER "my_pg_user" WITH ENCRYPTED PASSWORD 'temporary_password'; GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "my_pg_user";`,
     secretsMapping: {
       username: "POSTGRES_DB_USERNAME",
       password: "POSTGRES_DB_PASSWORD"

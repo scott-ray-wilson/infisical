@@ -387,10 +387,10 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             }
           });
 
-          // get the count of unique dynamic secret names to properly adjust remaining limit
-          const uniqueDynamicSecretsCount = new Set(secretRotations.map((rotation) => rotation.name)).size;
+          // get the count of unique secret rotation names to properly adjust remaining limit
+          const uniqueSecretRotationCount = new Set(secretRotations.map((rotation) => rotation.name)).size;
 
-          remainingLimit -= uniqueDynamicSecretsCount;
+          remainingLimit -= uniqueSecretRotationCount;
           adjustedOffset = 0;
         } else {
           adjustedOffset = Math.max(0, adjustedOffset - totalSecretRotationCount);
@@ -428,38 +428,44 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             offset: adjustedOffset,
             isInternal: true
           });
+        }
+      }
 
-          for await (const environment of environments) {
-            const secretCountFromEnv = secrets.filter((secret) => secret.environment === environment).length;
+      if (secrets?.length || secretRotations?.length) {
+        for await (const environment of environments) {
+          const secretCountFromEnv =
+            (secrets?.filter((secret) => secret.environment === environment).length ?? 0) +
+            (secretRotations
+              ?.filter((rotation) => rotation.environment.slug === environment)
+              .flatMap((rotation) => rotation.secrets.filter((secret) => Boolean(secret))).length ?? 0);
 
-            if (secretCountFromEnv) {
-              await server.services.auditLog.createAuditLog({
-                projectId,
-                ...req.auditLogInfo,
-                event: {
-                  type: EventType.GET_SECRETS,
-                  metadata: {
-                    environment,
-                    secretPath,
-                    numberOfSecrets: secretCountFromEnv
-                  }
+          if (secretCountFromEnv) {
+            await server.services.auditLog.createAuditLog({
+              projectId,
+              ...req.auditLogInfo,
+              event: {
+                type: EventType.GET_SECRETS,
+                metadata: {
+                  environment,
+                  secretPath,
+                  numberOfSecrets: secretCountFromEnv
+                }
+              }
+            });
+
+            if (getUserAgentType(req.headers["user-agent"]) !== UserAgentType.K8_OPERATOR) {
+              await server.services.telemetry.sendPostHogEvents({
+                event: PostHogEventTypes.SecretPulled,
+                distinctId: getTelemetryDistinctId(req),
+                properties: {
+                  numberOfSecrets: secretCountFromEnv,
+                  workspaceId: projectId,
+                  environment,
+                  secretPath,
+                  channel: getUserAgentType(req.headers["user-agent"]),
+                  ...req.auditLogInfo
                 }
               });
-
-              if (getUserAgentType(req.headers["user-agent"]) !== UserAgentType.K8_OPERATOR) {
-                await server.services.telemetry.sendPostHogEvents({
-                  event: PostHogEventTypes.SecretPulled,
-                  distinctId: getTelemetryDistinctId(req),
-                  properties: {
-                    numberOfSecrets: secretCountFromEnv,
-                    workspaceId: projectId,
-                    environment,
-                    secretPath,
-                    channel: getUserAgentType(req.headers["user-agent"]),
-                    ...req.auditLogInfo
-                  }
-                });
-              }
             }
           }
         }
@@ -822,39 +828,45 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
                 excludeRotatedSecrets: includeSecretRotations
               })
             ).secrets;
-
-            await server.services.auditLog.createAuditLog({
-              projectId,
-              ...req.auditLogInfo,
-              event: {
-                type: EventType.GET_SECRETS,
-                metadata: {
-                  environment,
-                  secretPath,
-                  numberOfSecrets: secrets.length
-                }
-              }
-            });
-
-            if (getUserAgentType(req.headers["user-agent"]) !== UserAgentType.K8_OPERATOR) {
-              await server.services.telemetry.sendPostHogEvents({
-                event: PostHogEventTypes.SecretPulled,
-                distinctId: getTelemetryDistinctId(req),
-                properties: {
-                  numberOfSecrets: secrets.length,
-                  workspaceId: projectId,
-                  environment,
-                  secretPath,
-                  channel: getUserAgentType(req.headers["user-agent"]),
-                  ...req.auditLogInfo
-                }
-              });
-            }
           }
         }
       } catch (error) {
         if (!(error instanceof ForbiddenError)) {
           throw error;
+        }
+      }
+
+      if (secrets?.length || secretRotations?.length) {
+        const secretCount =
+          (secrets?.length ?? 0) +
+          (secretRotations?.flatMap((rotation) => rotation.secrets.filter((secret) => Boolean(secret))).length ?? 0);
+
+        await server.services.auditLog.createAuditLog({
+          projectId,
+          ...req.auditLogInfo,
+          event: {
+            type: EventType.GET_SECRETS,
+            metadata: {
+              environment,
+              secretPath,
+              numberOfSecrets: secretCount
+            }
+          }
+        });
+
+        if (getUserAgentType(req.headers["user-agent"]) !== UserAgentType.K8_OPERATOR) {
+          await server.services.telemetry.sendPostHogEvents({
+            event: PostHogEventTypes.SecretPulled,
+            distinctId: getTelemetryDistinctId(req),
+            properties: {
+              numberOfSecrets: secretCount,
+              workspaceId: projectId,
+              environment,
+              secretPath,
+              channel: getUserAgentType(req.headers["user-agent"]),
+              ...req.auditLogInfo
+            }
+          });
         }
       }
 

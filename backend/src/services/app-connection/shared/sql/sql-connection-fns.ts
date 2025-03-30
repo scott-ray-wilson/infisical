@@ -20,10 +20,10 @@ export const getSqlConnectionClient = async (
 
   const {
     app,
-    credentials: { host, database, port, ca, password, username }
+    credentials: { host, database, port, sslCertificate, password, username }
   } = appConnection;
 
-  const ssl = ca ? { rejectUnauthorized: false, ca } : undefined;
+  const ssl = sslCertificate ? { rejectUnauthorized: false, ca: sslCertificate } : undefined;
   const isCloud = Boolean(appCfg.LICENSE_SERVER_KEY); // quick and dirty way to check if its cloud or not
   const dbHost = appCfg.DB_HOST || getDbConnectionHost(appCfg.DB_CONNECTION_URI);
 

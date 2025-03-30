@@ -20,7 +20,6 @@ export const AppConnectionsSchema = z.object({
   orgId: z.string().uuid(),
   createdAt: z.date(),
   updatedAt: z.date(),
-  isPlatformManaged: z.boolean().default(false).nullable().optional(),
   isPlatformManagedCredentials: z.boolean().default(false).nullable().optional()
 });
 

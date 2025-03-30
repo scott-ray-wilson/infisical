@@ -6,5 +6,5 @@ export const BaseSqlUsernameAndPasswordConnectionSchema = z.object({
   database: z.string().trim().min(1, "Database required").default("default"),
   username: z.string().trim().min(1, "Username required"),
   password: z.string().trim().min(1, "Password required"),
-  ca: z.string().trim().optional()
+  sslCertificate: z.string().trim().optional()
 });

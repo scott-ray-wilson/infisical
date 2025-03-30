@@ -98,14 +98,14 @@ export const SqlConnectionFields = ({ isPlatformManagedCredentials }: Props) => 
         />
       </div>
       <Controller
-        name="credentials.ca"
+        name="credentials.sslCertificate"
         control={control}
         shouldUnregister
         render={({ field, fieldState: { error } }) => (
           <FormControl
             errorText={error?.message}
             isError={Boolean(error?.message)}
-            label="CA (SSL)"
+            label="SSL Certificate"
             isOptional
           >
             <TextArea
@@ -131,8 +131,8 @@ export const SqlConnectionFields = ({ isPlatformManagedCredentials }: Props) => 
                 onCheckedChange={onChange}
                 isDisabled={isPlatformManagedCredentials}
               >
-                <p className="w-[8.6rem]">
-                  Platform Managed
+                <p className="w-[13.6rem]">
+                  Platform Managed Credentials
                   <Tooltip
                     className="max-w-md"
                     content={

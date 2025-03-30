@@ -165,6 +165,7 @@ export const appConnectionServiceFactory = ({
       credentials,
       method,
       orgId: actor.orgId,
+      // TODO: move to separate mutation
       isPlatformManagedCredentials: params.isPlatformManagedCredentials
     } as TAppConnectionConfig);
 

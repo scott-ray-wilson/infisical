@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -6,6 +7,7 @@ import { Button, FormControl, ModalClose, Select, SelectItem } from "@app/compon
 import { APP_CONNECTION_MAP, getAppConnectionMethodDetails } from "@app/helpers/appConnections";
 import { PostgresConnectionMethod, TPostgresConnection } from "@app/hooks/api/appConnections";
 import { AppConnection } from "@app/hooks/api/appConnections/enums";
+import { PlatformManagedConfirmationModal } from "@app/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/shared/PlatformManagedConfirmationModal";
 
 import {
   genericAppConnectionFieldsSchema,
@@ -38,6 +40,7 @@ type FormData = z.infer<typeof formSchema>;
 
 export const PostgresConnectionForm = ({ appConnection, onSubmit }: Props) => {
   const isUpdate = Boolean(appConnection);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -50,7 +53,7 @@ export const PostgresConnectionForm = ({ appConnection, onSubmit }: Props) => {
         database: "default",
         username: "",
         password: "",
-        ca: ""
+        sslCertificate: ""
       }
     }
   });
@@ -63,9 +66,18 @@ export const PostgresConnectionForm = ({ appConnection, onSubmit }: Props) => {
 
   const isPlatformManagedCredentials = appConnection?.isPlatformManagedCredentials ?? false;
 
+  const confirmSubmit = (formData: FormData) => {
+    if (formData.isPlatformManagedCredentials) {
+      setShowConfirmation(true);
+      return;
+    }
+
+    onSubmit(formData);
+  };
+
   return (
     <FormProvider {...form}>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(confirmSubmit)}>
         {!isUpdate && <GenericAppConnectionsFields />}
         <Controller
           name="method"
@@ -121,6 +133,11 @@ export const PostgresConnectionForm = ({ appConnection, onSubmit }: Props) => {
           </div>
         )}
       </form>
+      <PlatformManagedConfirmationModal
+        onConfirm={() => handleSubmit(onSubmit)()}
+        onOpenChange={setShowConfirmation}
+        isOpen={showConfirmation}
+      />
     </FormProvider>
   );
 };

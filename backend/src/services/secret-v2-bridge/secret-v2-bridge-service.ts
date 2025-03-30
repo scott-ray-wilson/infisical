@@ -763,6 +763,7 @@ export const secretV2BridgeServiceFactory = ({
     | "tagSlugs"
     | "environment"
     | "search"
+    | "excludeRotatedSecrets"
   >) => {
     const { permission } = await permissionService.getProjectPermission({
       actor,

@@ -280,8 +280,7 @@ const Page = () => {
       (folders?.length || 0) -
       (secrets?.length || 0) -
       (dynamicSecrets?.length || 0) -
-      (secretRotations?.length || 0) -
-      (secretRotations?.flatMap((rotation) => rotation.secrets).length || 0),
+      (secretRotations?.length || 0),
     0
   );
   const isNotEmpty = Boolean(

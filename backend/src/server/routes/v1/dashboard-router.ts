@@ -804,7 +804,8 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
             projectId,
             path: secretPath,
             search,
-            tagSlugs: tags
+            tagSlugs: tags,
+            excludeRotatedSecrets: includeSecretRotations
           });
 
           if (remainingLimit > 0 && totalSecretCount > adjustedOffset) {

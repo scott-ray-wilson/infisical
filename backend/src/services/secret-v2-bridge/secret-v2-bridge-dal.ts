@@ -343,6 +343,7 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
     filters?: {
       search?: string;
       tagSlugs?: string[];
+      excludeRotatedSecrets?: boolean;
     }
   ) => {
     try {
@@ -353,10 +354,19 @@ export const secretV2BridgeDALFactory = (db: TDbClient) => {
       }
 
       const query = (tx || db.replicaNode())(TableName.SecretV2)
+        .leftJoin(
+          TableName.SecretRotationV2SecretMapping,
+          `${TableName.SecretV2}.id`,
+          `${TableName.SecretRotationV2SecretMapping}.secretId`
+        )
         .whereIn("folderId", folderIds)
         .where((bd) => {
           if (filters?.search) {
             void bd.whereILike("key", `%${filters?.search}%`);
+          }
+
+          if (filters?.excludeRotatedSecrets) {
+            void bd.whereNull(`rotationId`);
           }
         })
         .where((bd) => {

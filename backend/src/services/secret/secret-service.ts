@@ -1128,6 +1128,7 @@ export const secretServiceFactory = ({
     | "environment"
     | "tagSlugs"
     | "search"
+    | "excludeRotatedSecrets"
   >) => {
     const { shouldUseSecretV2Bridge } = await projectBotService.getBotKey(projectId);
 

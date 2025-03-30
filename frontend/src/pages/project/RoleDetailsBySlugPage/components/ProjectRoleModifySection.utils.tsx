@@ -891,9 +891,11 @@ export const PROJECT_PERMISSION_OBJECT: TProjectPermissionObject = {
     title: "Secret Rotation",
     actions: [
       { label: "Read", value: "read" },
+      { label: "Read", value: "read-credentials" },
       { label: "Create", value: "create" },
       { label: "Modify", value: "edit" },
-      { label: "Remove", value: "delete" }
+      { label: "Remove", value: "delete" },
+      { label: "Rotate", value: "rotate" }
     ]
   },
   [ProjectPermissionSub.SecretRollback]: {

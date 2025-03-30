@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { SecretRotations } from "@app/lib/api-docs";
+import { SecretNameSchema } from "@app/server/lib/schemas";
 
 export const SqlCredentialsRotationGeneratedCredentialsSchema = z
   .object({
@@ -12,16 +13,8 @@ export const SqlCredentialsRotationGeneratedCredentialsSchema = z
   .max(2);
 
 export const SqlCredentialsRotationParametersSchema = z.object({
-  usernameSecretKey: z
-    .string()
-    .trim()
-    .min(1, "Username Secret Key Required")
-    .describe(SecretRotations.PARAMETERS.SQL_CREDENTIALS.usernameSecretKey),
-  passwordSecretKey: z
-    .string()
-    .trim()
-    .min(1, "Username Secret Key Required")
-    .describe(SecretRotations.PARAMETERS.SQL_CREDENTIALS.passwordSecretKey),
+  usernameSecretKey: SecretNameSchema.describe(SecretRotations.PARAMETERS.SQL_CREDENTIALS.usernameSecretKey),
+  passwordSecretKey: SecretNameSchema.describe(SecretRotations.PARAMETERS.SQL_CREDENTIALS.passwordSecretKey),
   issueStatement: z
     .string()
     .trim()

@@ -34,12 +34,12 @@ import {
   Tr
 } from "@app/components/v2";
 import {
-  ProjectPermissionActions,
   ProjectPermissionSub,
   useProjectPermission,
   useSubscription,
   useWorkspace
 } from "@app/context";
+import { ProjectPermissionSecretRotationActions } from "@app/context/ProjectPermissionContext/types";
 import { usePopUp } from "@app/hooks";
 import {
   useDeleteSecretRotation,
@@ -63,7 +63,7 @@ const Page = () => {
   ] as const);
   const workspaceId = currentWorkspace?.id || "";
   const canCreateRotation = permission.can(
-    ProjectPermissionActions.Create,
+    ProjectPermissionSecretRotationActions.Create,
     ProjectPermissionSub.SecretRotation
   );
   const { subscription } = useSubscription();
@@ -241,7 +241,7 @@ const Page = () => {
                         <Td>
                           <div className="flex justify-end space-x-2">
                             <ProjectPermissionCan
-                              I={ProjectPermissionActions.Edit}
+                              I={ProjectPermissionSecretRotationActions.Edit}
                               a={ProjectPermissionSub.SecretRotation}
                               allowedLabel="Rotate now"
                               renderTooltip
@@ -263,7 +263,7 @@ const Page = () => {
                               )}
                             </ProjectPermissionCan>
                             <ProjectPermissionCan
-                              I={ProjectPermissionActions.Delete}
+                              I={ProjectPermissionSecretRotationActions.Delete}
                               a={ProjectPermissionSub.SecretRotation}
                               allowedLabel="Rotate now"
                               renderTooltip
@@ -377,7 +377,7 @@ export const SecretRotationPage = () => {
         <meta property="og:image" content="/images/message.png" />
       </Helmet>
       <ProjectPermissionCan
-        I={ProjectPermissionActions.Read}
+        I={ProjectPermissionSecretRotationActions.Read}
         a={ProjectPermissionSub.SecretRotation}
         passThrough={false}
         renderGuardBanner

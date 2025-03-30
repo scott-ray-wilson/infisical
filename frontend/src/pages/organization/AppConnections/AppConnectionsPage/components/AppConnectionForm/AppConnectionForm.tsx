@@ -35,7 +35,7 @@ const CreateForm = ({ app, onComplete }: CreateFormProps) => {
   const onSubmit = async (
     formData: DiscriminativePick<
       TAppConnection,
-      "method" | "name" | "app" | "credentials" | "isPlatformManaged"
+      "method" | "name" | "app" | "credentials" | "isPlatformManagedCredentials"
     >
   ) => {
     try {
@@ -86,7 +86,7 @@ const UpdateForm = ({ appConnection, onComplete }: UpdateFormProps) => {
   const onSubmit = async (
     formData: DiscriminativePick<
       TAppConnection,
-      "method" | "name" | "app" | "credentials" | "isPlatformManaged"
+      "method" | "name" | "app" | "credentials" | "isPlatformManagedCredentials"
     >
   ) => {
     try {

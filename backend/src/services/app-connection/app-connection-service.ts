@@ -165,7 +165,7 @@ export const appConnectionServiceFactory = ({
       credentials,
       method,
       orgId: actor.orgId,
-      isPlatformManaged: params.isPlatformManaged
+      isPlatformManagedCredentials: params.isPlatformManagedCredentials
     } as TAppConnectionConfig);
 
     const encryptedCredentials = await encryptAppConnectionCredentials({
@@ -219,7 +219,7 @@ export const appConnectionServiceFactory = ({
     );
 
     // prevent updating credentials or management status if platform managed
-    if (appConnection.isPlatformManaged && (params.isPlatformManaged === false || credentials)) {
+    if (appConnection.isPlatformManagedCredentials && (params.isPlatformManagedCredentials === false || credentials)) {
       throw new BadRequestError({
         message: "Cannot update credentials or management status for platform managed connections"
       });
@@ -247,7 +247,7 @@ export const appConnectionServiceFactory = ({
         orgId: actor.orgId,
         credentials,
         method,
-        isPlatformManaged: params.isPlatformManaged
+        isPlatformManagedCredentials: params.isPlatformManagedCredentials
       } as TAppConnectionConfig);
 
       if (!validatedCredentials)

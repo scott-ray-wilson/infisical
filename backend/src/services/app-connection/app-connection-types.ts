@@ -74,7 +74,7 @@ export type TAppConnectionInput = { id: string } & (
 
 export type TCreateAppConnectionDTO = Pick<
   TAppConnectionInput,
-  "credentials" | "method" | "name" | "app" | "description" | "isPlatformManaged"
+  "credentials" | "method" | "name" | "app" | "description" | "isPlatformManagedCredentials"
 >;
 
 export type TUpdateAppConnectionDTO = Partial<Omit<TCreateAppConnectionDTO, "method" | "app">> & {

@@ -43,7 +43,7 @@ export const AppConnectionRow = ({
   onEditCredentials,
   onEditDetails
 }: Props) => {
-  const { id, name, method, app, description, isPlatformManaged } = appConnection;
+  const { id, name, method, app, description, isPlatformManagedCredentials } = appConnection;
 
   const [isIdCopied, setIsIdCopied] = useToggle(false);
 
@@ -102,7 +102,7 @@ export const AppConnectionRow = ({
 
       <Td>
         <div className="flex items-center justify-end gap-2">
-          {isPlatformManaged && (
+          {isPlatformManagedCredentials && (
             <Tooltip side="left" content="This connection is managed by Infisical.">
               <div>
                 <Badge className="whitespace-nowrap">Platform Managed</Badge>
@@ -152,7 +152,7 @@ export const AppConnectionRow = ({
                       icon={<FontAwesomeIcon icon={faAsterisk} />}
                       onClick={() => onEditCredentials(appConnection)}
                     >
-                      {isPlatformManaged ? "View" : "Edit"} Credentials
+                      {isPlatformManagedCredentials ? "View" : "Edit"} Credentials
                     </DropdownMenuItem>
                   )}
                 </OrgPermissionCan>

@@ -1,9 +1,16 @@
-import knex from "knex";
+import knex, { Knex } from "knex";
 
+import {
+  TSqlCredentialsRotationGeneratedCredentials,
+  TSqlCredentialsRotationWithConnection
+} from "@app/ee/services/secret-rotation-v2/shared/sql-credentials/sql-credentials-rotation-types";
 import { getConfig } from "@app/lib/config/env";
+import { BadRequestError } from "@app/lib/errors";
 import { getDbConnectionHost } from "@app/lib/knex";
+import { alphaNumericNanoId } from "@app/lib/nanoid";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
-import { TSqlConnection } from "@app/services/app-connection/app-connection-types";
+import { TAppConnectionRaw, TSqlConnection } from "@app/services/app-connection/app-connection-types";
+import { TSqlConnectionConfig } from "@app/services/app-connection/shared/sql/sql-connection-types";
 
 const EXTERNAL_REQUEST_TIMEOUT = 10 * 1000;
 
@@ -53,4 +60,59 @@ export const getSqlConnectionClient = async (
   });
 
   return client;
+};
+
+export const validateSqlConnectionCredentials = async (config: TSqlConnectionConfig) => {
+  const { credentials, app } = config;
+
+  const client = await getSqlConnectionClient({ app, credentials });
+
+  try {
+    await client.raw(`Select 1`);
+
+    return credentials;
+  } catch (error) {
+    throw new BadRequestError({
+      message: (error as Error)?.message ?? "Unable to validate connection: verify credentials"
+    });
+  } finally {
+    await client.destroy();
+  }
+};
+
+export const SQL_CONNECTION_ALTER_LOGIN_STATEMENT: Record<
+  TSqlCredentialsRotationWithConnection["connection"]["app"],
+  (credentials: TSqlCredentialsRotationGeneratedCredentials[number]) => [string, Knex.RawBinding]
+> = {
+  [AppConnection.Postgres]: ({ username, password }) => [`ALTER USER ?? WITH PASSWORD '${password}';`, [username]],
+  [AppConnection.MsSql]: ({ username, password }) => [`ALTER LOGIN ?? WITH PASSWORD = '${password}';`, [username]]
+};
+
+export const transferSqlConnectionCredentialsToPlatform = async (
+  config: TSqlConnectionConfig,
+  callback: (credentials: TSqlConnectionConfig["credentials"]) => Promise<TAppConnectionRaw>
+) => {
+  const { credentials, app } = config;
+
+  const client = await getSqlConnectionClient({ app, credentials });
+
+  const newPassword = alphaNumericNanoId(32);
+
+  try {
+    return await client.transaction(async (tx) => {
+      await tx.raw(
+        ...SQL_CONNECTION_ALTER_LOGIN_STATEMENT[app]({ username: credentials.username, password: newPassword })
+      );
+      return callback({
+        ...credentials,
+        password: newPassword
+      });
+    });
+  } catch (error) {
+    throw new BadRequestError({
+      message: (error as Error)?.message ?? "Unable to validate connection: verify credentials"
+    });
+  } finally {
+    await client.destroy();
+  }
 };

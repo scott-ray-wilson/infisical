@@ -2,7 +2,6 @@ import { AxiosError } from "axios";
 import { addDays, addMinutes } from "date-fns";
 
 import { getConfig } from "@app/lib/config/env";
-import { DatabaseError } from "@app/lib/errors";
 import { KmsDataKey } from "@app/services/kms/kms-types";
 
 import { MSSQL_CREDENTIALS_ROTATION_LIST_OPTION } from "./mssql-credentials";
@@ -159,16 +158,14 @@ export const expandSecretRotation = async (
 const MAX_MESSAGE_LENGTH = 1024;
 
 export const parseRotationErrorMessage = (err: unknown): string => {
-  let errorMessage: string;
+  let errorMessage = `Infisical encountered an issue while generating credentials with the configured inputs: `;
 
-  if (err instanceof DatabaseError) {
-    errorMessage = (err.error as { message: string }).message ?? "An unknown error occurred.";
-  } else if (err instanceof AxiosError) {
-    errorMessage = err?.response?.data
+  if (err instanceof AxiosError) {
+    errorMessage += err?.response?.data
       ? JSON.stringify(err?.response?.data)
       : err?.message ?? "An unknown error occurred.";
   } else {
-    errorMessage = (err as Error)?.message || "An unknown error occurred.";
+    errorMessage += (err as Error)?.message || "An unknown error occurred.";
   }
 
   return errorMessage.length <= MAX_MESSAGE_LENGTH

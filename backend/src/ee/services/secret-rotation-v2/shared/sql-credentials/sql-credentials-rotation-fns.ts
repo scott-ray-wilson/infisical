@@ -6,6 +6,7 @@ import {
   TRotationFactoryRevokeCredentials,
   TRotationFactoryRotateCredentials
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-types";
+import { logger } from "@app/lib/logger";
 import { getSqlConnectionClient, SQL_CONNECTION_ALTER_LOGIN_STATEMENT } from "@app/services/app-connection/shared/sql";
 
 import {
@@ -96,6 +97,20 @@ const generatePassword = () => {
   }
 };
 
+const redactPasswords = (e: unknown, credentials: TSqlCredentialsRotationGeneratedCredentials) => {
+  const error = e as Error;
+
+  if (!error?.message) return "Unknown error";
+
+  let redactedMessage = error.message;
+
+  credentials.forEach(({ password }) => {
+    redactedMessage = redactedMessage.replaceAll(password, "*******************");
+  });
+
+  return redactedMessage;
+};
+
 export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRotationWithConnection) => {
   const {
     connection,
@@ -137,6 +152,9 @@ export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRot
           await tx.raw(...SQL_CONNECTION_ALTER_LOGIN_STATEMENT[connection.app](credentials));
         }
       });
+    } catch (error) {
+      logger.warn(redactPasswords(error, credentialsSet));
+      throw new Error(redactPasswords(error, credentialsSet));
     } finally {
       await client.destroy();
     }
@@ -151,15 +169,17 @@ export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRot
   const revokeCredentials: TRotationFactoryRevokeCredentials = async (credentialsToRevoke, callback) => {
     const client = await getSqlConnectionClient(connection);
 
+    const revokedCredentials = credentialsToRevoke.map(({ username }) => ({ username, password: generatePassword() }));
+
     try {
       await client.transaction(async (tx) => {
-        for await (const { username } of credentialsToRevoke) {
+        for await (const credentials of revokedCredentials) {
           // invalidate previous passwords
-          await tx.raw(
-            ...SQL_CONNECTION_ALTER_LOGIN_STATEMENT[connection.app]({ username, password: generatePassword() })
-          );
+          await tx.raw(...SQL_CONNECTION_ALTER_LOGIN_STATEMENT[connection.app](credentials));
         }
       });
+    } catch (error) {
+      throw new Error(redactPasswords(error, revokedCredentials));
     } finally {
       await client.destroy();
     }
@@ -175,6 +195,8 @@ export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRot
 
     try {
       await client.raw(...SQL_CONNECTION_ALTER_LOGIN_STATEMENT[connection.app](credentials));
+    } catch (error) {
+      throw new Error(redactPasswords(error, [credentials]));
     } finally {
       await client.destroy();
     }

@@ -482,7 +482,9 @@ export const secretRotationV2ServiceFactory = ({
         throw err;
       }
 
-      throw new BadRequestError({ message: (err as Error).message });
+      throw new BadRequestError({
+        message: parseRotationErrorMessage(err)
+      });
     }
   };
 
@@ -839,9 +841,8 @@ export const secretRotationV2ServiceFactory = ({
 
       return updatedRotation;
     } catch (error) {
+      const errorMessage = parseRotationErrorMessage(error);
       if (isFinalAttempt) {
-        const errorMessage = parseRotationErrorMessage(error);
-
         const { encryptor } = await kmsService.createCipherPairWithDataKey({
           type: KmsDataKey.SecretManager,
           projectId
@@ -888,7 +889,7 @@ export const secretRotationV2ServiceFactory = ({
         }
       });
 
-      throw error;
+      throw new BadRequestError({ message: errorMessage });
     } finally {
       await lock?.release();
     }

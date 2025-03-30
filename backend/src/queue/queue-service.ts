@@ -306,6 +306,10 @@ export const queueServiceFactory = (
       workerCount: number;
     }
   ) => {
+    if (queueContainerPg[jobName]) {
+      throw new Error(`${jobName} queue is already initialized`);
+    }
+
     await pgBoss.createQueue(jobName);
     queueContainerPg[jobName] = true;
 

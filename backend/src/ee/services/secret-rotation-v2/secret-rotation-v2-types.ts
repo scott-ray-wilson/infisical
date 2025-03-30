@@ -111,6 +111,23 @@ export type TQuickSearchSecretRotationsV2 = {
   filters: TQuickSearchSecretRotationsV2Filters;
 };
 
+export type TSecretRotationRotateGeneratedCredentials = {
+  auditLogInfo?: AuditLogInfo;
+  jobId?: string;
+  shouldSendNotification?: boolean;
+  isFinalAttempt?: boolean;
+};
+
+export type TSecretRotationRotateSecretsJobPayload = { rotationId: string; queuedAt: Date };
+
+export type TSecretRotationSendNotificationJobPayload = {
+  secretRotation: TSecretRotationV2Raw;
+};
+
+// scott: the reason for the callback structure of the rotation factory is to facilitate, when possible,
+// transactional behavior. By passing in the rotation mutation, if this mutation fails we can roll back the
+// third party credential changes (when supported), preventing credentials getting out of sync
+
 export type TRotationFactoryIssueCredentials = (
   callback: (newCredentials: TSecretRotationV2GeneratedCredentials[number]) => Promise<TSecretRotationV2Raw>
 ) => Promise<TSecretRotationV2Raw>;
@@ -134,17 +151,4 @@ export type TRotationFactory = (secretRotation: TSecretRotationV2WithConnection)
   revokeCredentials: TRotationFactoryRevokeCredentials;
   rotateCredentials: TRotationFactoryRotateCredentials;
   getSecretsPayload: TRotationFactoryGetSecretsPayload;
-};
-
-export type TSecretRotationRotateGeneratedCredentials = {
-  auditLogInfo?: AuditLogInfo;
-  jobId?: string;
-  shouldSendNotification?: boolean;
-  isFinalAttempt?: boolean;
-};
-
-export type TSecretRotationRotateSecretsJobPayload = { rotationId: string; queuedAt: Date };
-
-export type TSecretRotationSendNotificationJobPayload = {
-  secretRotation: TSecretRotationV2Raw;
 };

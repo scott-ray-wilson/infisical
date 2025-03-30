@@ -98,7 +98,7 @@ export const secretRotationV2QueueServiceFactory = async ({
       const { rotationId, queuedAt } = job.data as TSecretRotationRotateSecretsJobPayload;
       const { retryCount, retryLimit } = job;
 
-      const logDetails = `[rotationId=${rotationId}] [jobId=${job.id}] attempt=[${retryCount}/${retryLimit}]`;
+      const logDetails = `[rotationId=${rotationId}] [jobId=${job.id}] retryCount=[${retryCount}/${retryLimit}]`;
 
       try {
         const secretRotation = await secretRotationV2DAL.findById(rotationId);

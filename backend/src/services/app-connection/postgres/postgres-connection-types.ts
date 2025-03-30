@@ -1,7 +1,5 @@
 import z from "zod";
 
-import { DiscriminativePick } from "@app/lib/types";
-
 import { AppConnection } from "../app-connection-enums";
 import {
   CreatePostgresConnectionSchema,
@@ -16,10 +14,3 @@ export type TPostgresConnectionInput = z.infer<typeof CreatePostgresConnectionSc
 };
 
 export type TValidatePostgresConnectionCredentials = typeof ValidatePostgresConnectionCredentialsSchema;
-
-export type TPostgresConnectionConfig = DiscriminativePick<
-  TPostgresConnectionInput,
-  "method" | "app" | "credentials" | "isPlatformManagedCredentials"
-> & {
-  orgId: string;
-};

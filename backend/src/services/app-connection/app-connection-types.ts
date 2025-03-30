@@ -1,3 +1,5 @@
+import { TAppConnectionDALFactory } from "@app/services/app-connection/app-connection-dal";
+import { TSqlConnectionConfig } from "@app/services/app-connection/shared/sql/sql-connection-types";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
 
 import { AWSRegion } from "./app-connection-enums";
@@ -33,18 +35,8 @@ import {
   THumanitecConnectionInput,
   TValidateHumanitecConnectionCredentials
 } from "./humanitec";
-import {
-  TMsSqlConnection,
-  TMsSqlConnectionConfig,
-  TMsSqlConnectionInput,
-  TValidateMsSqlConnectionCredentials
-} from "./mssql";
-import {
-  TPostgresConnection,
-  TPostgresConnectionConfig,
-  TPostgresConnectionInput,
-  TValidatePostgresConnectionCredentials
-} from "./postgres";
+import { TMsSqlConnection, TMsSqlConnectionInput, TValidateMsSqlConnectionCredentials } from "./mssql";
+import { TPostgresConnection, TPostgresConnectionInput, TValidatePostgresConnectionCredentials } from "./postgres";
 
 export type TAppConnection = { id: string } & (
   | TAwsConnection
@@ -57,6 +49,8 @@ export type TAppConnection = { id: string } & (
   | TPostgresConnection
   | TMsSqlConnection
 );
+
+export type TAppConnectionRaw = NonNullable<Awaited<ReturnType<TAppConnectionDALFactory["findById"]>>>;
 
 export type TSqlConnection = TPostgresConnection | TMsSqlConnection;
 
@@ -71,6 +65,8 @@ export type TAppConnectionInput = { id: string } & (
   | TPostgresConnectionInput
   | TMsSqlConnectionInput
 );
+
+export type TSqlConnectionInput = TPostgresConnectionInput | TMsSqlConnectionInput;
 
 export type TCreateAppConnectionDTO = Pick<
   TAppConnectionInput,
@@ -89,8 +85,7 @@ export type TAppConnectionConfig =
   | TAzureAppConfigurationConnectionConfig
   | TDatabricksConnectionConfig
   | THumanitecConnectionConfig
-  | TPostgresConnectionConfig
-  | TMsSqlConnectionConfig;
+  | TSqlConnectionConfig;
 
 export type TValidateAppConnectionCredentials =
   | TValidateAwsConnectionCredentials
@@ -109,9 +104,14 @@ export type TListAwsConnectionKmsKeys = {
   destination: SecretSync.AWSParameterStore | SecretSync.AWSSecretsManager;
 };
 
-export type TAppConnectionCredentialValidator = (
+export type TAppConnectionCredentialsValidator = (
   appConnection: TAppConnectionConfig
 ) => Promise<TAppConnection["credentials"]>;
+
+export type TAppConnectionTransitionCredentialsToPlatform = (
+  appConnection: TAppConnectionConfig,
+  callback: (credentials: TAppConnection["credentials"]) => Promise<TAppConnectionRaw>
+) => Promise<TAppConnectionRaw>;
 
 export type TAppConnectionBaseConfig = {
   supportsPlatformManagement?: boolean;

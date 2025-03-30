@@ -1,5 +1,6 @@
-import z from "zod";
+import { DiscriminativePick } from "@app/lib/types";
+import { TSqlConnectionInput } from "@app/services/app-connection/app-connection-types";
 
-import { BaseSqlUsernameAndPasswordConnectionSchema } from "./sql-connection-schemas";
-
-export type TBaseSqlConnectionCredentialsSchema = z.infer<typeof BaseSqlUsernameAndPasswordConnectionSchema>;
+export type TSqlConnectionConfig = DiscriminativePick<TSqlConnectionInput, "method" | "app" | "credentials"> & {
+  orgId: string;
+};

@@ -1,5 +1,4 @@
 import { randomInt } from "crypto";
-import { Knex } from "knex";
 
 import {
   TRotationFactoryGetSecretsPayload,
@@ -7,8 +6,7 @@ import {
   TRotationFactoryRevokeCredentials,
   TRotationFactoryRotateCredentials
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-types";
-import { AppConnection } from "@app/services/app-connection/app-connection-enums";
-import { getSqlConnectionClient } from "@app/services/app-connection/shared/sql";
+import { getSqlConnectionClient, SQL_CONNECTION_ALTER_LOGIN_STATEMENT } from "@app/services/app-connection/shared/sql";
 
 import {
   TSqlCredentialsRotationGeneratedCredentials,
@@ -98,14 +96,6 @@ const generatePassword = () => {
   }
 };
 
-const SqlStatementMap: Record<
-  TSqlCredentialsRotationWithConnection["connection"]["app"],
-  (credentials: TSqlCredentialsRotationGeneratedCredentials[number]) => [string, Knex.RawBinding]
-> = {
-  [AppConnection.Postgres]: ({ username, password }) => [`ALTER USER ?? WITH PASSWORD '${password}';`, [username]],
-  [AppConnection.MsSql]: ({ username, password }) => [`ALTER LOGIN ?? WITH PASSWORD = '${password}';`, [username]]
-};
-
 export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRotationWithConnection) => {
   const {
     connection,
@@ -144,7 +134,7 @@ export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRot
     try {
       await client.transaction(async (tx) => {
         for await (const credentials of credentialsSet) {
-          await tx.raw(...SqlStatementMap[connection.app](credentials));
+          await tx.raw(...SQL_CONNECTION_ALTER_LOGIN_STATEMENT[connection.app](credentials));
         }
       });
     } finally {
@@ -165,7 +155,9 @@ export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRot
       await client.transaction(async (tx) => {
         for await (const { username } of credentialsToRevoke) {
           // invalidate previous passwords
-          await tx.raw(...SqlStatementMap[connection.app]({ username, password: generatePassword() }));
+          await tx.raw(
+            ...SQL_CONNECTION_ALTER_LOGIN_STATEMENT[connection.app]({ username, password: generatePassword() })
+          );
         }
       });
     } finally {
@@ -182,7 +174,7 @@ export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRot
     const credentials = { username: activeIndex === 0 ? username2 : username1, password: generatePassword() };
 
     try {
-      await client.raw(...SqlStatementMap[connection.app](credentials));
+      await client.raw(...SQL_CONNECTION_ALTER_LOGIN_STATEMENT[connection.app](credentials));
     } finally {
       await client.destroy();
     }

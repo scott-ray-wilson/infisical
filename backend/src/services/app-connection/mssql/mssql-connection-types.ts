@@ -1,7 +1,5 @@
 import z from "zod";
 
-import { DiscriminativePick } from "@app/lib/types";
-
 import { AppConnection } from "../app-connection-enums";
 import {
   CreateMsSqlConnectionSchema,
@@ -16,10 +14,3 @@ export type TMsSqlConnectionInput = z.infer<typeof CreateMsSqlConnectionSchema> 
 };
 
 export type TValidateMsSqlConnectionCredentials = typeof ValidateMsSqlConnectionCredentialsSchema;
-
-export type TMsSqlConnectionConfig = DiscriminativePick<
-  TMsSqlConnectionInput,
-  "method" | "app" | "credentials" | "isPlatformManagedCredentials"
-> & {
-  orgId: string;
-};

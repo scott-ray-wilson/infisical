@@ -6,6 +6,7 @@ import {
   faEdit,
   faEllipsisV,
   faInfoCircle,
+  faServer,
   faTrash
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -103,9 +104,12 @@ export const AppConnectionRow = ({
       <Td>
         <div className="flex items-center justify-end gap-2">
           {isPlatformManagedCredentials && (
-            <Tooltip side="left" content="This connection is managed by Infisical.">
+            <Tooltip side="left" content="This connection's credentials are managed by Infisical.">
               <div>
-                <Badge className="whitespace-nowrap">Platform Managed</Badge>
+                <Badge className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap">
+                  <FontAwesomeIcon icon={faServer} />
+                  <span>Platform Managed Credentials</span>
+                </Badge>
               </div>
             </Tooltip>
           )}

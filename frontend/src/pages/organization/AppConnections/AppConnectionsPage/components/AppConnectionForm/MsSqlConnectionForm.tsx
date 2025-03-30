@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,6 +10,7 @@ import {
   MsSqlConnectionMethod,
   TMsSqlConnection
 } from "@app/hooks/api/appConnections/types/mssql-connection";
+import { PlatformManagedConfirmationModal } from "@app/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/shared/PlatformManagedConfirmationModal";
 
 import {
   genericAppConnectionFieldsSchema,
@@ -41,6 +43,7 @@ type FormData = z.infer<typeof formSchema>;
 
 export const MsSqlConnectionForm = ({ appConnection, onSubmit }: Props) => {
   const isUpdate = Boolean(appConnection);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -53,7 +56,7 @@ export const MsSqlConnectionForm = ({ appConnection, onSubmit }: Props) => {
         database: "default",
         username: "",
         password: "",
-        ca: ""
+        sslCertificate: ""
       }
     }
   });
@@ -66,9 +69,18 @@ export const MsSqlConnectionForm = ({ appConnection, onSubmit }: Props) => {
 
   const isPlatformManagedCredentials = appConnection?.isPlatformManagedCredentials ?? false;
 
+  const confirmSubmit = (formData: FormData) => {
+    if (formData.isPlatformManagedCredentials) {
+      setShowConfirmation(true);
+      return;
+    }
+
+    onSubmit(formData);
+  };
+
   return (
     <FormProvider {...form}>
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(confirmSubmit)}>
         {!isUpdate && <GenericAppConnectionsFields />}
         <Controller
           name="method"
@@ -124,6 +136,11 @@ export const MsSqlConnectionForm = ({ appConnection, onSubmit }: Props) => {
           </div>
         )}
       </form>
+      <PlatformManagedConfirmationModal
+        onConfirm={() => handleSubmit(onSubmit)()}
+        onOpenChange={setShowConfirmation}
+        isOpen={showConfirmation}
+      />
     </FormProvider>
   );
 };

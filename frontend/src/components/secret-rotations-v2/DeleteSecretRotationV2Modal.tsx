@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { createNotification } from "@app/components/notifications";
 import { DeleteActionModal, Switch } from "@app/components/v2";
@@ -22,6 +22,13 @@ export const DeleteSecretRotationV2Modal = ({
   const deleteSecretRotation = useDeleteSecretRotationV2();
   const [revokeGeneratedCredentials, setRevokeGeneratedCredentials] = useState(false);
   const [deleteSecrets, setDeleteSecrets] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setRevokeGeneratedCredentials(false);
+      setDeleteSecrets(false);
+    }
+  }, [isOpen]);
 
   if (!secretRotation) return null;
 
@@ -73,6 +80,10 @@ export const DeleteSecretRotationV2Modal = ({
       >
         Revoke Credentials
       </Switch>
+      <p className="mt-1 font-inter text-sm text-mineshaft-400">
+        Generated credentials will {revokeGeneratedCredentials ? "" : "not"} be revoked on deletion
+        {revokeGeneratedCredentials ? "" : " and remain active"}.
+      </p>
       <Switch
         containerClassName="mt-4"
         className="bg-mineshaft-400/50 shadow-inner data-[state=checked]:bg-red/50"
@@ -83,6 +94,9 @@ export const DeleteSecretRotationV2Modal = ({
       >
         Delete Secrets
       </Switch>
+      <p className="mt-1 font-inter text-sm text-mineshaft-400">
+        Rotation secrets will {deleteSecrets ? "" : "not"} be removed from your project on deletion.
+      </p>
     </DeleteActionModal>
   );
 };

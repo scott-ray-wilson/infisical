@@ -1677,7 +1677,17 @@ export const AppConnections = {
   },
   DELETE: (app: AppConnection) => ({
     connectionId: `The ID of the ${APP_CONNECTION_NAME_MAP[app]} Connection to be deleted.`
-  })
+  }),
+  CREDENTIALS: {
+    SQL_CONNECTION: {
+      host: "The hostname of the database server.",
+      port: "The port number of the database.",
+      database: "The name of the database to connect to.",
+      username: "The username to connect to the database with.",
+      password: "The password to connect to the database with.",
+      sslCertificate: "The SSL certificate to use for connection."
+    }
+  }
 };
 
 export const SecretSyncs = {
@@ -1850,8 +1860,10 @@ export const SecretRotations = {
   }),
   PARAMETERS: {
     SQL_CREDENTIALS: {
-      username1: "The username of the first login to rotate passwords for.",
-      username2: "The username of the second login to rotate passwords for."
+      username1:
+        "The username of the first login to rotate passwords for. This user must already exists in your database.",
+      username2:
+        "The username of the second login to rotate passwords for. This user must already exists in your database."
     }
   },
   SECRETS_MAPPING: {

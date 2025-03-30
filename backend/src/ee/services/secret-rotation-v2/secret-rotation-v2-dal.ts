@@ -54,7 +54,10 @@ const baseSecretRotationV2Query = ({
       db.ref("version").withSchema(TableName.AppConnection).as("connectionVersion"),
       db.ref("createdAt").withSchema(TableName.AppConnection).as("connectionCreatedAt"),
       db.ref("updatedAt").withSchema(TableName.AppConnection).as("connectionUpdatedAt"),
-      db.ref("isPlatformManaged").withSchema(TableName.AppConnection).as("connectionIsPlatformManaged")
+      db
+        .ref("isPlatformManagedCredentials")
+        .withSchema(TableName.AppConnection)
+        .as("connectionIsPlatformManagedCredentials")
     );
 
   if (filter) {
@@ -102,7 +105,7 @@ const expandSecretRotation = <T extends Awaited<ReturnType<typeof baseSecretRota
     connectionCreatedAt,
     connectionUpdatedAt,
     connectionVersion,
-    connectionIsPlatformManaged,
+    connectionIsPlatformManagedCredentials,
     ...el
   } = secretRotation;
 
@@ -121,7 +124,7 @@ const expandSecretRotation = <T extends Awaited<ReturnType<typeof baseSecretRota
       createdAt: connectionCreatedAt,
       updatedAt: connectionUpdatedAt,
       version: connectionVersion,
-      isPlatformManaged: connectionIsPlatformManaged
+      isPlatformManagedCredentials: connectionIsPlatformManagedCredentials
     },
     folder: {
       id: folder!.id,

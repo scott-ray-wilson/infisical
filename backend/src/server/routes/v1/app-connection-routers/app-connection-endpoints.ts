@@ -24,13 +24,13 @@ export const registerAppConnectionEndpoints = <T extends TAppConnection, I exten
     method: I["method"];
     credentials: I["credentials"];
     description?: string | null;
-    isPlatformManaged?: boolean;
+    isPlatformManagedCredentials?: boolean;
   }>;
   updateSchema: z.ZodType<{
     name?: string;
     credentials?: I["credentials"];
     description?: string | null;
-    isPlatformManaged?: boolean;
+    isPlatformManagedCredentials?: boolean;
   }>;
   sanitizedResponseSchema: z.ZodTypeAny;
 }) => {
@@ -214,10 +214,10 @@ export const registerAppConnectionEndpoints = <T extends TAppConnection, I exten
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
-      const { name, method, credentials, description, isPlatformManaged } = req.body;
+      const { name, method, credentials, description, isPlatformManagedCredentials } = req.body;
 
       const appConnection = (await server.services.appConnection.createAppConnection(
-        { name, method, app, credentials, description, isPlatformManaged },
+        { name, method, app, credentials, description, isPlatformManagedCredentials },
         req.permission
       )) as T;
 
@@ -231,7 +231,7 @@ export const registerAppConnectionEndpoints = <T extends TAppConnection, I exten
             method,
             app,
             connectionId: appConnection.id,
-            isPlatformManaged
+            isPlatformManagedCredentials
           }
         }
       });
@@ -258,11 +258,11 @@ export const registerAppConnectionEndpoints = <T extends TAppConnection, I exten
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
     handler: async (req) => {
-      const { name, credentials, description, isPlatformManaged } = req.body;
+      const { name, credentials, description, isPlatformManagedCredentials } = req.body;
       const { connectionId } = req.params;
 
       const appConnection = (await server.services.appConnection.updateAppConnection(
-        { name, credentials, connectionId, description, isPlatformManaged },
+        { name, credentials, connectionId, description, isPlatformManagedCredentials },
         req.permission
       )) as T;
 
@@ -276,7 +276,7 @@ export const registerAppConnectionEndpoints = <T extends TAppConnection, I exten
             description,
             credentialsUpdated: Boolean(credentials),
             connectionId,
-            isPlatformManaged
+            isPlatformManagedCredentials
           }
         }
       });

@@ -28,8 +28,8 @@ export const GenericCreateAppConnectionFieldsSchema = (
       .max(256, "Description cannot exceed 256 characters")
       .nullish()
       .describe(AppConnections.CREATE(app).description),
-    isPlatformManaged: supportsPlatformManagement
-      ? z.boolean().optional().default(false).describe(AppConnections.CREATE(app).isPlatformManaged)
+    isPlatformManagedCredentials: supportsPlatformManagement
+      ? z.boolean().optional().default(false).describe(AppConnections.CREATE(app).isPlatformManagedCredentials)
       : z.literal(false).optional().describe(`Not supported for ${APP_CONNECTION_NAME_MAP[app]} Connections.`)
   });
 
@@ -45,7 +45,7 @@ export const GenericUpdateAppConnectionFieldsSchema = (
       .max(256, "Description cannot exceed 256 characters")
       .nullish()
       .describe(AppConnections.UPDATE(app).description),
-    isPlatformManaged: supportsPlatformManagement
-      ? z.boolean().optional().describe(AppConnections.CREATE(app).isPlatformManaged)
+    isPlatformManagedCredentials: supportsPlatformManagement
+      ? z.boolean().optional().describe(AppConnections.CREATE(app).isPlatformManagedCredentials)
       : z.literal(false).optional().describe(`Not supported for ${APP_CONNECTION_NAME_MAP[app]} Connections.`)
   });

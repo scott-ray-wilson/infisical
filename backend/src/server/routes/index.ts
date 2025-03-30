@@ -1192,11 +1192,7 @@ export const registerRoutes = async (
     secretRotationQueue,
     projectDAL,
     licenseService,
-    secretDAL,
-    folderDAL,
-    projectBotService,
-    secretV2BridgeDAL,
-    kmsService
+    projectBotService
   });
 
   const integrationService = integrationServiceFactory({

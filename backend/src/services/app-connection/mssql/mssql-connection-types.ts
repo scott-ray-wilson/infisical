@@ -19,7 +19,7 @@ export type TValidateMsSqlConnectionCredentials = typeof ValidateMsSqlConnection
 
 export type TMsSqlConnectionConfig = DiscriminativePick<
   TMsSqlConnectionInput,
-  "method" | "app" | "credentials" | "isPlatformManaged"
+  "method" | "app" | "credentials" | "isPlatformManagedCredentials"
 > & {
   orgId: string;
 };

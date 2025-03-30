@@ -5,10 +5,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { FormControl, Input, SecretInput, Switch, TextArea, Tooltip } from "@app/components/v2";
 
 type Props = {
-  isPlatformManaged: boolean;
+  isPlatformManagedCredentials: boolean;
 };
 
-export const SqlConnectionFields = ({ isPlatformManaged }: Props) => {
+export const SqlConnectionFields = ({ isPlatformManagedCredentials }: Props) => {
   const { control } = useFormContext();
 
   return (
@@ -25,7 +25,7 @@ export const SqlConnectionFields = ({ isPlatformManaged }: Props) => {
               isError={Boolean(error?.message)}
               label="Host"
             >
-              <Input {...field} isDisabled={isPlatformManaged} />
+              <Input {...field} isDisabled={isPlatformManagedCredentials} />
             </FormControl>
           )}
         />
@@ -40,7 +40,7 @@ export const SqlConnectionFields = ({ isPlatformManaged }: Props) => {
               isError={Boolean(error?.message)}
               label="Database Name"
             >
-              <Input {...field} isDisabled={isPlatformManaged} />
+              <Input {...field} isDisabled={isPlatformManagedCredentials} />
             </FormControl>
           )}
         />
@@ -55,7 +55,7 @@ export const SqlConnectionFields = ({ isPlatformManaged }: Props) => {
               isError={Boolean(error?.message)}
               label="Port"
             >
-              <Input type="number" {...field} isDisabled={isPlatformManaged} />
+              <Input type="number" {...field} isDisabled={isPlatformManagedCredentials} />
             </FormControl>
           )}
         />
@@ -72,7 +72,7 @@ export const SqlConnectionFields = ({ isPlatformManaged }: Props) => {
               label="Username"
               className="flex-1"
             >
-              <Input {...field} isDisabled={isPlatformManaged} />
+              <Input {...field} isDisabled={isPlatformManagedCredentials} />
             </FormControl>
           )}
         />
@@ -91,7 +91,7 @@ export const SqlConnectionFields = ({ isPlatformManaged }: Props) => {
                 containerClassName="text-gray-400 w-full group-focus-within:!border-primary-400/50 border border-mineshaft-500 bg-mineshaft-900 px-2.5 py-1.5"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                isDisabled={isPlatformManaged}
+                isDisabled={isPlatformManagedCredentials}
               />
             </FormControl>
           )}
@@ -108,13 +108,18 @@ export const SqlConnectionFields = ({ isPlatformManaged }: Props) => {
             label="CA (SSL)"
             isOptional
           >
-            <TextArea className="!resize-none" rows={1} {...field} isDisabled={isPlatformManaged} />
+            <TextArea
+              className="!resize-none"
+              rows={1}
+              {...field}
+              isDisabled={isPlatformManagedCredentials}
+            />
           </FormControl>
         )}
       />
-      {!isPlatformManaged && (
+      {!isPlatformManagedCredentials && (
         <Controller
-          name="isPlatformManaged"
+          name="isPlatformManagedCredentials"
           control={control}
           render={({ field: { value, onChange }, fieldState: { error } }) => (
             <FormControl isError={Boolean(error?.message)} errorText={error?.message}>
@@ -124,7 +129,7 @@ export const SqlConnectionFields = ({ isPlatformManaged }: Props) => {
                 thumbClassName="bg-mineshaft-800"
                 isChecked={value}
                 onCheckedChange={onChange}
-                isDisabled={isPlatformManaged}
+                isDisabled={isPlatformManagedCredentials}
               >
                 <p className="w-[8.6rem]">
                   Platform Managed

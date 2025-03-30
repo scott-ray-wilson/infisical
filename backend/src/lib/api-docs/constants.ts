@@ -1661,7 +1661,7 @@ export const AppConnections = {
       description: `An optional description for the ${appName} Connection.`,
       credentials: `The credentials used to connect with ${appName}.`,
       method: `The method used to authenticate with ${appName}.`,
-      isPlatformManaged: `Whether or not the ${appName} Connection should be managed by Infisical.`
+      isPlatformManagedCredentials: `Whether or not the ${appName} Connection credentials should be managed by Infisical.`
     };
   },
   UPDATE: (app: AppConnection) => {
@@ -1672,7 +1672,7 @@ export const AppConnections = {
       description: `The updated description of the ${appName} Connection.`,
       credentials: `The credentials used to connect with ${appName}.`,
       method: `The method used to authenticate with ${appName}.`,
-      isPlatformManaged: `Whether or not the ${appName} Connection should be managed by Infisical.`
+      isPlatformManagedCredentials: `Whether or not the ${appName} Connection credentials should be managed by Infisical.`
     };
   },
   DELETE: (app: AppConnection) => ({

@@ -16,12 +16,12 @@ export const getPostgresConnectionListItem = () => {
 };
 
 export const validatePostgresConnectionCredentials = async (config: TPostgresConnectionConfig) => {
-  const { credentials, isPlatformManaged } = config;
+  const { credentials, isPlatformManagedCredentials } = config;
 
   const client = await getSqlConnectionClient({ app: AppConnection.Postgres, credentials });
 
   try {
-    if (isPlatformManaged) {
+    if (isPlatformManagedCredentials) {
       const newPassword = alphaNumericNanoId(32);
 
       await client.raw(`ALTER USER ?? WITH PASSWORD '${newPassword}';`, [credentials.username]);

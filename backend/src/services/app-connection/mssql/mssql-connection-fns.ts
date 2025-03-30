@@ -16,12 +16,12 @@ export const getMsSqlConnectionListItem = () => {
 };
 
 export const validateMsSqlConnectionCredentials = async (config: TMsSqlConnectionConfig) => {
-  const { credentials, isPlatformManaged } = config;
+  const { credentials, isPlatformManagedCredentials } = config;
 
   const client = await getSqlConnectionClient({ app: AppConnection.MsSql, credentials });
 
   try {
-    if (isPlatformManaged) {
+    if (isPlatformManagedCredentials) {
       const newPassword = alphaNumericNanoId(32);
 
       await client.raw(`ALTER LOGIN ?? WITH PASSWORD = '${newPassword}' OLD_PASSWORD = '${credentials.password}';`, [

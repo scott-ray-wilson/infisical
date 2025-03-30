@@ -24,7 +24,7 @@ type Props = {
 
 const rootSchema = genericAppConnectionFieldsSchema.extend({
   app: z.literal(AppConnection.Postgres),
-  isPlatformManaged: z.boolean().optional()
+  isPlatformManagedCredentials: z.boolean().optional()
 });
 
 const formSchema = z.discriminatedUnion("method", [
@@ -61,7 +61,7 @@ export const PostgresConnectionForm = ({ appConnection, onSubmit }: Props) => {
     formState: { isSubmitting, isDirty }
   } = form;
 
-  const isPlatformManaged = appConnection?.isPlatformManaged ?? false;
+  const isPlatformManagedCredentials = appConnection?.isPlatformManagedCredentials ?? false;
 
   return (
     <FormProvider {...form}>
@@ -98,8 +98,8 @@ export const PostgresConnectionForm = ({ appConnection, onSubmit }: Props) => {
             </FormControl>
           )}
         />
-        <SqlConnectionFields isPlatformManaged={isPlatformManaged} />
-        {isPlatformManaged ? (
+        <SqlConnectionFields isPlatformManagedCredentials={isPlatformManagedCredentials} />
+        {isPlatformManagedCredentials ? (
           <PlatformManagedNoticeBanner />
         ) : (
           <div className="mt-6 flex items-center">

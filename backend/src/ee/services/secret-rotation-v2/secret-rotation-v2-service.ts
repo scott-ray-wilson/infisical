@@ -14,9 +14,12 @@ import {
 } from "@app/ee/services/permission/project-permission";
 import { SecretRotation, SecretRotationStatus } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-enums";
 import {
+  calculateNextRotationAt,
   decryptSecretRotationCredentials,
   encryptSecretRotationCredentials,
   expandSecretRotation,
+  getNextUtcRotationInterval,
+  getSecretRotationRotateSecretJobOptions,
   listSecretRotationOptions,
   parseRotationErrorMessage
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-fns";
@@ -404,7 +407,14 @@ export const secretRotationV2ServiceFactory = ({
               rotationStatus: SecretRotationStatus.Success,
               lastRotationAttemptedAt: currentTime,
               lastRotatedAt: currentTime,
-              isLastRotationManual: true
+              nextRotationAt: calculateNextRotationAt({
+                lastRotatedAt: currentTime,
+                isAutoRotationEnabled: Boolean(payload.isAutoRotationEnabled),
+                rotateAtUtc,
+                rotationInterval: payload.rotationInterval,
+                rotationStatus: SecretRotationStatus.Success,
+                isManualRotation: true
+              })
             },
             tx
           );
@@ -454,8 +464,6 @@ export const secretRotationV2ServiceFactory = ({
         environmentSlug: folder.environment.slug,
         excludeReplication: true
       });
-
-      // TODO: verify credentials
 
       return await expandSecretRotation(secretRotation, kmsService);
     } catch (err) {
@@ -530,6 +538,12 @@ export const secretRotationV2ServiceFactory = ({
         message: `Secret Rotation with ID "${secretRotation.id}" is not configured for ${SECRET_ROTATION_NAME_MAP[type]}`
       });
 
+    const nextRotationAt = calculateNextRotationAt({
+      ...(secretRotation as TSecretRotationV2),
+      ...payload,
+      isManualRotation: false
+    });
+
     try {
       const updatedSecretRotation = await secretRotationV2DAL.transaction(async (tx) => {
         if (payload.secretsMapping && !isEqual(payload.secretsMapping, secretsMapping)) {
@@ -567,8 +581,23 @@ export const secretRotationV2ServiceFactory = ({
           });
         }
 
-        return secretRotationV2DAL.updateById(rotationId, payload, tx);
+        return secretRotationV2DAL.updateById(
+          rotationId,
+          {
+            ...payload,
+            nextRotationAt
+          },
+          tx
+        );
       });
+
+      if (nextRotationAt && nextRotationAt.getTime() < getNextUtcRotationInterval().getTime()) {
+        await queueService.queuePg(
+          QueueJobs.SecretRotationV2RotateSecrets,
+          { rotationId, queuedAt: new Date(), isManualRotation: true },
+          getSecretRotationRotateSecretJobOptions(updatedSecretRotation)
+        );
+      }
 
       return await expandSecretRotation(updatedSecretRotation, kmsService);
     } catch (err) {
@@ -700,7 +729,8 @@ export const secretRotationV2ServiceFactory = ({
       auditLogInfo,
       jobId,
       shouldSendNotification,
-      isFinalAttempt = true
+      isFinalAttempt = true,
+      isManualRotation = false
     }: TSecretRotationRotateGeneratedCredentials = {}
   ) => {
     const {
@@ -788,14 +818,21 @@ export const secretRotationV2ServiceFactory = ({
             resourceMetadataDAL
           });
 
+          const currentTime = new Date();
+
           return secretRotationV2DAL.updateById(
             secretRotation.id,
             {
               encryptedGeneratedCredentials: encryptedUpdatedCredentials,
               activeIndex: inactiveIndex,
-              lastRotatedAt: new Date(),
-              lastRotationAttemptedAt: new Date(),
-              isLastRotationManual: Boolean(auditLogInfo),
+              lastRotatedAt: currentTime,
+              lastRotationAttemptedAt: currentTime,
+              nextRotationAt: calculateNextRotationAt({
+                ...(secretRotation as TSecretRotationV2),
+                rotationStatus: SecretRotationStatus.Success,
+                lastRotatedAt: currentTime,
+                isManualRotation
+              }),
               rotationStatus: SecretRotationStatus.Success,
               lastRotationJobId: jobId,
               encryptedLastRotationMessage: null
@@ -856,7 +893,8 @@ export const secretRotationV2ServiceFactory = ({
           rotationStatus: SecretRotationStatus.Failed,
           lastRotationJobId: jobId,
           lastRotationAttemptedAt: new Date(),
-          encryptedLastRotationMessage: encryptedMessage
+          encryptedLastRotationMessage: encryptedMessage,
+          nextRotationAt: getNextUtcRotationInterval(secretRotation.rotateAtUtc as TSecretRotationV2["rotateAtUtc"])
         });
 
         if (shouldSendNotification) {
@@ -941,7 +979,10 @@ export const secretRotationV2ServiceFactory = ({
       throw new BadRequestError({ message: `A rotation is already in progress. Please try again shortly.` });
 
     try {
-      const updatedRotation = await rotateGeneratedCredentials(secretRotation, { auditLogInfo });
+      const updatedRotation = await rotateGeneratedCredentials(secretRotation, {
+        auditLogInfo,
+        isManualRotation: true
+      });
 
       return await expandSecretRotation(updatedRotation, kmsService);
     } catch (err) {

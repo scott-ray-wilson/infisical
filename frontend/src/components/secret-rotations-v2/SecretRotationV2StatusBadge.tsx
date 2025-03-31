@@ -88,7 +88,7 @@ export const SecretRotationV2StatusBadge = ({ secretRotation, className }: Props
     tooltipContent = `Rotates ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "h:mm aa")}.`;
   } else if (daysToRotation < 0) {
     variant = "primary";
-    label = "Rotation Queueing";
+    label = "Rotating";
     tooltipContent = `Rotates on ${format(nextRotationAt, "MM/dd/yyyy")} at ${format(nextRotationAt, "h:mm aa")}.`;
   } else if (daysToRotation < 1) {
     variant = "primary";

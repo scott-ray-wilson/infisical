@@ -4,16 +4,14 @@ import { ProjectMembershipRole } from "@app/db/schemas";
 import { TSecretRotationV2DALFactory } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-dal";
 import { SecretRotation } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-enums";
 import {
-  getNextUTCMidnight,
-  getNextUTCMinute,
-  getRotateAt
+  getNextUtcRotationInterval,
+  getSecretRotationRotateSecretJobOptions
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-fns";
 import { SECRET_ROTATION_NAME_MAP } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-maps";
 import { TSecretRotationV2ServiceFactory } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-service";
 import {
   TSecretRotationRotateSecretsJobPayload,
-  TSecretRotationSendNotificationJobPayload,
-  TSecretRotationV2
+  TSecretRotationSendNotificationJobPayload
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-types";
 import { getConfig } from "@app/lib/config/env";
 import { logger } from "@app/lib/logger";
@@ -49,7 +47,7 @@ export const secretRotationV2QueueServiceFactory = async ({
     QueueJobs.SecretRotationV2QueueRotations,
     async () => {
       try {
-        const rotateBy = appCfg.isRotationDevelopmentMode ? getNextUTCMinute() : getNextUTCMidnight();
+        const rotateBy = getNextUtcRotationInterval();
 
         const currentTime = new Date();
 
@@ -62,22 +60,18 @@ export const secretRotationV2QueueServiceFactory = async ({
         );
 
         for await (const rotation of secretRotations) {
-          const rotateAt = getRotateAt(rotation.rotateAtUtc as TSecretRotationV2["rotateAtUtc"], currentTime);
-
           logger.info(
             `secretRotationV2Queue: Queue Rotation [rotationId=${rotation.id}] [lastRotatedAt=${new Date(
               rotation.lastRotatedAt
-            ).toISOString()}] [rotateAt=${rotateAt.toISOString()}]`
+            ).toISOString()}] [rotateAt=${new Date(rotation.nextRotationAt!).toISOString()}]`
           );
           await queueService.queuePg(
             QueueJobs.SecretRotationV2RotateSecrets,
-            { rotationId: rotation.id, queuedAt: currentTime },
             {
-              jobId: `secret-rotation-v2-rotate-${rotation.id}`,
-              retryLimit: appCfg.isRotationDevelopmentMode ? 3 : 5,
-              retryBackoff: true,
-              startAfter: rotateAt
-            }
+              rotationId: rotation.id,
+              queuedAt: currentTime
+            },
+            getSecretRotationRotateSecretJobOptions(rotation)
           );
         }
       } catch (error) {
@@ -95,7 +89,7 @@ export const secretRotationV2QueueServiceFactory = async ({
   await queueService.startPg<QueueName.SecretRotationV2>(
     QueueJobs.SecretRotationV2RotateSecrets,
     async ([job]) => {
-      const { rotationId, queuedAt } = job.data as TSecretRotationRotateSecretsJobPayload;
+      const { rotationId, queuedAt, isManualRotation } = job.data as TSecretRotationRotateSecretsJobPayload;
       const { retryCount, retryLimit } = job;
 
       const logDetails = `[rotationId=${rotationId}] [jobId=${job.id}] retryCount=[${retryCount}/${retryLimit}]`;
@@ -104,6 +98,10 @@ export const secretRotationV2QueueServiceFactory = async ({
         const secretRotation = await secretRotationV2DAL.findById(rotationId);
 
         if (!secretRotation) throw new Error(`Secret rotation ${rotationId} not found`);
+
+        if (!secretRotation.isAutoRotationEnabled) {
+          logger.info(`secretRotationV2Queue: Skipping Rotation - Auto-Rotation Disabled Since Queue ${logDetails}`);
+        }
 
         if (isAfter(secretRotation.lastRotatedAt, queuedAt)) {
           // rotated since being queued, skip rotation
@@ -114,7 +112,8 @@ export const secretRotationV2QueueServiceFactory = async ({
         await secretRotationV2Service.rotateGeneratedCredentials(secretRotation, {
           jobId: job.id,
           shouldSendNotification: true,
-          isFinalAttempt: retryCount === retryLimit
+          isFinalAttempt: retryCount === retryLimit,
+          isManualRotation
         });
 
         logger.info(`secretRotationV2Queue: Secrets Rotated ${logDetails}`);

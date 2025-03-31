@@ -1,5 +1,4 @@
 import { AxiosError } from "axios";
-import { addDays, addMinutes } from "date-fns";
 
 import { getConfig } from "@app/lib/config/env";
 import { KmsDataKey } from "@app/services/kms/kms-types";
@@ -24,47 +23,46 @@ export const listSecretRotationOptions = () => {
   return Object.values(SECRET_ROTATION_LIST_OPTIONS).sort((a, b) => a.name.localeCompare(b.name));
 };
 
-export const getRotateAt = ({ hours, minutes }: TSecretRotationV2["rotateAtUtc"], currentTime: Date) => {
-  const appCfg = getConfig();
+const getNextUTCMidnight = ({ hours, minutes }: TSecretRotationV2["rotateAtUtc"] = { hours: 0, minutes: 0 }) => {
+  const now = new Date();
 
   return new Date(
     Date.UTC(
-      currentTime.getUTCFullYear(),
-      currentTime.getUTCMonth(),
-      currentTime.getUTCDate(),
-      appCfg.isRotationDevelopmentMode ? currentTime.getUTCHours() : hours,
-      appCfg.isRotationDevelopmentMode ? currentTime.getUTCMinutes() : minutes,
-      appCfg.isRotationDevelopmentMode ? minutes : 0,
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() + 1, // Add 1 day to get tomorrow
+      hours,
+      minutes,
+      0,
       0
     )
   );
 };
 
-export const getNextUTCMidnight = (date: Date = new Date()) =>
-  new Date(
+const getNextUTCMinute = ({ minutes }: TSecretRotationV2["rotateAtUtc"] = { hours: 0, minutes: 0 }) => {
+  const now = new Date();
+  return new Date(
     Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth(),
-      date.getUTCDate() + 1, // Add 1 day to get tomorrow
-      0,
-      0,
-      0,
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      now.getUTCHours(),
+      now.getUTCMinutes() + 1, // Add 1 minute to get the next minute
+      minutes, // use minutes as seconds in dev
       0
     )
   );
+};
 
-export const getNextUTCMinute = (date: Date = new Date()) =>
-  new Date(
-    Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth(),
-      date.getUTCDate(),
-      date.getUTCHours(),
-      date.getUTCMinutes() + 1, // Add 1 minute to get the next minute
-      0,
-      0
-    )
-  );
+export const getNextUtcRotationInterval = (rotateAtUtc?: TSecretRotationV2["rotateAtUtc"]) => {
+  const appCfg = getConfig();
+
+  if (appCfg.isRotationDevelopmentMode) {
+    return getNextUTCMinute(rotateAtUtc);
+  }
+
+  return getNextUTCMidnight(rotateAtUtc);
+};
 
 export const encryptSecretRotationCredentials = async ({
   projectId,
@@ -108,12 +106,84 @@ export const decryptSecretRotationCredentials = async ({
   return JSON.parse(decryptedPlainTextBlob.toString()) as TSecretRotationV2GeneratedCredentials;
 };
 
+export const getSecretRotationRotateSecretJobOptions = ({
+  id,
+  nextRotationAt
+}: Pick<TSecretRotationV2Raw, "id" | "nextRotationAt">) => {
+  const appCfg = getConfig();
+
+  return {
+    jobId: `secret-rotation-v2-rotate-${id}`,
+    retryLimit: appCfg.isRotationDevelopmentMode ? 3 : 5,
+    retryBackoff: true,
+    startAfter: nextRotationAt ?? undefined
+  };
+};
+
+export const calculateNextRotationAt = ({
+  rotateAtUtc,
+  isAutoRotationEnabled,
+  rotationInterval,
+  rotationStatus,
+  isManualRotation,
+  ...params
+}: Pick<
+  TSecretRotationV2,
+  "isAutoRotationEnabled" | "lastRotatedAt" | "rotateAtUtc" | "rotationInterval" | "rotationStatus"
+> & { isManualRotation: boolean }) => {
+  if (!isAutoRotationEnabled) return null;
+
+  if (rotationStatus === SecretRotationStatus.Failed) {
+    return getNextUtcRotationInterval(rotateAtUtc);
+  }
+
+  const lastRotatedAt = new Date(params.lastRotatedAt);
+
+  const appCfg = getConfig();
+
+  if (appCfg.isRotationDevelopmentMode) {
+    // treat interval as minute
+    const nextRotation = new Date(lastRotatedAt.getTime() + rotationInterval * 60 * 1000);
+
+    // in development mode we use rotateAtUtc.minutes as seconds
+    nextRotation.setUTCSeconds(rotateAtUtc.minutes);
+    nextRotation.setUTCMilliseconds(0);
+
+    // If creation/manual rotation seconds are after the configured seconds we pad an additional minute
+    // to ensure a full interval has elapsed before rotation
+    if (isManualRotation && lastRotatedAt.getUTCSeconds() >= rotateAtUtc.minutes) {
+      nextRotation.setUTCMinutes(nextRotation.getUTCMinutes() + 1);
+    }
+
+    return nextRotation;
+  }
+
+  const nextRotation = new Date(lastRotatedAt);
+
+  nextRotation.setUTCHours(rotateAtUtc.hours);
+  nextRotation.setUTCMinutes(rotateAtUtc.minutes);
+  nextRotation.setUTCSeconds(0);
+  nextRotation.setUTCMilliseconds(0);
+
+  // If creation/manual rotation was after the daily rotation time,
+  // we need pad an additional day to ensure full interval
+  if (
+    isManualRotation &&
+    (lastRotatedAt.getUTCHours() > rotateAtUtc.hours ||
+      (lastRotatedAt.getUTCHours() === rotateAtUtc.hours && lastRotatedAt.getUTCMinutes() >= rotateAtUtc.minutes))
+  ) {
+    nextRotation.setUTCDate(nextRotation.getUTCDate() + rotationInterval + 1);
+  } else {
+    nextRotation.setUTCDate(nextRotation.getUTCDate() + rotationInterval);
+  }
+
+  return nextRotation;
+};
+
 export const expandSecretRotation = async (
   { encryptedLastRotationMessage, ...secretRotation }: TSecretRotationV2Raw,
   kmsService: TSecretRotationV2ServiceFactoryDep["kmsService"]
 ) => {
-  const appCfg = getConfig();
-
   const { decryptor } = await kmsService.createCipherPairWithDataKey({
     type: KmsDataKey.SecretManager,
     projectId: secretRotation.projectId
@@ -125,33 +195,9 @@ export const expandSecretRotation = async (
       }).toString()
     : null;
 
-  const { rotateAtUtc, rotationStatus, rotationInterval, isLastRotationManual, lastRotatedAt } = secretRotation;
-
-  const modifier = appCfg.isRotationDevelopmentMode ? addMinutes : addDays;
-
-  const nextUtcInterval = getRotateAt(
-    rotateAtUtc as TSecretRotationV2["rotateAtUtc"],
-    appCfg.isRotationDevelopmentMode ? getNextUTCMinute() : getNextUTCMidnight()
-  );
-
-  const rotateAt = getRotateAt(
-    rotateAtUtc as TSecretRotationV2["rotateAtUtc"],
-    modifier(
-      lastRotatedAt,
-      rotationInterval + (isLastRotationManual ? 1 : 0) // pad full interval if manually rotated or just created
-    )
-  );
-
   return {
     ...secretRotation,
-    lastRotationMessage,
-    // eslint-disable-next-line no-nested-ternary
-    nextRotationAt: secretRotation.isAutoRotationEnabled
-      ? // we also check time in addition to status because service outages or if it was previously disabled
-        rotationStatus === SecretRotationStatus.Success && rotateAt.getTime() > nextUtcInterval.getTime()
-        ? rotateAt
-        : nextUtcInterval
-      : null
+    lastRotationMessage
   } as TSecretRotationV2;
 };
 

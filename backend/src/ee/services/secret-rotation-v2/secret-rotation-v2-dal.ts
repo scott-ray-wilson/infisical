@@ -3,7 +3,6 @@ import { Knex } from "knex";
 import { TDbClient } from "@app/db";
 import { TableName } from "@app/db/schemas";
 import { TSecretRotationsV2 } from "@app/db/schemas/secret-rotations-v2";
-import { getConfig } from "@app/lib/config/env";
 import { DatabaseError } from "@app/lib/errors";
 import {
   buildFindFilter,
@@ -441,17 +440,9 @@ export const secretRotationV2DALFactory = (
   };
 
   const findSecretRotationsToQueue = async (rotateBy: Date, tx?: Knex) => {
-    const appCfg = getConfig();
     const secretRotations = await (tx || db.replicaNode())(TableName.SecretRotationV2)
-      .whereRaw(
-        `"lastRotatedAt" + ("rotationInterval" * INTERVAL '1 ${
-          appCfg.isRotationDevelopmentMode ? "minute" : "day"
-        }') + (CASE WHEN "isLastRotationManual" = true THEN INTERVAL '1 ${
-          appCfg.isRotationDevelopmentMode ? "minute" : "day"
-        }' ELSE INTERVAL '0 day' END) < ?`,
-        [rotateBy]
-      )
-      .andWhere(`${TableName.SecretRotationV2}.isAutoRotationEnabled`, true)
+      .where(`${TableName.SecretRotationV2}.isAutoRotationEnabled`, true)
+      .andWhereRaw(`"nextRotationAt" <= ?`, [rotateBy])
       .select(selectAllTableCols(TableName.SecretRotationV2));
 
     return secretRotations;

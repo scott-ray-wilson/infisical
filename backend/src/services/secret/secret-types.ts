@@ -206,6 +206,7 @@ export type TGetSecretsRawDTO = {
   limit?: number;
   search?: string;
   keys?: string[];
+  excludeRotatedSecrets?: boolean;
 } & TProjectPermission;
 
 export type TGetSecretAccessListDTO = {
@@ -297,7 +298,7 @@ export type TUpdateManySecretRawDTO = Omit<TProjectPermission, "projectId"> & {
   secrets: {
     secretKey: string;
     newSecretName?: string;
-    secretValue: string;
+    secretValue?: string;
     secretComment?: string;
     skipMultilineEncoding?: boolean;
     tagIds?: string[];

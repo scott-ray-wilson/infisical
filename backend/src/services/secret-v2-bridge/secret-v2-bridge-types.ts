@@ -49,6 +49,7 @@ export type TGetSecretsDTO = {
   limit?: number;
   search?: string;
   keys?: string[];
+  excludeRotatedSecrets?: boolean;
 } & TProjectPermission;
 
 export type TGetSecretsMissingReadValuePermissionDTO = Omit<
@@ -132,7 +133,7 @@ export type TUpdateManySecretDTO = Omit<TProjectPermission, "projectId"> & {
   secrets: {
     secretKey: string;
     newSecretName?: string;
-    secretValue: string;
+    secretValue?: string;
     secretComment?: string;
     skipMultilineEncoding?: boolean;
     tagIds?: string[];
@@ -342,6 +343,7 @@ export type TFindSecretsByFolderIdsFilter = {
   metadataFilter?: { key?: string; value?: string }[];
   includeTagsInSearch?: boolean;
   keys?: string[];
+  excludeRotatedSecrets?: boolean;
 };
 
 export type TGetSecretsRawByFolderMappingsDTO = {

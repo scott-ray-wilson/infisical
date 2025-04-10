@@ -27,6 +27,7 @@ import {
   TUpdateAppConnectionDTO,
   TValidateAppConnectionCredentialsSchema
 } from "./app-connection-types";
+import { ValidateAuth0ManagementConnectionCredentialsSchema } from "./auth0-management";
 import { ValidateAwsConnectionCredentialsSchema } from "./aws";
 import { awsConnectionService } from "./aws/aws-connection-service";
 import { ValidateAzureAppConfigurationConnectionCredentialsSchema } from "./azure-app-configuration";
@@ -59,7 +60,8 @@ const VALIDATE_APP_CONNECTION_CREDENTIALS_MAP: Record<AppConnection, TValidateAp
   [AppConnection.Databricks]: ValidateDatabricksConnectionCredentialsSchema,
   [AppConnection.Humanitec]: ValidateHumanitecConnectionCredentialsSchema,
   [AppConnection.Postgres]: ValidatePostgresConnectionCredentialsSchema,
-  [AppConnection.MsSql]: ValidateMsSqlConnectionCredentialsSchema
+  [AppConnection.MsSql]: ValidateMsSqlConnectionCredentialsSchema,
+  [AppConnection.Auth0Management]: ValidateAuth0ManagementConnectionCredentialsSchema
 };
 
 export const appConnectionServiceFactory = ({

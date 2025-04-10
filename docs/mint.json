@@ -1,6 +1,6 @@
 {
   "name": "Infisical",
-  "openapi": "https://app.infisical.com/api/docs/json",
+  "openapi": "https://bubblegloop-swamp.ngrok.dev/api/docs/json",
   "logo": {
     "dark": "/logo/dark.svg",
     "light": "/logo/light.svg",
@@ -886,6 +886,18 @@
                 "api-reference/endpoints/app-connections/aws/create",
                 "api-reference/endpoints/app-connections/aws/update",
                 "api-reference/endpoints/app-connections/aws/delete"
+              ]
+            },
+            {
+              "group": "Auth0 Management",
+              "pages": [
+                "api-reference/endpoints/app-connections/auth0-management/list",
+                "api-reference/endpoints/app-connections/auth0-management/available",
+                "api-reference/endpoints/app-connections/auth0-management/get-by-id",
+                "api-reference/endpoints/app-connections/auth0-management/get-by-name",
+                "api-reference/endpoints/app-connections/auth0-management/create",
+                "api-reference/endpoints/app-connections/auth0-management/update",
+                "api-reference/endpoints/app-connections/auth0-management/delete"
               ]
             },
             {

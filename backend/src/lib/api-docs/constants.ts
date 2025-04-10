@@ -1696,6 +1696,10 @@ export const AppConnections = {
     connectionId: `The ID of the ${APP_CONNECTION_NAME_MAP[app]} Connection to be deleted.`
   }),
   CREDENTIALS: {
+    AUTH0_MANAGEMENT: {
+      managementUrl: "The URL of the Auth0 Management API.",
+      token: "The API token to authenticate with the Auth0 Management API."
+    },
     SQL_CONNECTION: {
       host: "The hostname of the database server.",
       port: "The port number of the database.",

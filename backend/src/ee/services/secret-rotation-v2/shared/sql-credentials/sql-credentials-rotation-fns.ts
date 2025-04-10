@@ -136,7 +136,9 @@ export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRot
     }
   };
 
-  const issueCredentials: TRotationFactoryIssueCredentials = async (callback) => {
+  const issueCredentials: TRotationFactoryIssueCredentials<TSqlCredentialsRotationGeneratedCredentials> = async (
+    callback
+  ) => {
     const client = await getSqlConnectionClient(connection);
 
     // For SQL, since we get existing users, we change both their passwords
@@ -165,7 +167,10 @@ export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRot
     return callback(credentialsSet[0]);
   };
 
-  const revokeCredentials: TRotationFactoryRevokeCredentials = async (credentialsToRevoke, callback) => {
+  const revokeCredentials: TRotationFactoryRevokeCredentials<TSqlCredentialsRotationGeneratedCredentials> = async (
+    credentialsToRevoke,
+    callback
+  ) => {
     const client = await getSqlConnectionClient(connection);
 
     const revokedCredentials = credentialsToRevoke.map(({ username }) => ({ username, password: generatePassword() }));
@@ -186,9 +191,10 @@ export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRot
     return callback();
   };
 
-  const rotateCredentials: TRotationFactoryRotateCredentials<
-    TSqlCredentialsRotationGeneratedCredentials[number]
-  > = async (_, callback) => {
+  const rotateCredentials: TRotationFactoryRotateCredentials<TSqlCredentialsRotationGeneratedCredentials> = async (
+    _,
+    callback
+  ) => {
     const client = await getSqlConnectionClient(connection);
 
     // generate new password for the next active user
@@ -207,7 +213,7 @@ export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRot
     return callback(credentials);
   };
 
-  const getSecretsPayload: TRotationFactoryGetSecretsPayload<TSqlCredentialsRotationGeneratedCredentials[number]> = (
+  const getSecretsPayload: TRotationFactoryGetSecretsPayload<TSqlCredentialsRotationGeneratedCredentials> = (
     generatedCredentials
   ) => {
     const { username, password } = secretsMapping;

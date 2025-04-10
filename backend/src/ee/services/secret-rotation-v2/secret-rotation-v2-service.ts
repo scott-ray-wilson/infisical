@@ -41,6 +41,7 @@ import {
   TRotationFactory,
   TSecretRotationRotateGeneratedCredentials,
   TSecretRotationV2,
+  TSecretRotationV2GeneratedCredentials,
   TSecretRotationV2Raw,
   TSecretRotationV2WithConnection,
   TUpdateSecretRotationV2DTO
@@ -104,8 +105,9 @@ export type TSecretRotationV2ServiceFactory = ReturnType<typeof secretRotationV2
 const MAX_GENERATED_CREDENTIALS_LENGTH = 2;
 
 const SECRET_ROTATION_FACTORY_MAP: Record<SecretRotation, TRotationFactory> = {
-  [SecretRotation.PostgresCredentials]: sqlCredentialsRotationFactory,
-  [SecretRotation.MsSqlCredentials]: sqlCredentialsRotationFactory
+  [SecretRotation.PostgresCredentials]: sqlCredentialsRotationFactory as TRotationFactory,
+  [SecretRotation.MsSqlCredentials]: sqlCredentialsRotationFactory as TRotationFactory,
+  [SecretRotation.Auth0ClientSecret]: sqlCredentialsRotationFactory as TRotationFactory
 };
 
 export const secretRotationV2ServiceFactory = ({
@@ -441,7 +443,7 @@ export const secretRotationV2ServiceFactory = ({
       // callback structure to support transactional rollback when possible
       const secretRotation = await rotationFactory.issueCredentials(async (newCredentials) => {
         const encryptedGeneratedCredentials = await encryptSecretRotationCredentials({
-          generatedCredentials: [newCredentials],
+          generatedCredentials: [newCredentials] as TSecretRotationV2GeneratedCredentials,
           projectId,
           kmsService
         });
@@ -848,7 +850,7 @@ export const secretRotationV2ServiceFactory = ({
 
         const encryptedUpdatedCredentials = await encryptSecretRotationCredentials({
           projectId,
-          generatedCredentials: updatedCredentials,
+          generatedCredentials: updatedCredentials as TSecretRotationV2GeneratedCredentials,
           kmsService
         });
 

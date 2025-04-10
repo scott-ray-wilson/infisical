@@ -1,4 +1,5 @@
 import { AuditLogInfo } from "@app/ee/services/audit-log/audit-log-types";
+import { TSqlCredentialsRotationGeneratedCredentials } from "@app/ee/services/secret-rotation-v2/shared/sql-credentials/sql-credentials-rotation-types";
 import { OrderByDirection } from "@app/lib/types";
 import { SecretsOrderBy } from "@app/services/secret/secret-types";
 
@@ -23,7 +24,6 @@ import {
 } from "./postgres-credentials";
 import { TSecretRotationV2DALFactory } from "./secret-rotation-v2-dal";
 import { SecretRotation } from "./secret-rotation-v2-enums";
-import { TSqlCredentialsRotationGeneratedCredentials } from "./shared/sql-credentials";
 
 export type TSecretRotationV2 = TPostgresCredentialsRotation | TMsSqlCredentialsRotation | TAuth0ClientSecretRotation;
 
@@ -145,27 +145,27 @@ export type TSecretRotationSendNotificationJobPayload = {
 // transactional behavior. By passing in the rotation mutation, if this mutation fails we can roll back the
 // third party credential changes (when supported), preventing credentials getting out of sync
 
-export type TRotationFactoryIssueCredentials = (
-  callback: (newCredentials: TSecretRotationV2GeneratedCredentials[number]) => Promise<TSecretRotationV2Raw>
+export type TRotationFactoryIssueCredentials<T extends TSecretRotationV2GeneratedCredentials> = (
+  callback: (newCredentials: T[number]) => Promise<TSecretRotationV2Raw>
 ) => Promise<TSecretRotationV2Raw>;
 
-export type TRotationFactoryRevokeCredentials = (
-  generatedCredentials: TSecretRotationV2GeneratedCredentials,
+export type TRotationFactoryRevokeCredentials<T extends TSecretRotationV2GeneratedCredentials> = (
+  generatedCredentials: T,
   callback: () => Promise<TSecretRotationV2Raw>
 ) => Promise<TSecretRotationV2Raw>;
 
-export type TRotationFactoryRotateCredentials<T extends TSecretRotationV2GeneratedCredentials[number]> = (
-  credentialsToRevoke: T | undefined,
-  callback: (newCredentials: T) => Promise<TSecretRotationV2Raw>
+export type TRotationFactoryRotateCredentials<T extends TSecretRotationV2GeneratedCredentials> = (
+  credentialsToRevoke: T[number] | undefined,
+  callback: (newCredentials: T[number]) => Promise<TSecretRotationV2Raw>
 ) => Promise<TSecretRotationV2Raw>;
 
-export type TRotationFactoryGetSecretsPayload<T extends TSecretRotationV2GeneratedCredentials[number]> = (
-  generatedCredentials: T
+export type TRotationFactoryGetSecretsPayload<T extends TSecretRotationV2GeneratedCredentials> = (
+  generatedCredentials: T[number]
 ) => { key: string; value: string }[];
 
 export type TRotationFactory = (secretRotation: TSecretRotationV2WithConnection) => {
-  issueCredentials: TRotationFactoryIssueCredentials;
-  revokeCredentials: TRotationFactoryRevokeCredentials;
-  rotateCredentials: TRotationFactoryRotateCredentials<TSecretRotationV2GeneratedCredentials[number]>;
-  getSecretsPayload: TRotationFactoryGetSecretsPayload<TSecretRotationV2GeneratedCredentials[number]>;
+  issueCredentials: TRotationFactoryIssueCredentials<TSecretRotationV2GeneratedCredentials>;
+  revokeCredentials: TRotationFactoryRevokeCredentials<TSecretRotationV2GeneratedCredentials>;
+  rotateCredentials: TRotationFactoryRotateCredentials<TSecretRotationV2GeneratedCredentials>;
+  getSecretsPayload: TRotationFactoryGetSecretsPayload<TSecretRotationV2GeneratedCredentials>;
 };

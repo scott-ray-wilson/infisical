@@ -1,5 +1,6 @@
 import { AppConnection } from "../enums";
 import { TAppConnectionOption } from "./app-options";
+import { TAuth0Connection } from "./auth0-connection";
 import { TAwsConnection } from "./aws-connection";
 import { TAzureAppConfigurationConnection } from "./azure-app-configuration-connection";
 import { TAzureKeyVaultConnection } from "./azure-key-vault-connection";
@@ -10,6 +11,7 @@ import { THumanitecConnection } from "./humanitec-connection";
 import { TMsSqlConnection } from "./mssql-connection";
 import { TPostgresConnection } from "./postgres-connection";
 
+export * from "./auth0-connection";
 export * from "./aws-connection";
 export * from "./azure-app-configuration-connection";
 export * from "./azure-key-vault-connection";
@@ -29,7 +31,8 @@ export type TAppConnection =
   | TDatabricksConnection
   | THumanitecConnection
   | TPostgresConnection
-  | TMsSqlConnection;
+  | TMsSqlConnection
+  | TAuth0Connection;
 
 export type TAvailableAppConnection = Pick<TAppConnection, "name" | "id">;
 
@@ -66,4 +69,5 @@ export type TAppConnectionMap = {
   [AppConnection.Humanitec]: THumanitecConnection;
   [AppConnection.Postgres]: TPostgresConnection;
   [AppConnection.MsSql]: TMsSqlConnection;
+  [AppConnection.Auth0]: TAuth0Connection;
 };

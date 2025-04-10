@@ -16,7 +16,7 @@ import {
   TAppConnectionCredentialsValidator,
   TAppConnectionTransitionCredentialsToPlatform
 } from "./app-connection-types";
-import { Auth0ConnectionMethod, validateAuth0ManagementConnectionCredentials } from "./auth0-management";
+import { Auth0ConnectionMethod, getAuth0ConnectionListItem, validateAuth0ConnectionCredentials } from "./auth0";
 import { AwsConnectionMethod, getAwsConnectionListItem, validateAwsConnectionCredentials } from "./aws";
 import {
   AzureAppConfigurationConnectionMethod,
@@ -53,7 +53,8 @@ export const listAppConnectionOptions = () => {
     getDatabricksConnectionListItem(),
     getHumanitecConnectionListItem(),
     getPostgresConnectionListItem(),
-    getMsSqlConnectionListItem()
+    getMsSqlConnectionListItem(),
+    getAuth0ConnectionListItem()
   ].sort((a, b) => a.name.localeCompare(b.name));
 };
 
@@ -110,7 +111,7 @@ const VALIDATE_APP_CONNECTION_CREDENTIALS_MAP: Record<AppConnection, TAppConnect
   [AppConnection.Humanitec]: validateHumanitecConnectionCredentials as TAppConnectionCredentialsValidator,
   [AppConnection.Postgres]: validateSqlConnectionCredentials as TAppConnectionCredentialsValidator,
   [AppConnection.MsSql]: validateSqlConnectionCredentials as TAppConnectionCredentialsValidator,
-  [AppConnection.Auth0Management]: validateAuth0ManagementConnectionCredentials as TAppConnectionCredentialsValidator
+  [AppConnection.Auth0]: validateAuth0ConnectionCredentials as TAppConnectionCredentialsValidator
 };
 
 export const validateAppConnectionCredentials = async (
@@ -134,11 +135,12 @@ export const getAppConnectionMethodName = (method: TAppConnection["method"]) => 
     case DatabricksConnectionMethod.ServicePrincipal:
       return "Service Principal";
     case HumanitecConnectionMethod.ApiToken:
-    case Auth0ConnectionMethod.ApiToken:
       return "API Token";
     case PostgresConnectionMethod.UsernameAndPassword:
     case MsSqlConnectionMethod.UsernameAndPassword:
       return "Username & Password";
+    case Auth0ConnectionMethod.ClientCredentials:
+      return "Client Credentials";
     default:
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       throw new Error(`Unhandled App Connection Method: ${method}`);
@@ -179,5 +181,5 @@ export const TRANSITION_CONNECTION_CREDENTIALS_TO_PLATFORM: Record<
   [AppConnection.Humanitec]: platformManagedCredentialsNotSupported,
   [AppConnection.Postgres]: transferSqlConnectionCredentialsToPlatform as TAppConnectionTransitionCredentialsToPlatform,
   [AppConnection.MsSql]: transferSqlConnectionCredentialsToPlatform as TAppConnectionTransitionCredentialsToPlatform,
-  [AppConnection.Auth0Management]: platformManagedCredentialsNotSupported
+  [AppConnection.Auth0]: platformManagedCredentialsNotSupported
 };

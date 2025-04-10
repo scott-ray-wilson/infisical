@@ -186,7 +186,9 @@ export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRot
     return callback();
   };
 
-  const rotateCredentials: TRotationFactoryRotateCredentials = async (_, callback) => {
+  const rotateCredentials: TRotationFactoryRotateCredentials<
+    TSqlCredentialsRotationGeneratedCredentials[number]
+  > = async (_, callback) => {
     const client = await getSqlConnectionClient(connection);
 
     // generate new password for the next active user
@@ -205,7 +207,9 @@ export const sqlCredentialsRotationFactory = (secretRotation: TSqlCredentialsRot
     return callback(credentials);
   };
 
-  const getSecretsPayload: TRotationFactoryGetSecretsPayload = (generatedCredentials) => {
+  const getSecretsPayload: TRotationFactoryGetSecretsPayload<TSqlCredentialsRotationGeneratedCredentials[number]> = (
+    generatedCredentials
+  ) => {
     const { username, password } = secretsMapping;
 
     const secrets = [

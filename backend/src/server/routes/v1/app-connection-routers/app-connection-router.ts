@@ -3,10 +3,7 @@ import { z } from "zod";
 import { EventType } from "@app/ee/services/audit-log/audit-log-types";
 import { readLimit } from "@app/server/config/rateLimiter";
 import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
-import {
-  Auth0ManagementConnectionListItemSchema,
-  SanitizedAuth0ManagementConnectionSchema
-} from "@app/services/app-connection/auth0-management";
+import { Auth0ConnectionListItemSchema, SanitizedAuth0ConnectionSchema } from "@app/services/app-connection/auth0";
 import { AwsConnectionListItemSchema, SanitizedAwsConnectionSchema } from "@app/services/app-connection/aws";
 import {
   AzureAppConfigurationConnectionListItemSchema,
@@ -44,7 +41,7 @@ const SanitizedAppConnectionSchema = z.union([
   ...SanitizedHumanitecConnectionSchema.options,
   ...SanitizedPostgresConnectionSchema.options,
   ...SanitizedMsSqlConnectionSchema.options,
-  ...SanitizedAuth0ManagementConnectionSchema.options
+  ...SanitizedAuth0ConnectionSchema.options
 ]);
 
 const AppConnectionOptionsSchema = z.discriminatedUnion("app", [
@@ -57,7 +54,7 @@ const AppConnectionOptionsSchema = z.discriminatedUnion("app", [
   HumanitecConnectionListItemSchema,
   PostgresConnectionListItemSchema,
   MsSqlConnectionListItemSchema,
-  Auth0ManagementConnectionListItemSchema
+  Auth0ConnectionListItemSchema
 ]);
 
 export const registerAppConnectionRouter = async (server: FastifyZodProvider) => {

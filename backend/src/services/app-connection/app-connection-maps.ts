@@ -10,5 +10,5 @@ export const APP_CONNECTION_NAME_MAP: Record<AppConnection, string> = {
   [AppConnection.Humanitec]: "Humanitec",
   [AppConnection.Postgres]: "PostgreSQL",
   [AppConnection.MsSql]: "Microsoft SQL Server",
-  [AppConnection.Auth0Management]: "Auth0 Management"
+  [AppConnection.Auth0]: "Auth0"
 };

@@ -1697,8 +1697,9 @@ export const AppConnections = {
   }),
   CREDENTIALS: {
     AUTH0_MANAGEMENT: {
-      managementUrl: "The URL of the Auth0 Management API.",
-      token: "The API token to authenticate with the Auth0 Management API."
+      instanceUrl: "The URL of the Auth0 instance to connect to.",
+      clientId: "The client ID of the Machine-to-Machine application.",
+      clientSecret: "The client secret of the Machine-to-Machine application."
     },
     SQL_CONNECTION: {
       host: "The hostname of the database server.",
@@ -1885,12 +1886,19 @@ export const SecretRotations = {
         "The username of the first login to rotate passwords for. This user must already exists in your database.",
       username2:
         "The username of the second login to rotate passwords for. This user must already exists in your database."
+    },
+    AUTH0_CLIENT_SECRET: {
+      clientId: "The client ID of the Auth0 Application to rotate the client secret for."
     }
   },
   SECRETS_MAPPING: {
     SQL_CREDENTIALS: {
       username: "The name of the secret that the active username will be mapped to.",
       password: "The name of the secret that the generated password will be mapped to."
+    },
+    AUTH0_CLIENT_SECRET: {
+      clientID: "The name of the secret that the client ID will be mapped to.",
+      clientSecret: "The name of the secret that the rotated client secret will be mapped to."
     }
   }
 };

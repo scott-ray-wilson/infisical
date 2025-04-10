@@ -8,7 +8,7 @@ export enum AppConnection {
   Humanitec = "humanitec",
   Postgres = "postgres",
   MsSql = "mssql",
-  Auth0Management = "auth0-management"
+  Auth0 = "auth0"
 }
 
 export enum AWSRegion {

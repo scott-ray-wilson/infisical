@@ -14,6 +14,7 @@ import {
   TRANSITION_CONNECTION_CREDENTIALS_TO_PLATFORM,
   validateAppConnectionCredentials
 } from "@app/services/app-connection/app-connection-fns";
+import { windmillConnectionService } from "@app/services/app-connection/windmill/windmill-connection-service";
 import { TKmsServiceFactory } from "@app/services/kms/kms-service";
 
 import { TAppConnectionDALFactory } from "./app-connection-dal";
@@ -444,6 +445,7 @@ export const appConnectionServiceFactory = ({
     humanitec: humanitecConnectionService(connectAppConnectionById),
     terraformCloud: terraformCloudConnectionService(connectAppConnectionById),
     camunda: camundaConnectionService(connectAppConnectionById, appConnectionDAL, kmsService),
-    vercel: vercelConnectionService(connectAppConnectionById)
+    vercel: vercelConnectionService(connectAppConnectionById),
+    windmill: windmillConnectionService(connectAppConnectionById)
   };
 };

@@ -1,5 +1,6 @@
 import { useFormContext } from "react-hook-form";
 
+import { WindmillSyncFields } from "@app/components/secret-syncs/forms/SecretSyncDestinationFields/WindmillSyncFields";
 import { SecretSync } from "@app/hooks/api/secretSyncs";
 
 import { TSecretSyncForm } from "../schemas";
@@ -43,6 +44,8 @@ export const SecretSyncDestinationFields = () => {
       return <CamundaSyncFields />;
     case SecretSync.Vercel:
       return <VercelSyncFields />;
+    case SecretSync.Windmill:
+      return <WindmillSyncFields />;
     default:
       throw new Error(`Unhandled Destination Config Field: ${destination}`);
   }

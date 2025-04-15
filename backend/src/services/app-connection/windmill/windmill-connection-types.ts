@@ -23,3 +23,5 @@ export type TWindmillConnectionConfig = DiscriminativePick<
 > & {
   orgId: string;
 };
+
+export type TWindmillWorkspace = { id: string; name: string; deleted: boolean };

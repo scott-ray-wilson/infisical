@@ -11,8 +11,17 @@ import {
 import { WindmillConnectionMethod } from "./windmill-connection-enums";
 
 export const WindmillConnectionAccessTokenCredentialsSchema = z.object({
-  accessToken: z.string().trim().min(1, "Access Token required"),
-  instanceUrl: z.string().trim().url("Invalid Instance URL").optional()
+  accessToken: z
+    .string()
+    .trim()
+    .min(1, "Access Token required")
+    .describe(AppConnections.CREDENTIALS.WINDMILL.accessToken),
+  instanceUrl: z
+    .string()
+    .trim()
+    .url("Invalid Instance URL")
+    .optional()
+    .describe(AppConnections.CREDENTIALS.WINDMILL.instanceUrl)
 });
 
 const BaseWindmillConnectionSchema = BaseAppConnectionSchema.extend({ app: z.literal(AppConnection.Windmill) });

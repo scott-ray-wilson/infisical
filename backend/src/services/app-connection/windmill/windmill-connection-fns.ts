@@ -7,10 +7,17 @@ import { blockLocalAndPrivateIpAddresses } from "@app/lib/validator";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 
 import { WindmillConnectionMethod } from "./windmill-connection-enums";
-import { TWindmillConnectionConfig } from "./windmill-connection-types";
+import { TWindmillConnection, TWindmillConnectionConfig, TWindmillWorkspace } from "./windmill-connection-types";
 
-export const getWindmillInstanceUrl = (config: TWindmillConnectionConfig) =>
-  config.credentials.instanceUrl ? removeTrailingSlash(config.credentials.instanceUrl) : "https://app.windmill.dev";
+export const getWindmillInstanceUrl = async (config: TWindmillConnectionConfig) => {
+  const instanceUrl = config.credentials.instanceUrl
+    ? removeTrailingSlash(config.credentials.instanceUrl)
+    : "https://app.windmill.dev";
+
+  await blockLocalAndPrivateIpAddresses(instanceUrl);
+
+  return instanceUrl;
+};
 
 export const getWindmillConnectionListItem = () => {
   return {
@@ -21,10 +28,8 @@ export const getWindmillConnectionListItem = () => {
 };
 
 export const validateWindmillConnectionCredentials = async (config: TWindmillConnectionConfig) => {
-  const instanceUrl = getWindmillInstanceUrl(config);
+  const instanceUrl = await getWindmillInstanceUrl(config);
   const { accessToken } = config.credentials;
-
-  await blockLocalAndPrivateIpAddresses(instanceUrl);
 
   try {
     await request.get(`${instanceUrl}/api/workspaces/list`, {
@@ -44,4 +49,17 @@ export const validateWindmillConnectionCredentials = async (config: TWindmillCon
   }
 
   return config.credentials;
+};
+
+export const listWindmillWorkspaces = async (appConnection: TWindmillConnection) => {
+  const instanceUrl = await getWindmillInstanceUrl(appConnection);
+  const { accessToken } = appConnection.credentials;
+
+  const resp = await request.get<TWindmillWorkspace[]>(`${instanceUrl}/api/workspaces/list`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+
+  return resp.data.filter((workspace) => !workspace.deleted);
 };

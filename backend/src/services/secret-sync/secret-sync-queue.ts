@@ -76,6 +76,7 @@ type TSecretSyncQueueFactoryDep = {
     | "findBySecretKeys"
     | "bulkUpdate"
     | "deleteMany"
+    | "invalidateSecretCacheByProjectId"
   >;
   secretImportDAL: Pick<TSecretImportDALFactory, "find" | "findByFolderIds">;
   secretSyncDAL: Pick<TSecretSyncDALFactory, "findById" | "find" | "updateById" | "deleteById">;
@@ -275,7 +276,7 @@ export const secretSyncQueueFactory = ({
   const queueSecretSyncSyncSecretsById = async (payload: TQueueSecretSyncSyncSecretsByIdDTO) =>
     queueService.queue(QueueName.AppConnectionSecretSync, QueueJobs.SecretSyncSyncSecrets, payload, {
       delay: getRequeueDelay(payload.failedToAcquireLockCount), // this is for delaying re-queued jobs if sync is locked
-      attempts: 5,
+      attempts: 1,
       backoff: {
         type: "exponential",
         delay: 3000
@@ -381,6 +382,9 @@ export const secretSyncQueueFactory = ({
         secrets: secretsToUpdate
       });
     }
+
+    if (secretsToUpdate.length || secretsToCreate.length)
+      await secretV2BridgeDAL.invalidateSecretCacheByProjectId(projectId);
 
     return importedSecretMap;
   };

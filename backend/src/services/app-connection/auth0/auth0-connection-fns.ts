@@ -1,5 +1,3 @@
-import { AxiosError } from "axios";
-
 import { request } from "@app/lib/config/request";
 import { BadRequestError } from "@app/lib/errors";
 import { removeTrailingSlash } from "@app/lib/fn";
@@ -84,7 +82,7 @@ export const validateAuth0ConnectionCredentials = async ({ credentials }: TAuth0
     };
   } catch (e: unknown) {
     throw new BadRequestError({
-      message: (e as AxiosError).message ?? `Unable to validate connection: verify credentials`
+      message: (e as Error).message ?? `Unable to validate connection: verify credentials`
     });
   }
 };

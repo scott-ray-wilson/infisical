@@ -1,30 +1,64 @@
 import { Controller, useFormContext } from "react-hook-form";
+import { SingleValue } from "react-select";
+import { faCircleInfo } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { TSecretRotationV2Form } from "@app/components/secret-rotations-v2/forms/schemas";
-import { FormControl, Input } from "@app/components/v2";
+import { FilterableSelect, FormControl, Tooltip } from "@app/components/v2";
+import { useAuth0ConnectionListClients } from "@app/hooks/api/appConnections/auth0";
+import { TAuth0Client } from "@app/hooks/api/appConnections/auth0/types";
 import { SecretRotation } from "@app/hooks/api/secretRotationsV2";
 
 export const Auth0ClientSecretRotationParametersFields = () => {
-  const { control } = useFormContext<
+  const { control, watch } = useFormContext<
     TSecretRotationV2Form & {
       type: SecretRotation.Auth0ClientSecret;
     }
   >();
 
+  const connectionId = watch("connection.id");
+
+  const { data: clients, isPending: isClientsPending } = useAuth0ConnectionListClients(
+    connectionId,
+    { enabled: Boolean(connectionId) }
+  );
+
   return (
     <Controller
+      name="parameters.clientId"
+      control={control}
       render={({ field: { value, onChange }, fieldState: { error } }) => (
         <FormControl
-          tooltipText="The Client ID of the Auth0 Application you want to rotate the client secret for."
           isError={Boolean(error)}
           errorText={error?.message}
-          label="Client ID"
+          label="Client"
+          helperText={
+            <Tooltip
+              className="max-w-md"
+              content="Ensure that your connection has been granted access to "
+            >
+              <div>
+                <span>Don&#39;t see the client you&#39;re looking for?</span>{" "}
+                <FontAwesomeIcon icon={faCircleInfo} className="text-mineshaft-400" />
+              </div>
+            </Tooltip>
+          }
         >
-          <Input value={value} onChange={onChange} />
+          <FilterableSelect
+            menuPlacement="top"
+            isLoading={isClientsPending && Boolean(connectionId)}
+            isDisabled={!connectionId}
+            value={clients?.find((client) => client.uuid === value) ?? null}
+            onChange={(option) => {
+              onChange((option as SingleValue<TAuth0Client>)?.uuid ?? null);
+            }}
+            options={clients}
+            placeholder="Select a client..."
+            getOptionLabel={(option) => option.name}
+            getOptionValue={(option) => option.uuid}
+          />
         </FormControl>
       )}
-      control={control}
-      name="parameters.clientId"
     />
   );
 };

@@ -27,3 +27,5 @@ export type TAuth0AccessTokenResponse = {
   scope: string;
   token_type: string;
 };
+
+export type TAuth0ListClientsResponse = {};

@@ -1,5 +1,4 @@
 import { request } from "@app/lib/config/request";
-import { logger } from "@app/lib/logger";
 import { OrgServiceActor } from "@app/lib/types";
 import { blockLocalAndPrivateIpAddresses } from "@app/lib/validator";
 import { TAppConnectionDALFactory } from "@app/services/app-connection/app-connection-dal";
@@ -7,7 +6,7 @@ import { AppConnection } from "@app/services/app-connection/app-connection-enums
 import { getAuth0ConnectionAccessToken } from "@app/services/app-connection/auth0/auth0-connection-fns";
 import { TKmsServiceFactory } from "@app/services/kms/kms-service";
 
-import { TAuth0Connection, TAuth0ListClientsResponse } from "./auth0-connection-types";
+import { TAuth0Connection, TAuth0ListClient, TAuth0ListClientsResponse } from "./auth0-connection-types";
 
 type TGetAppConnectionFunc = (
   app: AppConnection,
@@ -22,19 +21,35 @@ const listAuth0Clients = async (
 ) => {
   const accessToken = await getAuth0ConnectionAccessToken(appConnection, appConnectionDAL, kmsService);
 
-  const { audience } = appConnection.credentials;
+  const { audience, clientId: connectionClientId } = appConnection.credentials;
   await blockLocalAndPrivateIpAddresses(audience);
 
-  const { data } = await request.get<TAuth0ListClientsResponse>(`${audience}clients`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Accept-Encoding": "application/json"
-    }
-  });
+  const clients: TAuth0ListClient[] = [];
+  let hasMore = true;
+  let page = 0;
 
-  logger.warn(data, "clients");
+  while (hasMore) {
+    // eslint-disable-next-line no-await-in-loop
+    const { data: clientsPage } = await request.get<TAuth0ListClientsResponse>(`${audience}clients`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Accept-Encoding": "application/json"
+      },
+      params: {
+        include_totals: true,
+        per_page: 100,
+        page
+      }
+    });
 
-  return data ?? [];
+    clients.push(...clientsPage.clients);
+    page += 1;
+    hasMore = clientsPage.total > clients.length;
+  }
+
+  return (
+    clients.filter((client) => client.client_id !== connectionClientId && client.name !== "All Applications") ?? []
+  );
 };
 
 export const auth0ConnectionService = (
@@ -47,7 +62,7 @@ export const auth0ConnectionService = (
 
     const clients = await listAuth0Clients(appConnection, appConnectionDAL, kmsService);
 
-    return clients;
+    return clients.map((client) => ({ id: client.client_id, name: client.name }));
   };
 
   return {

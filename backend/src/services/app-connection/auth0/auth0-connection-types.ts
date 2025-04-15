@@ -28,4 +28,12 @@ export type TAuth0AccessTokenResponse = {
   token_type: string;
 };
 
-export type TAuth0ListClientsResponse = {};
+export type TAuth0ListClient = {
+  name: string;
+  client_id: string;
+};
+
+export type TAuth0ListClientsResponse = {
+  total: number;
+  clients: TAuth0ListClient[];
+};

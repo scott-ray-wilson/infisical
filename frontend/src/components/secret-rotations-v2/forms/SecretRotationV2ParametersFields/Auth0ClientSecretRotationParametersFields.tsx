@@ -35,7 +35,13 @@ export const Auth0ClientSecretRotationParametersFields = () => {
           helperText={
             <Tooltip
               className="max-w-md"
-              content="Ensure that your connection has been granted access to "
+              content={
+                <>
+                  Ensure that your connection has the{" "}
+                  <span className="font-semibold">read_clients</span> permission and the client
+                  exists in the connection's audience.
+                </>
+              }
             >
               <div>
                 <span>Don&#39;t see the client you&#39;re looking for?</span>{" "}
@@ -48,14 +54,14 @@ export const Auth0ClientSecretRotationParametersFields = () => {
             menuPlacement="top"
             isLoading={isClientsPending && Boolean(connectionId)}
             isDisabled={!connectionId}
-            value={clients?.find((client) => client.uuid === value) ?? null}
+            value={clients?.find((client) => client.id === value) ?? null}
             onChange={(option) => {
-              onChange((option as SingleValue<TAuth0Client>)?.uuid ?? null);
+              onChange((option as SingleValue<TAuth0Client>)?.id ?? null);
             }}
             options={clients}
             placeholder="Select a client..."
             getOptionLabel={(option) => option.name}
-            getOptionValue={(option) => option.uuid}
+            getOptionValue={(option) => option.id}
           />
         </FormControl>
       )}

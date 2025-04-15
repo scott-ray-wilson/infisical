@@ -35,7 +35,7 @@ export const registerAuth0ConnectionRouter = async (server: FastifyZodProvider) 
       }),
       response: {
         200: z.object({
-          clients: z.object({ uuid: z.string(), name: z.string() }).array()
+          clients: z.object({ name: z.string(), id: z.string() }).array()
         })
       }
     },

@@ -1,0 +1,227 @@
+import { request } from "@app/lib/config/request";
+import { logger } from "@app/lib/logger";
+import { getWindmillInstanceUrl } from "@app/services/app-connection/windmill";
+import { SecretSyncError } from "@app/services/secret-sync/secret-sync-errors";
+import {
+  TDeleteWindmillVariable,
+  TPostWindmillVariable,
+  TWindmillListVariables,
+  TWindmillListVariablesResponse,
+  TWindmillSyncWithCredentials,
+  TWindmillVariable
+} from "@app/services/secret-sync/windmill/windmill-sync-types";
+
+import { TSecretMap } from "../secret-sync-types";
+
+const listWindmillVariables = async ({ instanceUrl, workspace, accessToken, path }: TWindmillListVariables) => {
+  const variables: Record<string, TWindmillVariable> = {};
+
+  logger.warn({ instanceUrl, workspace, accessToken, path });
+
+  // windmill paginates but doesn't return if there's more pages so we need to check if page size full
+  let page: number | null = 1;
+
+  while (page) {
+    // eslint-disable-next-line no-await-in-loop
+    const { data: variablesPage } = await request.get<TWindmillListVariablesResponse>(
+      `${instanceUrl}/api/w/${workspace}/variables/list`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        },
+        params: {
+          page,
+          limit: 100,
+          path_start: path
+        }
+      }
+    );
+
+    // eslint-disable-next-line no-await-in-loop
+    for await (const variable of variablesPage) {
+      const variableName = variable.path.replace(path, "");
+
+      if (variable.is_oauth) continue;
+
+      if (variable.is_secret) {
+        const { data: variableValue } = await request.get<string>(
+          `${instanceUrl}/api/w/${workspace}/variables/get_value/${variable.path}`,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`
+            }
+          }
+        );
+
+        variables[variableName] = {
+          ...variable,
+          value: variableValue
+        };
+      } else {
+        variables[variableName] = variable;
+      }
+    }
+
+    if (variablesPage.length >= 100) {
+      page += 1;
+    } else {
+      page = null;
+    }
+  }
+
+  return variables;
+};
+
+const createWindmillVariable = async ({ path, value, instanceUrl, accessToken, workspace }: TPostWindmillVariable) => {
+  logger.warn(
+    { instanceUrl, path, value, accessToken, workspace },
+    `${instanceUrl}/api/w/${workspace}/variables/create`
+  );
+  const resp = await request.post(
+    `${instanceUrl}/api/w/${workspace}/variables/create`,
+    {
+      path,
+      value,
+      is_secret: true,
+      description: "test"
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      }
+    }
+  );
+};
+
+const updateWindmillVariable = async ({ path, value, instanceUrl, accessToken, workspace }: TPostWindmillVariable) => {
+  await request.post(
+    `${instanceUrl}/api/w/${workspace}/variables/update/${path}`,
+    {
+      value,
+      is_secret: true
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json"
+      }
+    }
+  );
+};
+
+const deleteWindmillVariable = async ({ path, instanceUrl, accessToken }: TDeleteWindmillVariable) => {
+  await request.delete(`${instanceUrl}/variables/delete/${path}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+};
+
+export const WindmillSyncFns = {
+  syncSecrets: async (secretSync: TWindmillSyncWithCredentials, secretMap: TSecretMap) => {
+    const {
+      connection,
+      destinationConfig: { workspace, path },
+      syncOptions: { disableSecretDeletion }
+    } = secretSync;
+
+    const instanceUrl = await getWindmillInstanceUrl(connection);
+
+    const { accessToken } = connection.credentials;
+
+    const variables = await listWindmillVariables({ instanceUrl, accessToken, workspace, path });
+
+    for await (const entry of Object.entries(secretMap)) {
+      const [key, { value }] = entry;
+
+      try {
+        const payload = {
+          instanceUrl,
+          workspace,
+          path: path + key,
+          value,
+          accessToken
+        };
+        if (key in variables) {
+          if (variables[key].value !== value) await updateWindmillVariable(payload);
+        } else {
+          await createWindmillVariable(payload);
+        }
+      } catch (error) {
+        logger.error(error.config);
+        throw new SecretSyncError({
+          error,
+          secretKey: key
+        });
+      }
+    }
+
+    if (disableSecretDeletion) return;
+
+    for await (const [key, variable] of Object.entries(variables)) {
+      if (!(key in secretMap)) {
+        try {
+          await deleteWindmillVariable({
+            instanceUrl,
+            workspace,
+            path: variable.path,
+            accessToken
+          });
+        } catch (error) {
+          throw new SecretSyncError({
+            error,
+            secretKey: key
+          });
+        }
+      }
+    }
+  },
+  removeSecrets: async (secretSync: TWindmillSyncWithCredentials, secretMap: TSecretMap) => {
+    const {
+      connection,
+      destinationConfig: { workspace, path }
+    } = secretSync;
+
+    const instanceUrl = await getWindmillInstanceUrl(connection);
+
+    const { accessToken } = connection.credentials;
+
+    const variables = await listWindmillVariables({ instanceUrl, accessToken, workspace, path });
+
+    for await (const [key, variable] of Object.entries(variables)) {
+      if (key in secretMap) {
+        try {
+          await deleteWindmillVariable({
+            path: variable.path,
+            instanceUrl,
+            workspace,
+            accessToken
+          });
+        } catch (error) {
+          throw new SecretSyncError({
+            error,
+            secretKey: key
+          });
+        }
+      }
+    }
+  },
+  getSecrets: async (secretSync: TWindmillSyncWithCredentials) => {
+    const {
+      connection,
+      destinationConfig: { workspace, path }
+    } = secretSync;
+
+    const instanceUrl = await getWindmillInstanceUrl(connection);
+    logger.warn(`instanceURL ${instanceUrl}`);
+
+    const { accessToken } = connection.credentials;
+
+    const variables = await listWindmillVariables({ instanceUrl, accessToken, workspace, path });
+
+    return Object.fromEntries(
+      Object.entries(variables).map(([key, variable]) => [key, { value: variable.value ?? "" }])
+    );
+  }
+};

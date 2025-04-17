@@ -16,6 +16,8 @@ export const getLdapConnectionListItem = () => {
   };
 };
 
+const LDAP_TIMEOUT = 15_000;
+
 const getLdapConnectionClient = async ({
   url,
   username,
@@ -28,28 +30,16 @@ const getLdapConnectionClient = async ({
   const isSSL = url.startsWith("ldaps");
 
   return new Promise<ldap.Client>((resolve, reject) => {
-    logger.warn(
-      isSSL
-        ? {
-            rejectUnauthorized: sslRejectUnauthorized,
-            ca: sslCertificate ? [sslCertificate] : undefined,
-            servername: ""
-          }
-        : undefined,
-      "sslCert"
-    );
-
     const client = ldap.createClient({
       bindDN: username,
       bindCredentials: password,
       url,
-      timeout: 15_000,
-      connectTimeout: 15_000,
+      timeout: LDAP_TIMEOUT,
+      connectTimeout: LDAP_TIMEOUT,
       tlsOptions: isSSL
         ? {
             rejectUnauthorized: sslRejectUnauthorized,
-            ca: sslCertificate ? [sslCertificate] : undefined,
-            servername: "dc-01.scott-test.local"
+            ca: sslCertificate ? [sslCertificate] : undefined
           }
         : undefined
     });
@@ -74,24 +64,41 @@ const getLdapConnectionClient = async ({
     client.on("connectTimeout", (err: Error) => {
       logger.error(err, "LDAP Connection Timeout");
       client.destroy();
-      reject(new Error(`Connection Timeout: ${err.message}`));
     });
 
     client.on("connect", () => {
       logger.warn("LDAP Connected");
-      resolve(client);
+
+      client.bind(username, password, (err) => {
+        if (err) {
+          logger.error(err, "LDAP Bind Error");
+          reject(new Error(`Bind Error: ${err.message}`));
+          client.destroy();
+        }
+
+        resolve(client);
+      });
     });
   });
 };
 
 export const validateLdapConnectionCredentials = async ({ credentials }: TLdapConnectionConfig) => {
+  let client: ldap.Client | undefined;
+
   try {
-    const client = await getLdapConnectionClient(credentials);
+    client = await getLdapConnectionClient(credentials);
+
+    // this shouldn't occur as handle connection error events in client but here as fallback
+    if (!client.connected) {
+      throw new BadRequestError({ message: "Unable to connect to LDAP server" });
+    }
 
     return credentials;
   } catch (e: unknown) {
     throw new BadRequestError({
       message: (e as Error).message ?? `Unable to validate connection: verify credentials`
     });
+  } finally {
+    client?.destroy();
   }
 };

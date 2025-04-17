@@ -9,6 +9,7 @@ import { TDatabricksConnection } from "./databricks-connection";
 import { TGcpConnection } from "./gcp-connection";
 import { TGitHubConnection } from "./github-connection";
 import { THumanitecConnection } from "./humanitec-connection";
+import { TLdapConnection } from "./ldap-connection";
 import { TMsSqlConnection } from "./mssql-connection";
 import { TPostgresConnection } from "./postgres-connection";
 import { TTerraformCloudConnection } from "./terraform-cloud-connection";
@@ -23,6 +24,7 @@ export * from "./databricks-connection";
 export * from "./gcp-connection";
 export * from "./github-connection";
 export * from "./humanitec-connection";
+export * from "./ldap-connection";
 export * from "./mssql-connection";
 export * from "./postgres-connection";
 export * from "./terraform-cloud-connection";
@@ -41,7 +43,8 @@ export type TAppConnection =
   | TPostgresConnection
   | TMsSqlConnection
   | TCamundaConnection
-  | TAuth0Connection;
+  | TAuth0Connection
+  | TLdapConnection;
 
 export type TAvailableAppConnection = Pick<TAppConnection, "name" | "id">;
 
@@ -82,4 +85,5 @@ export type TAppConnectionMap = {
   [AppConnection.MsSql]: TMsSqlConnection;
   [AppConnection.Camunda]: TCamundaConnection;
   [AppConnection.Auth0]: TAuth0Connection;
+  [AppConnection.LDAP]: TLdapConnection;
 };

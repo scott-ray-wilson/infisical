@@ -1,6 +1,6 @@
 {
   "name": "Infisical",
-  "openapi": "https://app.infisical.com/api/docs/json",
+  "openapi": "https://bubblegloop-swamp.ngrok.dev/api/docs/json",
   "logo": {
     "dark": "/logo/dark.svg",
     "light": "/logo/light.svg",
@@ -1007,6 +1007,18 @@
                 "api-reference/endpoints/app-connections/humanitec/create",
                 "api-reference/endpoints/app-connections/humanitec/update",
                 "api-reference/endpoints/app-connections/humanitec/delete"
+              ]
+            },
+            {
+              "group": "LDAP",
+              "pages": [
+                "api-reference/endpoints/app-connections/ldap/list",
+                "api-reference/endpoints/app-connections/ldap/available",
+                "api-reference/endpoints/app-connections/ldap/get-by-id",
+                "api-reference/endpoints/app-connections/ldap/get-by-name",
+                "api-reference/endpoints/app-connections/ldap/create",
+                "api-reference/endpoints/app-connections/ldap/update",
+                "api-reference/endpoints/app-connections/ldap/delete"
               ]
             },
             {

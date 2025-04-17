@@ -41,6 +41,7 @@ import {
   HumanitecConnectionMethod,
   validateHumanitecConnectionCredentials
 } from "./humanitec";
+import { getLdapConnectionListItem, LdapConnectionMethod, validateLdapConnectionCredentials } from "./ldap";
 import { getMsSqlConnectionListItem, MsSqlConnectionMethod } from "./mssql";
 import { getPostgresConnectionListItem, PostgresConnectionMethod } from "./postgres";
 import {
@@ -65,7 +66,8 @@ export const listAppConnectionOptions = () => {
     getPostgresConnectionListItem(),
     getMsSqlConnectionListItem(),
     getCamundaConnectionListItem(),
-    getAuth0ConnectionListItem()
+    getAuth0ConnectionListItem(),
+    getLdapConnectionListItem()
   ].sort((a, b) => a.name.localeCompare(b.name));
 };
 
@@ -128,7 +130,8 @@ export const validateAppConnectionCredentials = async (
     [AppConnection.Camunda]: validateCamundaConnectionCredentials as TAppConnectionCredentialsValidator,
     [AppConnection.Vercel]: validateVercelConnectionCredentials as TAppConnectionCredentialsValidator,
     [AppConnection.TerraformCloud]: validateTerraformCloudConnectionCredentials as TAppConnectionCredentialsValidator,
-    [AppConnection.Auth0]: validateAuth0ConnectionCredentials as TAppConnectionCredentialsValidator
+    [AppConnection.Auth0]: validateAuth0ConnectionCredentials as TAppConnectionCredentialsValidator,
+    [AppConnection.LDAP]: validateLdapConnectionCredentials as TAppConnectionCredentialsValidator
   };
 
   return VALIDATE_APP_CONNECTION_CREDENTIALS_MAP[appConnection.app](appConnection);
@@ -161,6 +164,8 @@ export const getAppConnectionMethodName = (method: TAppConnection["method"]) => 
       return "Username & Password";
     case Auth0ConnectionMethod.ClientCredentials:
       return "Client Credentials";
+    case LdapConnectionMethod.SimpleBind:
+      return "Simple Bind";
     default:
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       throw new Error(`Unhandled App Connection Method: ${method}`);
@@ -204,5 +209,6 @@ export const TRANSITION_CONNECTION_CREDENTIALS_TO_PLATFORM: Record<
   [AppConnection.TerraformCloud]: platformManagedCredentialsNotSupported,
   [AppConnection.Camunda]: platformManagedCredentialsNotSupported,
   [AppConnection.Vercel]: platformManagedCredentialsNotSupported,
-  [AppConnection.Auth0]: platformManagedCredentialsNotSupported
+  [AppConnection.Auth0]: platformManagedCredentialsNotSupported,
+  [AppConnection.LDAP]: platformManagedCredentialsNotSupported // we could support this in the future
 };

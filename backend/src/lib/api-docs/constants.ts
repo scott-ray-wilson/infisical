@@ -1808,6 +1808,17 @@ export const AppConnections = {
     CAMUNDA: {
       clientId: "The client ID used to authenticate with Camunda.",
       clientSecret: "The client secret used to authenticate with Camunda."
+    },
+    LDAP: {
+      provider: "The type of LDAP provider. Determines provider-specific behaviors.",
+      url: "The LDAP/LDAPS URL to connect to (e.g., ldap://domain-or-ip:389 or ldaps://domain-or-ip:636).",
+      username:
+        "The username or Distinguished Name (DN) to bind with. For simple authentication, use a username like 'jsmith'; for full DN, use format like 'cn=John Smith,ou=Users,dc=example,dc=com'.",
+      password: "The password to bind with for authentication.",
+      sslRejectUnauthorized:
+        "Whether or not to reject unauthorized SSL certificates (true/false) when using ldaps://. Set to false only in test environments.",
+      sslCertificate:
+        "The SSL certificate (PEM format) to use for secure connection when using ldaps://. Required when using self-signed certificates."
     }
   }
 };

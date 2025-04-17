@@ -24,8 +24,6 @@ export const testLDAPConfig = async (ldapConfig: TLDAPConfig): Promise<boolean> 
   return new Promise((resolve) => {
     const ldapClient = ldapjs.createClient({
       url: ldapConfig.url,
-      bindDN: ldapConfig.bindDN,
-      bindCredentials: ldapConfig.bindPass,
       ...(ldapConfig.caCert !== ""
         ? {
             tlsOptions: {

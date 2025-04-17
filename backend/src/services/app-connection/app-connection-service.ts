@@ -43,6 +43,7 @@ import { ValidateGitHubConnectionCredentialsSchema } from "./github";
 import { githubConnectionService } from "./github/github-connection-service";
 import { ValidateHumanitecConnectionCredentialsSchema } from "./humanitec";
 import { humanitecConnectionService } from "./humanitec/humanitec-connection-service";
+import { ValidateLdapConnectionCredentialsSchema } from "./ldap";
 import { ValidateMsSqlConnectionCredentialsSchema } from "./mssql";
 import { ValidatePostgresConnectionCredentialsSchema } from "./postgres";
 import { ValidateTerraformCloudConnectionCredentialsSchema } from "./terraform-cloud";
@@ -71,7 +72,8 @@ const VALIDATE_APP_CONNECTION_CREDENTIALS_MAP: Record<AppConnection, TValidateAp
   [AppConnection.Postgres]: ValidatePostgresConnectionCredentialsSchema,
   [AppConnection.MsSql]: ValidateMsSqlConnectionCredentialsSchema,
   [AppConnection.Camunda]: ValidateCamundaConnectionCredentialsSchema,
-  [AppConnection.Auth0]: ValidateAuth0ConnectionCredentialsSchema
+  [AppConnection.Auth0]: ValidateAuth0ConnectionCredentialsSchema,
+  [AppConnection.LDAP]: ValidateLdapConnectionCredentialsSchema
 };
 
 export const appConnectionServiceFactory = ({

@@ -11,16 +11,16 @@ import { TLdapConnectionConfig } from "./ldap-connection-types";
 export const getLdapConnectionListItem = () => {
   return {
     name: "LDAP" as const,
-    app: AppConnection.LDAP as const,
+    app: AppConnection.Ldap as const,
     methods: Object.values(LdapConnectionMethod) as [LdapConnectionMethod.SimpleBind]
   };
 };
 
 const LDAP_TIMEOUT = 15_000;
 
-const getLdapConnectionClient = async ({
+export const getLdapConnectionClient = async ({
   url,
-  username,
+  dn,
   password,
   sslCertificate,
   sslRejectUnauthorized
@@ -31,8 +31,6 @@ const getLdapConnectionClient = async ({
 
   return new Promise<ldap.Client>((resolve, reject) => {
     const client = ldap.createClient({
-      bindDN: username,
-      bindCredentials: password,
       url,
       timeout: LDAP_TIMEOUT,
       connectTimeout: LDAP_TIMEOUT,
@@ -69,7 +67,7 @@ const getLdapConnectionClient = async ({
     client.on("connect", () => {
       logger.warn("LDAP Connected");
 
-      client.bind(username, password, (err) => {
+      client.bind(dn, password, (err) => {
         if (err) {
           logger.error(err, "LDAP Bind Error");
           reject(new Error(`Bind Error: ${err.message}`));
@@ -96,7 +94,7 @@ export const validateLdapConnectionCredentials = async ({ credentials }: TLdapCo
     return credentials;
   } catch (e: unknown) {
     throw new BadRequestError({
-      message: (e as Error).message ?? `Unable to validate connection: verify credentials`
+      message: `Unable to validate connection: ${(e as Error).message || "verify credentials"}`
     });
   } finally {
     client?.destroy();

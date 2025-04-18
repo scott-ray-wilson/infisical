@@ -85,5 +85,5 @@ export type TAppConnectionMap = {
   [AppConnection.MsSql]: TMsSqlConnection;
   [AppConnection.Camunda]: TCamundaConnection;
   [AppConnection.Auth0]: TAuth0Connection;
-  [AppConnection.LDAP]: TLdapConnection;
+  [AppConnection.Ldap]: TLdapConnection;
 };

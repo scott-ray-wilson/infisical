@@ -37,7 +37,7 @@ type Props = {
 };
 
 const rootSchema = genericAppConnectionFieldsSchema.extend({
-  app: z.literal(AppConnection.LDAP)
+  app: z.literal(AppConnection.Ldap)
 });
 
 const formSchema = z.discriminatedUnion("method", [
@@ -46,7 +46,7 @@ const formSchema = z.discriminatedUnion("method", [
     credentials: z.object({
       provider: z.nativeEnum(LdapConnectionProvider),
       url: z.string().url().trim().min(1, "LDAP URL required"),
-      username: z.string().trim().min(1, "Username or DN required"),
+      dn: z.string().trim().min(1, "Distinguished Name (DN) required"),
       password: z.string().trim().min(1, "Password required"),
       sslRejectUnauthorized: z.boolean(),
       sslCertificate: z
@@ -67,7 +67,7 @@ export const LdapConnectionForm = ({ appConnection, onSubmit }: Props) => {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: appConnection ?? {
-      app: AppConnection.LDAP,
+      app: AppConnection.Ldap,
       method: LdapConnectionMethod.SimpleBind,
       credentials: {
         provider: LdapConnectionProvider.ActiveDirectory,
@@ -106,7 +106,7 @@ export const LdapConnectionForm = ({ appConnection, onSubmit }: Props) => {
             render={({ field: { value, onChange }, fieldState: { error } }) => (
               <FormControl
                 tooltipText={`The method you would like to use to connect with ${
-                  APP_CONNECTION_MAP[AppConnection.LDAP].name
+                  APP_CONNECTION_MAP[AppConnection.Ldap].name
                 }. This field cannot be changed after creation.`}
                 errorText={error?.message}
                 isError={Boolean(error?.message)}
@@ -207,15 +207,15 @@ export const LdapConnectionForm = ({ appConnection, onSubmit }: Props) => {
               />
               <div className="grid grid-cols-2 gap-2">
                 <Controller
-                  name="credentials.username"
+                  name="credentials.dn"
                   control={control}
                   render={({ field, fieldState: { error } }) => (
                     <FormControl
                       errorText={error?.message}
                       isError={Boolean(error?.message)}
-                      label="Binding Username or DN"
+                      label="Binding Distinguised Name (DN)"
                     >
-                      <Input {...field} placeholder="cn=John,ou=Users,dc=example,dc=com" />
+                      <Input {...field} placeholder="CN=John,OU=Users,DC=example,DC=com" />
                     </FormControl>
                   )}
                 />

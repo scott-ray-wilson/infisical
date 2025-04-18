@@ -32,5 +32,5 @@ export const APP_CONNECTION_REGISTER_ROUTER_MAP: Record<AppConnection, (server: 
     [AppConnection.MsSql]: registerMsSqlConnectionRouter,
     [AppConnection.Camunda]: registerCamundaConnectionRouter,
     [AppConnection.Auth0]: registerAuth0ConnectionRouter,
-    [AppConnection.LDAP]: registerLdapConnectionRouter
+    [AppConnection.Ldap]: registerLdapConnectionRouter
   };

@@ -50,7 +50,7 @@ export const APP_CONNECTION_MAP: Record<
   [AppConnection.MsSql]: { name: "Microsoft SQL Server", image: "MsSql.png" },
   [AppConnection.Camunda]: { name: "Camunda", image: "Camunda.png" },
   [AppConnection.Auth0]: { name: "Auth0", image: "Auth0.png", size: 40 },
-  [AppConnection.LDAP]: { name: "LDAP", image: "LDAP.webp", size: 60 }
+  [AppConnection.Ldap]: { name: "LDAP", image: "LDAP.webp", size: 60 }
 };
 
 export const getAppConnectionMethodDetails = (method: TAppConnection["method"]) => {

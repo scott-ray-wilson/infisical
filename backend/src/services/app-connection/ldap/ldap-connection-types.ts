@@ -12,7 +12,7 @@ import {
 export type TLdapConnection = z.infer<typeof LdapConnectionSchema>;
 
 export type TLdapConnectionInput = z.infer<typeof CreateLdapConnectionSchema> & {
-  app: AppConnection.LDAP;
+  app: AppConnection.Ldap;
 };
 
 export type TValidateLdapConnectionCredentialsSchema = typeof ValidateLdapConnectionCredentialsSchema;

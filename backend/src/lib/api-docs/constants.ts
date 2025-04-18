@@ -1812,8 +1812,7 @@ export const AppConnections = {
     LDAP: {
       provider: "The type of LDAP provider. Determines provider-specific behaviors.",
       url: "The LDAP/LDAPS URL to connect to (e.g., ldap://domain-or-ip:389 or ldaps://domain-or-ip:636).",
-      username:
-        "The username or Distinguished Name (DN) to bind with. For simple authentication, use a username like 'jsmith'; for full DN, use format like 'cn=John Smith,ou=Users,dc=example,dc=com'.",
+      dn: "The Distinguished Name (DN) of the principal to bind with (e.g., 'cn=John,ou=Users,dc=example,dc=com').",
       password: "The password to bind with for authentication.",
       sslRejectUnauthorized:
         "Whether or not to reject unauthorized SSL certificates (true/false) when using ldaps://. Set to false only in test environments.",
@@ -2018,6 +2017,9 @@ export const SecretRotations = {
     },
     AUTH0_CLIENT_SECRET: {
       clientId: "The client ID of the Auth0 Application to rotate the client secret for."
+    },
+    LDAP_PASSWORD: {
+      dn: "The Distinguished Name (DN) of the principal to rotate the password for."
     }
   },
   SECRETS_MAPPING: {
@@ -2028,6 +2030,10 @@ export const SecretRotations = {
     AUTH0_CLIENT_SECRET: {
       clientId: "The name of the secret that the client ID will be mapped to.",
       clientSecret: "The name of the secret that the rotated client secret will be mapped to."
+    },
+    LDAP_PASSWORD: {
+      dn: "The name of the secret that the Distinguished Name (DN) of the principal will be mapped to.",
+      password: "The name of the secret that the rotated password will be mapped to."
     }
   }
 };

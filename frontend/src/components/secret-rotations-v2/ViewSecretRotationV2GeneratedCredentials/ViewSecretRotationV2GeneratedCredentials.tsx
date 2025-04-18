@@ -4,8 +4,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { format } from "date-fns";
 
 import { ViewAuth0ClientSecretRotationGeneratedCredentials } from "@app/components/secret-rotations-v2/ViewSecretRotationV2GeneratedCredentials/ViewAuth0ClientSecretRotationGeneratedCredentials";
+import { ViewLdapPasswordRotationGeneratedCredentials } from "@app/components/secret-rotations-v2/ViewSecretRotationV2GeneratedCredentials/ViewLdapPasswordRotationGeneratedCredentials";
 import { Modal, ModalContent, Spinner } from "@app/components/v2";
-import { SECRET_ROTATION_MAP } from "@app/helpers/secretRotationsV2";
+import { NoticeBannerV2 } from "@app/components/v2/NoticeBannerV2/NoticeBannerV2";
+import { IS_ROTATION_DUAL_CREDENTIALS, SECRET_ROTATION_MAP } from "@app/helpers/secretRotationsV2";
 import {
   SecretRotation,
   TSecretRotationV2,
@@ -67,6 +69,12 @@ const Content = ({ secretRotation }: ContentProps) => {
         />
       );
       break;
+    case SecretRotation.LdapPassword:
+      Component = (
+        <ViewLdapPasswordRotationGeneratedCredentials
+          generatedCredentialsResponse={generatedCredentialsResponse}
+        />
+      );
     default:
       throw new Error("Unhandled View Generated Credential Rotation Type");
   }
@@ -74,6 +82,23 @@ const Content = ({ secretRotation }: ContentProps) => {
   return (
     <div className="flex flex-col gap-y-4">
       {Component}
+      {!IS_ROTATION_DUAL_CREDENTIALS[type] && (
+        <NoticeBannerV2 title="Auth0 Retired Credentials Behavior">
+          <p className="text-sm text-mineshaft-300">
+            Due to how {SECRET_ROTATION_MAP[type].name} are rotated, retired credentials will not be
+            able to authenticate with Auth0 during their{" "}
+            <a
+              target="_blank"
+              href="https://infisical.com/docs/documentation/platform/secret-rotation/overview#how-rotation-works"
+              rel="noopener noreferrer"
+              className="underline decoration-primary underline-offset-2 hover:text-mineshaft-200"
+            >
+              inactive period
+            </a>
+            . This is a limitation of the Auth0 platform and cannot be rectified by Infisical.
+          </p>
+        </NoticeBannerV2>
+      )}
       {nextRotationAt && (
         <div className="flex items-center gap-x-1.5 text-sm text-mineshaft-200">
           <FontAwesomeIcon icon={faRotate} className="text-mineshaft-400" />

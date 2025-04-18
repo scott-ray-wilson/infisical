@@ -858,6 +858,19 @@
               ]
             },
             {
+              "group": "LDAP Password",
+              "pages": [
+                "api-reference/endpoints/secret-rotations/ldap-password/create",
+                "api-reference/endpoints/secret-rotations/ldap-password/delete",
+                "api-reference/endpoints/secret-rotations/ldap-password/get-by-id",
+                "api-reference/endpoints/secret-rotations/ldap-password/get-by-name",
+                "api-reference/endpoints/secret-rotations/ldap-password/get-generated-credentials-by-id",
+                "api-reference/endpoints/secret-rotations/ldap-password/list",
+                "api-reference/endpoints/secret-rotations/ldap-password/rotate-secrets",
+                "api-reference/endpoints/secret-rotations/ldap-password/update"
+              ]
+            },
+            {
               "group": "Microsoft SQL Server Credentials",
               "pages": [
                 "api-reference/endpoints/secret-rotations/mssql-credentials/create",

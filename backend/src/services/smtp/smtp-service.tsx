@@ -5,7 +5,7 @@ import SMTPTransport from "nodemailer/lib/smtp-transport";
 import React from "react";
 
 import { getConfig } from "@app/lib/config/env";
-import OrganizationInvitationEmail from "@app/lib/emails/organization-invitation";
+import { NewDeviceLoginEmail, OrganizationInvitationEmail } from "@app/lib/emails";
 import { logger } from "@app/lib/logger";
 
 export type TSmtpConfig = SMTPTransport.Options;
@@ -50,7 +50,8 @@ export enum SmtpTemplates {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const EmailTemplateMap: Record<SmtpTemplates, React.FC<any>> = {
-  [SmtpTemplates.OrgInvite]: OrganizationInvitationEmail
+  [SmtpTemplates.OrgInvite]: OrganizationInvitationEmail,
+  [SmtpTemplates.NewDeviceJoin]: NewDeviceLoginEmail
 };
 
 export enum SmtpHost {

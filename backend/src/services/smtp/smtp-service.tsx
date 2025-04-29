@@ -1,6 +1,3 @@
-import fs from "node:fs/promises";
-import path from "node:path";
-
 import { render } from "@react-email/components";
 import handlebars from "handlebars";
 import { createTransport } from "nodemailer";
@@ -8,7 +5,7 @@ import SMTPTransport from "nodemailer/lib/smtp-transport";
 import React from "react";
 
 import { getConfig } from "@app/lib/config/env";
-import PlaidVerifyIdentityEmail from "@app/lib/emails/card-style";
+import OrganizationInvitationEmail from "@app/lib/emails/organization-invitation";
 import { logger } from "@app/lib/logger";
 
 export type TSmtpConfig = SMTPTransport.Options;
@@ -21,35 +18,40 @@ export type TSmtpSendMail = {
 export type TSmtpService = ReturnType<typeof smtpServiceFactory>;
 
 export enum SmtpTemplates {
-  SignupEmailVerification = "signupEmailVerification.handlebars",
-  EmailVerification = "emailVerification.handlebars",
-  SecretReminder = "secretReminder.handlebars",
-  EmailMfa = "emailMfa.handlebars",
-  UnlockAccount = "unlockAccount.handlebars",
-  AccessApprovalRequest = "accessApprovalRequest.handlebars",
-  AccessSecretRequestBypassed = "accessSecretRequestBypassed.handlebars",
-  SecretApprovalRequestNeedsReview = "secretApprovalRequestNeedsReview.handlebars",
-  HistoricalSecretList = "historicalSecretLeakIncident.handlebars",
-  NewDeviceJoin = "newDevice.handlebars",
-  OrgInvite = "organizationInvitation.handlebars",
-  ResetPassword = "passwordReset.handlebars",
-  SetupPassword = "passwordSetup.handlebars",
-  SecretLeakIncident = "secretLeakIncident.handlebars",
-  WorkspaceInvite = "workspaceInvitation.handlebars",
-  ScimUserProvisioned = "scimUserProvisioned.handlebars",
-  PkiExpirationAlert = "pkiExpirationAlert.handlebars",
-  IntegrationSyncFailed = "integrationSyncFailed.handlebars",
-  SecretSyncFailed = "secretSyncFailed.handlebars",
-  ExternalImportSuccessful = "externalImportSuccessful.handlebars",
-  ExternalImportFailed = "externalImportFailed.handlebars",
-  ExternalImportStarted = "externalImportStarted.handlebars",
-  SecretRequestCompleted = "secretRequestCompleted.handlebars",
-  SecretRotationFailed = "secretRotationFailed.handlebars",
-  ProjectAccessRequest = "projectAccess.handlebars",
-  OrgAdminProjectDirectAccess = "orgAdminProjectGrantAccess.handlebars",
-  OrgAdminBreakglassAccess = "orgAdminBreakglassAccess.handlebars",
-  ServiceTokenExpired = "serviceTokenExpired.handlebars"
+  SignupEmailVerification = "signupEmailVerification",
+  EmailVerification = "emailVerification",
+  SecretReminder = "secretReminder",
+  EmailMfa = "emailMfa",
+  UnlockAccount = "unlockAccount",
+  AccessApprovalRequest = "accessApprovalRequest",
+  AccessSecretRequestBypassed = "accessSecretRequestBypassed",
+  SecretApprovalRequestNeedsReview = "secretApprovalRequestNeedsReview",
+  HistoricalSecretList = "historicalSecretLeakIncident",
+  NewDeviceJoin = "newDevice",
+  OrgInvite = "organizationInvitation",
+  ResetPassword = "passwordReset",
+  SetupPassword = "passwordSetup",
+  SecretLeakIncident = "secretLeakIncident",
+  WorkspaceInvite = "workspaceInvitation",
+  ScimUserProvisioned = "scimUserProvisioned",
+  PkiExpirationAlert = "pkiExpirationAlert",
+  IntegrationSyncFailed = "integrationSyncFailed",
+  SecretSyncFailed = "secretSyncFailed",
+  ExternalImportSuccessful = "externalImportSuccessful",
+  ExternalImportFailed = "externalImportFailed",
+  ExternalImportStarted = "externalImportStarted",
+  SecretRequestCompleted = "secretRequestCompleted",
+  SecretRotationFailed = "secretRotationFailed",
+  ProjectAccessRequest = "projectAccess",
+  OrgAdminProjectDirectAccess = "orgAdminProjectGrantAccess",
+  OrgAdminBreakglassAccess = "orgAdminBreakglassAccess",
+  ServiceTokenExpired = "serviceTokenExpired"
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const EmailTemplateMap: Record<SmtpTemplates, React.FC<any>> = {
+  [SmtpTemplates.OrgInvite]: OrganizationInvitationEmail
+};
 
 export enum SmtpHost {
   Sendgrid = "smtp.sendgrid.net",
@@ -73,18 +75,26 @@ export const smtpServiceFactory = (cfg: TSmtpConfig) => {
 
   const sendMail = async ({ substitutions, recipients, template, subjectLine }: TSmtpSendMail) => {
     const appCfg = getConfig();
-    const html = await fs.readFile(path.resolve(__dirname, "./templates/", template), "utf8");
-    const temp = handlebars.compile(html);
-    const htmlToSend = temp({ isCloud: appCfg.isCloud, siteUrl: appCfg.SITE_URL, ...substitutions });
+    // const html = await fs.readFile(path.resolve(__dirname, "./templates/", template), "utf8");
+    // const temp = handlebars.compile(html);
+    // const htmlToSend = temp({ isCloud: appCfg.isCloud, siteUrl: appCfg.SITE_URL, ...substitutions });
 
-    const newHtmlToSend = await render(<PlaidVerifyIdentityEmail {...substitutions} />);
+    const EmailTemplate = EmailTemplateMap[template];
+
+    if (!EmailTemplate) {
+      throw new Error(`Email template ${template} not found`);
+    }
+
+    const htmlToSend = await render(
+      <EmailTemplate {...substitutions} isCloud={appCfg.isCloud} siteUrl={appCfg.SITE_URL} />
+    );
 
     if (isSmtpOn) {
       await smtp.sendMail({
         from: cfg.from,
         to: recipients.join(", "),
         subject: subjectLine,
-        html: newHtmlToSend
+        html: htmlToSend
       });
     } else {
       logger.info("SMTP is not configured. Outputting it in terminal");
@@ -92,7 +102,7 @@ export const smtpServiceFactory = (cfg: TSmtpConfig) => {
         from: cfg.from,
         to: recipients.join(", "),
         subject: subjectLine,
-        html: newHtmlToSend
+        html: htmlToSend
       });
     }
   };

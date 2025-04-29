@@ -44,46 +44,61 @@ export const PlaidVerifyIdentityEmail = ({
       <Tailwind>
         <Body className="bg-gray-300 my-auto mx-auto font-sans px-2">
           <Preview>Test Email</Preview>
-          <Container className="border bg-gray-50 border-solid  border-gray-200 rounded-md my-[40px] mx-auto p-[32px] pb-[12px] max-w-[465px]">
-            <Section className="mt-[12px] mb-[8px]">
-              <Img
-                src={`https://infisical.com/_next/image?url=%2Fimages%2Flogo-black.png&w=64&q=75`}
-                width="32"
-                alt="Vercel Logo"
-                className="mb-[8px]"
-              />
+          <Container className="bg-white rounded-2xl my-[40px] mx-auto pb-[0px] max-w-[465px]">
+            <Section className="border-0 bg-[#c2d62b] mt-[0px] mb-[38px] h-[18px] rounded-t-2xl" />
+            <Section className="px-[32px] mb-[24px]">
+              <Section className="w-[48px] h-[48px] border border-solid border-gray-300 rounded-full bg-gray-100 mx-auto">
+                <Img
+                  src={`https://infisical.com/_next/image?url=%2Fimages%2Flogo-black.png&w=64&q=75`}
+                  width="32"
+                  alt="Vercel Logo"
+                  className="mx-auto"
+                />
+              </Section>
               {/* <Text className="inline-block pl-[4px] mb-[2px]">Infisical</Text> */}
             </Section>
-            <Hr />
-            <Heading className="text-black text-[20px] text-center font-normal p-0 my-[32px] mx-0">
-              Join <strong>{orgName}</strong> on <strong>Infisical</strong>
-            </Heading>
-            <Section className="p-[24px] border text-center border-solid border-gray-200 rounded-md bg-gray-100">
-              <Text className="text-black text-[16px] leading-[24px]">
-                <strong>{invitingUserName}</strong> (
-                <Link href={`mailto:${invitingUserEmail}`} className="text-slate-500 no-underline">
-                  {invitingUserEmail}
-                </Link>
-                ) has invited you to <strong>{orgName}</strong> on <strong>Infisical</strong>.
-              </Text>
-              <Button
-                href={`${callbackUrl}?token=${token}${metadata ? `&metadata=${metadata}` : ""}&to=${inviteeEmail}$&organization_id=${orgId}`}
-                className="rounded p-3 mx-auto mt-[8px] text-[16px] bg-black text-white"
-              >
-                Join {orgName}
-              </Button>
+            <Section className="px-[28px] bg-white">
+              <Heading className="text-black text-[18px] leading-[22px] text-center font-normal p-0 mx-0">
+                You've been invited to join
+                <br />
+                <strong>{orgName}</strong> on <strong>Infisical</strong>
+              </Heading>
+              <Section className="px-[24px] mt-[36px] py-[12px] border text-center border-solid border-gray-200 rounded-md bg-gray-50">
+                <Text className="text-black text-[16px] leading-[24px]">
+                  <strong>{invitingUserName}</strong> (
+                  <Link href={`mailto:${invitingUserEmail}`} className="text-slate-500 no-underline">
+                    {invitingUserEmail}
+                  </Link>
+                  ) has invited you to collaborate on <strong>{orgName}</strong> on <strong>Infisical</strong>.
+                </Text>
+              </Section>
+
+              <Section className="text-center mt-[28px]">
+                <Button
+                  href={`${callbackUrl}?token=${token}${metadata ? `&metadata=${metadata}` : ""}&to=${inviteeEmail}$&organization_id=${orgId}`}
+                  className="rounded-md p-3 px-[28px] my-[8px] text-center text-[16px] bg-[#c2d62b] text-black font-medium"
+                >
+                  Accept Invite
+                </Button>
+              </Section>
+
+              <Section className="mt-[24px] bg-gray-50  py-[8px] border border-solid border-gray-200 px-[16px] rounded-md text-gray-800">
+                <Text className="mb-[0px]">
+                  <strong>About Infisical:</strong>
+                </Text>
+                <Hr className="border-[#e0ed34] bg-[#e0ed34] mt-[8px] mb-[0px] h-[1px]" />
+                <Text>
+                  Infisical is an all-in-one platform to securely manage application secrets, certificates, SSH keys,
+                  and configurations across your team and infrastructure.
+                </Text>
+              </Section>
             </Section>
-            <Section className="mt-[16px] text-gray-800">
-              <Text className="mb-[0px]">
-                <strong>About Infisical:</strong>
-              </Text>
-              <Text>
-                Infisical is an all-in-one platform to securely manage application secrets, certificates, SSH keys, and
-                configurations across your team and infrastructure.
+            <Hr className=" mt-[32px] mb-[0px] h-[1px]" />
+            <Section className="px-[24px] text-center">
+              <Text className="text-gray-500 text-[12px]">
+                Email sent via Infisical at <strong className="text-[#c2d62b]">https://app.infisical.com</strong>
               </Text>
             </Section>
-            <Hr />
-            <Text className="text-gray-400 text-[12px]">Email sent via Infisical at https://app.infisical.com</Text>
           </Container>
         </Body>
       </Tailwind>

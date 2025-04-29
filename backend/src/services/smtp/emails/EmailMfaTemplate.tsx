@@ -3,39 +3,36 @@ import React from "react";
 
 import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
-interface SignupEmailVerificationTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
+interface EmailMfaTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
   code: string;
   isCloud: boolean;
 }
 
-export const SignupEmailVerificationTemplate = ({ code, siteUrl, isCloud }: SignupEmailVerificationTemplateProps) => {
+export const EmailMfaTemplate = ({ code, siteUrl, isCloud }: EmailMfaTemplateProps) => {
   return (
-    <BaseEmailWrapper
-      title="Confirm Your Email Address"
-      preview="Verify your email address to get started with Infisical."
-      siteUrl={siteUrl}
-    >
+    <BaseEmailWrapper title="MFA Code" preview="Sign-in attempt requires further verification" siteUrl={siteUrl}>
       <Heading className="text-black text-[18px] leading-[22px] text-center font-normal p-0 mx-0">
-        <strong>Confirm your email address</strong>
+        <strong>MFA required</strong>
       </Heading>
       <Section className="px-[16px] mt-[36px] pt-[8px] text-center pb-[8px] text-[14px] border border-solid border-gray-200 rounded-md bg-gray-50">
-        <Text>Enter the confirmation code below in the browser where you started sign-up.</Text>
+        <Text>Enter the MFA code below in the browser where you started sign-in.</Text>
         <Text className="text-[24px] mt-[16px]">
           <strong>{code}</strong>
         </Text>
       </Section>
       <Section className="mt-[24px] bg-gray-50 pt-[2px] pb-[16px] border border-solid border-gray-200 px-[16px] rounded-md text-gray-800">
         <Text className="mb-[0px]">
-          <strong>Questions about setting up Infisical?</strong>{" "}
+          <strong>Not you?</strong>{" "}
           {isCloud ? (
             <>
-              Email us at{" "}
+              Contact us at{" "}
               <Link href={`mailto:support@infisical.com`} className="text-slate-500 no-underline">
                 support@infisical.com
-              </Link>
+              </Link>{" "}
+              immediately
             </>
           ) : (
-            "Contact your administrator"
+            "Contact your administrator immediately"
           )}
           .
         </Text>
@@ -44,10 +41,10 @@ export const SignupEmailVerificationTemplate = ({ code, siteUrl, isCloud }: Sign
   );
 };
 
-export default SignupEmailVerificationTemplate;
+export default EmailMfaTemplate;
 
-SignupEmailVerificationTemplate.PreviewProps = {
+EmailMfaTemplate.PreviewProps = {
   code: "124356",
   isCloud: true,
   siteUrl: "https://infisical.com"
-} as SignupEmailVerificationTemplateProps;
+} as EmailMfaTemplateProps;

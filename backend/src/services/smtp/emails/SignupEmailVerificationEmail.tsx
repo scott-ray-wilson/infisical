@@ -3,12 +3,12 @@ import React from "react";
 
 import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
-interface SignupVerifcationEmailProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
+interface SignupVerificationEmailProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
   code: string;
   isCloud: boolean;
 }
 
-export const SignupVerificationEmail = ({ code, siteUrl, isCloud }: SignupVerifcationEmailProps) => {
+export const SignupEmailVerificationEmail = ({ code, siteUrl, isCloud }: SignupVerificationEmailProps) => {
   return (
     <BaseEmailWrapper
       title="Confirm Your Email Address"
@@ -18,7 +18,7 @@ export const SignupVerificationEmail = ({ code, siteUrl, isCloud }: SignupVerifc
       <Heading className="text-black text-[18px] leading-[22px] text-center font-normal p-0 mx-0">
         <strong>Confirm your email address</strong>
       </Heading>
-      <Section className="px-[16px] mt-[26px] pt-[8px] text-center pb-[8px] text-[14px] border border-solid border-gray-200 rounded-md bg-gray-50">
+      <Section className="px-[16px] mt-[36px] pt-[8px] text-center pb-[8px] text-[14px] border border-solid border-gray-200 rounded-md bg-gray-50">
         <Text>Enter the confirmation code below in the browser where you started signup.</Text>
         <Text className="text-[24px] mt-[16px]">
           <strong>{code}</strong>
@@ -44,10 +44,10 @@ export const SignupVerificationEmail = ({ code, siteUrl, isCloud }: SignupVerifc
   );
 };
 
-export default SignupVerificationEmail;
+export default SignupEmailVerificationEmail;
 
-SignupVerificationEmail.PreviewProps = {
+SignupEmailVerificationEmail.PreviewProps = {
   code: "124356",
   isCloud: true,
   siteUrl: "https://infisical.com"
-} as SignupVerifcationEmailProps;
+} as SignupVerificationEmailProps;

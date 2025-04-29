@@ -49,7 +49,7 @@ export const OrganizationInvitationEmail = ({
       <Section className="text-center mt-[28px]">
         <Button
           href={`${callback_url}?token=${token}${metadata ? `&metadata=${metadata}` : ""}&to=${email}&organization_id=${organizationId}`}
-          className="rounded-md  p-3 px-[28px] my-[8px] text-center text-[16px] bg-[#EBF852] text-black font-medium"
+          className="rounded-md  p-3 px-[28px] my-[8px] text-center text-[16px] bg-[#EBF852] border-solid border border-[#d1e309] text-black font-medium"
         >
           Accept Invite
         </Button>

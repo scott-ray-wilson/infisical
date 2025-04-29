@@ -7,6 +7,7 @@ import { NewDeviceLoginEmail, OrganizationInvitationEmail } from "src/services/s
 
 import { getConfig } from "@app/lib/config/env";
 import { logger } from "@app/lib/logger";
+import SignupEmailVerificationEmail from "@app/services/smtp/emails/SignupEmailVerificationEmail";
 
 export type TSmtpConfig = SMTPTransport.Options;
 export type TSmtpSendMail = {
@@ -51,7 +52,8 @@ export enum SmtpTemplates {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const EmailTemplateMap: Record<SmtpTemplates, React.FC<any>> = {
   [SmtpTemplates.OrgInvite]: OrganizationInvitationEmail,
-  [SmtpTemplates.NewDeviceJoin]: NewDeviceLoginEmail
+  [SmtpTemplates.NewDeviceJoin]: NewDeviceLoginEmail,
+  [SmtpTemplates.SignupEmailVerification]: SignupEmailVerificationEmail
 };
 
 export enum SmtpHost {

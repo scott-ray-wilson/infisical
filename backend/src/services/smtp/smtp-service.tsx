@@ -3,9 +3,9 @@ import handlebars from "handlebars";
 import { createTransport } from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 import React from "react";
+import { NewDeviceLoginEmail, OrganizationInvitationEmail } from "src/services/smtp/emails";
 
 import { getConfig } from "@app/lib/config/env";
-import { NewDeviceLoginEmail, OrganizationInvitationEmail } from "@app/lib/emails";
 import { logger } from "@app/lib/logger";
 
 export type TSmtpConfig = SMTPTransport.Options;

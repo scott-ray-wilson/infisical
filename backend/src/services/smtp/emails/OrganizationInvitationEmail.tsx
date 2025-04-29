@@ -1,7 +1,7 @@
 import { Button, Heading, Link, Section, Text } from "@react-email/components";
 import React from "react";
 
-import { BaseEmailWrapper, BaseEmailWrapperProps } from "./base-email-wrapper";
+import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
 interface OrganizationInvitationEmailProps extends Omit<BaseEmailWrapperProps, "preview" | "title"> {
   metadata?: string;

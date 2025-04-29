@@ -1,16 +1,4 @@
-import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Hr,
-  Html,
-  Img,
-  Preview,
-  Section,
-  Tailwind,
-  Text
-} from "@react-email/components";
+import { Body, Container, Head, Hr, Html, Img, Link, Preview, Section, Tailwind, Text } from "@react-email/components";
 import React, { ReactNode } from "react";
 
 export interface BaseEmailWrapperProps {
@@ -44,9 +32,9 @@ export const BaseEmailWrapper = ({ title, preview, children, siteUrl }: BaseEmai
             <Section className="px-[24px] text-center">
               <Text className="text-gray-500 text-[12px]">
                 Email sent via Infisical at{" "}
-                <Button href={siteUrl} className="text-slate-500">
+                <Link href={siteUrl} className="text-slate-500 no-underline">
                   {siteUrl}
-                </Button>
+                </Link>
               </Text>
             </Section>
           </Container>

@@ -1,7 +1,7 @@
-import { Heading, Section, Text } from "@react-email/components";
+import { Heading, Link, Section, Text } from "@react-email/components";
 import React from "react";
 
-import { BaseEmailWrapper, BaseEmailWrapperProps } from "./base-email-wrapper";
+import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
 interface NewDeviceLoginEmailProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
   email: string;
@@ -40,8 +40,15 @@ export const NewDeviceLoginEmail = ({
       </Section>
       <Section className="mt-[24px] bg-gray-50 pt-[2px] pb-[16px] border border-solid border-gray-200 px-[16px] rounded-md text-gray-800">
         <Text className="mb-[0px]">
-          If you believe that this login is suspicious, please contact {isCloud ? "Infisical" : "your administrator"} or
-          reset your password immediately.
+          If you believe that this login is suspicious, please contact{" "}
+          {isCloud ? (
+            <Link href={`mailto:support@infisical.com`} className="text-slate-500 no-underline">
+              support@infisical.com
+            </Link>
+          ) : (
+            "your administrator"
+          )}{" "}
+          or reset your password immediately.
         </Text>
       </Section>
     </BaseEmailWrapper>
@@ -56,6 +63,6 @@ NewDeviceLoginEmail.PreviewProps = {
   userAgent:
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3.1 Safari/605.1.15",
   timestamp: "Tue Apr 29 2025 23:03:27 GMT+0000 (Coordinated Universal Time)\n",
-  isCloud: false,
+  isCloud: true,
   siteUrl: "https://infisical.com"
 } as NewDeviceLoginEmailProps;

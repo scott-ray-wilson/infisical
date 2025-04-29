@@ -761,6 +761,8 @@ export const orgServiceFactory = ({
 
     const { permission } = await permissionService.getOrgPermission(actor, actorId, orgId, actorAuthMethod, actorOrgId);
 
+    const invitingUser = await userDAL.findOne({ id: actorId });
+
     const org = await orgDAL.findOrgById(orgId);
 
     const isEmailInvalid = await isDisposableEmail(inviteeEmails);
@@ -1179,8 +1181,8 @@ export const orgServiceFactory = ({
           subjectLine: "Infisical organization invitation",
           recipients: [el.email],
           substitutions: {
-            inviterFirstName: el.firstName,
-            inviterUsername: el.email,
+            inviterFirstName: invitingUser.firstName,
+            inviterUsername: invitingUser.email,
             organizationName: org?.name,
             email: el.email,
             organizationId: org?.id.toString(),

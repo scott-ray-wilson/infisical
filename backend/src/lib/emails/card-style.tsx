@@ -1,136 +1,199 @@
-import { Body, Container, Head, Heading, Html, Img, Link, Section, Text } from "@react-email/components";
+import {
+  Body,
+  Button,
+  Column,
+  Container,
+  Head,
+  Heading,
+  Hr,
+  Html,
+  Img,
+  Link,
+  Preview,
+  Row,
+  Section,
+  Tailwind,
+  Text
+} from "@react-email/components";
 import React from "react";
 
 interface PlaidVerifyIdentityEmailProps {
-  validationCode?: string;
+  orgName: string;
+  invitingUserName: string;
+  invitingUserEmail: string;
+  callbackUrl: string;
+  token: string;
+  metadata?: string;
+  inviteeEmail: string;
+  orgId: string;
 }
 
-const main = {
-  backgroundColor: "#ffffff",
-  fontFamily: "HelveticaNeue,Helvetica,Arial,sans-serif"
+export const PlaidVerifyIdentityEmail = ({
+  orgName,
+  invitingUserName,
+  invitingUserEmail,
+  token,
+  callbackUrl,
+  metadata,
+  inviteeEmail,
+  orgId
+}: PlaidVerifyIdentityEmailProps) => {
+  return (
+    <Html>
+      <Head title="Organization Invitation" />
+      <Tailwind>
+        <Body className="bg-gray-300 my-auto mx-auto font-sans px-2">
+          <Preview>Test Email</Preview>
+          <Container className="border bg-gray-50 border-solid  border-gray-200 rounded-md my-[40px] mx-auto p-[32px] pb-[12px] max-w-[465px]">
+            <Section className="mt-[12px] mb-[8px]">
+              <Img
+                src={`https://infisical.com/_next/image?url=%2Fimages%2Flogo-black.png&w=64&q=75`}
+                width="32"
+                alt="Vercel Logo"
+                className="mb-[8px]"
+              />
+              {/* <Text className="inline-block pl-[4px] mb-[2px]">Infisical</Text> */}
+            </Section>
+            <Hr />
+            <Heading className="text-black text-[20px] text-center font-normal p-0 my-[32px] mx-0">
+              Join <strong>{orgName}</strong> on <strong>Infisical</strong>
+            </Heading>
+            <Section className="p-[24px] border text-center border-solid border-gray-200 rounded-md bg-gray-100">
+              <Text className="text-black text-[16px] leading-[24px]">
+                <strong>{invitingUserName}</strong> (
+                <Link href={`mailto:${invitingUserEmail}`} className="text-slate-500 no-underline">
+                  {invitingUserEmail}
+                </Link>
+                ) has invited you to <strong>{orgName}</strong> on <strong>Infisical</strong>.
+              </Text>
+              <Button
+                href={`${callbackUrl}?token=${token}${metadata ? `&metadata=${metadata}` : ""}&to=${inviteeEmail}$&organization_id=${orgId}`}
+                className="rounded p-3 mx-auto mt-[8px] text-[16px] bg-black text-white"
+              >
+                Join {orgName}
+              </Button>
+            </Section>
+            <Section className="mt-[16px] text-gray-800">
+              <Text className="mb-[0px]">
+                <strong>About Infisical:</strong>
+              </Text>
+              <Text>
+                Infisical is an all-in-one platform to securely manage application secrets, certificates, SSH keys, and
+                configurations across your team and infrastructure.
+              </Text>
+            </Section>
+            <Hr />
+            <Text className="text-gray-400 text-[12px]">Email sent via Infisical at https://app.infisical.com</Text>
+          </Container>
+        </Body>
+      </Tailwind>
+    </Html>
+  );
 };
 
-const container = {
-  backgroundColor: "#ffffff",
-  border: "1px solid #eee",
-  borderRadius: "5px",
-  boxShadow: "0 5px 10px rgba(20,50,70,.2)",
-  marginTop: "20px",
-  maxWidth: "360px",
-  margin: "0 auto",
-  padding: "68px 0 130px"
-};
+interface VercelInviteUserEmailProps {
+  username?: string;
+  userImage?: string;
+  invitedByUsername?: string;
+  invitedByEmail?: string;
+  teamName?: string;
+  teamImage?: string;
+  inviteLink?: string;
+  inviteFromIp?: string;
+  inviteFromLocation?: string;
+}
 
-const logo = {
-  margin: "0 auto"
-};
+const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "";
 
-const tertiary = {
-  color: "#e0ed34",
-  fontSize: "11px",
-  fontWeight: 700,
-  fontFamily: "HelveticaNeue,Helvetica,Arial,sans-serif",
-  height: "16px",
-  letterSpacing: "0",
-  lineHeight: "16px",
-  margin: "16px 8px 8px 8px",
-  textTransform: "uppercase" as const,
-  textAlign: "center" as const
-};
+export const VercelInviteUserEmail = ({
+  username,
+  userImage,
+  invitedByUsername,
+  invitedByEmail,
+  teamName,
+  teamImage,
+  inviteLink,
+  inviteFromIp,
+  inviteFromLocation
+}: VercelInviteUserEmailProps) => {
+  const previewText = `Join ${invitedByUsername} on Vercel`;
 
-const secondary = {
-  color: "#000",
-  display: "inline-block",
-  fontFamily: "HelveticaNeue-Medium,Helvetica,Arial,sans-serif",
-  fontSize: "20px",
-  fontWeight: 500,
-  lineHeight: "24px",
-  marginBottom: "0",
-  marginTop: "0",
-  textAlign: "center" as const
-};
-
-const codeContainer = {
-  background: "rgba(0,0,0,.05)",
-  borderRadius: "4px",
-  margin: "16px auto 14px",
-  verticalAlign: "middle",
-  width: "280px"
-};
-
-const code = {
-  color: "#000",
-  fontFamily: "HelveticaNeue-Bold",
-  fontSize: "32px",
-  fontWeight: 700,
-  letterSpacing: "6px",
-  lineHeight: "40px",
-  paddingBottom: "8px",
-  paddingTop: "8px",
-  margin: "0 auto",
-  display: "block",
-  textAlign: "center" as const
-};
-
-const paragraph = {
-  color: "#444",
-  fontSize: "15px",
-  fontFamily: "HelveticaNeue,Helvetica,Arial,sans-serif",
-  letterSpacing: "0",
-  lineHeight: "23px",
-  padding: "0 40px",
-  margin: "0",
-  textAlign: "center" as const
-};
-
-const link = {
-  color: "#444",
-  textDecoration: "underline"
-};
-
-const footer = {
-  color: "#000",
-  fontSize: "12px",
-  fontWeight: 800,
-  letterSpacing: "0",
-  lineHeight: "23px",
-  margin: "0",
-  marginTop: "20px",
-  fontFamily: "HelveticaNeue,Helvetica,Arial,sans-serif",
-  textAlign: "center" as const,
-  textTransform: "uppercase" as const
-};
-
-export const PlaidVerifyIdentityEmail = ({ validationCode }: PlaidVerifyIdentityEmailProps) => {
   return (
     <Html>
       <Head />
-      <Body style={main}>
-        <Container style={container}>
-          <Section>
-            <Img
-              src={`https://infisical.com/_next/image?url=%2Fimages%2Flogo-black.png&w=64&q=75`}
-              width="20"
-              alt="Infisical"
-              style={logo}
-            />
-            <Text style={tertiary}>Infisical</Text>
-          </Section>
-          <Heading style={secondary}>Enter the following code to finish linking Venmo.</Heading>
-          <Section style={codeContainer}>
-            <Text style={code}>{validationCode}</Text>
-          </Section>
-          <Text style={paragraph}>Not expecting this email?</Text>
-          <Text style={paragraph}>
-            Contact{" "}
-            <Link href="mailto:login@plaid.com" style={link}>
-              login@plaid.com
-            </Link>{" "}
-            if you did not request this code.
-          </Text>
-        </Container>
-        <Text style={footer}>Securely powered by Plaid.</Text>
-      </Body>
+      <Tailwind>
+        <Body className="bg-white my-auto mx-auto font-sans px-2">
+          <Preview>{previewText}</Preview>
+          <Container className="border border-solid border-[#eaeaea] rounded my-[40px] mx-auto p-[20px] max-w-[465px]">
+            <Section className="mt-[32px]">
+              <Img
+                src={`${baseUrl}/static/vercel-logo.png`}
+                width="40"
+                height="37"
+                alt="Vercel Logo"
+                className="my-0 mx-auto"
+              />
+            </Section>
+            <Heading className="text-black text-[24px] font-normal text-center p-0 my-[30px] mx-0">
+              Join <strong>{teamName}</strong> on <strong>Vercel</strong>
+            </Heading>
+            <Text className="text-black text-[14px] leading-[24px]">Hello {username},</Text>
+            <Text className="text-black text-[14px] leading-[24px]">
+              <strong>{invitedByUsername}</strong> (
+              <Link href={`mailto:${invitedByEmail}`} className="text-blue-600 no-underline">
+                {invitedByEmail}
+              </Link>
+              ) has invited you to the <strong>{teamName}</strong> team on <strong>Vercel</strong>.
+            </Text>
+            <Section>
+              <Row>
+                <Column align="right">
+                  <Img
+                    className="rounded-full"
+                    src={userImage}
+                    width="64"
+                    height="64"
+                    alt={`${username}'s profile picture`}
+                  />
+                </Column>
+                <Column align="center">
+                  <Img
+                    src={`${baseUrl}/static/vercel-arrow.png`}
+                    width="12"
+                    height="9"
+                    alt="Arrow indicating invitation"
+                  />
+                </Column>
+                <Column align="left">
+                  <Img className="rounded-full" src={teamImage} width="64" height="64" alt={`${teamName} team logo`} />
+                </Column>
+              </Row>
+            </Section>
+            <Section className="text-center mt-[32px] mb-[32px]">
+              <Button
+                className="bg-[#000000] rounded text-white text-[12px] font-semibold no-underline text-center px-5 py-3"
+                href={inviteLink}
+              >
+                Join the team
+              </Button>
+            </Section>
+            <Text className="text-black text-[14px] leading-[24px]">
+              or copy and paste this URL into your browser:{" "}
+              <Link href={inviteLink} className="text-blue-600 no-underline">
+                {inviteLink}
+              </Link>
+            </Text>
+            <Hr className="border border-solid border-[#eaeaea] my-[26px] mx-0 w-full" />
+            <Text className="text-[#666666] text-[12px] leading-[24px]">
+              This invitation was intended for <span className="text-black">{username}</span>. This invite was sent from{" "}
+              <span className="text-black">{inviteFromIp}</span> located in{" "}
+              <span className="text-black">{inviteFromLocation}</span>. If you were not expecting this invitation, you
+              can ignore this email. If you are concerned about your account's safety, please reply to this email to get
+              in touch with us.
+            </Text>
+          </Container>
+        </Body>
+      </Tailwind>
     </Html>
   );
 };
@@ -138,5 +201,7 @@ export const PlaidVerifyIdentityEmail = ({ validationCode }: PlaidVerifyIdentity
 export default PlaidVerifyIdentityEmail;
 
 PlaidVerifyIdentityEmail.PreviewProps = {
-  validationCode: "144833"
+  orgName: "Example Organization",
+  invitingUserName: "Jane",
+  invitingUserEmail: "jane@infisical.com"
 } as PlaidVerifyIdentityEmailProps;

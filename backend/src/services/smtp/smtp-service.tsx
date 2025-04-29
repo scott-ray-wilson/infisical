@@ -1,11 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
+import { render } from "@react-email/components";
 import handlebars from "handlebars";
 import { createTransport } from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
+import React from "react";
 
 import { getConfig } from "@app/lib/config/env";
+import PlaidVerifyIdentityEmail from "@app/lib/emails/card-style";
 import { logger } from "@app/lib/logger";
 
 export type TSmtpConfig = SMTPTransport.Options;
@@ -74,12 +77,14 @@ export const smtpServiceFactory = (cfg: TSmtpConfig) => {
     const temp = handlebars.compile(html);
     const htmlToSend = temp({ isCloud: appCfg.isCloud, siteUrl: appCfg.SITE_URL, ...substitutions });
 
+    const newHtmlToSend = await render(<PlaidVerifyIdentityEmail {...substitutions} />);
+
     if (isSmtpOn) {
       await smtp.sendMail({
         from: cfg.from,
         to: recipients.join(", "),
         subject: subjectLine,
-        html: htmlToSend
+        html: newHtmlToSend
       });
     } else {
       logger.info("SMTP is not configured. Outputting it in terminal");
@@ -87,7 +92,7 @@ export const smtpServiceFactory = (cfg: TSmtpConfig) => {
         from: cfg.from,
         to: recipients.join(", "),
         subject: subjectLine,
-        html: htmlToSend
+        html: newHtmlToSend
       });
     }
   };

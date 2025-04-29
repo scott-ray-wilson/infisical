@@ -3,7 +3,7 @@ import React from "react";
 
 import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
-interface NewDeviceLoginEmailProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
+interface NewDeviceLoginTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
   email: string;
   timestamp: string;
   ip: string;
@@ -11,14 +11,14 @@ interface NewDeviceLoginEmailProps extends Omit<BaseEmailWrapperProps, "title" |
   isCloud: boolean;
 }
 
-export const NewDeviceLoginEmail = ({
+export const NewDeviceLoginTemplate = ({
   email,
   timestamp,
   ip,
   userAgent,
   siteUrl,
   isCloud
-}: NewDeviceLoginEmailProps) => {
+}: NewDeviceLoginTemplateProps) => {
   return (
     <BaseEmailWrapper
       title="Successful Login from New Device"
@@ -55,9 +55,9 @@ export const NewDeviceLoginEmail = ({
   );
 };
 
-export default NewDeviceLoginEmail;
+export default NewDeviceLoginTemplate;
 
-NewDeviceLoginEmail.PreviewProps = {
+NewDeviceLoginTemplate.PreviewProps = {
   email: "john@infisical.com",
   ip: "127.0.0.1",
   userAgent:
@@ -65,4 +65,4 @@ NewDeviceLoginEmail.PreviewProps = {
   timestamp: "Tue Apr 29 2025 23:03:27 GMT+0000 (Coordinated Universal Time)\n",
   isCloud: true,
   siteUrl: "https://infisical.com"
-} as NewDeviceLoginEmailProps;
+} as NewDeviceLoginTemplateProps;

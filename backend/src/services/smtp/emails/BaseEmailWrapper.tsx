@@ -16,7 +16,7 @@ export const BaseEmailWrapper = ({ title, preview, children, siteUrl }: BaseEmai
         <Body className="bg-gray-300 my-auto mx-auto font-sans px-[8px]">
           <Preview>{preview}</Preview>
           <Container className="bg-white rounded-xl my-[40px] mx-auto pb-[0px] max-w-[500px]">
-            <Section className="border-0 border-b border-[#d1e309] border-solid bg-[#EBF852] mb-[44px] h-[14px] rounded-t-xl" />
+            <Section className="border-0 border-b border-[#d1e309] border-solid bg-[#EBF852] mb-[44px] h-[10px] rounded-t-xl" />
             <Section className="px-[32px] mb-[18px]">
               <Section className="w-[48px] h-[48px] border border-solid border-gray-300 rounded-full bg-gray-100 mx-auto">
                 <Img

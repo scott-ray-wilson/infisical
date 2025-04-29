@@ -3,7 +3,7 @@ import React from "react";
 
 import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
-interface OrganizationInvitationEmailProps extends Omit<BaseEmailWrapperProps, "preview" | "title"> {
+interface OrganizationInvitationTemplateProps extends Omit<BaseEmailWrapperProps, "preview" | "title"> {
   metadata?: string;
   inviterFirstName: string;
   inviterUsername: string;
@@ -14,7 +14,7 @@ interface OrganizationInvitationEmailProps extends Omit<BaseEmailWrapperProps, "
   callback_url: string;
 }
 
-export const OrganizationInvitationEmail = ({
+export const OrganizationInvitationTemplate = ({
   organizationName,
   inviterFirstName,
   inviterUsername,
@@ -24,7 +24,7 @@ export const OrganizationInvitationEmail = ({
   email,
   organizationId,
   siteUrl
-}: OrganizationInvitationEmailProps) => {
+}: OrganizationInvitationTemplateProps) => {
   return (
     <BaseEmailWrapper
       title="Organization Invitation"
@@ -64,12 +64,12 @@ export const OrganizationInvitationEmail = ({
   );
 };
 
-export default OrganizationInvitationEmail;
+export default OrganizationInvitationTemplate;
 
-OrganizationInvitationEmail.PreviewProps = {
+OrganizationInvitationTemplate.PreviewProps = {
   organizationName: "Example Organization",
   inviterFirstName: "Jane",
   inviterUsername: "jane@infisical.com",
   email: "john@infisical.com",
   siteUrl: "https://infisical.com"
-} as OrganizationInvitationEmailProps;
+} as OrganizationInvitationTemplateProps;

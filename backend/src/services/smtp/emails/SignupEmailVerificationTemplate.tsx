@@ -3,12 +3,12 @@ import React from "react";
 
 import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
-interface SignupVerificationEmailProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
+interface SignupEmailVerificationTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
   code: string;
   isCloud: boolean;
 }
 
-export const SignupEmailVerificationEmail = ({ code, siteUrl, isCloud }: SignupVerificationEmailProps) => {
+export const SignupEmailVerificationTemplate = ({ code, siteUrl, isCloud }: SignupEmailVerificationTemplateProps) => {
   return (
     <BaseEmailWrapper
       title="Confirm Your Email Address"
@@ -44,10 +44,10 @@ export const SignupEmailVerificationEmail = ({ code, siteUrl, isCloud }: SignupV
   );
 };
 
-export default SignupEmailVerificationEmail;
+export default SignupEmailVerificationTemplate;
 
-SignupEmailVerificationEmail.PreviewProps = {
+SignupEmailVerificationTemplate.PreviewProps = {
   code: "124356",
   isCloud: true,
   siteUrl: "https://infisical.com"
-} as SignupVerificationEmailProps;
+} as SignupEmailVerificationTemplateProps;

@@ -3,11 +3,11 @@ import handlebars from "handlebars";
 import { createTransport } from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 import React from "react";
-import { NewDeviceLoginEmail, OrganizationInvitationEmail } from "src/services/smtp/emails";
+import { NewDeviceLoginTemplate, OrganizationInvitationTemplate } from "src/services/smtp/emails";
 
 import { getConfig } from "@app/lib/config/env";
 import { logger } from "@app/lib/logger";
-import SignupEmailVerificationEmail from "@app/services/smtp/emails/SignupEmailVerificationEmail";
+import SignupEmailVerificationTemplate from "@app/services/smtp/emails/SignupEmailVerificationTemplate";
 
 export type TSmtpConfig = SMTPTransport.Options;
 export type TSmtpSendMail = {
@@ -51,9 +51,9 @@ export enum SmtpTemplates {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const EmailTemplateMap: Record<SmtpTemplates, React.FC<any>> = {
-  [SmtpTemplates.OrgInvite]: OrganizationInvitationEmail,
-  [SmtpTemplates.NewDeviceJoin]: NewDeviceLoginEmail,
-  [SmtpTemplates.SignupEmailVerification]: SignupEmailVerificationEmail
+  [SmtpTemplates.OrgInvite]: OrganizationInvitationTemplate,
+  [SmtpTemplates.NewDeviceJoin]: NewDeviceLoginTemplate,
+  [SmtpTemplates.SignupEmailVerification]: SignupEmailVerificationTemplate
 };
 
 export enum SmtpHost {

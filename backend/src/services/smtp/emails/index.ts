@@ -1,2 +1,2 @@
-export * from "./NewDeviceLoginEmail";
-export * from "./OrganizationInvitationEmail";
+export * from "./NewDeviceLoginTemplate";
+export * from "./OrganizationInvitationTemplate";

@@ -36,7 +36,7 @@ export const AccessApprovalRequestTemplate = ({
       siteUrl={siteUrl}
     >
       <Heading className="text-black text-[18px] leading-[28px] text-center font-normal p-0 mx-0">
-        You have a new access approval request pending review for <strong>{projectName}</strong>
+        You have a new access approval request pending review for the project <strong>{projectName}</strong>
       </Heading>
       <Section className="px-[24px] mt-[36px] pt-[12px] pb-[8px] border border-solid border-gray-200 rounded-md bg-gray-50">
         <Text className="text-black text-[14px] leading-[24px]">

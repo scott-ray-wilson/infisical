@@ -1,30 +1,18 @@
-import { Button, Heading, Link, Section, Text } from "@react-email/components";
+import { Button, Heading, Section, Text } from "@react-email/components";
 import React from "react";
 
 import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
-interface OrganizationInvitationTemplateProps extends Omit<BaseEmailWrapperProps, "preview" | "title"> {
-  metadata?: string;
-  inviterFirstName: string;
-  inviterUsername: string;
+interface ScimUserProvisionedTemplateProps extends Omit<BaseEmailWrapperProps, "preview" | "title"> {
   organizationName: string;
-  email: string;
-  organizationId: string;
-  token: string;
   callback_url: string;
 }
 
-export const OrganizationInvitationTemplate = ({
+export const ScimUserProvisionedTemplate = ({
   organizationName,
-  inviterFirstName,
-  inviterUsername,
-  token,
   callback_url,
-  metadata,
-  email,
-  organizationId,
   siteUrl
-}: OrganizationInvitationTemplateProps) => {
+}: ScimUserProvisionedTemplateProps) => {
   return (
     <BaseEmailWrapper
       title="Organization Invitation"
@@ -38,16 +26,12 @@ export const OrganizationInvitationTemplate = ({
       </Heading>
       <Section className="px-[24px] mt-[36px] pt-[12px] pb-[8px] border text-center border-solid border-gray-200 rounded-md bg-gray-50">
         <Text className="text-black text-[14px] leading-[24px]">
-          <strong>{inviterFirstName}</strong> (
-          <Link href={`mailto:${inviterUsername}`} className="text-slate-700 no-underline">
-            {inviterUsername}
-          </Link>
-          ) has invited you to collaborate on <strong>{organizationName}</strong>.
+          You've been invited you to collaborate on <strong>{organizationName}</strong>.
         </Text>
       </Section>
       <Section className="text-center mt-[28px]">
         <Button
-          href={`${callback_url}?token=${token}${metadata ? `&metadata=${metadata}` : ""}&to=${email}&organization_id=${organizationId}`}
+          href={callback_url}
           className="rounded-md  p-3 px-[28px] my-[8px] text-center text-[16px] bg-[#EBF852] border-solid border border-[#d1e309] text-black font-medium"
         >
           Accept Invite
@@ -63,13 +47,10 @@ export const OrganizationInvitationTemplate = ({
   );
 };
 
-export default OrganizationInvitationTemplate;
+export default ScimUserProvisionedTemplate;
 
-OrganizationInvitationTemplate.PreviewProps = {
+ScimUserProvisionedTemplate.PreviewProps = {
   organizationName: "Example Organization",
-  inviterFirstName: "Jane",
-  inviterUsername: "jane@infisical.com",
-  email: "john@infisical.com",
-  siteUrl: "https://infisical.com",
-  callback_url: "https://app.infisical.com"
-} as OrganizationInvitationTemplateProps;
+  callback_url: "https://app.infisical.com",
+  siteUrl: "https://app.infisical.com"
+} as ScimUserProvisionedTemplateProps;

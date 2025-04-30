@@ -25,7 +25,7 @@ export const NewDeviceLoginTemplate = ({
       preview="New device login from Infisical."
       siteUrl={siteUrl}
     >
-      <Heading className="text-black text-[18px] leading-[22px] text-center font-normal p-0 mx-0">
+      <Heading className="text-black text-[18px] leading-[28px] text-center font-normal p-0 mx-0">
         We're verifying a recent login for
         <br />
         <strong>{email}</strong>

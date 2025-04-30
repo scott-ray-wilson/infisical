@@ -15,7 +15,7 @@ export const SignupEmailVerificationTemplate = ({ code, siteUrl, isCloud }: Sign
       preview="Verify your email address to get started with Infisical."
       siteUrl={siteUrl}
     >
-      <Heading className="text-black text-[18px] leading-[22px] text-center font-normal p-0 mx-0">
+      <Heading className="text-black text-[18px] leading-[28px] text-center font-normal p-0 mx-0">
         <strong>Confirm your email address</strong>
       </Heading>
       <Section className="px-[16px] mt-[36px] pt-[8px] text-center pb-[8px] text-[14px] border border-solid border-gray-200 rounded-md bg-gray-50">

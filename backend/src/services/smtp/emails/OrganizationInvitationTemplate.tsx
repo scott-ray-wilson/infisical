@@ -28,10 +28,10 @@ export const OrganizationInvitationTemplate = ({
   return (
     <BaseEmailWrapper
       title="Organization Invitation"
-      preview="You've been invited to join an organization on Infisical"
+      preview="You've been invited to join an organization on Infisical."
       siteUrl={siteUrl}
     >
-      <Heading className="text-black text-[18px] leading-[22px] text-center font-normal p-0 mx-0">
+      <Heading className="text-black text-[18px] leading-[28px] text-center font-normal p-0 mx-0">
         You've been invited to join
         <br />
         <strong>{organizationName}</strong> on <strong>Infisical</strong>
@@ -45,7 +45,6 @@ export const OrganizationInvitationTemplate = ({
           ) has invited you to collaborate on <strong>{organizationName}</strong>.
         </Text>
       </Section>
-
       <Section className="text-center mt-[28px]">
         <Button
           href={`${callback_url}?token=${token}${metadata ? `&metadata=${metadata}` : ""}&to=${email}&organization_id=${organizationId}`}

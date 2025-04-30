@@ -53,5 +53,5 @@ OrgAdminBreakglassAccessTemplate.PreviewProps = {
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3.1 Safari/605.1.15",
   timestamp: "Tue Apr 29 2025 23:03:27 GMT+0000 (Coordinated Universal Time)",
   siteUrl: "https://infisical.com",
-  email: "Example Project"
+  email: "august@infiscal.com"
 } as OrgAdminBreakglassAccessTemplateProps;

@@ -5,7 +5,6 @@ import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
 interface AccessApprovalRequestTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
   projectName: string;
-  isCloud: boolean;
   requesterFullName: string;
   requesterEmail: string;
   isTemporary: boolean;
@@ -20,7 +19,6 @@ interface AccessApprovalRequestTemplateProps extends Omit<BaseEmailWrapperProps,
 export const AccessApprovalRequestTemplate = ({
   projectName,
   siteUrl,
-  isCloud,
   requesterFullName,
   requesterEmail,
   isTemporary,
@@ -43,7 +41,7 @@ export const AccessApprovalRequestTemplate = ({
       <Section className="px-[24px] mt-[36px] pt-[12px] pb-[8px] border border-solid border-gray-200 rounded-md bg-gray-50">
         <Text className="text-black text-[14px] leading-[24px]">
           <strong>{requesterFullName}</strong> (
-          <Link href={`mailto:${requesterEmail}`} className="text-slate-500 no-underline">
+          <Link href={`mailto:${requesterEmail}`} className="text-slate-700 no-underline">
             {requesterEmail}
           </Link>
           ) has requested {isTemporary ? "temporary" : "permanent"} access to <strong>{secretPath}</strong> in the{" "}
@@ -64,7 +62,7 @@ export const AccessApprovalRequestTemplate = ({
           </Text>
         ))}
         {note && (
-          <Text className="text-[14px] text-slate-500 leading-[24px]">
+          <Text className="text-[14px] text-slate-700 leading-[24px]">
             <strong className="text-black">User Note:</strong> "{note}"
           </Text>
         )}
@@ -89,7 +87,6 @@ AccessApprovalRequestTemplate.PreviewProps = {
   isTemporary: true,
   secretPath: "/api/secrets",
   environment: "Production",
-  isCloud: true,
   siteUrl: "https://infisical.com",
   projectName: "Example Project",
   expiresIn: "1 day",

@@ -30,7 +30,7 @@ export const SignupEmailVerificationTemplate = ({ code, siteUrl, isCloud }: Sign
           {isCloud ? (
             <>
               Email us at{" "}
-              <Link href={`mailto:support@infisical.com`} className="text-slate-500 no-underline">
+              <Link href={`mailto:support@infisical.com`} className="text-slate-700 no-underline">
                 support@infisical.com
               </Link>
             </>

@@ -32,7 +32,7 @@ export const BaseEmailWrapper = ({ title, preview, children, siteUrl }: BaseEmai
             <Section className="px-[24px] text-center">
               <Text className="text-gray-500 text-[12px]">
                 Email sent via Infisical at{" "}
-                <Link href={siteUrl} className="text-slate-500 no-underline">
+                <Link href={siteUrl} className="text-slate-700 no-underline">
                   {siteUrl}
                 </Link>
               </Text>

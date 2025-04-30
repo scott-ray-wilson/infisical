@@ -18,13 +18,13 @@ export const EmailVerificationTemplate = ({ code, siteUrl, isCloud }: EmailVerif
       <Heading className="text-black text-[18px] leading-[28px] text-center font-normal p-0 mx-0">
         <strong>Confirm your email address</strong>
       </Heading>
-      <Section className="px-[16px] mt-[36px] pt-[8px] text-center pb-[8px] text-[14px] border border-solid border-gray-200 rounded-md bg-gray-50">
+      <Section className="px-[24px] mt-[36px] pt-[8px] text-center pb-[8px] text-[14px] border border-solid border-gray-200 rounded-md bg-gray-50">
         <Text>Enter the confirmation code below in the browser window requiring confirmation.</Text>
         <Text className="text-[24px] mt-[16px]">
           <strong>{code}</strong>
         </Text>
       </Section>
-      <Section className="mt-[24px] bg-gray-50 pt-[2px] pb-[16px] border border-solid border-gray-200 px-[16px] rounded-md text-gray-800">
+      <Section className="mt-[24px] bg-gray-50 pt-[2px] pb-[16px] border border-solid border-gray-200 px-[24px] rounded-md text-gray-800">
         <Text className="mb-[0px]">
           <strong>Questions about Infisical?</strong>{" "}
           {isCloud ? (

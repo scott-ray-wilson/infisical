@@ -53,7 +53,7 @@ export const OrganizationInvitationTemplate = ({
           Accept Invite
         </Button>
       </Section>
-      <Section className="mt-[24px] bg-gray-50 pt-[2px] pb-[16px] border border-solid border-gray-200 px-[16px] rounded-md text-gray-800">
+      <Section className="mt-[24px] bg-gray-50 pt-[2px] pb-[16px] border border-solid border-gray-200 px-[24px] rounded-md text-gray-800">
         <Text className="mb-[0px]">
           <strong>About Infisical:</strong> Infisical is an all-in-one platform to securely manage application secrets,
           certificates, SSH keys, and configurations across your team and infrastructure.

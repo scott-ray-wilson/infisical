@@ -30,7 +30,7 @@ export const IntegrationSyncFailedTemplate = ({
       <Heading className="text-black text-[18px] leading-[28px] text-center font-normal p-0 mx-0">
         <strong>{count}</strong> integration(s) failed to sync
       </Heading>
-      <Section className="px-[16px] mt-[36px] pt-[26px] pb-[4px] text-[14px] border border-solid border-gray-200 rounded-md bg-gray-50">
+      <Section className="px-[24px] mt-[36px] pt-[26px] pb-[4px] text-[14px] border border-solid border-gray-200 rounded-md bg-gray-50">
         <strong>Project</strong>
         <Text className="text-[14px] mt-[4px]">{projectName}</Text>
         <strong>Environment</strong>

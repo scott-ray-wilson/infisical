@@ -30,7 +30,7 @@ export const NewDeviceLoginTemplate = ({
         <br />
         <strong>{email}</strong>
       </Heading>
-      <Section className="px-[16px] mt-[36px] pt-[26px] pb-[4px] text-[14px] border border-solid border-gray-200 rounded-md bg-gray-50">
+      <Section className="px-[24px] mt-[36px] pt-[26px] pb-[4px] text-[14px] border border-solid border-gray-200 rounded-md bg-gray-50">
         <strong>Timestamp</strong>
         <Text className="text-[14px] mt-[4px]">{timestamp}</Text>
         <strong>IP Address</strong>
@@ -38,7 +38,7 @@ export const NewDeviceLoginTemplate = ({
         <strong>User Agent</strong>
         <Text className="text-[14px] mt-[4px]">{userAgent}</Text>
       </Section>
-      <Section className="mt-[24px] bg-gray-50 pt-[2px] pb-[16px] border border-solid border-gray-200 px-[16px] rounded-md text-gray-800">
+      <Section className="mt-[24px] bg-gray-50 px-[24px] pt-[2px] pb-[16px] border border-solid border-gray-200 rounded-md text-gray-800">
         <Text className="mb-[0px]">
           If you believe that this login is suspicious, please contact{" "}
           {isCloud ? (
@@ -62,7 +62,7 @@ NewDeviceLoginTemplate.PreviewProps = {
   ip: "127.0.0.1",
   userAgent:
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3.1 Safari/605.1.15",
-  timestamp: "Tue Apr 29 2025 23:03:27 GMT+0000 (Coordinated Universal Time)\n",
+  timestamp: "Tue Apr 29 2025 23:03:27 GMT+0000 (Coordinated Universal Time)",
   isCloud: true,
   siteUrl: "https://infisical.com"
 } as NewDeviceLoginTemplateProps;

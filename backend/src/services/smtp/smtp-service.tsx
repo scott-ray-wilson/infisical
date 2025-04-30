@@ -49,13 +49,6 @@ export enum SmtpTemplates {
   ServiceTokenExpired = "serviceTokenExpired"
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const EmailTemplateMap: Record<SmtpTemplates, React.FC<any>> = {
-  [SmtpTemplates.OrgInvite]: OrganizationInvitationTemplate,
-  [SmtpTemplates.NewDeviceJoin]: NewDeviceLoginTemplate,
-  [SmtpTemplates.SignupEmailVerification]: SignupEmailVerificationTemplate
-};
-
 export enum SmtpHost {
   Sendgrid = "smtp.sendgrid.net",
   Mailgun = "smtp.mailgun.org",
@@ -81,6 +74,13 @@ export const smtpServiceFactory = (cfg: TSmtpConfig) => {
     // const html = await fs.readFile(path.resolve(__dirname, "./templates/", template), "utf8");
     // const temp = handlebars.compile(html);
     // const htmlToSend = temp({ isCloud: appCfg.isCloud, siteUrl: appCfg.SITE_URL, ...substitutions });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const EmailTemplateMap: Record<SmtpTemplates, React.FC<any>> = {
+      [SmtpTemplates.OrgInvite]: OrganizationInvitationTemplate,
+      [SmtpTemplates.NewDeviceJoin]: NewDeviceLoginTemplate,
+      [SmtpTemplates.SignupEmailVerification]: SignupEmailVerificationTemplate
+    };
 
     const EmailTemplate = EmailTemplateMap[template];
 

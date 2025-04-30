@@ -3,7 +3,7 @@ import React from "react";
 
 import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
-interface SecretApprovalRequestBypassTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
+interface SecretApprovalRequestBypassedTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
   projectName: string;
   requesterFullName: string;
   requesterEmail: string;
@@ -13,7 +13,7 @@ interface SecretApprovalRequestBypassTemplateProps extends Omit<BaseEmailWrapper
   approvalUrl: string;
 }
 
-export const SecretApprovalRequestBypassTemplate = ({
+export const SecretApprovalRequestBypassedTemplate = ({
   projectName,
   siteUrl,
   requesterFullName,
@@ -22,7 +22,7 @@ export const SecretApprovalRequestBypassTemplate = ({
   environment,
   bypassReason,
   approvalUrl
-}: SecretApprovalRequestBypassTemplateProps) => {
+}: SecretApprovalRequestBypassedTemplateProps) => {
   return (
     <BaseEmailWrapper
       title="Secret Approval Request Bypassed"
@@ -58,9 +58,9 @@ export const SecretApprovalRequestBypassTemplate = ({
   );
 };
 
-export default SecretApprovalRequestBypassTemplate;
+export default SecretApprovalRequestBypassedTemplate;
 
-SecretApprovalRequestBypassTemplate.PreviewProps = {
+SecretApprovalRequestBypassedTemplate.PreviewProps = {
   requesterFullName: "Abigail Williams",
   requesterEmail: "abigail@infisical.com",
   secretPath: "/api/secrets",
@@ -68,4 +68,4 @@ SecretApprovalRequestBypassTemplate.PreviewProps = {
   siteUrl: "https://infisical.com",
   projectName: "Example Project",
   bypassReason: "I needed urgent access for a production misconfiguration."
-} as SecretApprovalRequestBypassTemplateProps;
+} as SecretApprovalRequestBypassedTemplateProps;

@@ -26,7 +26,7 @@ export const SecretLeakIncidentTemplate = ({
       </Heading>
       <Section className="px-[24px] mt-[36px] pt-[8px] pb-[8px] text-[14px] border border-solid border-gray-200 rounded-md bg-gray-50">
         <Text className="text-[14px]">
-          You are receiving this notifcation because one or more leaked secrets have been detected in a recent commit
+          You are receiving this notification because one or more leaked secrets have been detected in a recent commit
           pushed by <strong>{pusher_name}</strong> (
           <Link href={`mailto:${pusher_email}`} className="text-slate-700 no-underline">
             {pusher_email}

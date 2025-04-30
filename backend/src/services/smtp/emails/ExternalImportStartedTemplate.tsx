@@ -3,7 +3,7 @@ import React from "react";
 
 import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
-interface ExternalImportStartedTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
+interface ExternalImportStartedTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview" | "children"> {
   provider: string;
 }
 

@@ -3,7 +3,7 @@ import React from "react";
 
 import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
-interface AccessApprovalRequestTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
+interface AccessApprovalRequestTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview" | "children"> {
   projectName: string;
   requesterFullName: string;
   requesterEmail: string;

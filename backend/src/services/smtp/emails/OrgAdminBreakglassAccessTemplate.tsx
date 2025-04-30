@@ -3,7 +3,7 @@ import React from "react";
 
 import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
-interface OrgAdminBreakglassAccessTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
+interface OrgAdminBreakglassAccessTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview" | "children"> {
   email: string;
   timestamp: string;
   ip: string;

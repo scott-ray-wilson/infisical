@@ -3,7 +3,7 @@ import React from "react";
 
 import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
-interface IntegrationSyncFailedTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
+interface IntegrationSyncFailedTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview" | "children"> {
   count: number;
   projectName: string;
   secretPath: string;

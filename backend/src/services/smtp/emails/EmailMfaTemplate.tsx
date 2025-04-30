@@ -3,7 +3,7 @@ import React from "react";
 
 import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
-interface EmailMfaTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview"> {
+interface EmailMfaTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview" | "children"> {
   code: string;
   isCloud: boolean;
 }

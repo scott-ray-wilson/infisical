@@ -3,25 +3,24 @@ import React from "react";
 
 import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
-interface PasswordResetTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview" | "children"> {
+interface PasswordSetupTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview" | "children"> {
   email: string;
   callback_url: string;
   token: string;
   isCloud: boolean;
 }
 
-export const PasswordResetTemplate = ({ email, isCloud, siteUrl, callback_url, token }: PasswordResetTemplateProps) => {
+export const PasswordSetupTemplate = ({ email, isCloud, siteUrl, callback_url, token }: PasswordSetupTemplateProps) => {
   return (
-    <BaseEmailWrapper
-      title="Account Recovery"
-      preview="A password reset was requested for your Infisical account."
-      siteUrl={siteUrl}
-    >
+    <BaseEmailWrapper title="Password Setup" preview="Setup your password for Infisical." siteUrl={siteUrl}>
       <Heading className="text-black text-[18px] leading-[28px] text-center font-normal p-0 mx-0">
-        <strong>Account Recovery</strong>
+        <strong>Password Setup</strong>
       </Heading>
       <Section className="px-[24px] mt-[36px] pt-[12px] pb-[8px] border border-solid border-gray-200 rounded-md bg-gray-50">
-        <Text className="text-[14px]">A password reset was requested for your Infisical account.</Text>
+        <Text className="text-[14px]">Someone requested to set up a password for your Infisical account.</Text>
+        <Text className="text-[14px] text-red-500">
+          Make sure you are already logged in to Infisical in the current browser before clicking the link below.
+        </Text>
         <Text className="text-[14px]">
           If you did not initiate this request, please contact{" "}
           {isCloud ? (
@@ -42,17 +41,17 @@ export const PasswordResetTemplate = ({ email, isCloud, siteUrl, callback_url, t
           href={`${callback_url}?token=${token}&to=${email}`}
           className="rounded-md  p-3 px-[28px] my-[8px] text-center text-[16px] bg-[#EBF852] border-solid border border-[#d1e309] text-black font-medium"
         >
-          Reset Password
+          Set Up Password
         </Button>
       </Section>
     </BaseEmailWrapper>
   );
 };
 
-export default PasswordResetTemplate;
+export default PasswordSetupTemplate;
 
-PasswordResetTemplate.PreviewProps = {
-  email: "kevin@infisical.com",
+PasswordSetupTemplate.PreviewProps = {
+  email: "casey@infisical.com",
   callback_url: "https://app.infisical.com",
   isCloud: true
-} as PasswordResetTemplateProps;
+} as PasswordSetupTemplateProps;

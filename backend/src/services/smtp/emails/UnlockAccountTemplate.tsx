@@ -8,7 +8,7 @@ interface UnlockAccountTemplateProps extends Omit<BaseEmailWrapperProps, "title"
   callback_url: string;
 }
 
-export const UnlockAccountTemplate = ({ token, siteUrl, callback_url, url }: UnlockAccountTemplateProps) => {
+export const UnlockAccountTemplate = ({ token, siteUrl, callback_url }: UnlockAccountTemplateProps) => {
   return (
     <BaseEmailWrapper
       title="Your Infisical Account Has Been Locked"

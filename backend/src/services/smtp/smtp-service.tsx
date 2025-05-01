@@ -3,11 +3,37 @@ import handlebars from "handlebars";
 import { createTransport } from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
 import React from "react";
-import { NewDeviceLoginTemplate, OrganizationInvitationTemplate } from "src/services/smtp/emails";
+import {
+  AccessApprovalRequestTemplate,
+  EmailMfaTemplate,
+  EmailVerificationTemplate,
+  ExternalImportFailedTemplate,
+  ExternalImportStartedTemplate,
+  ExternalImportSucceededTemplate,
+  IntegrationSyncFailedTemplate,
+  NewDeviceLoginTemplate,
+  OrgAdminBreakglassAccessTemplate,
+  OrganizationInvitationTemplate,
+  PasswordResetTemplate,
+  PasswordSetupTemplate,
+  PkiExpirationAlertTemplate,
+  ProjectAccessRequestTemplate,
+  ProjectInvitationTemplate,
+  ScimUserProvisionedTemplate,
+  SecretApprovalRequestBypassedTemplate,
+  SecretApprovalRequestNeedsReviewTemplate,
+  SecretLeakIncidentTemplate,
+  SecretReminderTemplate,
+  SecretRotationFailedTemplate,
+  SecretSyncFailedTemplate,
+  ServiceTokenExpiryNoticeTemplate,
+  ShareSecretTemplate,
+  SignupEmailVerificationTemplate,
+  UnlockAccountTemplate
+} from "src/services/smtp/emails";
 
 import { getConfig } from "@app/lib/config/env";
 import { logger } from "@app/lib/logger";
-import SignupEmailVerificationTemplate from "@app/services/smtp/emails/SignupEmailVerificationTemplate";
 
 export type TSmtpConfig = SMTPTransport.Options;
 export type TSmtpSendMail = {
@@ -27,7 +53,7 @@ export enum SmtpTemplates {
   AccessApprovalRequest = "accessApprovalRequest",
   AccessSecretRequestBypassed = "accessSecretRequestBypassed",
   SecretApprovalRequestNeedsReview = "secretApprovalRequestNeedsReview",
-  HistoricalSecretList = "historicalSecretLeakIncident",
+  // HistoricalSecretList = "historicalSecretLeakIncident", not used anymore?
   NewDeviceJoin = "newDevice",
   OrgInvite = "organizationInvitation",
   ResetPassword = "passwordReset",
@@ -79,7 +105,31 @@ export const smtpServiceFactory = (cfg: TSmtpConfig) => {
     const EmailTemplateMap: Record<SmtpTemplates, React.FC<any>> = {
       [SmtpTemplates.OrgInvite]: OrganizationInvitationTemplate,
       [SmtpTemplates.NewDeviceJoin]: NewDeviceLoginTemplate,
-      [SmtpTemplates.SignupEmailVerification]: SignupEmailVerificationTemplate
+      [SmtpTemplates.SignupEmailVerification]: SignupEmailVerificationTemplate,
+      [SmtpTemplates.EmailMfa]: EmailMfaTemplate,
+      [SmtpTemplates.AccessApprovalRequest]: AccessApprovalRequestTemplate,
+      [SmtpTemplates.EmailVerification]: EmailVerificationTemplate,
+      [SmtpTemplates.ExternalImportFailed]: ExternalImportFailedTemplate,
+      [SmtpTemplates.ExternalImportStarted]: ExternalImportStartedTemplate,
+      [SmtpTemplates.ExternalImportSuccessful]: ExternalImportSucceededTemplate,
+      [SmtpTemplates.AccessSecretRequestBypassed]: SecretApprovalRequestBypassedTemplate,
+      [SmtpTemplates.IntegrationSyncFailed]: IntegrationSyncFailedTemplate,
+      [SmtpTemplates.OrgAdminBreakglassAccess]: OrgAdminBreakglassAccessTemplate,
+      [SmtpTemplates.SecretLeakIncident]: SecretLeakIncidentTemplate,
+      [SmtpTemplates.WorkspaceInvite]: ProjectInvitationTemplate,
+      [SmtpTemplates.ScimUserProvisioned]: ScimUserProvisionedTemplate,
+      [SmtpTemplates.SecretRequestCompleted]: ShareSecretTemplate,
+      [SmtpTemplates.UnlockAccount]: UnlockAccountTemplate,
+      [SmtpTemplates.ServiceTokenExpired]: ServiceTokenExpiryNoticeTemplate,
+      [SmtpTemplates.SecretReminder]: SecretReminderTemplate,
+      [SmtpTemplates.SecretRotationFailed]: SecretRotationFailedTemplate,
+      [SmtpTemplates.SecretSyncFailed]: SecretSyncFailedTemplate,
+      [SmtpTemplates.OrgAdminProjectDirectAccess]: ProjectAccessRequestTemplate, // replace with actual
+      [SmtpTemplates.ProjectAccessRequest]: ProjectAccessRequestTemplate,
+      [SmtpTemplates.SecretApprovalRequestNeedsReview]: SecretApprovalRequestNeedsReviewTemplate,
+      [SmtpTemplates.ResetPassword]: PasswordResetTemplate,
+      [SmtpTemplates.SetupPassword]: PasswordSetupTemplate,
+      [SmtpTemplates.PkiExpirationAlert]: PkiExpirationAlertTemplate
     };
 
     const EmailTemplate = EmailTemplateMap[template];

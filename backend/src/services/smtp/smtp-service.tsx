@@ -35,6 +35,8 @@ import {
 import { getConfig } from "@app/lib/config/env";
 import { logger } from "@app/lib/logger";
 
+import OrgAdminProjectGrantAccessTemplate from "./emails/OrgAdminProjectGrantAccessTemplate";
+
 export type TSmtpConfig = SMTPTransport.Options;
 export type TSmtpSendMail = {
   template: SmtpTemplates;
@@ -97,9 +99,6 @@ export const smtpServiceFactory = (cfg: TSmtpConfig) => {
 
   const sendMail = async ({ substitutions, recipients, template, subjectLine }: TSmtpSendMail) => {
     const appCfg = getConfig();
-    // const html = await fs.readFile(path.resolve(__dirname, "./templates/", template), "utf8");
-    // const temp = handlebars.compile(html);
-    // const htmlToSend = temp({ isCloud: appCfg.isCloud, siteUrl: appCfg.SITE_URL, ...substitutions });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const EmailTemplateMap: Record<SmtpTemplates, React.FC<any>> = {
@@ -124,7 +123,7 @@ export const smtpServiceFactory = (cfg: TSmtpConfig) => {
       [SmtpTemplates.SecretReminder]: SecretReminderTemplate,
       [SmtpTemplates.SecretRotationFailed]: SecretRotationFailedTemplate,
       [SmtpTemplates.SecretSyncFailed]: SecretSyncFailedTemplate,
-      [SmtpTemplates.OrgAdminProjectDirectAccess]: ProjectAccessRequestTemplate, // replace with actual
+      [SmtpTemplates.OrgAdminProjectDirectAccess]: OrgAdminProjectGrantAccessTemplate,
       [SmtpTemplates.ProjectAccessRequest]: ProjectAccessRequestTemplate,
       [SmtpTemplates.SecretApprovalRequestNeedsReview]: SecretApprovalRequestNeedsReviewTemplate,
       [SmtpTemplates.ResetPassword]: PasswordResetTemplate,

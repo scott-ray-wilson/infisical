@@ -7,6 +7,7 @@ export * from "./ExternalImportSucceededTemplate";
 export * from "./IntegrationSyncFailedTemplate";
 export * from "./NewDeviceLoginTemplate";
 export * from "./OrgAdminBreakglassAccessTemplate";
+export * from "./OrgAdminProjectGrantAccessTemplate";
 export * from "./OrganizationInvitationTemplate";
 export * from "./OrganizationInvitationTemplate";
 export * from "./PasswordResetTemplate";

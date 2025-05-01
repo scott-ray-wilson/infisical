@@ -27,11 +27,22 @@ export const SecretLeakIncidentTemplate = ({
       <Section className="px-[24px] mt-[36px] pt-[8px] pb-[8px] text-[14px] border border-solid border-gray-200 rounded-md bg-gray-50">
         <Text className="text-[14px]">
           You are receiving this notification because one or more leaked secrets have been detected in a recent commit
-          pushed by <strong>{pusher_name}</strong> (
-          <Link href={`mailto:${pusher_email}`} className="text-slate-700 no-underline">
-            {pusher_email}
-          </Link>
-          ).
+          {(pusher_email || pusher_name) && (
+            <>
+              {" "}
+              pushed by <strong>{pusher_name ?? "Unknown Pusher"}</strong>{" "}
+              {pusher_email && (
+                <>
+                  (
+                  <Link href={`mailto:${pusher_email}`} className="text-slate-700 no-underline">
+                    {pusher_email}
+                  </Link>
+                  )
+                </>
+              )}
+            </>
+          )}
+          .
         </Text>
         <Text className="text-[14px]">
           If these are test secrets, please add `infisical-scan:ignore` at the end of the line containing the secret as

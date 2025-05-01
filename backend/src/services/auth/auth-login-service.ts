@@ -569,9 +569,9 @@ export const authLoginServiceFactory = ({
   }: TVerifyMfaTokenDTO) => {
     const appCfg = getConfig();
     const user = await userDAL.findById(userId);
-    enforceUserLockStatus(Boolean(user.isLocked), user.temporaryLockDateEnd);
 
     try {
+      enforceUserLockStatus(Boolean(user.isLocked), user.temporaryLockDateEnd);
       if (mfaMethod === MfaMethod.EMAIL) {
         await tokenService.validateTokenForUser({
           type: TokenType.TOKEN_EMAIL_MFA,

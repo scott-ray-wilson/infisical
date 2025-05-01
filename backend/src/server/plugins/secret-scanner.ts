@@ -1,7 +1,6 @@
 import type { EmitterWebhookEventName } from "@octokit/webhooks/dist-types/types";
 import { PushEvent } from "@octokit/webhooks-types";
 import { Probot } from "probot";
-import SmeeClient from "smee-client";
 
 import { getConfig } from "@app/lib/config/env";
 import { logger } from "@app/lib/logger";
@@ -37,14 +36,14 @@ export const registerSecretScannerGhApp = async (server: FastifyZodProvider) => 
       secret: appCfg.SECRET_SCANNING_WEBHOOK_SECRET as string
     });
 
-    if (appCfg.NODE_ENV === "development") {
-      const smee = new SmeeClient({
-        source: appCfg.SECRET_SCANNING_WEBHOOK_PROXY as string,
-        target: "http://backend:4000/ss-webhook",
-        logger: console
-      });
-      smee.start();
-    }
+    // if (appCfg.NODE_ENV === "development") {
+    //   const smee = new SmeeClient({
+    //     source: appCfg.SECRET_SCANNING_WEBHOOK_PROXY as string,
+    //     target: "http://backend:4000/ss-webhook",
+    //     logger: console
+    //   });
+    //   smee.start();
+    // }
 
     await probot.load(probotApp);
 

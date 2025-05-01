@@ -9,7 +9,7 @@ interface ShareSecretTemplateProps extends Omit<BaseEmailWrapperProps, "title" |
   secretRequestUrl: string;
 }
 
-export const ShareSecretTemplate = ({
+export const SecretRequestCompletedTemplate = ({
   name,
   siteUrl,
   respondentUsername,
@@ -43,9 +43,9 @@ export const ShareSecretTemplate = ({
   );
 };
 
-export default ShareSecretTemplate;
+export default SecretRequestCompletedTemplate;
 
-ShareSecretTemplate.PreviewProps = {
+SecretRequestCompletedTemplate.PreviewProps = {
   respondentUsername: "Gracie",
   siteUrl: "https://infisical.com",
   secretRequestUrl: "https://infisical.com",

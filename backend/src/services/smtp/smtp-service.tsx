@@ -24,10 +24,10 @@ import {
   SecretApprovalRequestNeedsReviewTemplate,
   SecretLeakIncidentTemplate,
   SecretReminderTemplate,
+  SecretRequestCompletedTemplate,
   SecretRotationFailedTemplate,
   SecretSyncFailedTemplate,
   ServiceTokenExpiryNoticeTemplate,
-  ShareSecretTemplate,
   SignupEmailVerificationTemplate,
   UnlockAccountTemplate
 } from "src/services/smtp/emails";
@@ -117,7 +117,7 @@ export const smtpServiceFactory = (cfg: TSmtpConfig) => {
       [SmtpTemplates.SecretLeakIncident]: SecretLeakIncidentTemplate,
       [SmtpTemplates.WorkspaceInvite]: ProjectInvitationTemplate,
       [SmtpTemplates.ScimUserProvisioned]: ScimUserProvisionedTemplate,
-      [SmtpTemplates.SecretRequestCompleted]: ShareSecretTemplate,
+      [SmtpTemplates.SecretRequestCompleted]: SecretRequestCompletedTemplate,
       [SmtpTemplates.UnlockAccount]: UnlockAccountTemplate,
       [SmtpTemplates.ServiceTokenExpired]: ServiceTokenExpiryNoticeTemplate,
       [SmtpTemplates.SecretReminder]: SecretReminderTemplate,

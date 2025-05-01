@@ -46,7 +46,7 @@ export const PkiExpirationAlertTemplate = ({
         ))}
         <Hr />
         <Text className="text-[14px]  leading-[24px]">
-          Please take necessary actions to renew these items before they expire.
+          Please take the necessary actions to renew these items before they expire.
         </Text>
         <Text className="text-[14px]  leading-[24px]">
           For more details, please log in to your Infisical account and check your PKI management section.

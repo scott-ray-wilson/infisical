@@ -4,7 +4,7 @@ import React from "react";
 import { BaseEmailWrapper, BaseEmailWrapperProps } from "./BaseEmailWrapper";
 
 interface SecretSyncFailedTemplateProps extends Omit<BaseEmailWrapperProps, "title" | "preview" | "children"> {
-  destination: string;
+  syncDestination: string;
   syncName: string;
   syncUrl: string;
   projectName: string;
@@ -14,7 +14,7 @@ interface SecretSyncFailedTemplateProps extends Omit<BaseEmailWrapperProps, "tit
 }
 
 export const SecretSyncFailedTemplate = ({
-  destination,
+  syncDestination,
   syncName,
   syncUrl,
   projectName,
@@ -26,13 +26,13 @@ export const SecretSyncFailedTemplate = ({
   return (
     <BaseEmailWrapper title="Secret Sync Failed" preview="A secret sync failed." siteUrl={siteUrl}>
       <Heading className="text-black text-[18px] leading-[28px] text-center font-normal p-0 mx-0">
-        Your <strong>{destination}</strong> Sync <strong>{syncName}</strong> failed to sync
+        Your <strong>{syncDestination}</strong> Sync <strong>{syncName}</strong> failed to sync
       </Heading>
       <Section className="px-[24px] mt-[36px] pt-[26px] pb-[4px] text-[14px] border border-solid border-gray-200 rounded-md bg-gray-50">
         <strong>Name</strong>
         <Text className="text-[14px] mt-[4px]">{syncName}</Text>
         <strong>Destination</strong>
-        <Text className="text-[14px] mt-[4px]">{destination}</Text>
+        <Text className="text-[14px] mt-[4px]">{syncDestination}</Text>
         <strong>Project</strong>
         <Text className="text-[14px] mt-[4px]">{projectName}</Text>
         {environment && (
@@ -69,7 +69,7 @@ export const SecretSyncFailedTemplate = ({
 export default SecretSyncFailedTemplate;
 
 SecretSyncFailedTemplate.PreviewProps = {
-  destination: "AWS Parameter Store",
+  syncDestination: "AWS Parameter Store",
   syncUrl: "https://infisical.com",
   failureMessage: "Key name cannot contain a colon (:) or a forward slash (/).",
   projectName: "Example Project",

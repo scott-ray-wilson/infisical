@@ -31,6 +31,7 @@ import {
   isConditionalSubjects,
   PROJECT_PERMISSION_OBJECT,
   projectRoleFormSchema,
+  ProjectTypePermissionSubjects,
   rolePermission2Form,
   TFormSchema
 } from "./ProjectRoleModifySection.utils";
@@ -221,17 +222,19 @@ export const RolePermissionsSection = ({ roleSlug, isDisabled }: Props) => {
           </div>
           <div className="py-4">
             {!isPending && <PermissionEmptyState />}
-            {(Object.keys(PROJECT_PERMISSION_OBJECT) as ProjectPermissionSub[]).map((subject) => (
-              <GeneralPermissionPolicies
-                subject={subject}
-                actions={PROJECT_PERMISSION_OBJECT[subject].actions}
-                title={PROJECT_PERMISSION_OBJECT[subject].title}
-                key={`project-permission-${subject}`}
-                isDisabled={isDisabled}
-              >
-                {renderConditionalComponents(subject, isDisabled)}
-              </GeneralPermissionPolicies>
-            ))}
+            {(Object.keys(PROJECT_PERMISSION_OBJECT) as ProjectPermissionSub[])
+              .filter((subject) => ProjectTypePermissionSubjects[currentWorkspace.type][subject])
+              .map((subject) => (
+                <GeneralPermissionPolicies
+                  subject={subject}
+                  actions={PROJECT_PERMISSION_OBJECT[subject].actions}
+                  title={PROJECT_PERMISSION_OBJECT[subject].title}
+                  key={`project-permission-${subject}`}
+                  isDisabled={isDisabled}
+                >
+                  {renderConditionalComponents(subject, isDisabled)}
+                </GeneralPermissionPolicies>
+              ))}
           </div>
         </FormProvider>
       </form>

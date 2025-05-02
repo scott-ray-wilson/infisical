@@ -591,7 +591,10 @@ export const projectServiceFactory = ({
         workspaces.map(async (workspace) => {
           return {
             ...workspace,
-            roles: [...(workspaceMappedToRoles[workspace.id] || []), ...getPredefinedRoles(workspace.id)]
+            roles: [
+              ...(workspaceMappedToRoles[workspace.id] || []),
+              ...getPredefinedRoles({ projectId: workspace.id, projectType: workspace.type })
+            ]
           };
         })
       );

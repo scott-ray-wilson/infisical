@@ -12,6 +12,12 @@ import {
   TIdentityProjectMemberships,
   TProjectMemberships
 } from "@app/db/schemas";
+import {
+  projectAdminPermissions,
+  projectMemberPermissions,
+  projectNoAccessPermissions,
+  projectViewerPermission
+} from "@app/ee/services/permission/predfined-roles";
 import { conditionsMatcher } from "@app/lib/casl";
 import { BadRequestError, ForbiddenRequestError, NotFoundError } from "@app/lib/errors";
 import { objectify } from "@app/lib/fn";
@@ -32,14 +38,7 @@ import {
   TGetServiceTokenProjectPermissionArg,
   TGetUserProjectPermissionArg
 } from "./permission-service-types";
-import {
-  buildServiceTokenProjectPermission,
-  projectAdminPermissions,
-  projectMemberPermissions,
-  projectNoAccessPermissions,
-  ProjectPermissionSet,
-  projectViewerPermission
-} from "./project-permission";
+import { buildServiceTokenProjectPermission, ProjectPermissionSet } from "./project-permission";
 
 type TPermissionServiceFactoryDep = {
   orgRoleDAL: Pick<TOrgRoleDALFactory, "findOne">;

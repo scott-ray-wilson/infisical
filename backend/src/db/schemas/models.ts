@@ -189,7 +189,8 @@ export enum ProjectMembershipRole {
   Member = "member",
   Custom = "custom",
   Viewer = "viewer",
-  NoAccess = "no-access"
+  NoAccess = "no-access",
+  SshHostBootstrap = "infisical-ssh-host-bootstrap"
 }
 
 export enum SecretEncryptionAlgo {

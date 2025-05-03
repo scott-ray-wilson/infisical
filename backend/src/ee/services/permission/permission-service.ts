@@ -16,7 +16,8 @@ import {
   projectAdminPermissions,
   projectMemberPermissions,
   projectNoAccessPermissions,
-  projectViewerPermission
+  projectViewerPermission,
+  sshHostBootstrapPermissions
 } from "@app/ee/services/permission/predfined-roles";
 import { conditionsMatcher } from "@app/lib/casl";
 import { BadRequestError, ForbiddenRequestError, NotFoundError } from "@app/lib/errors";
@@ -94,6 +95,8 @@ export const permissionServiceFactory = ({
             return projectViewerPermission;
           case ProjectMembershipRole.NoAccess:
             return projectNoAccessPermissions;
+          case ProjectMembershipRole.SshHostBootstrap:
+            return sshHostBootstrapPermissions;
           case ProjectMembershipRole.Custom: {
             return unpackRules<RawRuleOf<MongoAbility<ProjectPermissionSet>>>(
               permissions as PackRule<RawRuleOf<MongoAbility<ProjectPermissionSet>>>[]

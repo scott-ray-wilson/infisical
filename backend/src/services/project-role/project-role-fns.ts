@@ -26,7 +26,7 @@ export const getPredefinedRoles = ({ projectId, projectType, roleFilter }: TGetP
       name: "SSH Host Bootstrapper",
       slug: ProjectMembershipRole.SshHostBootstrap,
       permissions: sshHostBootstrapPermissions,
-      description: "Create and issue access for SSH Hosts",
+      description: "Create and issue SSH Hosts in a project",
       createdAt: new Date(),
       updatedAt: new Date(),
       type: ProjectType.SSH

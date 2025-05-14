@@ -154,7 +154,8 @@ export enum TableName {
   MicrosoftTeamsIntegrations = "microsoft_teams_integrations",
   ProjectMicrosoftTeamsConfigs = "project_microsoft_teams_configs",
   SecretReminderRecipients = "secret_reminder_recipients",
-  GithubOrgSyncConfig = "github_org_sync_configs"
+  GithubOrgSyncConfig = "github_org_sync_configs",
+  SecretScanningSource
 }
 
 export type TImmutableDBKeys = "id" | "createdAt" | "updatedAt";

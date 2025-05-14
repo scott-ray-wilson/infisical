@@ -155,7 +155,10 @@ export enum TableName {
   ProjectMicrosoftTeamsConfigs = "project_microsoft_teams_configs",
   SecretReminderRecipients = "secret_reminder_recipients",
   GithubOrgSyncConfig = "github_org_sync_configs",
-  SecretScanningSource
+  SecretScanningSource = "secret_scanning_sources",
+  SecretScanningTarget = "secret_scanning_targets",
+  SecretScanningScan = "secret_scanning_scans",
+  SecretScanningFinding = "secret_scanning_findings"
 }
 
 export type TImmutableDBKeys = "id" | "createdAt" | "updatedAt";

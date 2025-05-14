@@ -3,6 +3,11 @@ import {
   SECRET_ROTATION_CONNECTION_MAP,
   SECRET_ROTATION_NAME_MAP
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-maps";
+import { SecretScanningSource } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
+import {
+  SECRET_SCANNING_SOURCE_CONNECTION_MAP,
+  SECRET_SCANNING_SOURCE_NAME_MAP
+} from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-maps";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 import { APP_CONNECTION_NAME_MAP } from "@app/services/app-connection/app-connection-maps";
 import { SecretSync } from "@app/services/secret-sync/secret-sync-enums";
@@ -2256,6 +2261,108 @@ export const SecretRotations = {
   }),
   ROTATE: (type: SecretRotation) => ({
     rotationId: `The ID of the ${SECRET_ROTATION_NAME_MAP[type]} Rotation to rotate generated credentials for.`
+  }),
+  PARAMETERS: {
+    SQL_CREDENTIALS: {
+      username1:
+        "The username of the first login to rotate passwords for. This user must already exists in your database.",
+      username2:
+        "The username of the second login to rotate passwords for. This user must already exists in your database."
+    },
+    AUTH0_CLIENT_SECRET: {
+      clientId: "The client ID of the Auth0 Application to rotate the client secret for."
+    },
+    AZURE_CLIENT_SECRET: {
+      objectId: "The ID of the Azure Application to rotate the client secret for.",
+      appName: "The name of the Azure Application to rotate the client secret for.",
+      clientId: "The client ID of the Azure Application to rotate the client secret for."
+    },
+    LDAP_PASSWORD: {
+      dn: "The Distinguished Name (DN) of the principal to rotate the password for."
+    },
+    GENERAL: {
+      PASSWORD_REQUIREMENTS: {
+        base: "The password requirements to use when generating the new password.",
+        length: "The length of the password to generate.",
+        required: {
+          digits: "The amount of digits to require in the generated password.",
+          lowercase: "The amount of lowercase characters to require in the generated password.",
+          uppercase: "The amount of uppercase characters to require in the generated password.",
+          symbols: "The amount of symbols to require in the generated password."
+        },
+        allowedSymbols: 'The allowed symbols to use in the generated password (defaults to "-_.~!*").'
+      }
+    },
+    AWS_IAM_USER_SECRET: {
+      userName: "The name of the client to rotate credentials for.",
+      region: "The AWS region the client is present in."
+    }
+  },
+  SECRETS_MAPPING: {
+    SQL_CREDENTIALS: {
+      username: "The name of the secret that the active username will be mapped to.",
+      password: "The name of the secret that the generated password will be mapped to."
+    },
+    AUTH0_CLIENT_SECRET: {
+      clientId: "The name of the secret that the client ID will be mapped to.",
+      clientSecret: "The name of the secret that the rotated client secret will be mapped to."
+    },
+    AZURE_CLIENT_SECRET: {
+      clientId: "The name of the secret that the client ID will be mapped to.",
+      clientSecret: "The name of the secret that the rotated client secret will be mapped to."
+    },
+    LDAP_PASSWORD: {
+      dn: "The name of the secret that the Distinguished Name (DN) of the principal will be mapped to.",
+      password: "The name of the secret that the rotated password will be mapped to."
+    },
+    AWS_IAM_USER_SECRET: {
+      accessKeyId: "The name of the secret that the access key ID will be mapped to.",
+      secretAccessKey: "The name of the secret that the rotated secret access key will be mapped to."
+    }
+  }
+};
+
+export const SecretScanningSources = {
+  LIST: (type?: SecretScanningSource) => ({
+    projectId: `The ID of the project to list ${type ? SECRET_SCANNING_SOURCE_NAME_MAP[type] : "Secret"} Scanning Sources from.`
+  }),
+  GET_BY_ID: (type: SecretScanningSource) => ({
+    rotationId: `The ID of the ${SECRET_SCANNING_SOURCE_NAME_MAP[type]} Scanning Source to retrieve.`
+  }),
+  GET_BY_NAME: (type: SecretScanningSource) => ({
+    rotationName: `The name of the ${SECRET_SCANNING_SOURCE_NAME_MAP[type]} Scanning Source to retrieve.`,
+    projectId: `The ID of the project the ${SECRET_SCANNING_SOURCE_NAME_MAP[type]} Scanning Source is located in.`
+  }),
+  CREATE: (type: SecretScanningSource) => {
+    const sourceType = SECRET_SCANNING_SOURCE_NAME_MAP[type];
+    return {
+      name: `The name of the ${sourceType} Scanning Source to create. Must be slug-friendly.`,
+      description: `An optional description for the ${sourceType} Scanning Source.`,
+      projectId: "The ID of the project to create the scanning source in.",
+      connectionId: `The ID of the ${
+        APP_CONNECTION_NAME_MAP[SECRET_SCANNING_SOURCE_CONNECTION_MAP[type]]
+      } Connection to use for this scanning source.`,
+      // scott: this description may need to be parameterized if we support different scan targets than repos
+      isAutoScanEnabled: `Whether scans should be automatically performed when a push occurs to repositories associated with this scanning source.`,
+      config: `The configuration parameters to use for this scanning source.`
+    };
+  },
+  UPDATE: (type: SecretScanningSource) => {
+    const typeName = SECRET_SCANNING_SOURCE_NAME_MAP[type];
+    return {
+      sourceId: `The ID of the ${typeName} Scanning Source to be updated.`,
+      name: `The updated name of the ${typeName} Scanning Source. Must be slug-friendly.`,
+      description: `The updated description of the ${typeName} Scanning Source.`,
+      // scott: this description may need to be parameterized if we support different scan targets than repos
+      isAutoScanEnabled: `Whether scans should be automatically performed when a push occurs to repositories associated with this scanning source.`,
+      config: `The updated configuration parameters to use for this scanning source.`
+    };
+  },
+  DELETE: (type: SecretScanningSource) => ({
+    sourceId: `The ID of the ${SECRET_SCANNING_SOURCE_NAME_MAP[type]} Scanning Source to be deleted.`
+  }),
+  SCAN: (type: SecretScanningSource) => ({
+    rotationId: `The ID of the ${SECRET_SCANNING_SOURCE_NAME_MAP[type]} Scanning Source to rotate generated credentials for.`
   }),
   PARAMETERS: {
     SQL_CREDENTIALS: {

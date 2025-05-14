@@ -2,6 +2,7 @@ import { Knex } from "knex";
 
 import { TableName } from "@app/db/schemas";
 import { createOnUpdateTrigger, dropOnUpdateTrigger } from "@app/db/utils";
+import { SecretScanningFindingStatus } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
 
 export async function up(knex: Knex): Promise<void> {
   if (!(await knex.schema.hasTable(TableName.SecretScanningSource))) {
@@ -11,11 +12,12 @@ export async function up(knex: Knex): Promise<void> {
       t.string("description");
       t.string("type").notNullable();
       t.jsonb("config").notNullable();
-      t.uuid("connectionId").notNullable();
+      t.uuid("connectionId");
       t.foreign("connectionId").references("id").inTable(TableName.AppConnection);
       t.string("projectId").notNullable();
       t.foreign("projectId").references("id").inTable(TableName.Project).onDelete("CASCADE");
       t.timestamps(true, true, true);
+      t.unique(["projectId", "name"]);
     });
     await createOnUpdateTrigger(knex, TableName.SecretScanningSource);
   }
@@ -36,7 +38,7 @@ export async function up(knex: Knex): Promise<void> {
   if (!(await knex.schema.hasTable(TableName.SecretScanningScan))) {
     await knex.schema.createTable(TableName.SecretScanningScan, (t) => {
       t.uuid("id", { primaryKey: true }).defaultTo(knex.fn.uuid());
-      t.string("status").notNullable(); // TODO: default
+      t.string("status").notNullable();
       t.string("type").notNullable();
       t.uuid("targetId").notNullable();
       t.foreign("targetId").references("id").inTable(TableName.SecretScanningTarget).onDelete("CASCADE");
@@ -53,7 +55,7 @@ export async function up(knex: Knex): Promise<void> {
       t.string("targetType").notNullable();
       t.string("rule").notNullable();
       t.string("severity").notNullable();
-      t.string("status").notNullable(); // TODO: default
+      t.string("status").notNullable().defaultTo(SecretScanningFindingStatus.Unresolved);
       t.string("remarks").notNullable();
       t.string("fingerprint").notNullable();
       t.jsonb("details").notNullable();
@@ -70,14 +72,14 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  await knex.schema.dropTableIfExists(TableName.SecretScanningSource);
-  await dropOnUpdateTrigger(knex, TableName.SecretScanningSource);
+  await knex.schema.dropTableIfExists(TableName.SecretScanningFinding);
+
+  await dropOnUpdateTrigger(knex, TableName.SecretScanningFinding);
+  await knex.schema.dropTableIfExists(TableName.SecretScanningScan);
 
   await knex.schema.dropTableIfExists(TableName.SecretScanningTarget);
   await dropOnUpdateTrigger(knex, TableName.SecretScanningTarget);
 
-  await knex.schema.dropTableIfExists(TableName.SecretScanningScan);
-
-  await knex.schema.dropTableIfExists(TableName.SecretScanningFinding);
-  await dropOnUpdateTrigger(knex, TableName.SecretScanningFinding);
+  await knex.schema.dropTableIfExists(TableName.SecretScanningSource);
+  await dropOnUpdateTrigger(knex, TableName.SecretScanningSource);
 }

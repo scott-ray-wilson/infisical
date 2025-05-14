@@ -87,6 +87,7 @@ import { gitAppInstallSessionDALFactory } from "@app/ee/services/secret-scanning
 import { secretScanningDALFactory } from "@app/ee/services/secret-scanning/secret-scanning-dal";
 import { secretScanningQueueFactory } from "@app/ee/services/secret-scanning/secret-scanning-queue";
 import { secretScanningServiceFactory } from "@app/ee/services/secret-scanning/secret-scanning-service";
+import { secretScanningV2DALFactory } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-dal";
 import { secretSnapshotServiceFactory } from "@app/ee/services/secret-snapshot/secret-snapshot-service";
 import { snapshotDALFactory } from "@app/ee/services/secret-snapshot/snapshot-dal";
 import { snapshotFolderDALFactory } from "@app/ee/services/secret-snapshot/snapshot-folder-dal";
@@ -443,6 +444,7 @@ export const registerRoutes = async (
   const secretRotationV2DAL = secretRotationV2DALFactory(db, folderDAL);
   const microsoftTeamsIntegrationDAL = microsoftTeamsIntegrationDALFactory(db);
   const projectMicrosoftTeamsConfigDAL = projectMicrosoftTeamsConfigDALFactory(db);
+  const secretScanningV2DAL = secretScanningV2DALFactory(db);
 
   const permissionService = permissionServiceFactory({
     permissionDAL,

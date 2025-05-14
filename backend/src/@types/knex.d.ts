@@ -321,9 +321,21 @@ import {
   TSecretRotationV2SecretMappingsInsert,
   TSecretRotationV2SecretMappingsUpdate,
   TSecrets,
+  TSecretScanningFindings,
+  TSecretScanningFindingsInsert,
+  TSecretScanningFindingsUpdate,
   TSecretScanningGitRisks,
   TSecretScanningGitRisksInsert,
   TSecretScanningGitRisksUpdate,
+  TSecretScanningScans,
+  TSecretScanningScansInsert,
+  TSecretScanningScansUpdate,
+  TSecretScanningSources,
+  TSecretScanningSourcesInsert,
+  TSecretScanningSourcesUpdate,
+  TSecretScanningTargets,
+  TSecretScanningTargetsInsert,
+  TSecretScanningTargetsUpdate,
   TSecretSharing,
   TSecretSharingInsert,
   TSecretSharingUpdate,
@@ -1065,6 +1077,26 @@ declare module "knex/types/tables" {
       TGithubOrgSyncConfigs,
       TGithubOrgSyncConfigsInsert,
       TGithubOrgSyncConfigsUpdate
+    >;
+    [TableName.SecretScanningSource]: KnexOriginal.CompositeTableType<
+      TSecretScanningSources,
+      TSecretScanningSourcesInsert,
+      TSecretScanningSourcesUpdate
+    >;
+    [TableName.SecretScanningTarget]: KnexOriginal.CompositeTableType<
+      TSecretScanningTargets,
+      TSecretScanningTargetsInsert,
+      TSecretScanningTargetsUpdate
+    >;
+    [TableName.SecretScanningScan]: KnexOriginal.CompositeTableType<
+      TSecretScanningScans,
+      TSecretScanningScansInsert,
+      TSecretScanningScansUpdate
+    >;
+    [TableName.SecretScanningFinding]: KnexOriginal.CompositeTableType<
+      TSecretScanningFindings,
+      TSecretScanningFindingsInsert,
+      TSecretScanningFindingsUpdate
     >;
   }
 }

@@ -2046,6 +2046,10 @@ export const AppConnections = {
       region: "The region identifier in Oracle Cloud Infrastructure where the vault is located.",
       fingerprint: "The fingerprint of the public key uploaded to the user's API keys.",
       privateKey: "The private key content in PEM format used to sign API requests."
+    },
+    GITLAB: {
+      instanceUrl: "The GitLab instance URL to connect with (defaults to https://gitlab.com).",
+      accessToken: "The access token to use to connect with GitLab."
     }
   }
 };

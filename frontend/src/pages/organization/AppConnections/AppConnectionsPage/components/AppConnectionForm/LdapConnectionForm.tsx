@@ -19,7 +19,7 @@ import {
   Tooltip
 } from "@app/components/v2";
 import { APP_CONNECTION_MAP, getAppConnectionMethodDetails } from "@app/helpers/appConnections";
-import { DistinguishedNameRegex } from "@app/helpers/string";
+import { DistinguishedNameRegex, UserPrincipalNameRegex } from "@app/helpers/string";
 import {
   LdapConnectionMethod,
   LdapConnectionProvider,
@@ -55,8 +55,13 @@ const formSchema = z.discriminatedUnion("method", [
       dn: z
         .string()
         .trim()
-        .regex(DistinguishedNameRegex, "Invalid Distinguished Name format")
-        .min(1, "Distinguished Name (DN) required"),
+        .min(1, "Distinguished Name (DN) or UPN required")
+        .refine(
+          (value) => DistinguishedNameRegex.test(value) || UserPrincipalNameRegex.test(value),
+          {
+            message: "Invalid Distinguished Name (DN) or UPN"
+          }
+        ),
       password: z.string().trim().min(1, "Password required"),
       sslRejectUnauthorized: z.boolean(),
       sslCertificate: z

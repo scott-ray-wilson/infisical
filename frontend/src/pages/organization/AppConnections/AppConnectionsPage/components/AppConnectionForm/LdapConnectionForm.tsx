@@ -55,11 +55,11 @@ const formSchema = z.discriminatedUnion("method", [
       dn: z
         .string()
         .trim()
-        .min(1, "Distinguished Name (DN) or UPN required")
+        .min(1, "DN/UPN required")
         .refine(
           (value) => DistinguishedNameRegex.test(value) || UserPrincipalNameRegex.test(value),
           {
-            message: "Invalid Distinguished Name (DN) or UPN"
+            message: "Invalid DN/UPN format"
           }
         ),
       password: z.string().trim().min(1, "Password required"),

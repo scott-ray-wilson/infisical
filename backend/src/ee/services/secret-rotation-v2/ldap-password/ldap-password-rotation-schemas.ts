@@ -9,7 +9,7 @@ import {
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-schemas";
 import { PasswordRequirementsSchema } from "@app/ee/services/secret-rotation-v2/shared/general";
 import { SecretRotations } from "@app/lib/api-docs";
-import { DistinguishedNameRegex } from "@app/lib/regex";
+import { DistinguishedNameRegex, UserPrincipalNameRegex } from "@app/lib/regex";
 import { SecretNameSchema } from "@app/server/lib/schemas";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 
@@ -26,8 +26,10 @@ const LdapPasswordRotationParametersSchema = z.object({
   dn: z
     .string()
     .trim()
-    .regex(new RE2(DistinguishedNameRegex), "Invalid DN format, ie; CN=user,OU=users,DC=example,DC=com")
-    .min(1, "Distinguished Name (DN) Required")
+    .min(1, "DN/UPN required")
+    .refine((value) => new RE2(DistinguishedNameRegex).test(value) || new RE2(UserPrincipalNameRegex).test(value), {
+      message: "Invalid DN/UPN format"
+    })
     .describe(SecretRotations.PARAMETERS.LDAP_PASSWORD.dn),
   passwordRequirements: PasswordRequirementsSchema.optional()
 });

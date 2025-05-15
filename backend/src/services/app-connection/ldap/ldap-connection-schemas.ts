@@ -23,9 +23,9 @@ export const LdapConnectionSimpleBindCredentialsSchema = z.object({
   dn: z
     .string()
     .trim()
-    .min(1, "Distinguished Name (DN) required")
+    .min(1, "DN/UPN required")
     .refine((value) => new RE2(DistinguishedNameRegex).test(value) || new RE2(UserPrincipalNameRegex).test(value), {
-      message: "Invalid Distinguished Name (DN) or UPN"
+      message: "Invalid DN/UPN format"
     })
     .describe(AppConnections.CREDENTIALS.LDAP.dn),
   password: z.string().trim().min(1, "Password required").describe(AppConnections.CREDENTIALS.LDAP.password),

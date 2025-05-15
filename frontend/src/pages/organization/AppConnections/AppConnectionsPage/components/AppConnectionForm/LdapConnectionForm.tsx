@@ -228,7 +228,7 @@ export const LdapConnectionForm = ({ appConnection, onSubmit }: Props) => {
                     <FormControl
                       errorText={error?.message}
                       isError={Boolean(error?.message)}
-                      label="Binding Distinguished Name (DN)"
+                      label="Binding DN/UPN"
                     >
                       <Input {...field} placeholder="CN=John,OU=Users,DC=example,DC=com" />
                     </FormControl>

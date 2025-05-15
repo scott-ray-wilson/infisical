@@ -1,4 +1,4 @@
-import ldap from "ldapjs";
+import ldap, { Client, SearchOptions } from "ldapjs";
 
 import {
   TRotationFactory,
@@ -8,6 +8,7 @@ import {
   TRotationFactoryRotateCredentials
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-types";
 import { logger } from "@app/lib/logger";
+import { DistinguishedNameRegex } from "@app/lib/regex";
 import { encryptAppConnectionCredentials } from "@app/services/app-connection/app-connection-fns";
 import { getLdapConnectionClient, LdapProvider, TLdapConnection } from "@app/services/app-connection/ldap";
 
@@ -18,6 +19,52 @@ import {
 } from "./ldap-password-rotation-types";
 
 const getEncodedPassword = (password: string) => Buffer.from(`"${password}"`, "utf16le");
+
+const getDN = async (dn: string, client: Client): Promise<string> => {
+  if (DistinguishedNameRegex.test(dn)) return dn;
+
+  // Create search options
+  const opts: SearchOptions = {
+    filter: `(userPrincipalName=${dn})`,
+    scope: "sub",
+    attributes: ["dn"]
+  };
+
+  const base = dn
+    .split("@")[1]
+    .split(".")
+    .map((dc) => `dc=${dc}`)
+    .join(",");
+
+  return new Promise((resolve, reject) => {
+    // Perform the search
+    client.search(base, opts, (err, res) => {
+      if (err) {
+        logger.error(err, "LDAP Failed to get DN");
+        reject(new Error(`Provider Resolve DN Error: ${err.message}`));
+      }
+
+      let userDn: string | null;
+
+      res.on("searchEntry", (entry) => {
+        userDn = entry.objectName;
+      });
+
+      res.on("error", (error) => {
+        logger.error(error, "LDAP Failed to get DN");
+        reject(new Error(`Provider Resolve DN Error: ${error.message}`));
+      });
+
+      res.on("end", () => {
+        if (userDn) {
+          resolve(userDn);
+        } else {
+          reject(new Error(`Unable to resolve DN for ${dn}.`));
+        }
+      });
+    });
+  });
+};
 
 export const ldapPasswordRotationFactory: TRotationFactory<
   TLdapPasswordRotationWithConnection,
@@ -93,8 +140,9 @@ export const ldapPasswordRotationFactory: TRotationFactory<
     }
 
     try {
+      const userDn = await getDN(dn, client);
       await new Promise((resolve, reject) => {
-        client.modify(dn, changes, (err) => {
+        client.modify(userDn, changes, (err) => {
           if (err) {
             logger.error(err, "LDAP Password Rotation Failed");
             reject(new Error(`Provider Modify Error: ${err.message}`));

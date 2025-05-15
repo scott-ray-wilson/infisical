@@ -31,4 +31,17 @@ export const registerV2EERoutes = async (server: FastifyZodProvider) => {
     },
     { prefix: "/secret-rotations" }
   );
+
+  await server.register(
+    async (secretScanningV2Router) => {
+      // register generic secret rotation endpoints
+      await secretScanningV2Router.register(registerSecretRotationV2Router);
+
+      // register service specific secret rotation endpoints (secret-rotations/postgres-credentials, etc.)
+      // for await (const [type, router] of Object.entries(SECRET_ROTATION_REGISTER_ROUTER_MAP)) {
+      //   await secretScanningV2Router.register(router, { prefix: `/${type}` });
+      // }
+    },
+    { prefix: "/secret-scanning" }
+  );
 };

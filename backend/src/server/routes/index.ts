@@ -87,6 +87,7 @@ import { gitAppInstallSessionDALFactory } from "@app/ee/services/secret-scanning
 import { secretScanningDALFactory } from "@app/ee/services/secret-scanning/secret-scanning-dal";
 import { secretScanningQueueFactory } from "@app/ee/services/secret-scanning/secret-scanning-queue";
 import { secretScanningServiceFactory } from "@app/ee/services/secret-scanning/secret-scanning-service";
+import { secretScanningV2ServiceFactory } from "@app/ee/services/secret-scanning-v2/secret-rotation-v2-service";
 import { secretScanningV2DALFactory } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-dal";
 import { secretSnapshotServiceFactory } from "@app/ee/services/secret-snapshot/secret-snapshot-service";
 import { snapshotDALFactory } from "@app/ee/services/secret-snapshot/snapshot-dal";
@@ -1685,6 +1686,17 @@ export const registerRoutes = async (
     smtpService
   });
 
+  const secretScanningV2Service = secretScanningV2ServiceFactory({
+    appConnectionDAL,
+    permissionService,
+    appConnectionService,
+    licenseService,
+    auditLogService,
+    keyStore,
+    queueService,
+    secretScanningV2DAL
+  });
+
   await superAdminService.initServerCfg();
 
   // setup the communication with license key server
@@ -1795,7 +1807,8 @@ export const registerRoutes = async (
     secretRotationV2: secretRotationV2Service,
     microsoftTeams: microsoftTeamsService,
     assumePrivileges: assumePrivilegeService,
-    githubOrgSync: githubOrgSyncConfigService
+    githubOrgSync: githubOrgSyncConfigService,
+    secretScanningV2: secretScanningV2Service
   });
 
   const cronJobs: CronJob[] = [];

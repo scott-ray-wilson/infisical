@@ -1,76 +1,63 @@
 import { z } from "zod";
 
 import { SecretScanningSourcesSchema } from "@app/db/schemas";
-import { SecretRotation } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-enums";
 import { SecretScanningSource } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
 import { SECRET_SCANNING_SOURCE_CONNECTION_MAP } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-maps";
-import { SecretRotations } from "@app/lib/api-docs";
-import { removeTrailingSlash } from "@app/lib/fn";
+import { SecretScanningSources } from "@app/lib/api-docs";
 import { slugSchema } from "@app/server/lib/schemas";
-
-const RotateAtUtcSchema = z.object({
-  hours: z.number().min(0).max(23),
-  minutes: z.number().min(0).max(59)
-});
 
 type SecretScanningSourceSchemaOpts = {
   type: SecretScanningSource;
-  isConnectionRequired?: boolean;
+  isConnectionRequired: boolean;
 };
 
 // TODO: check if need type support for is connection required
-export const BaseSecretScanningSourceSchema = ({ type, isConnectionRequired = true }: SecretScanningSourceSchemaOpts) =>
+export const BaseSecretScanningSourceSchema = ({ type, isConnectionRequired }: SecretScanningSourceSchemaOpts) =>
   SecretScanningSourcesSchema.omit({
     // unique to provider
     type: true,
     connectionId: true,
     config: true
   }).extend({
+    type: z.literal(type),
     connectionId: isConnectionRequired ? z.string().uuid() : z.null(),
-    connection: z.object({
-      app: z.literal(SECRET_SCANNING_SOURCE_CONNECTION_MAP[type]),
-      name: z.string(),
-      id: z.string().uuid()
-    })
+    connection: isConnectionRequired
+      ? z.object({
+          app: z.literal(SECRET_SCANNING_SOURCE_CONNECTION_MAP[type]),
+          name: z.string(),
+          id: z.string().uuid()
+        })
+      : z.null()
   });
 
-export const BaseCreateSecretScanningSourceSchema = (type: SecretRotation) =>
+export const BaseCreateSecretScanningSourceSchema = ({ type, isConnectionRequired }: SecretScanningSourceSchemaOpts) =>
   z.object({
-    name: slugSchema({ field: "name" }).describe(SecretRotations.CREATE(type).name),
-    projectId: z.string().trim().min(1, "Project ID required").describe(SecretRotations.CREATE(type).projectId),
+    name: slugSchema({ field: "name" }).describe(SecretScanningSources.CREATE(type).name),
+    projectId: z.string().trim().min(1, "Project ID required").describe(SecretScanningSources.CREATE(type).projectId),
     description: z
       .string()
       .trim()
       .max(256, "Description cannot exceed 256 characters")
       .nullish()
-      .describe(SecretRotations.CREATE(type).description),
-    connectionId: z.string().uuid().describe(SecretRotations.CREATE(type).connectionId),
-    environment: slugSchema({ field: "environment", max: 64 }).describe(SecretRotations.CREATE(type).environment),
-    secretPath: z
-      .string()
-      .trim()
-      .min(1, "Secret path required")
-      .transform(removeTrailingSlash)
-      .describe(SecretRotations.CREATE(type).secretPath),
-    isAutoRotationEnabled: z
+      .describe(SecretScanningSources.CREATE(type).description),
+    connectionId: isConnectionRequired
+      ? z.string().uuid().describe(SecretScanningSources.CREATE(type).connectionId)
+      : z.undefined(),
+    isAutoScanEnabled: z
       .boolean()
       .optional()
       .default(true)
-      .describe(SecretRotations.CREATE(type).isAutoRotationEnabled),
-    rotationInterval: z.coerce.number().min(1).describe(SecretRotations.CREATE(type).rotationInterval),
-    rotateAtUtc: RotateAtUtcSchema.optional().describe(SecretRotations.CREATE(type).rotateAtUtc)
+      .describe(SecretScanningSources.CREATE(type).isAutoScanEnabled)
   });
 
-export const BaseUpdateSecretRotationSchema = (type: SecretRotation) =>
+export const BaseUpdateSecretScanningSourceSchema = (type: SecretScanningSource) =>
   z.object({
-    name: slugSchema({ field: "name" }).describe(SecretRotations.UPDATE(type).name).optional(),
+    name: slugSchema({ field: "name" }).describe(SecretScanningSources.UPDATE(type).name).optional(),
     description: z
       .string()
       .trim()
       .max(256, "Description cannot exceed 256 characters")
       .nullish()
-      .describe(SecretRotations.UPDATE(type).description),
-    isAutoRotationEnabled: z.boolean().optional().describe(SecretRotations.UPDATE(type).isAutoRotationEnabled),
-    rotationInterval: z.coerce.number().min(1).optional().describe(SecretRotations.UPDATE(type).rotationInterval),
-    rotateAtUtc: RotateAtUtcSchema.optional().describe(SecretRotations.UPDATE(type).rotateAtUtc)
+      .describe(SecretScanningSources.UPDATE(type).description),
+    isAutoScanEnabled: z.boolean().optional().describe(SecretScanningSources.UPDATE(type).isAutoScanEnabled)
   });

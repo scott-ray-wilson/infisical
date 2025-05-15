@@ -59,7 +59,8 @@ export enum ApiDocsTags {
   SshHostGroups = "SSH Host Groups",
   KmsKeys = "KMS Keys",
   KmsEncryption = "KMS Encryption",
-  KmsSigning = "KMS Signing"
+  KmsSigning = "KMS Signing",
+  SecretScanning = "Secret Scanning"
 }
 
 export const GROUPS = {

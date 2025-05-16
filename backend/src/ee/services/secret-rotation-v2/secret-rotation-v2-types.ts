@@ -197,7 +197,8 @@ export type TRotationFactoryRevokeCredentials<T extends TSecretRotationV2Generat
 
 export type TRotationFactoryRotateCredentials<T extends TSecretRotationV2GeneratedCredentials> = (
   credentialsToRevoke: T[number] | undefined,
-  callback: (newCredentials: T[number]) => Promise<TSecretRotationV2Raw>
+  callback: (newCredentials: T[number]) => Promise<TSecretRotationV2Raw>,
+  activeCredentials: T[number]
 ) => Promise<TSecretRotationV2Raw>;
 
 export type TRotationFactoryGetSecretsPayload<T extends TSecretRotationV2GeneratedCredentials> = (

@@ -1,6 +1,6 @@
 import { AuditLogInfo } from "@app/ee/services/audit-log/audit-log-types";
 import { TSqlCredentialsRotationGeneratedCredentials } from "@app/ee/services/secret-rotation-v2/shared/sql-credentials/sql-credentials-rotation-types";
-import { OrderByDirection } from "@app/lib/types";
+import { DiscriminativePick, OrderByDirection } from "@app/lib/types";
 import { TAppConnectionDALFactory } from "@app/services/app-connection/app-connection-dal";
 import { TKmsServiceFactory } from "@app/services/kms/kms-service";
 import { SecretsOrderBy } from "@app/services/secret/secret-types";
@@ -111,11 +111,10 @@ export type TFindSecretRotationV2ByNameDTO = {
   type: SecretRotation;
 };
 
-export type TCreateSecretRotationV2DTO = Pick<
+export type TCreateSecretRotationV2DTO = DiscriminativePick<
   TSecretRotationV2,
-  "parameters" | "secretsMapping" | "description" | "rotationInterval" | "name" | "connectionId" | "projectId"
+  "parameters" | "secretsMapping" | "description" | "rotationInterval" | "name" | "connectionId" | "projectId" | "type"
 > & {
-  type: SecretRotation;
   secretPath: string;
   environment: string;
   isAutoRotationEnabled?: boolean;

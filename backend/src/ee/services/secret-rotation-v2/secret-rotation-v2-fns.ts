@@ -6,12 +6,13 @@ import { KmsDataKey } from "@app/services/kms/kms-types";
 import { AUTH0_CLIENT_SECRET_ROTATION_LIST_OPTION } from "./auth0-client-secret";
 import { AWS_IAM_USER_SECRET_ROTATION_LIST_OPTION } from "./aws-iam-user-secret";
 import { AZURE_CLIENT_SECRET_ROTATION_LIST_OPTION } from "./azure-client-secret";
-import { LDAP_PASSWORD_ROTATION_LIST_OPTION } from "./ldap-password";
+import { LDAP_PASSWORD_ROTATION_LIST_OPTION, LdapPasswordRotationMethod } from "./ldap-password";
 import { MSSQL_CREDENTIALS_ROTATION_LIST_OPTION } from "./mssql-credentials";
 import { POSTGRES_CREDENTIALS_ROTATION_LIST_OPTION } from "./postgres-credentials";
 import { SecretRotation, SecretRotationStatus } from "./secret-rotation-v2-enums";
 import { TSecretRotationV2ServiceFactoryDep } from "./secret-rotation-v2-service";
 import {
+  TCreateSecretRotationV2DTO,
   TSecretRotationV2,
   TSecretRotationV2GeneratedCredentials,
   TSecretRotationV2ListItem,
@@ -227,4 +228,19 @@ export const parseRotationErrorMessage = (err: unknown): string => {
   return errorMessage.length <= MAX_MESSAGE_LENGTH
     ? errorMessage
     : `${errorMessage.substring(0, MAX_MESSAGE_LENGTH - 3)}...`;
+};
+
+export const stripSensitiveRotationParameters = (secretRotation: TCreateSecretRotationV2DTO) => {
+  switch (secretRotation.type) {
+    case SecretRotation.LdapPassword: {
+      if (secretRotation.parameters.rotationMethod === LdapPasswordRotationMethod.TargetPrincipal) {
+        const { password, ...rest } = secretRotation.parameters;
+
+        return rest;
+      }
+      return secretRotation.parameters;
+    }
+    default:
+      return secretRotation.parameters;
+  }
 };

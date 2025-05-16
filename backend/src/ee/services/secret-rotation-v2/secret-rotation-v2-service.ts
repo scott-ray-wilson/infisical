@@ -25,7 +25,8 @@ import {
   getNextUtcRotationInterval,
   getSecretRotationRotateSecretJobOptions,
   listSecretRotationOptions,
-  parseRotationErrorMessage
+  parseRotationErrorMessage,
+  stripSensitiveRotationParameters
 } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-fns";
 import {
   SECRET_ROTATION_CONNECTION_MAP,
@@ -393,23 +394,22 @@ export const secretRotationV2ServiceFactory = ({
     return expandSecretRotation(secretRotation, kmsService);
   };
 
-  const createSecretRotation = async (
-    {
-      projectId,
-      secretPath,
-      environment,
-      rotateAtUtc = { hours: 0, minutes: 0 },
-      secretsMapping,
-      ...payload
-    }: TCreateSecretRotationV2DTO,
-    actor: OrgServiceActor
-  ) => {
+  const createSecretRotation = async (dto: TCreateSecretRotationV2DTO, actor: OrgServiceActor) => {
     const plan = await licenseService.getPlan(actor.orgId);
 
     if (!plan.secretRotation)
       throw new BadRequestError({
         message: "Failed to create secret rotation due to plan restriction. Upgrade plan to create secret rotations."
       });
+
+    const {
+      projectId,
+      secretPath,
+      environment,
+      rotateAtUtc = { hours: 0, minutes: 0 },
+      secretsMapping,
+      ...payload
+    } = dto;
 
     const { permission } = await permissionService.getProjectPermission({
       actor: actor.type,
@@ -494,6 +494,7 @@ export const secretRotationV2ServiceFactory = ({
               folderId: folder.id,
               secretsMapping,
               ...payload,
+              parameters: stripSensitiveRotationParameters(dto),
               encryptedGeneratedCredentials,
               rotateAtUtc,
               rotationStatus: SecretRotationStatus.Success,

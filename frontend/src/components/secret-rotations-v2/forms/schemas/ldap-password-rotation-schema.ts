@@ -19,6 +19,10 @@ export const LdapPasswordRotationSchema = z
             message: "Invalid DN/UPN format"
           }
         ),
+      password: z
+        .string()
+        .optional()
+        .refine((value) => (!value ? undefined : value)),
       passwordRequirements: PasswordRequirementsSchema.optional()
     }),
     secretsMapping: z.object({

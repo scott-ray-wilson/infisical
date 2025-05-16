@@ -31,11 +31,36 @@ export const LdapPasswordRotationParametersFields = () => {
           </FormControl>
         )}
       />
+      <Controller
+        name="parameters.password"
+        control={control}
+        render={({ field: { value, onChange }, fieldState: { error } }) => (
+          <FormControl
+            isError={Boolean(error)}
+            errorText={error?.message}
+            tooltipClassName="max-w-sm"
+            tooltipText={
+              <div className="flex flex-col gap-2">
+                <p> Specify your password to perform a personal password rotation.</p>
+                <p>
+                  If left blank, Infisical will use the Binding DN of the LDAP Connection to perform
+                  the rotation.
+                </p>
+              </div>
+            }
+            isOptional
+            helperText="Leave blank if you are using a service account connection for rotation"
+            label="Password"
+          >
+            <Input value={value} onChange={onChange} placeholder="***********************" />
+          </FormControl>
+        )}
+      />
       <div className="flex flex-col gap-3">
         <div className="w-full border-b border-mineshaft-600">
           <span className="text-sm text-mineshaft-300">Password Requirements</span>
         </div>
-        <div className="grid grid-cols-2 gap-3 rounded border border-mineshaft-600 bg-mineshaft-700 px-3 py-2">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1 rounded border border-mineshaft-600 bg-mineshaft-700 px-3 py-2">
           <Controller
             control={control}
             name="parameters.passwordRequirements.length"

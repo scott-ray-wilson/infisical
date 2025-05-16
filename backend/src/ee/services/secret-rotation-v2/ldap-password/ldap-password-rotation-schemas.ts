@@ -1,6 +1,7 @@
 import RE2 from "re2";
 import { z } from "zod";
 
+import { LdapPasswordRotationMethod } from "@app/ee/services/secret-rotation-v2/ldap-password/ldap-password-rotation-types";
 import { SecretRotation } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-enums";
 import {
   BaseCreateSecretRotationSchema,
@@ -22,17 +23,45 @@ export const LdapPasswordRotationGeneratedCredentialsSchema = z
   .min(1)
   .max(2);
 
-const LdapPasswordRotationParametersSchema = z.object({
-  dn: z
-    .string()
-    .trim()
-    .min(1, "DN/UPN required")
-    .refine((value) => new RE2(DistinguishedNameRegex).test(value) || new RE2(UserPrincipalNameRegex).test(value), {
-      message: "Invalid DN/UPN format"
-    })
-    .describe(SecretRotations.PARAMETERS.LDAP_PASSWORD.dn),
-  passwordRequirements: PasswordRequirementsSchema.optional()
-});
+const LdapPasswordRotationParametersSchema = z.intersection(
+  z.object({
+    dn: z
+      .string()
+      .trim()
+      .min(1, "DN/UPN required")
+      .refine((value) => new RE2(DistinguishedNameRegex).test(value) || new RE2(UserPrincipalNameRegex).test(value), {
+        message: "Invalid DN/UPN format"
+      })
+      .describe(SecretRotations.PARAMETERS.LDAP_PASSWORD.dn),
+    passwordRequirements: PasswordRequirementsSchema.optional()
+  }),
+  z.discriminatedUnion("rotationMethod", [
+    z
+      .object({
+        rotationMethod: z
+          .literal(LdapPasswordRotationMethod.ConnectionPrincipal)
+          .optional()
+          .describe(SecretRotations.PARAMETERS.LDAP_PASSWORD.rotationMethod)
+      })
+      .describe(
+        JSON.stringify({
+          title: "Rotation Method: Connection Principal"
+        })
+      ),
+    z
+      .object({
+        rotationMethod: z
+          .literal(LdapPasswordRotationMethod.TargetPrincipal)
+          .describe(SecretRotations.PARAMETERS.LDAP_PASSWORD.rotationMethod),
+        password: z.string().min(1, "Password required").describe(SecretRotations.PARAMETERS.LDAP_PASSWORD.password)
+      })
+      .describe(
+        JSON.stringify({
+          title: "Rotation Method: Target Principal"
+        })
+      )
+  ])
+);
 
 const LdapPasswordRotationSecretsMappingSchema = z.object({
   dn: SecretNameSchema.describe(SecretRotations.SECRETS_MAPPING.LDAP_PASSWORD.dn),

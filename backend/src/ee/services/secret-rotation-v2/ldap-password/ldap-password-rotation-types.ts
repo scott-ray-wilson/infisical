@@ -9,6 +9,11 @@ import {
   LdapPasswordRotationSchema
 } from "./ldap-password-rotation-schemas";
 
+export enum LdapPasswordRotationMethod {
+  TargetPrincipal = "target-principal",
+  ConnectionPrincipal = "connection-principal"
+}
+
 export type TLdapPasswordRotation = z.infer<typeof LdapPasswordRotationSchema>;
 
 export type TLdapPasswordRotationInput = z.infer<typeof CreateLdapPasswordRotationSchema>;

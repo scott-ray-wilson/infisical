@@ -2305,7 +2305,10 @@ export const SecretRotations = {
       clientId: "The client ID of the Azure Application to rotate the client secret for."
     },
     LDAP_PASSWORD: {
-      dn: "The Distinguished Name (DN) or User Principal Name (UPN) of the principal to rotate the password for."
+      dn: "The Distinguished Name (DN) or User Principal Name (UPN) of the principal to rotate the password for.",
+      rotationMethod:
+        "Whether the rotation should be performed by the LDAP connection principal or the target principal.",
+      password: 'The password of the provided principal if "rotationMethod" is set to "target-principal".'
     },
     GENERAL: {
       PASSWORD_REQUIREMENTS: {

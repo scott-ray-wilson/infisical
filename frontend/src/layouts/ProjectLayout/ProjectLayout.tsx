@@ -280,10 +280,14 @@ export const ProjectLayout = () => {
                         >
                           {({ isActive }) => (
                             <MenuItem isSelected={isActive} icon="search">
-                              Findings{" "}
-                              {unresolvedFindings && (
-                                <Badge variant="primary">{unresolvedFindings}</Badge>
-                              )}
+                              <div className="flex w-full items-center justify-between">
+                                <span>Findings</span>
+                                {unresolvedFindings && (
+                                  <Badge variant="primary" className="mr-2">
+                                    {unresolvedFindings}
+                                  </Badge>
+                                )}
+                              </div>
                             </MenuItem>
                           )}
                         </Link>

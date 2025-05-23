@@ -7,12 +7,14 @@ import {
   TGetSecretScanningUnresolvedFindingsResponse,
   TListSecretScanningDataSourceOptions,
   TListSecretScanningDataSources,
+  TListSecretScanningFindingsResponse,
   TListSecretScanningResourcesResponse,
   TListSecretScanningScansResponse,
   TSecretScanningDataSource,
   TSecretScanningDataSourceOption,
   TSecretScanningDataSourceResponse,
   TSecretScanningDataSourceWithDetails,
+  TSecretScanningFinding,
   TSecretScanningResourceWithDetails,
   TSecretScanningScanWithDetails
 } from "./types";
@@ -38,7 +40,9 @@ export const secretScanningV2Keys = {
     dataSourceId
   ],
   finding: () => [...secretScanningV2Keys.all, "finding"] as const,
-  findingCount: (projectId: string) => ["count", projectId] as const
+  findingCount: (projectId: string) =>
+    [...secretScanningV2Keys.finding(), "count", projectId] as const,
+  listFindings: (projectId: string) => [...secretScanningV2Keys.finding(), "list", projectId]
 };
 
 export const useSecretScanningDataSourceOptions = (
@@ -177,10 +181,37 @@ export const useGetSecretScanningUnresolvedFindingCount = (
     queryKey: secretScanningV2Keys.findingCount(projectId),
     queryFn: async () => {
       const { data } = await apiRequest.get<TGetSecretScanningUnresolvedFindingsResponse>(
-        "/api/v2/secret-scanning/unresolved-findings-count"
+        "/api/v2/secret-scanning/unresolved-findings-count",
+        { params: { projectId } }
       );
 
       return data.unresolvedFindings;
+    },
+    ...options
+  });
+};
+
+export const useListSecretScanningFindings = (
+  projectId: string,
+  options?: Omit<
+    UseQueryOptions<
+      TSecretScanningFinding[],
+      unknown,
+      TSecretScanningFinding[],
+      ReturnType<typeof secretScanningV2Keys.listFindings>
+    >,
+    "queryKey" | "queryFn"
+  >
+) => {
+  return useQuery({
+    queryKey: secretScanningV2Keys.listFindings(projectId),
+    queryFn: async () => {
+      const { data } = await apiRequest.get<TListSecretScanningFindingsResponse>(
+        "/api/v2/secret-scanning/findings",
+        { params: { projectId } }
+      );
+
+      return data.findings;
     },
     ...options
   });

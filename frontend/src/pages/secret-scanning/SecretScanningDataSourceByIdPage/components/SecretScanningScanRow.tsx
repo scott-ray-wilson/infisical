@@ -101,10 +101,8 @@ export const SecretScanningScanRow = ({ scan }: Props) => {
         )}
       </Td>
       <Td>
-        <div className="">
-          <p>{format(createdAt, "MMM dd yyyy")}</p>
-          <p className="text-xs text-mineshaft-400">{format(createdAt, "HH:mm aa")}</p>
-        </div>
+        <p>{format(createdAt, "MMM dd yyyy")}</p>
+        <p className="text-xs text-mineshaft-400">{format(createdAt, "HH:mm aa")}</p>
       </Td>
       <Td className="!min-w-[8rem] max-w-0">
         <div className="flex w-full items-center">

@@ -2,6 +2,8 @@ import { DiscriminativePick } from "@app/types";
 
 import {
   SecretScanningDataSource,
+  SecretScanningFindingSeverity,
+  SecretScanningFindingStatus,
   SecretScanningResource,
   SecretScanningScanStatus,
   SecretScanningScanType
@@ -98,4 +100,26 @@ export type TListSecretScanningScansResponse = {
 
 export type TGetSecretScanningUnresolvedFindingsResponse = {
   unresolvedFindings: number;
+};
+
+export type TSecretScanningFinding = {
+  id: string;
+  dataSourceName: string;
+  dataSourceType: SecretScanningDataSource;
+  resourceName: string;
+  resourceType: SecretScanningResource;
+  rule: string;
+  severity: SecretScanningFindingSeverity;
+  status: SecretScanningFindingStatus;
+  remarks?: string;
+  fingerprint: string;
+  // details: any;
+  projectId: string;
+  scanId: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type TListSecretScanningFindingsResponse = {
+  findings: TSecretScanningFinding[];
 };

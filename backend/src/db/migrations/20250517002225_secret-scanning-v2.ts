@@ -70,6 +70,7 @@ export async function up(knex: Knex): Promise<void> {
       t.uuid("scanId");
       t.foreign("scanId").references("id").inTable(TableName.SecretScanningScan).onDelete("SET NULL");
       t.timestamps(true, true, true);
+      t.unique(["projectId", "fingerprint"]);
     });
     await createOnUpdateTrigger(knex, TableName.SecretScanningFinding);
   }

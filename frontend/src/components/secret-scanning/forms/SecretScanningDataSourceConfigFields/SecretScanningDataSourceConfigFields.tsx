@@ -3,6 +3,7 @@ import { Controller, useFormContext } from "react-hook-form";
 import { FormControl, Switch } from "@app/components/v2";
 import { AUTO_SYNC_DESCRIPTION_HELPER } from "@app/helpers/secretScanningV2";
 import { SecretScanningDataSource } from "@app/hooks/api/secretScanningV2";
+
 import { TSecretScanningDataSourceForm } from "../schemas";
 import { GitLabDataSourceConfigFields } from "./GitLabDataSourceConfigFields";
 
@@ -21,7 +22,7 @@ export const SecretScanningDataSourceConfigFields = () => {
 
   return (
     <>
-      <p className="mb-4 text-sm text-bunker-300">Configure your Data Source.</p>
+      <p className="mb-4 text-sm text-bunker-300">Connect and configure your Data Source.</p>
       <Component />
       <Controller
         control={control}

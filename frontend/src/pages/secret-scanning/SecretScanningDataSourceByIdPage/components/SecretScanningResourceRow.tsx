@@ -135,7 +135,7 @@ export const SecretScanningResourceRow = ({ resource, dataSource }: Props) => {
       </Td>
       <Td className="whitespace-nowrap">
         {/* eslint-disable-next-line no-nested-ternary */}
-        {lastScanStatus?.match(/queued|scanning/) ? (
+        {lastScanStatus?.match(/queued|scanning|failed/) ? (
           <SecretScanningScanStatusBadge status={lastScanStatus} />
         ) : lastScannedAt ? (
           formatDistance(new Date(lastScannedAt), new Date(), { addSuffix: true })

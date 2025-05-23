@@ -22,7 +22,8 @@ export enum SecretScanningFindingStatus {
 
 // TODO: should this be source type specific?
 export enum SecretScanningResource {
-  Repository = "repository"
+  Repository = "repository",
+  Project = "project"
 }
 
 export enum SecretScanningFindingSeverity {

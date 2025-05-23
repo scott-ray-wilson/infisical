@@ -3,13 +3,15 @@ import {
   TGitHubDataSource,
   TGitHubDataSourceInput,
   TGitHubDataSourceListItem,
-  TGitHubDataSourceWithConnection
+  TGitHubDataSourceWithConnection,
+  TGitHubFinding
 } from "@app/ee/services/secret-scanning-v2/github";
 import {
   TGitLabDataSource,
   TGitLabDataSourceInput,
   TGitLabDataSourceListItem,
-  TGitLabDataSourceWithConnection
+  TGitLabDataSourceWithConnection,
+  TGitLabFinding
 } from "@app/ee/services/secret-scanning-v2/gitlab";
 import {
   SecretScanningDataSource,
@@ -44,7 +46,7 @@ export type TSecretScanningDataSourceInput = TGitHubDataSourceInput | TGitLabDat
 
 export type TSecretScanningDataSourceListItem = TGitHubDataSourceListItem | TGitLabDataSourceListItem;
 
-// export type TSecretRotationV2Raw = NonNullable<Awaited<ReturnType<TSecretRotationV2DALFactory["findById"]>>>;
+export type TSecretScanningFinding = TGitHubFinding | TGitLabFinding;
 
 export type TListSecretScanningDataSourcesByProjectId = {
   projectId: string;

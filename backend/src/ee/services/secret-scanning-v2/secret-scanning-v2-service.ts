@@ -24,6 +24,7 @@ import {
   TSecretScanningDataSource,
   TSecretScanningDataSourceWithConnection,
   TSecretScanningDataSourceWithDetails,
+  TSecretScanningFinding,
   TSecretScanningResourceWithDetails,
   TSecretScanningScanWithDetails,
   TTriggerSecretScanningDataSourceDTO,
@@ -619,7 +620,7 @@ export const secretScanningV2ServiceFactory = ({
       projectId
     });
 
-    return findings;
+    return findings as TSecretScanningFinding[];
   };
 
   return {

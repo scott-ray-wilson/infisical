@@ -1,11 +1,13 @@
 import { z } from "zod";
 
-import { SecretScanningFindingsSchema } from "@app/db/schemas";
 import { EventType } from "@app/ee/services/audit-log/audit-log-types";
 import { GitHubDataSourceListItemSchema } from "@app/ee/services/secret-scanning-v2/github";
 import { GitLabDataSourceListItemSchema } from "@app/ee/services/secret-scanning-v2/gitlab";
 import { SecretScanningScanStatus } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
-import { SecretScanningDataSourceSchema } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-union-schema";
+import {
+  SecretScanningDataSourceSchema,
+  SecretScanningFindingSchema
+} from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-union-schemas";
 import { ApiDocsTags, SecretScanningDataSources, SecretScanningFindings } from "@app/lib/api-docs";
 import { readLimit } from "@app/server/config/rateLimiter";
 import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
@@ -99,7 +101,7 @@ export const registerSecretScanningV2Router = async (server: FastifyZodProvider)
         projectId: z.string().trim().min(1, "Project ID required").describe(SecretScanningFindings.LIST.projectId)
       }),
       response: {
-        200: z.object({ findings: SecretScanningFindingsSchema.array() })
+        200: z.object({ findings: SecretScanningFindingSchema.array() })
       }
     },
     onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),

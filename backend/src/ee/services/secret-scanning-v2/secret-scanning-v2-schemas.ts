@@ -72,26 +72,28 @@ export const BaseUpdateSecretScanningDataSourceSchema = (type: SecretScanningDat
     isAutoScanEnabled: z.boolean().optional().describe(SecretScanningDataSources.UPDATE(type).isAutoScanEnabled)
   });
 
-export const RepositoryFindingSchema = SecretScanningFindingsSchema.omit({ details: true }).extend({
-  details: z.object({
-    description: z.string(),
-    startLine: z.number(),
-    endLine: z.number(),
-    startColumn: z.number(),
-    endColumn: z.number(),
-    match: z.string(),
-    secret: z.string(),
-    file: z.string(),
-    link: z.string(),
-    symlinkFile: z.string(),
-    commit: z.string(),
-    entropy: z.number(),
-    author: z.string(),
-    email: z.string(),
-    date: z.string(),
-    message: z.string(),
-    tags: z.string().array(),
-    ruleID: z.string(),
-    fingerprint: z.string()
-  })
+export const GitRepositoryScanFindingDetailsSchema = z.object({
+  description: z.string(),
+  startLine: z.number(),
+  endLine: z.number(),
+  startColumn: z.number(),
+  endColumn: z.number(),
+  file: z.string(),
+  link: z.string(),
+  symlinkFile: z.string(),
+  commit: z.string(),
+  entropy: z.number(),
+  author: z.string(),
+  email: z.string(),
+  date: z.string(),
+  message: z.string(),
+  tags: z.string().array(),
+  ruleID: z.string(),
+  fingerprint: z.string()
+});
+
+export const BaseSecretScanningFindingSchema = SecretScanningFindingsSchema.omit({
+  dataSourceType: true,
+  resourceType: true,
+  details: true
 });

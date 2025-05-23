@@ -5,7 +5,8 @@ import { TGitLabConnection } from "@app/services/app-connection/gitlab";
 import {
   CreateGitLabDataSourceSchema,
   GitLabDataSourceListItemSchema,
-  GitLabDataSourceSchema
+  GitLabDataSourceSchema,
+  GitLabFindingSchema
 } from "./gitlab-secret-scanning-schemas";
 
 export type TGitLabDataSource = z.infer<typeof GitLabDataSourceSchema>;
@@ -13,6 +14,8 @@ export type TGitLabDataSource = z.infer<typeof GitLabDataSourceSchema>;
 export type TGitLabDataSourceInput = z.infer<typeof CreateGitLabDataSourceSchema>;
 
 export type TGitLabDataSourceListItem = z.infer<typeof GitLabDataSourceListItemSchema>;
+
+export type TGitLabFinding = z.infer<typeof GitLabFindingSchema>;
 
 export type TGitLabDataSourceWithConnection = TGitLabDataSource & {
   connection: TGitLabConnection;

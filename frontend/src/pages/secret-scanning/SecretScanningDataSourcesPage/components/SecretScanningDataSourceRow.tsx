@@ -7,6 +7,7 @@ import {
   faEllipsisV,
   faInfoCircle,
   faRotate,
+  faSearch,
   faToggleOff,
   faToggleOn,
   faTrash,
@@ -108,7 +109,6 @@ export const SecretScanningDataSourceRow = ({
       }
       className={twMerge(
         "group h-10 cursor-pointer transition-colors duration-100 hover:bg-mineshaft-700",
-        unresolvedFindings && "bg-yellow/5 hover:bg-yellow/10",
         lastScanStatus === SecretScanningScanStatus.Failed && "bg-red/5 hover:bg-red/10"
       )}
       key={`data-source-${id}`}
@@ -135,7 +135,16 @@ export const SecretScanningDataSourceRow = ({
       </Td>
       <Td>
         {/* eslint-disable-next-line no-nested-ternary */}
-        {lastScannedAt && lastScanStatus?.match(/complete|failed/) ? (
+        {lastScanStatus?.match(/queued|scanning/) ? (
+          <Badge
+            variant="primary"
+            className="flex h-5 w-min animate-pulse items-center gap-1.5 whitespace-nowrap bg-mineshaft-400/50 text-bunker-300"
+          >
+            <FontAwesomeIcon icon={faSearch} />
+            <span>Scanning For Leaks</span>
+          </Badge>
+        ) : // eslint-disable-next-line no-nested-ternary
+        lastScannedAt ? (
           unresolvedFindings ? (
             <Badge
               variant="primary"
@@ -160,21 +169,17 @@ export const SecretScanningDataSourceRow = ({
         )}
       </Td>
       <Td>
-        <span>
-          {lastScannedAt
-            ? formatDistance(new Date(lastScannedAt), new Date(), { addSuffix: true })
-            : "-"}
-        </span>
-      </Td>
-      <Td>
         <div className="flex w-full items-center gap-1">
-          {lastScanStatus ? (
+          {/* eslint-disable-next-line no-nested-ternary */}
+          {lastScanStatus?.match(/queued|scanning|failed/) ? (
             <SecretScanningScanStatusBadge
               status={lastScanStatus}
               statusMessage={lastScanStatusMessage}
             />
+          ) : lastScannedAt ? (
+            <span>{formatDistance(new Date(lastScannedAt), new Date(), { addSuffix: true })}</span>
           ) : (
-            "-"
+            <span className="text-mineshaft-400">No scans</span>
           )}
           {!isAutoScanEnabled && (
             <Tooltip

@@ -1,10 +1,15 @@
 import { z } from "zod";
 
-import { SecretScanningDataSource } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
+import {
+  SecretScanningDataSource,
+  SecretScanningResource
+} from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
 import {
   BaseCreateSecretScanningDataSourceSchema,
   BaseSecretScanningDataSourceSchema,
-  BaseUpdateSecretScanningDataSourceSchema
+  BaseSecretScanningFindingSchema,
+  BaseUpdateSecretScanningDataSourceSchema,
+  GitRepositoryScanFindingDetailsSchema
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-schemas";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 
@@ -59,3 +64,9 @@ export const GitLabDataSourceListItemSchema = z
       title: "GitLab"
     })
   );
+
+export const GitLabFindingSchema = BaseSecretScanningFindingSchema.extend({
+  resourceType: z.literal(SecretScanningResource.Project),
+  dataSourceType: z.literal(SecretScanningDataSource.GitLab),
+  details: GitRepositoryScanFindingDetailsSchema
+});

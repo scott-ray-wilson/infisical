@@ -344,7 +344,7 @@ export const SecretScanningDataSourcesTable = ({ dataSources }: Props) => {
           <THead>
             <Tr>
               <Th className="w-40">Platform</Th>
-              <Th className="w-1/5">
+              <Th className="w-1/3">
                 <div className="flex items-center">
                   Name
                   <IconButton
@@ -357,7 +357,7 @@ export const SecretScanningDataSourcesTable = ({ dataSources }: Props) => {
                   </IconButton>
                 </div>
               </Th>
-              <Th className="w-1/5">
+              <Th className="w-1/4">
                 <div className="flex items-center">
                   Findings
                   <IconButton
@@ -370,22 +370,9 @@ export const SecretScanningDataSourcesTable = ({ dataSources }: Props) => {
                   </IconButton>
                 </div>
               </Th>
-              <Th className="w-60">
-                <div className="flex items-center">
-                  Last Scanned
-                  <IconButton
-                    variant="plain"
-                    className={getClassName(DataSourcesOrderBy.Type)}
-                    ariaLabel="sort"
-                    onClick={() => handleSort(DataSourcesOrderBy.Type)}
-                  >
-                    <FontAwesomeIcon icon={getColSortIcon(DataSourcesOrderBy.Type)} />
-                  </IconButton>
-                </div>
-              </Th>
               <Th className="w-1/4">
                 <div className="flex items-center">
-                  Scan Status
+                  Last Scan
                   <IconButton
                     variant="plain"
                     className={getClassName(DataSourcesOrderBy.Type)}

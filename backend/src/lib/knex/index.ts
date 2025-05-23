@@ -182,14 +182,15 @@ export const ormify = <DbOps extends object, Tname extends keyof Tables>(db: Kne
   upsert: async (
     data: readonly Tables[Tname]["insert"][],
     onConflictField: keyof Tables[Tname]["base"] | Array<keyof Tables[Tname]["base"]>,
-    tx?: Knex
+    tx?: Knex,
+    mergeColumns?: (keyof Knex.ResolveTableType<Knex.TableType<Tname>, "update">)[] | undefined
   ) => {
     try {
       if (!data.length) return [];
       const res = await (tx || db)(tableName)
         .insert(data as never)
         .onConflict(onConflictField as never)
-        .merge()
+        .merge(mergeColumns)
         .returning("*");
       return res;
     } catch (error) {

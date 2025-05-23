@@ -7,11 +7,7 @@ import { twMerge } from "tailwind-merge";
 import { createNotification } from "@app/components/notifications";
 import { Button } from "@app/components/v2";
 import { useWorkspace } from "@app/context";
-import { APP_CONNECTION_MAP } from "@app/helpers/appConnections";
-import {
-  SECRET_SCANNING_DATA_SOURCE_CONNECTION_MAP,
-  SECRET_SCANNING_DATA_SOURCE_MAP
-} from "@app/helpers/secretScanningV2";
+import { SECRET_SCANNING_DATA_SOURCE_MAP } from "@app/helpers/secretScanningV2";
 import {
   SecretScanningDataSource,
   TSecretScanningDataSource
@@ -23,7 +19,6 @@ import {
 
 import { SecretScanningDataSourceSchema, TSecretScanningDataSourceForm } from "./schemas";
 import { SecretScanningDataSourceConfigFields } from "./SecretScanningDataSourceConfigFields";
-import { SecretScanningDataSourceConnectionField } from "./SecretScanningDataSourceConnectionField";
 import { SecretScanningDataSourceDetailsFields } from "./SecretScanningDataSourceDetailsFields";
 import { SecretScanningDataSourceReviewFields } from "./SecretScanningDataSourceReviewFields";
 
@@ -36,13 +31,7 @@ type Props = {
 
 const FORM_TABS: { name: string; key: string; fields: (keyof TSecretScanningDataSourceForm)[] }[] =
   [
-    // scott: this may need to be shown based on type in the future
-    {
-      name: "Connection",
-      key: "connection",
-      fields: ["connection"]
-    },
-    { name: "Configuration", key: "config", fields: ["config", "isAutoScanEnabled"] },
+    { name: "Configuration", key: "config", fields: ["config", "isAutoScanEnabled", "connection"] },
     { name: "Details", key: "details", fields: ["name", "description"] },
     { name: "Review", key: "review", fields: [] }
   ];
@@ -59,7 +48,7 @@ export const SecretScanningDataSourceForm = ({ type, onComplete, onCancel, dataS
     resolver: zodResolver(SecretScanningDataSourceSchema),
     defaultValues: dataSource ?? {
       type,
-      isAutoScanEnabled: true // scott: this may need to be derived from type in future
+      isAutoScanEnabled: true // scott: this may need to be derived from type in the future
     },
     reValidateMode: "onChange"
   });
@@ -161,14 +150,6 @@ export const SecretScanningDataSourceForm = ({ type, onComplete, onCancel, dataS
             ))}
           </Tab.List>
           <Tab.Panels>
-            <Tab.Panel>
-              <p className="mb-4 text-sm text-bunker-300">
-                Select the{" "}
-                {APP_CONNECTION_MAP[SECRET_SCANNING_DATA_SOURCE_CONNECTION_MAP[type]].name}{" "}
-                Connection for this Data Source.
-              </p>
-              <SecretScanningDataSourceConnectionField isUpdate={Boolean(dataSource)} />
-            </Tab.Panel>
             <Tab.Panel>
               <SecretScanningDataSourceConfigFields />
             </Tab.Panel>

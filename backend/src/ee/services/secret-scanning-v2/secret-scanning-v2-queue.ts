@@ -21,6 +21,7 @@ import { TSmtpService } from "@app/services/smtp/smtp-service";
 import { TSecretScanningV2DALFactory } from "./secret-scanning-v2-dal";
 import {
   SecretScanningDataSource,
+  SecretScanningFindingStatus,
   SecretScanningResource,
   SecretScanningScanStatus,
   SecretScanningScanType
@@ -158,7 +159,7 @@ export const secretScanningV2QueueServiceFactory = async ({
         }
 
         await secretScanningV2DAL.findings.transaction(async (tx) => {
-          await secretScanningV2DAL.findings.insertMany(
+          await secretScanningV2DAL.findings.upsert(
             findingsPayload.map((findings) => ({
               ...findings,
               projectId: dataSource.projectId,
@@ -166,9 +167,12 @@ export const secretScanningV2QueueServiceFactory = async ({
               dataSourceType: dataSource.type,
               resourceName: resource.name,
               resourceType: resource.type,
-              scanId
+              scanId,
+              status: SecretScanningFindingStatus.Unresolved
             })),
-            tx
+            ["projectId", "fingerprint"],
+            tx,
+            ["resourceName", "dataSourceName", "status"]
           );
 
           await secretScanningV2DAL.scans.update(

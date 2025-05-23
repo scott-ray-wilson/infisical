@@ -1,9 +1,10 @@
 import { useEffect } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { MultiValue } from "react-select";
 import { faCircleInfo } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
+import { SecretScanningDataSourceConnectionField } from "@app/components/secret-scanning/forms/SecretScanningDataSourceConnectionField";
 import { FilterableSelect, FormControl, Select, SelectItem, Tooltip } from "@app/components/v2";
 import {
   TGitLabConnectionProject,
@@ -25,7 +26,8 @@ export const GitLabDataSourceConfigFields = () => {
     }
   >();
 
-  const connectionId = watch("connection.id");
+  const connectionId = useWatch({ control, name: "connection.id" });
+  const isUpdate = Boolean(watch("id"));
 
   const { data: projects, isPending: isProjectsPending } = useGitLabConnectListProjects(
     connectionId,
@@ -47,6 +49,14 @@ export const GitLabDataSourceConfigFields = () => {
 
   return (
     <>
+      <SecretScanningDataSourceConnectionField
+        isUpdate={isUpdate}
+        onChange={() => {
+          if (scanMethod === ScanMethod.SelectProjects) {
+            setValue("config.includeProjects", []);
+          }
+        }}
+      />
       <FormControl label="Scan Projects">
         <Select
           value={scanMethod}
@@ -56,6 +66,7 @@ export const GitLabDataSourceConfigFields = () => {
           className="w-full border border-mineshaft-500 capitalize"
           position="popper"
           dropdownContainerClassName="max-w-none"
+          isDisabled={!connectionId}
         >
           {Object.values(ScanMethod).map((method) => {
             return (

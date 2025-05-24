@@ -1,7 +1,7 @@
 import { Controller, useFormContext } from "react-hook-form";
 
 import { FormControl, Switch } from "@app/components/v2";
-import { AUTO_SYNC_DESCRIPTION_HELPER } from "@app/helpers/secretScanningV2";
+import { RESOURCE_DESCRIPTION_HELPER } from "@app/helpers/secretScanningV2";
 import { SecretScanningDataSource } from "@app/hooks/api/secretScanningV2";
 
 import { TSecretScanningDataSourceForm } from "../schemas";
@@ -18,7 +18,7 @@ export const SecretScanningDataSourceConfigFields = () => {
   const type = watch("type");
 
   const Component = COMPONENT_MAP[type];
-  const autoScanDescription = AUTO_SYNC_DESCRIPTION_HELPER[type];
+  const autoScanDescription = RESOURCE_DESCRIPTION_HELPER[type];
 
   return (
     <>
@@ -32,7 +32,7 @@ export const SecretScanningDataSourceConfigFields = () => {
             <FormControl
               helperText={
                 value
-                  ? `Scans will automatically be triggered when a ${autoScanDescription.verb} occurs to ${autoScanDescription.noun} associated with this data source.`
+                  ? `Scans will automatically be triggered when a ${autoScanDescription.verb} occurs to ${autoScanDescription.pluralNoun} associated with this data source.`
                   : "Manually trigger scans to detect secret leaks."
               }
               isError={Boolean(error)}

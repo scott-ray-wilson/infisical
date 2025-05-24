@@ -51,7 +51,7 @@ enum FindingsOrderBy {
 }
 
 type DataSourceFilters = {
-  types: SecretScanningDataSource[];
+  dataSourceTypes: SecretScanningDataSource[];
   // status: SecretSyncStatus[];
 };
 
@@ -69,7 +69,7 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
   const updateDataSource = useUpdateSecretScanningDataSource();
 
   const [filters, setFilters] = useState<DataSourceFilters>({
-    types: []
+    dataSourceTypes: []
   });
 
   const {
@@ -85,7 +85,7 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
     orderBy,
     setOrderDirection,
     setOrderBy
-  } = usePagination<FindingsOrderBy>(FindingsOrderBy.ResourceName, { initPerPage: 20 });
+  } = usePagination<FindingsOrderBy>(FindingsOrderBy.Timestamp, { initPerPage: 20 });
 
   const filteredFindings = useMemo(
     () =>
@@ -93,7 +93,8 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
         .filter((finding) => {
           const { rule, resourceName, dataSourceType } = finding;
 
-          // if (filters.types.length && !filters.types.includes(type)) return false;
+          if (filters.dataSourceTypes.length && !filters.dataSourceTypes.includes(dataSourceType))
+            return false;
 
           // if (filters.status.length && (!syncStatus || !filters.status.includes(syncStatus))) {
           //   return false;
@@ -165,7 +166,7 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
   const getColSortIcon = (col: FindingsOrderBy) =>
     orderDirection === OrderByDirection.DESC && orderBy === col ? faArrowUp : faArrowDown;
 
-  const isTableFiltered = Boolean(filters.types.length);
+  const isTableFiltered = Boolean(filters.dataSourceTypes.length);
 
   const handleDelete = (dataSource: TSecretScanningDataSource) =>
     handlePopUpOpen("deleteDataSource", dataSource);
@@ -285,14 +286,14 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
                       e.preventDefault();
                       setFilters((prev) => ({
                         ...prev,
-                        types: prev.types.includes(type)
-                          ? prev.types.filter((a) => a !== type)
-                          : [...prev.types, type]
+                        dataSourceTypes: prev.dataSourceTypes.includes(type)
+                          ? prev.dataSourceTypes.filter((a) => a !== type)
+                          : [...prev.dataSourceTypes, type]
                       }));
                     }}
                     key={type}
                     icon={
-                      filters.types.includes(type) && (
+                      filters.dataSourceTypes.includes(type) && (
                         <FontAwesomeIcon className="text-primary" icon={faCheckCircle} />
                       )
                     }
@@ -333,9 +334,9 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
                   </IconButton>
                 </div>
               </Th>
-              <Th className="w-1/3">
+              <Th className="w-1/3 whitespace-nowrap">
                 <div className="flex items-center">
-                  Name
+                  Resource Name
                   <IconButton
                     variant="plain"
                     className={getClassName(FindingsOrderBy.ResourceName)}

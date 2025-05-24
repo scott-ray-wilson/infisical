@@ -36,7 +36,7 @@ import { ROUTE_PATHS } from "@app/const/routes";
 import { ProjectPermissionSub } from "@app/context";
 import { ProjectPermissionSecretScanningDataSourceActions } from "@app/context/ProjectPermissionContext/types";
 import {
-  AUTO_SYNC_DESCRIPTION_HELPER,
+  RESOURCE_DESCRIPTION_HELPER,
   SECRET_SCANNING_DATA_SOURCE_MAP
 } from "@app/helpers/secretScanningV2";
 import { useToggle } from "@app/hooks";
@@ -93,7 +93,7 @@ export const SecretScanningDataSourceRow = ({
     return () => clearTimeout(timer);
   }, [isIdCopied]);
 
-  const autoScanDescription = AUTO_SYNC_DESCRIPTION_HELPER[type];
+  const autoScanDescription = RESOURCE_DESCRIPTION_HELPER[type];
 
   return (
     <Tr
@@ -188,7 +188,7 @@ export const SecretScanningDataSourceRow = ({
           {!isAutoScanEnabled && (
             <Tooltip
               className="text-xs"
-              content={`Auto-Scan is disabled. Scans will not be automatically triggered when a ${autoScanDescription.verb} occurs to ${autoScanDescription.noun} associated with this data source`}
+              content={`Auto-Scan is disabled. Scans will not be automatically triggered when a ${autoScanDescription.verb} occurs to ${autoScanDescription.pluralNoun} associated with this data source`}
             >
               <div className="ml-auto">
                 <Badge className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap bg-mineshaft-400/50 text-bunker-300">

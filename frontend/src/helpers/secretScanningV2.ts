@@ -25,10 +25,28 @@ export const SECRET_SCANNING_DATA_SOURCE_CONNECTION_MAP: Record<
   [SecretScanningDataSource.GitLab]: AppConnection.GitLab
 };
 
-export const AUTO_SYNC_DESCRIPTION_HELPER: Record<
+export const RESOURCE_DESCRIPTION_HELPER: Record<
   SecretScanningDataSource,
-  { verb: string; noun: string }
+  {
+    verb: string;
+    pluralNoun: string;
+    singularNoun: string;
+    singularTitle: string;
+    pluralTitle: string;
+  }
 > = {
-  [SecretScanningDataSource.GitHub]: { verb: "push", noun: "repositories" },
-  [SecretScanningDataSource.GitLab]: { verb: "push", noun: "projects" }
+  [SecretScanningDataSource.GitHub]: {
+    verb: "push",
+    pluralNoun: "repositories",
+    singularNoun: "repository",
+    pluralTitle: "Repositories",
+    singularTitle: "Repository"
+  },
+  [SecretScanningDataSource.GitLab]: {
+    verb: "push",
+    pluralNoun: "projects",
+    singularNoun: "project",
+    pluralTitle: "Projects",
+    singularTitle: "Project"
+  }
 };

@@ -65,17 +65,24 @@ const titleCaseToCamelCase = (obj: unknown): unknown => {
   return result;
 };
 
-export const scanRepositoryAndGetFindings = async (scanPath: string, findingsPath: string): TGetFindingsPayload => {
+export const scanGitRepositoryAndGetFindings = async (scanPath: string, findingsPath: string): TGetFindingsPayload => {
   await scanDirectory(scanPath, findingsPath);
 
   const findingsData = JSON.parse(await readFindingsFile(findingsPath)) as SecretMatch[];
 
-  return findingsData.map((finding) => ({
-    details: titleCaseToCamelCase(finding),
-    fingerprint: finding.Fingerprint,
-    severity: SecretScanningFindingSeverity.High,
-    rule: finding.RuleID
-  }));
+  return findingsData.map(
+    ({
+      // discard match and secret as we don't want to store
+      Match,
+      Secret,
+      ...finding
+    }) => ({
+      details: titleCaseToCamelCase(finding),
+      fingerprint: finding.Fingerprint,
+      severity: SecretScanningFindingSeverity.High,
+      rule: finding.RuleID
+    })
+  );
 };
 
 const MAX_MESSAGE_LENGTH = 1024;

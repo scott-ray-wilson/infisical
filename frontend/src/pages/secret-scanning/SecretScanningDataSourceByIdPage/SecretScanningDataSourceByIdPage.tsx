@@ -53,17 +53,7 @@ const PageContent = () => {
       </div>
     );
   }
-  //
-  // const destinationDetails = SECRET_SYNC_MAP[dataSource.destination];
-  //
-  // const handleEditDetails = () => handlePopUpOpen("editSync", SecretSyncEditFields.Details);
-  //
-  // const handleEditSource = () => handlePopUpOpen("editSync", SecretSyncEditFields.Source);
-  //
-  // const handleEditOptions = () => handlePopUpOpen("editSync", SecretSyncEditFields.Options);
-  //
-  // const handleEditDestination = () => handlePopUpOpen("editSync", SecretSyncEditFields.Destination);
-  //
+
   return (
     <div className="container mx-auto flex flex-col justify-between bg-bunker-800 font-inter text-white">
       <div className="mx-auto mb-6 w-full max-w-7xl">

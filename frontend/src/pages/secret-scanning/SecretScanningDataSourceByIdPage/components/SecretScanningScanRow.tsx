@@ -1,13 +1,5 @@
 import { useCallback } from "react";
-import { faGit } from "@fortawesome/free-brands-svg-icons";
-import {
-  faCheck,
-  faCopy,
-  faEllipsisV,
-  faExpand,
-  faSearch,
-  faWarning
-} from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faCopy, faEllipsisV, faWarning } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { format } from "date-fns";
 import { twMerge } from "tailwind-merge";
@@ -76,50 +68,24 @@ export const SecretScanningScanRow = ({ scan }: Props) => {
       key={`scan-${id}`}
     >
       <Td>
-        {type === SecretScanningScanType.FullScan ? (
-          <Tooltip content="Full Scan">
-            <div>
-              <Badge
-                variant="success"
-                className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap bg-mineshaft-400/50 text-bunker-300"
-              >
-                <FontAwesomeIcon icon={faExpand} />
-              </Badge>
-            </div>
-          </Tooltip>
-        ) : (
-          <Tooltip content="Diff Scan">
-            <div>
-              <Badge
-                variant="primary"
-                className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap bg-mineshaft-400/50 text-bunker-300"
-              >
-                <FontAwesomeIcon icon={faGit} />
-              </Badge>
-            </div>
-          </Tooltip>
-        )}
-      </Td>
-      <Td>
-        <p>{format(createdAt, "MMM dd yyyy")}</p>
-        <p className="text-xs text-mineshaft-400">{format(createdAt, "HH:mm aa")}</p>
+        <p>
+          {format(createdAt, "MMM dd yyyy")}{" "}
+          <span className="text-mineshaft-300">{format(createdAt, "h:mm aa")}</span>
+        </p>
       </Td>
       <Td className="!min-w-[8rem] max-w-0">
-        <div className="flex w-full items-center">
+        <div className="flex flex-col">
           <p className="truncate">{resourceName}</p>
         </div>
+      </Td>
+      <Td className="whitespace-nowrap">
+        {type === SecretScanningScanType.FullScan ? "Full scan" : "Diff Scan"}
       </Td>
       <Td>
         {
           // eslint-disable-next-line no-nested-ternary
-          status?.match(/queued|scanning/) ? (
-            <Badge
-              variant="primary"
-              className="flex h-5 w-min animate-pulse items-center gap-1.5 whitespace-nowrap bg-mineshaft-400/50 text-bunker-300"
-            >
-              <FontAwesomeIcon icon={faSearch} />
-              <span>Scanning For Leaks</span>
-            </Badge>
+          status?.match(/queued|scanning|failed/) ? (
+            <SecretScanningScanStatusBadge status={status} statusMessage={statusMessage} />
           ) : // eslint-disable-next-line no-nested-ternary
           totalFindings ? (
             <div className="flex flex-col">
@@ -153,9 +119,6 @@ export const SecretScanningScanRow = ({ scan }: Props) => {
             </Badge>
           )
         }
-      </Td>
-      <Td className="whitespace-nowrap">
-        <SecretScanningScanStatusBadge status={status} statusMessage={statusMessage} />
       </Td>
       <Td>
         <Tooltip className="max-w-sm text-center" content="Options">

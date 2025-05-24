@@ -6,7 +6,7 @@ import {
 } from "@app/ee/services/secret-scanning/secret-scanning-queue/secret-scanning-fns";
 import {
   parseScanErrorMessage,
-  scanRepositoryAndGetFindings
+  scanGitRepositoryAndGetFindings
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-fns";
 import { BadRequestError, InternalServerError } from "@app/lib/errors";
 import { logger } from "@app/lib/logger";
@@ -118,8 +118,6 @@ export const secretScanningV2QueueServiceFactory = async ({
       const tempFolder = await createTempFolder();
 
       try {
-        throw new Error("Test Error");
-
         await secretScanningV2DAL.scans.update(
           { id: scanId },
           {
@@ -154,7 +152,8 @@ export const secretScanningV2QueueServiceFactory = async ({
         let findingsPayload: TFindingsPayload;
         switch (resource.type) {
           case SecretScanningResource.Repository:
-            findingsPayload = await scanRepositoryAndGetFindings(scanPath, findingsPath);
+          case SecretScanningResource.Project:
+            findingsPayload = await scanGitRepositoryAndGetFindings(scanPath, findingsPath);
             break;
           default:
             throw new Error("Unhandled resource type");

@@ -115,7 +115,26 @@ export type TSecretScanningFinding = {
   status: SecretScanningFindingStatus;
   remarks?: string;
   fingerprint: string;
-  // details: any;
+  // TODO scott: this will need to be type diffentiated once we add other scan types
+  details: {
+    description: string;
+    startLine: number;
+    endLine: number;
+    startColumn: number;
+    endColumn: number;
+    file: string;
+    link: string;
+    symlinkFile: string;
+    commit: string;
+    entropy: string;
+    author: string;
+    email: string;
+    date: string;
+    message: string;
+    tags: string[];
+    ruleID: string;
+    fingerprint: string;
+  };
   projectId: string;
   scanId: string;
   createdAt: string;

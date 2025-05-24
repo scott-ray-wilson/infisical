@@ -48,7 +48,7 @@ export const GitLabSecretScanningFactory: TSecretScanningFactory<TGitLabDataSour
     return filteredProjects.map(({ id, pathWithNamespace }) => ({
       name: pathWithNamespace,
       externalId: id.toString(),
-      type: SecretScanningResource.Repository
+      type: SecretScanningResource.Project
     }));
   };
 

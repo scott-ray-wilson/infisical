@@ -55,33 +55,11 @@ enum DataSourcesOrderBy {
 
 type DataSourceFilters = {
   types: SecretScanningDataSource[];
-  // status: SecretSyncStatus[];
 };
-
-// const getSyncStatusOrderValue = (syncStatus: SecretSyncStatus | null) => {
-//   switch (syncStatus) {
-//     case SecretSyncStatus.Failed:
-//       return 0;
-//     case SecretSyncStatus.Pending:
-//     case SecretSyncStatus.Running:
-//       return 1;
-//     case SecretSyncStatus.Succeeded:
-//       return 2;
-//     default:
-//       return 3;
-//   }
-// };
 
 type Props = {
   dataSources: TSecretScanningDataSourceWithDetails[];
 };
-
-// const STATUS_ICON_MAP = {
-//   [SecretSyncStatus.Succeeded]: { icon: faCheck, className: "text-green", name: "Synced" },
-//   [SecretSyncStatus.Failed]: { icon: faWarning, className: "text-red", name: "Not Synced" },
-//   [SecretSyncStatus.Pending]: { icon: faRotate, className: "text-yellow", name: "Syncing" },
-//   [SecretSyncStatus.Running]: { icon: faRotate, className: "text-yellow", name: "Syncing" }
-// };
 
 export const SecretScanningDataSourcesTable = ({ dataSources }: Props) => {
   const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp([

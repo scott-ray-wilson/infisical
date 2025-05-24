@@ -30,6 +30,7 @@ import {
   ProjectPermissionSecretScanningDataSourceActions,
   ProjectPermissionSub
 } from "@app/context/ProjectPermissionContext/types";
+import { RESOURCE_DESCRIPTION_HELPER } from "@app/helpers/secretScanningV2";
 import { useToggle } from "@app/hooks";
 import {
   SecretScanningScanStatus,
@@ -89,6 +90,8 @@ export const SecretScanningResourceRow = ({ resource, dataSource }: Props) => {
     },
     [isIdCopied]
   );
+
+  const resourceDetails = RESOURCE_DESCRIPTION_HELPER[dataSource.type];
 
   return (
     <Tr
@@ -194,7 +197,7 @@ export const SecretScanningResourceRow = ({ resource, dataSource }: Props) => {
                     <Tooltip
                       position="left"
                       sideOffset={42}
-                      content="Manually trigger a scan for this resource."
+                      content={`Manually trigger a scan for this ${resourceDetails.singularNoun}.`}
                     >
                       <div className="flex h-full w-full items-center justify-between gap-1">
                         <span> Trigger Scan</span>

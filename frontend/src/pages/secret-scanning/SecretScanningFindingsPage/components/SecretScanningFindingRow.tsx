@@ -11,6 +11,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  GenericFieldLabel,
   IconButton,
   Td,
   Tooltip,
@@ -28,7 +29,8 @@ type Props = {
 };
 
 export const SecretScanningFindingRow = ({ finding }: Props) => {
-  const { resourceName, id, dataSourceType, createdAt, resourceType, rule, status } = finding;
+  const { resourceName, id, dataSourceType, createdAt, resourceType, rule, status, details } =
+    finding;
 
   const [isIdCopied, setIsIdCopied] = useToggle(false);
 
@@ -52,80 +54,134 @@ export const SecretScanningFindingRow = ({ finding }: Props) => {
 
   const sourceDetails = SECRET_SCANNING_DATA_SOURCE_MAP[dataSourceType];
 
+  const [isExpanded, setIsExpanded] = useToggle(false);
+
   return (
-    <Tr
-      className={twMerge("group h-10 transition-colors duration-100 hover:bg-mineshaft-700")}
-      key={`resource-${id}`}
-    >
-      <Td className="!min-w-[4rem] max-w-0">
-        <div className="flex w-full items-center">
-          <img
-            alt={`${sourceDetails.name} Data Source`}
-            src={`/images/integrations/${sourceDetails.image}`}
-            className="w-5"
-          />
-          <p className="ml-2 truncate">{sourceDetails.name}</p>
-        </div>
-      </Td>
-      <Td>
-        <div className="flex items-center gap-2">
-          <p>{format(createdAt, "MMM dd yyyy")}</p>
-          <p className="text-mineshaft-400">{format(createdAt, "HH:mm aa")}</p>
-        </div>
-      </Td>
-      <Td className="!min-w-[8rem] max-w-0">
-        <div className="w-full items-center">
-          <p className="truncate">{resourceName}</p>
-          <p className="truncate text-xs text-mineshaft-400">{resourceType}</p>
-        </div>
-      </Td>
-      <Td>{rule}</Td>
-      <Td className="whitespace-nowrap">
-        {status === SecretScanningFindingStatus.Unresolved ? (
-          <Badge
-            variant="primary"
-            className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap"
-          >
-            <FontAwesomeIcon icon={faWarning} />
-            <span>Unresolved</span>
-          </Badge>
-        ) : (
-          <Badge
-            variant="success"
-            className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap"
-          >
-            <FontAwesomeIcon icon={faCheck} />
-            Resolved
-          </Badge>
+    <>
+      <Tr
+        onClick={setIsExpanded.toggle}
+        className={twMerge(
+          "group h-10 cursor-pointer transition-colors duration-100 hover:bg-mineshaft-700"
         )}
-      </Td>
-      <Td>
-        <Tooltip className="max-w-sm text-center" content="Options">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                ariaLabel="Options"
-                colorSchema="secondary"
-                className="w-6"
-                variant="plain"
-              >
-                <FontAwesomeIcon icon={faEllipsisV} />
-              </IconButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent sideOffset={2} align="end">
-              <DropdownMenuItem
-                icon={<FontAwesomeIcon icon={isIdCopied ? faCheck : faCopy} />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleCopyId(id);
-                }}
-              >
-                Copy Finding ID
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </Tooltip>
-      </Td>
-    </Tr>
+        key={`resource-${id}`}
+      >
+        <Td className="!min-w-[4rem] max-w-0">
+          <div className="flex w-full items-center">
+            <img
+              alt={`${sourceDetails.name} Data Source`}
+              src={`/images/integrations/${sourceDetails.image}`}
+              className="w-5"
+            />
+            <p className="ml-2 truncate">{sourceDetails.name}</p>
+          </div>
+        </Td>
+        <Td>
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <p>{format(createdAt, "MMM dd yyyy")}</p>
+            <p className="text-mineshaft-400">{format(createdAt, "h:mm aa")}</p>
+          </div>
+        </Td>
+        <Td className="!min-w-[8rem] max-w-0">
+          <div className="w-full items-center">
+            <p className="truncate">{resourceName}</p>
+            <p className="truncate text-xs text-mineshaft-400">{resourceType}</p>
+          </div>
+        </Td>
+        <Td className="whitespace-nowrap">{rule}</Td>
+        <Td className="whitespace-nowrap">
+          {status === SecretScanningFindingStatus.Unresolved ? (
+            <Badge
+              variant="primary"
+              className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap"
+            >
+              <FontAwesomeIcon icon={faWarning} />
+              <span>Unresolved</span>
+            </Badge>
+          ) : (
+            <Badge
+              variant="success"
+              className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap"
+            >
+              <FontAwesomeIcon icon={faCheck} />
+              Resolved
+            </Badge>
+          )}
+        </Td>
+        <Td>
+          <Tooltip className="max-w-sm text-center" content="Options">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  ariaLabel="Options"
+                  colorSchema="secondary"
+                  className="w-6"
+                  variant="plain"
+                >
+                  <FontAwesomeIcon icon={faEllipsisV} />
+                </IconButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent sideOffset={2} align="end">
+                <DropdownMenuItem
+                  icon={<FontAwesomeIcon icon={isIdCopied ? faCheck : faCopy} />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleCopyId(id);
+                  }}
+                >
+                  Copy Finding ID
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </Tooltip>
+        </Td>
+      </Tr>
+      <Tr>
+        <Td colSpan={6} className="!border-none p-0">
+          <div
+            className={`w-full overflow-hidden bg-mineshaft-900/75 transition-all duration-300 ease-in-out ${
+              isExpanded ? "max-h-[50rem] opacity-100" : "max-h-0"
+            }`}
+          >
+            <div className="grid gap-4 p-4 2xl:grid-cols-6">
+              <GenericFieldLabel truncate className="col-span-full" label="Description">
+                {details.description}
+              </GenericFieldLabel>
+              <GenericFieldLabel truncate label="Date">
+                {format(details.date, "MMM dd yyyy h:mm aa")}
+              </GenericFieldLabel>
+              <GenericFieldLabel truncate label="Author">
+                {details.author}
+              </GenericFieldLabel>
+              <GenericFieldLabel className="col-span-4" truncate label="Email">
+                {details.email}
+              </GenericFieldLabel>
+              <GenericFieldLabel truncate className="col-span-full" label="File">
+                {details.file}
+              </GenericFieldLabel>
+              <GenericFieldLabel truncate className="col-span-full" label="Commit">
+                {details.commit}
+              </GenericFieldLabel>
+              <GenericFieldLabel className="col-span-full" label="Commit Message">
+                {details.message}
+              </GenericFieldLabel>
+              <GenericFieldLabel label="Start Line">{details.startLine}</GenericFieldLabel>
+              <GenericFieldLabel label="End Line">{details.endLine}</GenericFieldLabel>
+              <GenericFieldLabel label="Start Column">{details.startColumn}</GenericFieldLabel>
+              <GenericFieldLabel label="End Column">{details.endColumn}</GenericFieldLabel>
+              <GenericFieldLabel className="col-span-full" label="Link">
+                <a
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="cursor-pointer underline underline-offset-2"
+                  href={details.link}
+                >
+                  {details.link}
+                </a>
+              </GenericFieldLabel>
+            </div>
+          </div>
+        </Td>
+      </Tr>
+    </>
   );
 };

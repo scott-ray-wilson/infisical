@@ -1,9 +1,11 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   faArrowDown,
   faArrowUp,
   faBan,
+  faCheckCircle,
   faExpand,
+  faFilter,
   faMagnifyingGlass,
   faSearch
 } from "@fortawesome/free-solid-svg-icons";
@@ -11,6 +13,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { twMerge } from "tailwind-merge";
 
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
   EmptyState,
   IconButton,
   Input,
@@ -25,9 +32,11 @@ import {
 } from "@app/components/v2";
 import { ProjectPermissionSub, useProjectPermission } from "@app/context";
 import { ProjectPermissionSecretScanningDataSourceActions } from "@app/context/ProjectPermissionContext/types";
+import { RESOURCE_DESCRIPTION_HELPER } from "@app/helpers/secretScanningV2";
 import { usePagination, useResetPageHelper } from "@app/hooks";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import {
+  SecretScanningScanStatus,
   TSecretScanningDataSource,
   useListSecretScanningScans
 } from "@app/hooks/api/secretScanningV2";
@@ -45,6 +54,10 @@ type Props = {
   dataSource: TSecretScanningDataSource;
 };
 
+type ScanFilters = {
+  resourceNames: string[];
+};
+
 export const SecretScanningScanTable = ({ dataSource }: Props) => {
   const { permission } = useProjectPermission();
 
@@ -60,6 +73,10 @@ export const SecretScanningScanTable = ({ dataSource }: Props) => {
       enabled: canReadScans
     }
   );
+
+  const [filters, setFilters] = useState<ScanFilters>({
+    resourceNames: []
+  });
 
   const {
     search,
@@ -82,6 +99,9 @@ export const SecretScanningScanTable = ({ dataSource }: Props) => {
         .filter((scan) => {
           const { resourceName } = scan;
 
+          if (filters.resourceNames.length && !filters.resourceNames.includes(resourceName))
+            return false;
+
           const searchValue = search.trim().toLowerCase();
 
           return resourceName.toLowerCase().includes(searchValue);
@@ -91,7 +111,18 @@ export const SecretScanningScanTable = ({ dataSource }: Props) => {
 
           switch (orderBy) {
             case ScansOrderBy.Findings:
-              return scanOne.unresolvedFindings - scanTwo.unresolvedFindings;
+              if (
+                scanOne.unresolvedFindings === 0 &&
+                scanOne.status === SecretScanningScanStatus.Failed
+              )
+                return 1;
+              if (
+                scanTwo.unresolvedFindings === 0 &&
+                scanTwo.status === SecretScanningScanStatus.Failed
+              )
+                return -1;
+
+              return scanTwo.unresolvedFindings - scanOne.unresolvedFindings;
             case ScansOrderBy.Timestamp:
               return new Date(scanTwo.createdAt).getTime() - new Date(scanOne.createdAt).getTime();
             case ScansOrderBy.ResourceName:
@@ -101,7 +132,7 @@ export const SecretScanningScanTable = ({ dataSource }: Props) => {
                 .localeCompare(scanTwo.resourceName.toLowerCase());
           }
         }),
-    [scans, orderDirection, search, orderBy]
+    [scans, orderDirection, search, orderBy, filters]
   );
 
   useResetPageHelper({
@@ -125,21 +156,72 @@ export const SecretScanningScanTable = ({ dataSource }: Props) => {
   const getColSortIcon = (col: ScansOrderBy) =>
     orderDirection === OrderByDirection.DESC && orderBy === col ? faArrowUp : faArrowDown;
 
+  const isTableFiltered = Boolean(filters.resourceNames.length);
+
+  const resourceDetails = RESOURCE_DESCRIPTION_HELPER[dataSource.type];
+
   return (
     <div>
-      <Input
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        leftIcon={<FontAwesomeIcon icon={faMagnifyingGlass} />}
-        placeholder="Search scans..."
-        className="flex-1"
-      />
+      <div className="flex gap-2">
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          leftIcon={<FontAwesomeIcon icon={faMagnifyingGlass} />}
+          placeholder="Search scans..."
+          className="flex-1"
+        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              ariaLabel="Filter data sources"
+              variant="plain"
+              size="sm"
+              className={twMerge(
+                "flex h-10 w-11 items-center justify-center overflow-hidden border border-mineshaft-600 bg-mineshaft-800 p-0 transition-all hover:border-primary/60 hover:bg-primary/10",
+                isTableFiltered && "border-primary/50 text-primary"
+              )}
+            >
+              <FontAwesomeIcon icon={faFilter} />
+            </IconButton>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="thin-scrollbar max-h-[70vh] overflow-y-auto" align="end">
+            <DropdownMenuLabel>{resourceDetails.pluralTitle}</DropdownMenuLabel>
+            {scans.length ? (
+              [...new Set(scans.map(({ resourceName }) => resourceName))].map((resourceName) => {
+                return (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setFilters((prev) => ({
+                        ...prev,
+                        resourceNames: prev.resourceNames.includes(resourceName)
+                          ? prev.resourceNames.filter((a) => a !== resourceName)
+                          : [...prev.resourceNames, resourceName]
+                      }));
+                    }}
+                    key={resourceName}
+                    icon={
+                      filters.resourceNames.includes(resourceName) && (
+                        <FontAwesomeIcon className="text-primary" icon={faCheckCircle} />
+                      )
+                    }
+                    iconPos="right"
+                  >
+                    {resourceName}
+                  </DropdownMenuItem>
+                );
+              })
+            ) : (
+              <DropdownMenuItem isDisabled>No Data Sources Configured</DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       <TableContainer className="mt-4">
         <Table>
           <THead>
             <Tr>
-              <Th className="w-4" />
-              <Th className="w-min whitespace-nowrap">
+              <Th className="w-1/4 whitespace-nowrap">
                 <div className="flex items-center">
                   Timestamp
                   <IconButton
@@ -152,7 +234,7 @@ export const SecretScanningScanTable = ({ dataSource }: Props) => {
                   </IconButton>
                 </div>
               </Th>
-              <Th className="w-full">
+              <Th className="w-1/2">
                 <div className="flex items-center">
                   Name
                   <IconButton
@@ -165,22 +247,10 @@ export const SecretScanningScanTable = ({ dataSource }: Props) => {
                   </IconButton>
                 </div>
               </Th>
+              <Th className="w-20">Type</Th>
               <Th className="w-1/5 whitespace-nowrap">
                 <div className="flex items-center">
                   Findings
-                  <IconButton
-                    variant="plain"
-                    className={getClassName(ScansOrderBy.Findings)}
-                    ariaLabel="sort"
-                    onClick={() => handleSort(ScansOrderBy.Findings)}
-                  >
-                    <FontAwesomeIcon icon={getColSortIcon(ScansOrderBy.Findings)} />
-                  </IconButton>
-                </div>
-              </Th>
-              <Th>
-                <div className="flex items-center">
-                  Status
                   <IconButton
                     variant="plain"
                     className={getClassName(ScansOrderBy.Findings)}

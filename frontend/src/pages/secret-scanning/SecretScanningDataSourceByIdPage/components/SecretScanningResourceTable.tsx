@@ -24,6 +24,7 @@ import {
 } from "@app/components/v2";
 import { ProjectPermissionSub, useProjectPermission } from "@app/context";
 import { ProjectPermissionSecretScanningDataSourceActions } from "@app/context/ProjectPermissionContext/types";
+import { RESOURCE_DESCRIPTION_HELPER } from "@app/helpers/secretScanningV2";
 import { usePagination, useResetPageHelper } from "@app/hooks";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import {
@@ -42,10 +43,9 @@ enum ResourcesOrderBy {
 
 type Props = {
   dataSource: TSecretScanningDataSource;
-  label: string;
 };
 
-export const SecretScanningResourcesTable = ({ dataSource, label }: Props) => {
+export const SecretScanningResourcesTable = ({ dataSource }: Props) => {
   const { permission } = useProjectPermission();
 
   const canReadResources = permission.can(
@@ -139,13 +139,15 @@ export const SecretScanningResourcesTable = ({ dataSource, label }: Props) => {
   const getColSortIcon = (col: ResourcesOrderBy) =>
     orderDirection === OrderByDirection.DESC && orderBy === col ? faArrowUp : faArrowDown;
 
+  const resourceDetails = RESOURCE_DESCRIPTION_HELPER[dataSource.type];
+
   return (
     <div>
       <Input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         leftIcon={<FontAwesomeIcon icon={faMagnifyingGlass} />}
-        placeholder={`Search ${label.toLowerCase()}...`}
+        placeholder={`Search ${resourceDetails.pluralNoun}...`}
         className="flex-1"
       />
       <TableContainer className="mt-4">
@@ -210,7 +212,7 @@ export const SecretScanningResourcesTable = ({ dataSource, label }: Props) => {
         {!canReadResources && (
           <EmptyState
             icon={faBan}
-            title={`You do not have permission to view data source ${label.toLowerCase()}`}
+            title={`You do not have permission to view data source ${resourceDetails.pluralNoun}`}
           />
         )}
         {Boolean(filteredResources.length) && (
@@ -227,7 +229,7 @@ export const SecretScanningResourcesTable = ({ dataSource, label }: Props) => {
             title={
               resources.length
                 ? "No resources match search..."
-                : `This data source has no ${label.toLowerCase()} associated with it.`
+                : `This data source has no ${resourceDetails.pluralNoun} associated with it.`
             }
             icon={resources.length ? faSearch : undefined}
           />

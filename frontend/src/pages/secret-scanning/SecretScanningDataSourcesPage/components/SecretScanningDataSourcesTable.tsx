@@ -138,9 +138,6 @@ export const SecretScanningDataSourcesTable = ({ dataSources }: Props) => {
               if (dataSourceOne.lastScannedAt === null) return 1;
               if (dataSourceTwo.lastScannedAt === null) return -1;
 
-              if (dataSourceOne.lastScanStatus === SecretScanningScanStatus.Failed) return 1;
-              if (dataSourceTwo.lastScanStatus === SecretScanningScanStatus.Failed) return -1;
-
               return (
                 new Date(dataSourceTwo.lastScannedAt).getTime() -
                 new Date(dataSourceOne.lastScannedAt).getTime()

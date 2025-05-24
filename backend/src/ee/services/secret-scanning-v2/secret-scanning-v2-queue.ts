@@ -118,6 +118,8 @@ export const secretScanningV2QueueServiceFactory = async ({
       const tempFolder = await createTempFolder();
 
       try {
+        throw new Error("Test Error");
+
         await secretScanningV2DAL.scans.update(
           { id: scanId },
           {

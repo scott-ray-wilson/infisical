@@ -3,6 +3,8 @@ import {
   faCheck,
   faCopy,
   faEllipsisV,
+  faExpand,
+  faInfoCircle,
   faSearch,
   faWarning
 } from "@fortawesome/free-solid-svg-icons";
@@ -15,7 +17,6 @@ import { ProjectPermissionCan } from "@app/components/permissions";
 import { SecretScanningScanStatusBadge } from "@app/components/secret-scanning";
 import {
   Badge,
-  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -31,6 +32,7 @@ import {
 } from "@app/context/ProjectPermissionContext/types";
 import { useToggle } from "@app/hooks";
 import {
+  SecretScanningScanStatus,
   TSecretScanningDataSource,
   TSecretScanningResourceWithDetails,
   useTriggerSecretScanningDataSource
@@ -42,8 +44,8 @@ type Props = {
 };
 
 export const SecretScanningResourceRow = ({ resource, dataSource }: Props) => {
-  const { id, name, lastScannedAt, lastScanStatus, unresolvedFindings } = resource;
-  console.log("lastScanStatus", lastScanStatus);
+  const { id, name, lastScannedAt, lastScanStatus, unresolvedFindings, lastScanStatusMessage } =
+    resource;
 
   const triggerDataSourceScan = useTriggerSecretScanningDataSource();
 
@@ -90,7 +92,10 @@ export const SecretScanningResourceRow = ({ resource, dataSource }: Props) => {
 
   return (
     <Tr
-      className={twMerge("group h-10 transition-colors duration-100 hover:bg-mineshaft-700")}
+      className={twMerge(
+        "group h-10 transition-colors duration-100 hover:bg-mineshaft-700",
+        lastScanStatus === SecretScanningScanStatus.Failed && "bg-red/5 hover:bg-red/10"
+      )}
       key={`resource-${id}`}
     >
       <Td className="!min-w-[8rem] max-w-0">
@@ -110,6 +115,7 @@ export const SecretScanningResourceRow = ({ resource, dataSource }: Props) => {
           </Badge>
         ) : // eslint-disable-next-line no-nested-ternary
         lastScannedAt ? (
+          // eslint-disable-next-line no-nested-ternary
           unresolvedFindings ? (
             <Badge
               variant="primary"
@@ -120,6 +126,8 @@ export const SecretScanningResourceRow = ({ resource, dataSource }: Props) => {
                 {unresolvedFindings} Secret{unresolvedFindings > 1 ? "s" : ""} Detected
               </span>
             </Badge>
+          ) : lastScanStatus === SecretScanningScanStatus.Failed ? (
+            <span className="text-mineshaft-400">No findings</span>
           ) : (
             <Badge
               variant="success"
@@ -130,36 +138,22 @@ export const SecretScanningResourceRow = ({ resource, dataSource }: Props) => {
             </Badge>
           )
         ) : (
-          "-"
+          <span className="text-mineshaft-400">No findings</span>
         )}
       </Td>
       <Td className="whitespace-nowrap">
         {/* eslint-disable-next-line no-nested-ternary */}
         {lastScanStatus?.match(/queued|scanning|failed/) ? (
-          <SecretScanningScanStatusBadge status={lastScanStatus} />
+          <SecretScanningScanStatusBadge
+            status={lastScanStatus}
+            statusMessage={lastScanStatusMessage}
+            scannedAt={lastScannedAt}
+          />
         ) : lastScannedAt ? (
           formatDistance(new Date(lastScannedAt), new Date(), { addSuffix: true })
         ) : (
-          "-"
+          <span className="text-mineshaft-400">No scans</span>
         )}
-      </Td>
-      <Td>
-        <ProjectPermissionCan
-          I={ProjectPermissionSecretScanningDataSourceActions.TriggerScans}
-          a={ProjectPermissionSub.SecretScanningDataSources}
-        >
-          {(isAllowed) => (
-            <Button
-              onClick={handleTriggerScan}
-              isLoading={triggerDataSourceScan.isPending}
-              isDisabled={triggerDataSourceScan.isPending || !isAllowed}
-              size="xs"
-              colorSchema="secondary"
-            >
-              Scan
-            </Button>
-          )}
-        </ProjectPermissionCan>
       </Td>
       <Td>
         <Tooltip className="max-w-sm text-center" content="Options">
@@ -182,8 +176,38 @@ export const SecretScanningResourceRow = ({ resource, dataSource }: Props) => {
                   handleCopyId(id);
                 }}
               >
-                Copy Data Source ID
+                Copy Resource ID
               </DropdownMenuItem>
+              <ProjectPermissionCan
+                I={ProjectPermissionSecretScanningDataSourceActions.TriggerScans}
+                a={ProjectPermissionSub.SecretScanningDataSources}
+              >
+                {(isAllowed) => (
+                  <DropdownMenuItem
+                    isDisabled={!isAllowed}
+                    icon={<FontAwesomeIcon icon={faExpand} />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleTriggerScan();
+                    }}
+                  >
+                    <Tooltip
+                      position="left"
+                      sideOffset={42}
+                      content="Manually trigger a scan for this resource."
+                    >
+                      <div className="flex h-full w-full items-center justify-between gap-1">
+                        <span> Trigger Scan</span>
+                        <FontAwesomeIcon
+                          className="text-bunker-300"
+                          size="sm"
+                          icon={faInfoCircle}
+                        />
+                      </div>
+                    </Tooltip>
+                  </DropdownMenuItem>
+                )}
+              </ProjectPermissionCan>
             </DropdownMenuContent>
           </DropdownMenu>
         </Tooltip>

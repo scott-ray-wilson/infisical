@@ -27,13 +27,12 @@ import { ProjectPermissionSecretScanningDataSourceActions } from "@app/context/P
 import { usePagination, useResetPageHelper } from "@app/hooks";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import {
+  SecretScanningScanStatus,
   TSecretScanningDataSource,
   useListSecretScanningResources
 } from "@app/hooks/api/secretScanningV2";
 
 import { SecretScanningResourceRow } from "./SecretScanningResourceRow";
-
-// import { getSecretSyncDestinationColValues } from "./helpers";
 
 enum ResourcesOrderBy {
   Name = "name",
@@ -93,11 +92,22 @@ export const SecretScanningResourcesTable = ({ dataSource, label }: Props) => {
 
           switch (orderBy) {
             case ResourcesOrderBy.Findings:
-              return resourceOne.unresolvedFindings - resourceTwo.unresolvedFindings;
+              if (
+                resourceOne.unresolvedFindings === 0 &&
+                resourceOne.lastScanStatus === SecretScanningScanStatus.Failed
+              )
+                return 1;
+              if (
+                resourceTwo.unresolvedFindings === 0 &&
+                resourceTwo.lastScanStatus === SecretScanningScanStatus.Failed
+              )
+                return -1;
+
+              return resourceTwo.unresolvedFindings - resourceOne.unresolvedFindings;
             case ResourcesOrderBy.LastScanned:
               return (
-                (resourceOne.lastScannedAt ? new Date(resourceOne.lastScannedAt).getTime() : 0) -
-                (resourceTwo.lastScannedAt ? new Date(resourceTwo.lastScannedAt).getTime() : 0)
+                new Date(resourceTwo.lastScannedAt).getTime() -
+                new Date(resourceOne.lastScannedAt).getTime()
               );
             case ResourcesOrderBy.Name:
             default:
@@ -142,7 +152,7 @@ export const SecretScanningResourcesTable = ({ dataSource, label }: Props) => {
         <Table>
           <THead>
             <Tr>
-              <Th className="w-full">
+              <Th className="w-1/2">
                 <div className="flex items-center">
                   Name
                   <IconButton
@@ -155,7 +165,7 @@ export const SecretScanningResourcesTable = ({ dataSource, label }: Props) => {
                   </IconButton>
                 </div>
               </Th>
-              <Th className="w-1/5">
+              <Th className="w-1/4">
                 <div className="flex items-center">
                   Findings
                   <IconButton
@@ -168,7 +178,7 @@ export const SecretScanningResourcesTable = ({ dataSource, label }: Props) => {
                   </IconButton>
                 </div>
               </Th>
-              <Th className="w-1/5 whitespace-nowrap">
+              <Th className="w-1/4 whitespace-nowrap">
                 <div className="flex items-center">
                   Last Scan
                   <IconButton
@@ -181,7 +191,6 @@ export const SecretScanningResourcesTable = ({ dataSource, label }: Props) => {
                   </IconButton>
                 </div>
               </Th>
-              <Th className="w-5" />
               <Th className="w-5" />
             </Tr>
           </THead>

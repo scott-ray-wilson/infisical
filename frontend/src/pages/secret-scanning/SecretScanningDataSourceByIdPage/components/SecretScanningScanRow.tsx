@@ -120,7 +120,8 @@ export const SecretScanningScanRow = ({ scan }: Props) => {
               <FontAwesomeIcon icon={faSearch} />
               <span>Scanning For Leaks</span>
             </Badge>
-          ) : totalFindings ? (
+          ) : // eslint-disable-next-line no-nested-ternary
+          totalFindings ? (
             <div className="flex flex-col">
               {unresolvedFindings && (
                 <Badge
@@ -140,6 +141,8 @@ export const SecretScanningScanRow = ({ scan }: Props) => {
                 </Badge>
               )}
             </div>
+          ) : status === SecretScanningScanStatus.Failed ? (
+            <span className="text-mineshaft-400">No findings</span>
           ) : (
             <Badge
               variant="success"

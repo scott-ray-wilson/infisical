@@ -1,5 +1,6 @@
 import { faArrowRotateForward, faCheck, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { formatDistance } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
 import { Badge, Tooltip } from "@app/components/v2";
@@ -9,9 +10,15 @@ type Props = {
   status: SecretScanningScanStatus;
   statusMessage?: string | null;
   className?: string;
+  scannedAt?: string | null;
 };
 
-export const SecretScanningScanStatusBadge = ({ status, statusMessage, className }: Props) => {
+export const SecretScanningScanStatusBadge = ({
+  status,
+  statusMessage,
+  className,
+  scannedAt
+}: Props) => {
   if (status === SecretScanningScanStatus.Failed) {
     let errorMessage = statusMessage;
     if (statusMessage) {
@@ -34,6 +41,11 @@ export const SecretScanningScanStatusBadge = ({ status, statusMessage, className
                 <div className="text-xs">Failure Reason</div>
               </div>
               <div className="break-words rounded bg-mineshaft-600 p-2 text-xs">{errorMessage}</div>
+              {scannedAt && (
+                <div className="mt-1 text-xs text-mineshaft-400">
+                  Attempted {formatDistance(new Date(scannedAt), new Date(), { addSuffix: true })}
+                </div>
+              )}
             </div>
           </div>
         }

@@ -5,8 +5,8 @@ import {
   faCopy,
   faEdit,
   faEllipsisV,
+  faExpand,
   faInfoCircle,
-  faRotate,
   faSearch,
   faToggleOff,
   faToggleOn,
@@ -178,6 +178,7 @@ export const SecretScanningDataSourceRow = ({
             <SecretScanningScanStatusBadge
               status={lastScanStatus}
               statusMessage={lastScanStatusMessage}
+              scannedAt={lastScannedAt}
             />
           ) : lastScannedAt ? (
             <span>{formatDistance(new Date(lastScannedAt), new Date(), { addSuffix: true })}</span>
@@ -228,7 +229,7 @@ export const SecretScanningDataSourceRow = ({
               >
                 {(isAllowed: boolean) => (
                   <DropdownMenuItem
-                    icon={<FontAwesomeIcon icon={faRotate} />}
+                    icon={<FontAwesomeIcon icon={faExpand} />}
                     onClick={(e) => {
                       e.stopPropagation();
                       onTriggerScan(dataSource);

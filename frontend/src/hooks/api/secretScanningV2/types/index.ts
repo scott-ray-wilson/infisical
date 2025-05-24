@@ -13,14 +13,12 @@ import { TGitLabDataSource, TGitLabDataSourceOption } from "./gitlab-data-source
 
 export type TSecretScanningDataSource = TGitLabDataSource | TGitHubDataSource;
 
-type DashboardDetails = {
+export type TSecretScanningDataSourceWithDetails = TSecretScanningDataSource & {
   lastScannedAt: string | null;
   lastScanStatus: SecretScanningScanStatus | null;
   lastScanStatusMessage: string | null;
   unresolvedFindings: number | null;
 };
-
-export type TSecretScanningDataSourceWithDetails = TSecretScanningDataSource & DashboardDetails;
 
 export type TListSecretScanningDataSources = {
   dataSources: TSecretScanningDataSourceWithDetails[];
@@ -76,7 +74,11 @@ export type TSecretScanningResourceWithDetails = {
   name: string;
   createdAt: string;
   updatedAt: string;
-} & DashboardDetails;
+  lastScannedAt: string;
+  lastScanStatus: SecretScanningScanStatus;
+  lastScanStatusMessage: string | null;
+  unresolvedFindings: number;
+};
 
 export type TListSecretScanningResourcesResponse = {
   resources: TSecretScanningResourceWithDetails[];

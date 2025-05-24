@@ -20,6 +20,7 @@ import {
   useSubscription,
   useWorkspace
 } from "@app/context";
+import { ProjectPermissionSecretScanningFindingActions } from "@app/context/ProjectPermissionContext/types";
 import {
   useGetAccessRequestsCount,
   useGetSecretApprovalRequestCount,
@@ -74,12 +75,12 @@ export const ProjectLayout = () => {
     (secretApprovalReqCount?.open || 0) + (accessApprovalRequestCount?.pendingCount || 0);
 
   const { data: unresolvedFindings } = useGetSecretScanningUnresolvedFindingCount(workspaceId, {
-    // enabled:
-    //   isSecretScanning &&
-    //   permission.can(
-    //     ProjectPermissionSecretScanningFindingActions.Read,
-    //     ProjectPermissionSub.SecretScanningFindings
-    //   ),
+    enabled:
+      isSecretScanning &&
+      permission.can(
+        ProjectPermissionSecretScanningFindingActions.Read,
+        ProjectPermissionSub.SecretScanningFindings
+      ),
     refetchInterval: 30000
   });
 

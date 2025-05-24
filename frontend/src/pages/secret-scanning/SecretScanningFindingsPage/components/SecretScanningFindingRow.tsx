@@ -7,6 +7,7 @@ import { twMerge } from "tailwind-merge";
 import { createNotification } from "@app/components/notifications";
 import {
   Badge,
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -76,9 +77,9 @@ export const SecretScanningFindingRow = ({ finding }: Props) => {
           </div>
         </Td>
         <Td>
-          <div className="flex items-center gap-2 whitespace-nowrap">
+          <div className="flex items-center gap-1 whitespace-nowrap">
             <p>{format(createdAt, "MMM dd yyyy")}</p>
-            <p className="text-mineshaft-400">{format(createdAt, "h:mm aa")}</p>
+            <p className="text-mineshaft-300">{format(createdAt, "h:mm aa")}</p>
           </div>
         </Td>
         <Td className="!min-w-[8rem] max-w-0">
@@ -138,7 +139,7 @@ export const SecretScanningFindingRow = ({ finding }: Props) => {
       <Tr>
         <Td colSpan={6} className="!border-none p-0">
           <div
-            className={`w-full overflow-hidden bg-mineshaft-900/75 transition-all duration-300 ease-in-out ${
+            className={`w-full overflow-hidden bg-mineshaft-900/75 transition-all duration-500 ${
               isExpanded ? "max-h-[50rem] opacity-100" : "max-h-0"
             }`}
           >
@@ -172,12 +173,20 @@ export const SecretScanningFindingRow = ({ finding }: Props) => {
                 <a
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="cursor-pointer underline underline-offset-2"
+                  className="cursor-pointer text-mineshaft-300 underline underline-offset-2 hover:text-mineshaft-100"
                   href={details.link}
                 >
                   {details.link}
                 </a>
               </GenericFieldLabel>
+
+              <Button
+                className="col-span-full"
+                colorSchema="secondary"
+                leftIcon={<FontAwesomeIcon className="text-green" icon={faCheck} />}
+              >
+                {status === SecretScanningFindingStatus.Unresolved ? "Resolve" : "Unresolve"}
+              </Button>
             </div>
           </div>
         </Td>

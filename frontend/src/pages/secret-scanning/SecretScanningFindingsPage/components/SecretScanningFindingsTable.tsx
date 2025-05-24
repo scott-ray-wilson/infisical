@@ -2,10 +2,12 @@ import { useMemo, useState } from "react";
 import {
   faArrowDown,
   faArrowUp,
+  faCheck,
   faCheckCircle,
   faFilter,
   faMagnifyingGlass,
-  faSearch
+  faSearch,
+  faWarning
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { twMerge } from "tailwind-merge";
@@ -33,6 +35,7 @@ import { usePagination, usePopUp, useResetPageHelper } from "@app/hooks";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import {
   SecretScanningDataSource,
+  SecretScanningFindingStatus,
   TSecretScanningDataSource,
   TSecretScanningFinding,
   useTriggerSecretScanningDataSource,
@@ -41,7 +44,10 @@ import {
 
 import { SecretScanningFindingRow } from "./SecretScanningFindingRow";
 
-// import { getSecretSyncDestinationColValues } from "./helpers";
+const STATUS_ICON_MAP = {
+  [SecretScanningFindingStatus.Resolved]: { icon: faCheck, className: "text-green" },
+  [SecretScanningFindingStatus.Unresolved]: { icon: faWarning, className: "text-yellow" }
+};
 
 enum FindingsOrderBy {
   ResourceName = "resource-name",
@@ -52,7 +58,7 @@ enum FindingsOrderBy {
 
 type DataSourceFilters = {
   dataSourceTypes: SecretScanningDataSource[];
-  // status: SecretSyncStatus[];
+  status: SecretScanningFindingStatus[];
 };
 
 type Props = {
@@ -69,7 +75,8 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
   const updateDataSource = useUpdateSecretScanningDataSource();
 
   const [filters, setFilters] = useState<DataSourceFilters>({
-    dataSourceTypes: []
+    dataSourceTypes: [],
+    status: []
   });
 
   const {
@@ -91,14 +98,14 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
     () =>
       findings
         .filter((finding) => {
-          const { rule, resourceName, dataSourceType } = finding;
+          const { rule, resourceName, dataSourceType, status } = finding;
 
           if (filters.dataSourceTypes.length && !filters.dataSourceTypes.includes(dataSourceType))
             return false;
 
-          // if (filters.status.length && (!syncStatus || !filters.status.includes(syncStatus))) {
-          //   return false;
-          // }
+          if (filters.status.length && !filters.status.includes(status)) {
+            return false;
+          }
 
           const searchValue = search.trim().toLowerCase();
 
@@ -166,7 +173,7 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
   const getColSortIcon = (col: FindingsOrderBy) =>
     orderDirection === OrderByDirection.DESC && orderBy === col ? faArrowUp : faArrowDown;
 
-  const isTableFiltered = Boolean(filters.dataSourceTypes.length);
+  const isTableFiltered = Boolean(filters.dataSourceTypes.length || filters.status.length);
 
   const handleDelete = (dataSource: TSecretScanningDataSource) =>
     handlePopUpOpen("deleteDataSource", dataSource);
@@ -245,36 +252,34 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="thin-scrollbar max-h-[70vh] overflow-y-auto" align="end">
             <DropdownMenuLabel>Status</DropdownMenuLabel>
-            {/* {[SecretSyncStatus.Running, SecretSyncStatus.Succeeded, SecretSyncStatus.Failed].map(
-              (status) => (
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setFilters((prev) => ({
-                      ...prev,
-                      status: prev.status.includes(status)
-                        ? prev.status.filter((s) => s !== status)
-                        : [...prev.status, status]
-                    }));
-                  }}
-                  key={status}
-                  icon={
-                    filters.status.includes(status) && (
-                      <FontAwesomeIcon className="text-primary" icon={faCheckCircle} />
-                    )
-                  }
-                  iconPos="right"
-                >
-                  <div className="flex items-center gap-2">
-                    <FontAwesomeIcon
-                      icon={STATUS_ICON_MAP[status].icon}
-                      className={STATUS_ICON_MAP[status].className}
-                    />
-                    <span className="capitalize">{STATUS_ICON_MAP[status].name}</span>
-                  </div>
-                </DropdownMenuItem>
-              )
-            )} */}
+            {Object.values(SecretScanningFindingStatus).map((status) => (
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  setFilters((prev) => ({
+                    ...prev,
+                    status: prev.status.includes(status)
+                      ? prev.status.filter((s) => s !== status)
+                      : [...prev.status, status]
+                  }));
+                }}
+                key={status}
+                icon={
+                  filters.status.includes(status) && (
+                    <FontAwesomeIcon className="text-primary" icon={faCheckCircle} />
+                  )
+                }
+                iconPos="right"
+              >
+                <div className="flex items-center gap-2">
+                  <FontAwesomeIcon
+                    icon={STATUS_ICON_MAP[status].icon}
+                    className={STATUS_ICON_MAP[status].className}
+                  />
+                  <span className="capitalize">{status}</span>
+                </div>
+              </DropdownMenuItem>
+            ))}
             <DropdownMenuLabel>Platform</DropdownMenuLabel>
             {findings.length ? (
               [...new Set(findings.map(({ dataSourceType: type }) => type))].map((type) => {

@@ -120,3 +120,9 @@ export type TSecretScanningFactory<T extends TSecretScanningDataSourceWithConnec
 
 export type TFindingsPayload = Pick<TSecretScanningFindingsInsert, "details" | "fingerprint" | "severity" | "rule">[];
 export type TGetFindingsPayload = Promise<TFindingsPayload>;
+
+export type TUpdateSecretScanningFinding = {
+  status?: SecretScanningFindingStatus;
+  remark?: string;
+  findingId: string;
+};

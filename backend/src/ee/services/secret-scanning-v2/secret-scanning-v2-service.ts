@@ -28,7 +28,7 @@ import {
   TSecretScanningResourceWithDetails,
   TSecretScanningScanWithDetails,
   TTriggerSecretScanningDataSourceDTO,
-  TUpdateSecretScanningDataSourceDTO
+  TUpdateSecretScanningDataSourceDTO, TUpdateSecretScanningFinding
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-types";
 import { TKeyStoreFactory } from "@app/keystore/keystore";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
@@ -602,6 +602,36 @@ export const secretScanningV2ServiceFactory = ({
   };
 
   const listSecretScanningFindingsByProjectId = async (projectId: string, actor: OrgServiceActor) => {
+    const plan = await licenseService.getPlan(actor.orgId);
+
+    if (!plan.secretScanning)
+      throw new BadRequestError({
+        message:
+          "Failed to access Secret Scanning Findings due to plan restriction. Upgrade plan to enable Secret Scanning."
+      });
+
+    const { permission } = await permissionService.getProjectPermission({
+      actor: actor.type,
+      actorId: actor.id,
+      actorAuthMethod: actor.authMethod,
+      actorOrgId: actor.orgId,
+      actionProjectType: ActionProjectType.SecretScanning,
+      projectId
+    });
+
+    ForbiddenError.from(permission).throwUnlessCan(
+      ProjectPermissionSecretScanningFindingActions.Read,
+      ProjectPermissionSub.SecretScanningFindings
+    );
+
+    const findings = await secretScanningV2DAL.findings.find({
+      projectId
+    });
+
+    return findings as TSecretScanningFinding[];
+  };
+
+  const updateSecretScanningFindingById = async ({ findingId remark, status}: TUpdateSecretScanningFinding, actor: OrgServiceActor) => {
     const plan = await licenseService.getPlan(actor.orgId);
 
     if (!plan.secretScanning)

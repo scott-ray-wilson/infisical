@@ -14,10 +14,10 @@ import { TGitLabDataSource, TGitLabDataSourceOption } from "./gitlab-data-source
 export type TSecretScanningDataSource = TGitLabDataSource | TGitHubDataSource;
 
 type DashboardDetails = {
-  lastScannedAt?: string | null;
-  lastScanStatus?: SecretScanningScanStatus | null;
-  lastScanStatusMessage?: string | null;
-  unresolvedFindings: number;
+  lastScannedAt: string | null;
+  lastScanStatus: SecretScanningScanStatus | null;
+  lastScanStatusMessage: string | null;
+  unresolvedFindings: number | null;
 };
 
 export type TSecretScanningDataSourceWithDetails = TSecretScanningDataSource & DashboardDetails;

@@ -152,7 +152,7 @@ export const registerSecretScanningV2Router = async (server: FastifyZodProvider)
                 lastScannedAt: z.date().nullish(),
                 lastScanStatus: z.nativeEnum(SecretScanningScanStatus).nullish(),
                 lastScanStatusMessage: z.string().nullish(),
-                unresolvedFindings: z.number()
+                unresolvedFindings: z.number().nullish()
               })
             )
             .array()

@@ -145,6 +145,7 @@ export const SecretScanningDataSourceRow = ({
           </Badge>
         ) : // eslint-disable-next-line no-nested-ternary
         lastScannedAt ? (
+          // eslint-disable-next-line no-nested-ternary
           unresolvedFindings ? (
             <Badge
               variant="primary"
@@ -155,6 +156,8 @@ export const SecretScanningDataSourceRow = ({
                 {unresolvedFindings} Secret{unresolvedFindings > 1 ? "s" : ""} Detected
               </span>
             </Badge>
+          ) : lastScanStatus === SecretScanningScanStatus.Failed ? (
+            <span className="text-mineshaft-400">No findings</span>
           ) : (
             <Badge
               variant="success"
@@ -165,7 +168,7 @@ export const SecretScanningDataSourceRow = ({
             </Badge>
           )
         ) : (
-          "-"
+          <span className="text-mineshaft-400">No findings</span>
         )}
       </Td>
       <Td>

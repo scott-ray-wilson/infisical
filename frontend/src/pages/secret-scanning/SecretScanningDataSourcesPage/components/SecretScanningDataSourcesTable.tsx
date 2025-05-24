@@ -36,6 +36,7 @@ import { usePagination, usePopUp, useResetPageHelper } from "@app/hooks";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import {
   SecretScanningDataSource,
+  SecretScanningScanStatus,
   TSecretScanningDataSource,
   TSecretScanningDataSourceWithDetails,
   useTriggerSecretScanningDataSource,
@@ -47,9 +48,9 @@ import { SecretScanningDataSourceRow } from "./SecretScanningDataSourceRow";
 // import { getSecretSyncDestinationColValues } from "./helpers";
 
 enum DataSourcesOrderBy {
-  Type = "type",
+  Findings = "findings",
   Name = "name",
-  Status = "status"
+  LastScan = "last-scan"
 }
 
 type DataSourceFilters = {
@@ -118,45 +119,53 @@ export const SecretScanningDataSourcesTable = ({ dataSources }: Props) => {
 
           if (filters.types.length && !filters.types.includes(type)) return false;
 
-          // if (filters.status.length && (!syncStatus || !filters.status.includes(syncStatus))) {
-          //   return false;
-          // }
-
           const searchValue = search.trim().toLowerCase();
-
-          // const destinationValues = getSecretSyncDestinationColValues(dataSource);
 
           return (
             SECRET_SCANNING_DATA_SOURCE_MAP[type].name.toLowerCase().includes(searchValue) ||
             name.toLowerCase().includes(searchValue) ||
             connection.name.toLowerCase().includes(searchValue)
-            // ||
-            // destinationValues.primaryText.toLowerCase().includes(searchValue) ||
-            // destinationValues.secondaryText?.toLowerCase().includes(searchValue)
           );
         })
         .sort((a, b) => {
           const [dataSourceOne, dataSourceTwo] =
             orderDirection === OrderByDirection.ASC ? [a, b] : [b, a];
 
-          // TODO: platform
-
           switch (orderBy) {
-            // case DataSourcesOrderBy.Type:
-            //   return getSecretSyncDestinationColValues(dataSourceOne)
-            //     .primaryText.toLowerCase()
-            //     .localeCompare(
-            //       getSecretSyncDestinationColValues(dataSourceTwo).primaryText.toLowerCase()
-            //     );
-            // case DataSourcesOrderBy.Status:
-            //   if (!syncOne.syncStatus && syncTwo.syncStatus) return 1;
-            //   if (syncOne.syncStatus && !syncTwo.syncStatus) return -1;
-            //   if (!syncOne.syncStatus && !syncTwo.syncStatus) return 0;
+            case DataSourcesOrderBy.LastScan:
+              if (dataSourceOne.lastScannedAt === null && dataSourceTwo.lastScannedAt === null)
+                return 0;
+              if (dataSourceOne.lastScannedAt === null) return 1;
+              if (dataSourceTwo.lastScannedAt === null) return -1;
 
-            //   return (
-            //     getSyncStatusOrderValue(syncOne.syncStatus) -
-            //     getSyncStatusOrderValue(syncTwo.syncStatus)
-            //   );
+              if (dataSourceOne.lastScanStatus === SecretScanningScanStatus.Failed) return 1;
+              if (dataSourceTwo.lastScanStatus === SecretScanningScanStatus.Failed) return -1;
+
+              return (
+                new Date(dataSourceTwo.lastScannedAt).getTime() -
+                new Date(dataSourceOne.lastScannedAt).getTime()
+              );
+            case DataSourcesOrderBy.Findings:
+              if (
+                dataSourceOne.unresolvedFindings === null &&
+                dataSourceTwo.unresolvedFindings === null
+              )
+                return 0;
+              if (dataSourceOne.unresolvedFindings === null) return 1;
+              if (dataSourceTwo.unresolvedFindings === null) return -1;
+
+              if (
+                dataSourceOne.unresolvedFindings === 0 &&
+                dataSourceOne.lastScanStatus === SecretScanningScanStatus.Failed
+              )
+                return 1;
+              if (
+                dataSourceTwo.unresolvedFindings === 0 &&
+                dataSourceTwo.lastScanStatus === SecretScanningScanStatus.Failed
+              )
+                return -1;
+
+              return dataSourceTwo.unresolvedFindings - dataSourceOne.unresolvedFindings;
             case DataSourcesOrderBy.Name:
             default:
               return dataSourceOne.name
@@ -267,37 +276,6 @@ export const SecretScanningDataSourcesTable = ({ dataSources }: Props) => {
             </IconButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="thin-scrollbar max-h-[70vh] overflow-y-auto" align="end">
-            <DropdownMenuLabel>Status</DropdownMenuLabel>
-            {/* {[SecretSyncStatus.Running, SecretSyncStatus.Succeeded, SecretSyncStatus.Failed].map(
-              (status) => (
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setFilters((prev) => ({
-                      ...prev,
-                      status: prev.status.includes(status)
-                        ? prev.status.filter((s) => s !== status)
-                        : [...prev.status, status]
-                    }));
-                  }}
-                  key={status}
-                  icon={
-                    filters.status.includes(status) && (
-                      <FontAwesomeIcon className="text-primary" icon={faCheckCircle} />
-                    )
-                  }
-                  iconPos="right"
-                >
-                  <div className="flex items-center gap-2">
-                    <FontAwesomeIcon
-                      icon={STATUS_ICON_MAP[status].icon}
-                      className={STATUS_ICON_MAP[status].className}
-                    />
-                    <span className="capitalize">{STATUS_ICON_MAP[status].name}</span>
-                  </div>
-                </DropdownMenuItem>
-              )
-            )} */}
             <DropdownMenuLabel>Platform</DropdownMenuLabel>
             {dataSources.length ? (
               [...new Set(dataSources.map(({ type }) => type))].map((type) => {
@@ -343,7 +321,7 @@ export const SecretScanningDataSourcesTable = ({ dataSources }: Props) => {
         <Table>
           <THead>
             <Tr>
-              <Th className="w-40">Platform</Th>
+              <Th className="w-60">Platform</Th>
               <Th className="w-1/3">
                 <div className="flex items-center">
                   Name
@@ -357,29 +335,29 @@ export const SecretScanningDataSourcesTable = ({ dataSources }: Props) => {
                   </IconButton>
                 </div>
               </Th>
-              <Th className="w-1/4">
+              <Th className="w-1/3">
                 <div className="flex items-center">
                   Findings
                   <IconButton
                     variant="plain"
-                    className={getClassName(DataSourcesOrderBy.Status)}
+                    className={getClassName(DataSourcesOrderBy.Findings)}
                     ariaLabel="sort"
-                    onClick={() => handleSort(DataSourcesOrderBy.Status)}
+                    onClick={() => handleSort(DataSourcesOrderBy.Findings)}
                   >
-                    <FontAwesomeIcon icon={getColSortIcon(DataSourcesOrderBy.Status)} />
+                    <FontAwesomeIcon icon={getColSortIcon(DataSourcesOrderBy.Findings)} />
                   </IconButton>
                 </div>
               </Th>
-              <Th className="w-1/4">
+              <Th className="w-1/3">
                 <div className="flex items-center">
                   Last Scan
                   <IconButton
                     variant="plain"
-                    className={getClassName(DataSourcesOrderBy.Type)}
+                    className={getClassName(DataSourcesOrderBy.LastScan)}
                     ariaLabel="sort"
-                    onClick={() => handleSort(DataSourcesOrderBy.Type)}
+                    onClick={() => handleSort(DataSourcesOrderBy.LastScan)}
                   >
-                    <FontAwesomeIcon icon={getColSortIcon(DataSourcesOrderBy.Type)} />
+                    <FontAwesomeIcon icon={getColSortIcon(DataSourcesOrderBy.LastScan)} />
                   </IconButton>
                 </div>
               </Th>

@@ -260,7 +260,7 @@ export const secretScanningV2DALFactory = (db: TDbClient) => {
           lastScanStatus: lastScan?.status ?? null,
           lastScanStatusMessage: lastScan?.statusMessage ?? null,
           lastScannedAt: lastScan?.createdAt ?? null,
-          unresolvedFindings: findings?.length ?? 0
+          unresolvedFindings: scans.length ? findings.length : null
         };
       });
     } catch (error) {

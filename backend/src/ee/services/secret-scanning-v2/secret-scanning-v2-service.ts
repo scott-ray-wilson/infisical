@@ -238,9 +238,10 @@ export const secretScanningV2ServiceFactory = ({
       ProjectPermissionSub.SecretScanningDataSources
     );
 
+    let connection: TAppConnection | null = null;
     if (payload.connectionId) {
       // validates permission to connect and app is valid for data source
-      await appConnectionService.connectAppConnectionById(
+      connection = await appConnectionService.connectAppConnectionById(
         SECRET_SCANNING_DATA_SOURCE_CONNECTION_MAP[payload.type],
         payload.connectionId,
         actor
@@ -254,6 +255,13 @@ export const secretScanningV2ServiceFactory = ({
         projectId,
         ...payload
       });
+
+      if (payload.isAutoScanEnabled) {
+        await secretScanningV2Queue.queueDataSourceFullScan({
+          ...dataSource,
+          connection
+        } as TSecretScanningDataSourceWithConnection);
+      }
 
       return dataSource as TSecretScanningDataSource;
     } catch (err) {

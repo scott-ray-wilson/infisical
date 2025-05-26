@@ -15,6 +15,7 @@ import {
 } from "@app/ee/services/secret-scanning-v2/gitlab";
 import {
   SecretScanningDataSource,
+  SecretScanningFindingStatus,
   SecretScanningScanStatus
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
 
@@ -122,7 +123,7 @@ export type TFindingsPayload = Pick<TSecretScanningFindingsInsert, "details" | "
 export type TGetFindingsPayload = Promise<TFindingsPayload>;
 
 export type TUpdateSecretScanningFinding = {
-  status?: SecretScanningFindingStatus;
-  remark?: string;
+  status: SecretScanningFindingStatus;
+  remarks?: string | null;
   findingId: string;
 };

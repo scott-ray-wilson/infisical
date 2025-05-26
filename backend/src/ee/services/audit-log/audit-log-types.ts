@@ -14,7 +14,8 @@ import {
   TCreateSecretScanningDataSourceDTO,
   TDeleteSecretScanningDataSourceDTO,
   TTriggerSecretScanningDataSourceDTO,
-  TUpdateSecretScanningDataSourceDTO
+  TUpdateSecretScanningDataSourceDTO,
+  TUpdateSecretScanningFinding
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-types";
 import { SshCaStatus, SshCertType } from "@app/ee/services/ssh/ssh-certificate-authority-types";
 import { SshCertKeyAlgorithm } from "@app/ee/services/ssh-certificate/ssh-certificate-types";
@@ -2997,9 +2998,7 @@ interface SecretScanningFindingListEvent {
 
 interface SecretScanningFindingUpdateEvent {
   type: EventType.SECRET_SCANNING_FINDING_UPDATE;
-  metadata: {
-    // TODO
-  };
+  metadata: TUpdateSecretScanningFinding;
 }
 
 export type Event =

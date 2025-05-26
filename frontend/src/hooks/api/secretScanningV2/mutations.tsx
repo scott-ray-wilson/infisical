@@ -7,8 +7,10 @@ import {
   TCreateSecretScanningDataSourceDTO,
   TDeleteSecretScanningDataSourceDTO,
   TSecretScanningDataSourceResponse,
+  TSecretScanningFindingResponse,
   TTriggerSecretScanningDataSourceDTO,
-  TUpdateSecretScanningDataSourceDTO
+  TUpdateSecretScanningDataSourceDTO,
+  TUpdateSecretScanningFinding
 } from "./types";
 
 export const useCreateSecretScanningDataSource = () => {
@@ -107,6 +109,26 @@ export const useTriggerSecretScanningDataSource = () => {
       queryClient.invalidateQueries({
         queryKey: secretScanningV2Keys.listScans(dataSourceId)
       });
+    }
+  });
+};
+
+export const useUpdateSecretScanningFinding = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ findingId, ...params }: TUpdateSecretScanningFinding) => {
+      const { data } = await apiRequest.patch<TSecretScanningFindingResponse>(
+        `/api/v2/secret-scanning/findings/${findingId}`,
+        params
+      );
+
+      return data.finding;
+    },
+    onSuccess: (_, { projectId }) => {
+      queryClient.invalidateQueries({
+        queryKey: secretScanningV2Keys.listFindings(projectId)
+      });
+      // TODO: data source queries
     }
   });
 };

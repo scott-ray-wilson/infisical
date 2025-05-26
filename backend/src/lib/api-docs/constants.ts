@@ -2415,5 +2415,10 @@ export const SecretScanningDataSources = {
 export const SecretScanningFindings = {
   LIST: {
     projectId: `The ID of the project to list Secret Scanning Findings from.`
+  },
+  UPDATE: {
+    findingId: "The ID of the Secret Scanning Finding to update the resolve status for.",
+    status: "The updated status of the specified Secret Scanning Finding.",
+    remarks: "Remarks pertaining to the resolve status of this finding."
   }
 };

@@ -3,13 +3,16 @@ import { z } from "zod";
 import { EventType } from "@app/ee/services/audit-log/audit-log-types";
 import { GitHubDataSourceListItemSchema } from "@app/ee/services/secret-scanning-v2/github";
 import { GitLabDataSourceListItemSchema } from "@app/ee/services/secret-scanning-v2/gitlab";
-import { SecretScanningScanStatus } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
+import {
+  SecretScanningFindingStatus,
+  SecretScanningScanStatus
+} from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
 import {
   SecretScanningDataSourceSchema,
   SecretScanningFindingSchema
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-union-schemas";
 import { ApiDocsTags, SecretScanningDataSources, SecretScanningFindings } from "@app/lib/api-docs";
-import { readLimit } from "@app/server/config/rateLimiter";
+import { readLimit, writeLimit } from "@app/server/config/rateLimiter";
 import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
 import { AuthMode } from "@app/services/auth/auth-type";
 
@@ -129,6 +132,56 @@ export const registerSecretScanningV2Router = async (server: FastifyZodProvider)
       });
 
       return { findings };
+    }
+  });
+
+  server.route({
+    method: "PATCH",
+    url: "/findings/:findingId",
+    config: {
+      rateLimit: writeLimit
+    },
+    schema: {
+      hide: false,
+      tags: [ApiDocsTags.SecretScanning],
+      description: "Update the resolve status of the specified Secret Scanning Finding.",
+      params: z.object({
+        findingId: z.string().trim().min(1, "Finding ID required").describe(SecretScanningFindings.UPDATE.findingId)
+      }),
+      body: z.object({
+        status: z.nativeEnum(SecretScanningFindingStatus).describe(SecretScanningFindings.UPDATE.status),
+        remarks: z.string().nullish().describe(SecretScanningFindings.UPDATE.remarks)
+      }),
+      response: {
+        200: z.object({ finding: SecretScanningFindingSchema })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT, AuthMode.IDENTITY_ACCESS_TOKEN]),
+    handler: async (req) => {
+      const {
+        params: { findingId },
+        body,
+        permission
+      } = req;
+
+      const { finding, projectId } = await server.services.secretScanningV2.updateSecretScanningFindingById(
+        { findingId, ...body },
+        permission
+      );
+
+      await server.services.auditLog.createAuditLog({
+        ...req.auditLogInfo,
+        projectId,
+        event: {
+          type: EventType.SECRET_SCANNING_FINDING_UPDATE,
+          metadata: {
+            findingId,
+            ...body
+          }
+        }
+      });
+
+      return { finding };
     }
   });
 

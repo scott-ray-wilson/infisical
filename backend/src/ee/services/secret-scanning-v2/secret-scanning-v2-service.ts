@@ -28,7 +28,8 @@ import {
   TSecretScanningResourceWithDetails,
   TSecretScanningScanWithDetails,
   TTriggerSecretScanningDataSourceDTO,
-  TUpdateSecretScanningDataSourceDTO, TUpdateSecretScanningFinding
+  TUpdateSecretScanningDataSourceDTO,
+  TUpdateSecretScanningFinding
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-types";
 import { TKeyStoreFactory } from "@app/keystore/keystore";
 import { DatabaseErrorCode } from "@app/lib/error-codes";
@@ -631,7 +632,10 @@ export const secretScanningV2ServiceFactory = ({
     return findings as TSecretScanningFinding[];
   };
 
-  const updateSecretScanningFindingById = async ({ findingId remark, status}: TUpdateSecretScanningFinding, actor: OrgServiceActor) => {
+  const updateSecretScanningFindingById = async (
+    { findingId, remarks, status }: TUpdateSecretScanningFinding,
+    actor: OrgServiceActor
+  ) => {
     const plan = await licenseService.getPlan(actor.orgId);
 
     if (!plan.secretScanning)
@@ -640,25 +644,33 @@ export const secretScanningV2ServiceFactory = ({
           "Failed to access Secret Scanning Findings due to plan restriction. Upgrade plan to enable Secret Scanning."
       });
 
+    const finding = await secretScanningV2DAL.findings.findById(findingId);
+
+    if (!finding)
+      throw new NotFoundError({
+        message: `Could not find Secret Scanning Finding with ID "${findingId}"`
+      });
+
     const { permission } = await permissionService.getProjectPermission({
       actor: actor.type,
       actorId: actor.id,
       actorAuthMethod: actor.authMethod,
       actorOrgId: actor.orgId,
       actionProjectType: ActionProjectType.SecretScanning,
-      projectId
+      projectId: finding.projectId
     });
 
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionSecretScanningFindingActions.Read,
+      ProjectPermissionSecretScanningFindingActions.Resolve,
       ProjectPermissionSub.SecretScanningFindings
     );
 
-    const findings = await secretScanningV2DAL.findings.find({
-      projectId
+    const updatedFinding = await secretScanningV2DAL.findings.updateById(findingId, {
+      remarks,
+      status
     });
 
-    return findings as TSecretScanningFinding[];
+    return { finding: updatedFinding as TSecretScanningFinding, projectId: finding.projectId };
   };
 
   return {
@@ -675,6 +687,7 @@ export const secretScanningV2ServiceFactory = ({
     listSecretScanningResourcesWithDetailsByDataSourceId,
     listSecretScanningScansWithDetailsByDataSourceId,
     getSecretScanningUnresolvedFindingsCountByProjectId,
-    listSecretScanningFindingsByProjectId
+    listSecretScanningFindingsByProjectId,
+    updateSecretScanningFindingById
   };
 };

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { faCheck, faCopy, faEllipsisV, faWarning } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faCopy, faEllipsisV, faUndo, faWarning } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { format } from "date-fns";
 import { twMerge } from "tailwind-merge";
@@ -27,11 +27,21 @@ import {
 
 type Props = {
   finding: TSecretScanningFinding;
+  onUpdate: (finding: TSecretScanningFinding) => void;
 };
 
-export const SecretScanningFindingRow = ({ finding }: Props) => {
-  const { resourceName, id, dataSourceType, createdAt, resourceType, rule, status, details } =
-    finding;
+export const SecretScanningFindingRow = ({ finding, onUpdate }: Props) => {
+  const {
+    resourceName,
+    id,
+    dataSourceType,
+    createdAt,
+    resourceType,
+    rule,
+    status,
+    details,
+    remarks
+  } = finding;
 
   const [isIdCopied, setIsIdCopied] = useToggle(false);
 
@@ -99,13 +109,17 @@ export const SecretScanningFindingRow = ({ finding }: Props) => {
               <span>Unresolved</span>
             </Badge>
           ) : (
-            <Badge
-              variant="success"
-              className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap"
-            >
-              <FontAwesomeIcon icon={faCheck} />
-              Resolved
-            </Badge>
+            <Tooltip position="left" content={remarks}>
+              <div className="w-min">
+                <Badge
+                  variant="success"
+                  className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap"
+                >
+                  <FontAwesomeIcon icon={faCheck} />
+                  Resolved
+                </Badge>
+              </div>
+            </Tooltip>
           )}
         </Td>
         <Td>
@@ -181,9 +195,16 @@ export const SecretScanningFindingRow = ({ finding }: Props) => {
               </GenericFieldLabel>
 
               <Button
-                className="col-span-full"
+                onClick={() => onUpdate(finding)}
                 colorSchema="secondary"
-                leftIcon={<FontAwesomeIcon className="text-green" icon={faCheck} />}
+                leftIcon={
+                  <FontAwesomeIcon
+                    className={
+                      status === SecretScanningFindingStatus.Unresolved ? "text-green" : undefined
+                    }
+                    icon={status === SecretScanningFindingStatus.Unresolved ? faCheck : faUndo}
+                  />
+                }
               >
                 {status === SecretScanningFindingStatus.Unresolved ? "Resolve" : "Unresolve"}
               </Button>

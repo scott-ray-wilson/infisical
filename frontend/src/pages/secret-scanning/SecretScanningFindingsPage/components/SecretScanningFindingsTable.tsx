@@ -12,7 +12,6 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { twMerge } from "tailwind-merge";
 
-import { createNotification } from "@app/components/notifications";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,11 +35,9 @@ import { OrderByDirection } from "@app/hooks/api/generic/types";
 import {
   SecretScanningDataSource,
   SecretScanningFindingStatus,
-  TSecretScanningDataSource,
-  TSecretScanningFinding,
-  useTriggerSecretScanningDataSource,
-  useUpdateSecretScanningDataSource
+  TSecretScanningFinding
 } from "@app/hooks/api/secretScanningV2";
+import { SecretScanningUpdateFindingModal } from "@app/pages/secret-scanning/SecretScanningFindingsPage/components/SecretScanningUpdateFindingModal";
 
 import { SecretScanningFindingRow } from "./SecretScanningFindingRow";
 
@@ -66,13 +63,7 @@ type Props = {
 };
 
 export const SecretScanningFindingsTable = ({ findings }: Props) => {
-  const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp([
-    "deleteDataSource",
-    "editDataSource",
-    "triggerDataSourceScan"
-  ] as const);
-  const triggerDataSourceScan = useTriggerSecretScanningDataSource();
-  const updateDataSource = useUpdateSecretScanningDataSource();
+  const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp(["updateFinding"] as const);
 
   const [filters, setFilters] = useState<DataSourceFilters>({
     dataSourceTypes: [],
@@ -174,57 +165,6 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
     orderDirection === OrderByDirection.DESC && orderBy === col ? faArrowUp : faArrowDown;
 
   const isTableFiltered = Boolean(filters.dataSourceTypes.length || filters.status.length);
-
-  const handleDelete = (dataSource: TSecretScanningDataSource) =>
-    handlePopUpOpen("deleteDataSource", dataSource);
-
-  const handleEdit = (dataSource: TSecretScanningDataSource) =>
-    handlePopUpOpen("editDataSource", dataSource);
-
-  const handleToggleEnableAutoScan = async (dataSource: TSecretScanningDataSource) => {
-    const destinationName = SECRET_SCANNING_DATA_SOURCE_MAP[dataSource.type].name;
-
-    const isAutoScanEnabled = !dataSource.isAutoScanEnabled;
-
-    try {
-      await updateDataSource.mutateAsync({
-        dataSourceId: dataSource.id,
-        type: dataSource.type,
-        isAutoScanEnabled,
-        projectId: dataSource.projectId
-      });
-
-      createNotification({
-        text: `Successfully ${isAutoScanEnabled ? "enabled" : "disabled"} auto-scan for ${destinationName} Data Source`,
-        type: "success"
-      });
-    } catch {
-      createNotification({
-        text: `Failed to ${isAutoScanEnabled ? "enable" : "disable"} auto-scan for ${destinationName} Data Source`,
-        type: "error"
-      });
-    }
-  };
-
-  const handleTriggerScan = async (dataSource: TSecretScanningDataSource) => {
-    try {
-      await triggerDataSourceScan.mutateAsync({
-        dataSourceId: dataSource.id,
-        type: dataSource.type,
-        projectId: dataSource.projectId
-      });
-
-      createNotification({
-        text: "Successfully triggered scan",
-        type: "success"
-      });
-    } catch {
-      createNotification({
-        text: "Failed to trigger scan",
-        type: "error"
-      });
-    }
-  };
 
   return (
     <div>
@@ -383,7 +323,11 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
           </THead>
           <TBody>
             {filteredFindings.slice(offset, perPage * page).map((finding) => (
-              <SecretScanningFindingRow key={finding.id} finding={finding} />
+              <SecretScanningFindingRow
+                key={finding.id}
+                finding={finding}
+                onUpdate={() => handlePopUpOpen("updateFinding", finding)}
+              />
             ))}
           </TBody>
         </Table>
@@ -407,6 +351,11 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
           />
         )}
       </TableContainer>
+      <SecretScanningUpdateFindingModal
+        isOpen={popUp.updateFinding.isOpen}
+        onOpenChange={(isOpen) => handlePopUpToggle("updateFinding", isOpen)}
+        finding={popUp.updateFinding.data}
+      />
     </div>
   );
 };

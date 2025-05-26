@@ -89,23 +89,21 @@ export const SecretScanningScanRow = ({ scan }: Props) => {
           ) : // eslint-disable-next-line no-nested-ternary
           totalFindings ? (
             <div className="flex flex-col">
-              {unresolvedFindings && (
-                <Badge
-                  variant={unresolvedFindings ? "primary" : undefined}
-                  className={twMerge(
-                    "flex h-5 w-min items-center gap-1.5 whitespace-nowrap",
-                    !unresolvedFindings && "bg-mineshaft-400/50 text-bunker-300"
-                  )}
-                >
-                  <FontAwesomeIcon icon={unresolvedFindings ? faWarning : faCheck} />
-                  <span className="text-xs">
-                    {totalFindings}{" "}
-                    {unresolvedFindings
-                      ? `Secret ${totalFindings > 1 ? "s" : ""} Detected`
-                      : "Leak Resolved"}
-                  </span>
-                </Badge>
-              )}
+              <Badge
+                variant={unresolvedFindings ? "primary" : undefined}
+                className={twMerge(
+                  "flex h-5 w-min items-center gap-1.5 whitespace-nowrap",
+                  !unresolvedFindings && "bg-mineshaft-400/50 text-bunker-300"
+                )}
+              >
+                <FontAwesomeIcon icon={unresolvedFindings ? faWarning : faCheck} />
+                <span className="text-xs">
+                  {totalFindings}{" "}
+                  {unresolvedFindings
+                    ? `Secret ${totalFindings > 1 ? "s" : ""} Detected`
+                    : "Leak Resolved"}
+                </span>
+              </Badge>
             </div>
           ) : status === SecretScanningScanStatus.Failed ? (
             <span className="text-mineshaft-400">No findings</span>

@@ -185,7 +185,7 @@ export const registerSecretScanningV2Router = async (server: FastifyZodProvider)
     }
   });
 
-  // this is not exposed and for UI only
+  /* DASHBOARD, NOT EXPOSED *********************************************************** */
   server.route({
     method: "GET",
     url: "/data-sources-dashboard",

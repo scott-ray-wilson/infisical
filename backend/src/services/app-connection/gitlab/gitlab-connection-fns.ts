@@ -37,13 +37,15 @@ export const getGitLabConnectionListItem = () => {
   return {
     name: "GitLab" as const,
     app: AppConnection.GitLab as const,
-    methods: Object.values(GitLabConnectionMethod) as [GitLabConnectionMethod.AccessToken]
+    methods: Object.values(GitLabConnectionMethod) as [GitLabConnectionMethod]
   };
 };
 
 export const validateGitLabConnectionCredentials = async (config: TGitLabConnectionConfig) => {
   try {
     const client = await getGitLabConnectionClient(config);
+
+    // returns group/project bot
     await client.Users.showCurrentUser();
   } catch (error: unknown) {
     logger.error(error, "Error validating GitLab connection credentials");

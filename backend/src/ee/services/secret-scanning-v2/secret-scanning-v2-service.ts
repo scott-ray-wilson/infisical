@@ -10,6 +10,7 @@ import {
   ProjectPermissionSub
 } from "@app/ee/services/permission/project-permission";
 import { SecretScanningFindingStatus } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
+import { SECRET_SCANNING_FACTORY_MAP } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-factory";
 import { listSecretScanningDataSourceOptions } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-fns";
 import {
   SECRET_SCANNING_DATA_SOURCE_CONNECTION_MAP,
@@ -41,6 +42,7 @@ import { decryptAppConnection } from "@app/services/app-connection/app-connectio
 import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
 import { TAppConnection } from "@app/services/app-connection/app-connection-types";
 import { TKmsServiceFactory } from "@app/services/kms/kms-service";
+import { KmsDataKey } from "@app/services/kms/kms-types";
 
 import { TSecretScanningV2DALFactory } from "./secret-scanning-v2-dal";
 import { TSecretScanningV2QueueServiceFactory } from "./secret-scanning-v2-queue";
@@ -214,7 +216,7 @@ export const secretScanningV2ServiceFactory = ({
   };
 
   const createSecretScanningDataSource = async (
-    { projectId, ...payload }: TCreateSecretScanningDataSourceDTO,
+    payload: TCreateSecretScanningDataSourceDTO,
     actor: OrgServiceActor
   ) => {
     const plan = await licenseService.getPlan(actor.orgId);
@@ -231,7 +233,7 @@ export const secretScanningV2ServiceFactory = ({
       actorAuthMethod: actor.authMethod,
       actorOrgId: actor.orgId,
       actionProjectType: ActionProjectType.SecretScanning,
-      projectId
+      projectId: payload.projectId
     });
 
     ForbiddenError.from(permission).throwUnlessCan(
@@ -249,26 +251,64 @@ export const secretScanningV2ServiceFactory = ({
       );
     }
 
-    try {
-      // TODO: initialize webhooks
+    const factory = SECRET_SCANNING_FACTORY_MAP[payload.type]();
 
-      const dataSource = await secretScanningV2DAL.dataSources.create({
-        projectId,
-        ...payload
-      });
+    try {
+      const createdDataSource = await factory.initialize(
+        { payload, connection: connection as TSecretScanningDataSourceWithConnection["connection"] },
+        async (credentials) => {
+          let encryptedCredentials: Buffer | null = null;
+
+          if (credentials) {
+            const { encryptor } = await kmsService.createCipherPairWithDataKey({
+              type: KmsDataKey.SecretManager,
+              projectId: payload.projectId
+            });
+
+            const { cipherTextBlob } = encryptor({
+              plainText: Buffer.from(JSON.stringify(credentials))
+            });
+
+            encryptedCredentials = cipherTextBlob;
+          }
+
+          return secretScanningV2DAL.dataSources.transaction(async (tx) => {
+            const dataSource = await secretScanningV2DAL.dataSources.create(
+              {
+                encryptedCredentials,
+                ...payload
+              },
+              tx
+            );
+
+            await factory.postInitialize({
+              payload,
+              connection: connection as TSecretScanningDataSourceWithConnection["connection"],
+              dataSourceId: dataSource.id,
+              credentials
+            });
+
+            return dataSource;
+          });
+        }
+      );
 
       if (payload.isAutoScanEnabled) {
-        await secretScanningV2Queue.queueDataSourceFullScan({
-          ...dataSource,
-          connection
-        } as TSecretScanningDataSourceWithConnection);
+        try {
+          await secretScanningV2Queue.queueDataSourceFullScan({
+            ...createdDataSource,
+            connection
+          } as TSecretScanningDataSourceWithConnection);
+        } catch {
+          // silently fail, don't want to block creation, they'll try scanning when they don't see anything and get the error
+        }
       }
 
-      return dataSource as TSecretScanningDataSource;
+      return createdDataSource as TSecretScanningDataSource;
     } catch (err) {
       if (err instanceof DatabaseError && (err.error as { code: string })?.code === DatabaseErrorCode.UniqueViolation) {
         throw new BadRequestError({
-          message: `A Secret Scanning Data Source with the name "${payload.name}" already exists for the project with ID "${projectId}"`
+          message: `A Secret Scanning Data Source with the name "${payload.name}" already exists for the project with ID "${payload.projectId}"`
         });
       }
 

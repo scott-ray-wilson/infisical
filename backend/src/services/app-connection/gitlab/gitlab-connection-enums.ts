@@ -1,3 +1,4 @@
 export enum GitLabConnectionMethod {
-  AccessToken = "access-token"
+  ProjectAccessToken = "project-access-token",
+  GroupAccessToken = "group-access-token"
 }

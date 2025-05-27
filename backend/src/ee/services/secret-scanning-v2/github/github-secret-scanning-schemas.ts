@@ -70,3 +70,5 @@ export const GitHubFindingSchema = BaseSecretScanningFindingSchema.extend({
   dataSourceType: z.literal(SecretScanningDataSource.GitHub),
   details: GitRepositoryScanFindingDetailsSchema
 });
+
+export const GitHubDataSourceCredentialsSchema = z.null();

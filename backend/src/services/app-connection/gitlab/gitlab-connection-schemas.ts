@@ -27,13 +27,13 @@ export const GitLabConnectionAccessTokenCredentialsSchema = z.object({
 const BaseGitLabConnectionSchema = BaseAppConnectionSchema.extend({ app: z.literal(AppConnection.GitLab) });
 
 export const GitLabConnectionSchema = BaseGitLabConnectionSchema.extend({
-  method: z.literal(GitLabConnectionMethod.AccessToken),
+  method: z.nativeEnum(GitLabConnectionMethod),
   credentials: GitLabConnectionAccessTokenCredentialsSchema
 });
 
 export const SanitizedGitLabConnectionSchema = z.discriminatedUnion("method", [
   BaseGitLabConnectionSchema.extend({
-    method: z.literal(GitLabConnectionMethod.AccessToken),
+    method: z.nativeEnum(GitLabConnectionMethod),
     credentials: GitLabConnectionAccessTokenCredentialsSchema.pick({
       instanceUrl: true
     })
@@ -42,7 +42,7 @@ export const SanitizedGitLabConnectionSchema = z.discriminatedUnion("method", [
 
 export const ValidateGitLabConnectionCredentialsSchema = z.discriminatedUnion("method", [
   z.object({
-    method: z.literal(GitLabConnectionMethod.AccessToken).describe(AppConnections.CREATE(AppConnection.GitLab).method),
+    method: z.nativeEnum(GitLabConnectionMethod).describe(AppConnections.CREATE(AppConnection.GitLab).method),
     credentials: GitLabConnectionAccessTokenCredentialsSchema.describe(
       AppConnections.CREATE(AppConnection.GitLab).credentials
     )

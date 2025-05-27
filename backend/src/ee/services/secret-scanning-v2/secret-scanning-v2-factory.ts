@@ -2,9 +2,16 @@ import { GitHubSecretScanningFactory } from "@app/ee/services/secret-scanning-v2
 import { GitLabSecretScanningFactory } from "@app/ee/services/secret-scanning-v2/gitlab/gitlab-secret-scanning-factory";
 
 import { SecretScanningDataSource } from "./secret-scanning-v2-enums";
-import { TSecretScanningDataSourceWithConnection, TSecretScanningFactory } from "./secret-scanning-v2-types";
+import {
+  TSecretScanningDataSourceCredentials,
+  TSecretScanningDataSourceWithConnection,
+  TSecretScanningFactory
+} from "./secret-scanning-v2-types";
 
-type TSecretScanningFactoryImplementation = TSecretScanningFactory<TSecretScanningDataSourceWithConnection>;
+type TSecretScanningFactoryImplementation = TSecretScanningFactory<
+  TSecretScanningDataSourceWithConnection,
+  TSecretScanningDataSourceCredentials
+>;
 
 export const SECRET_SCANNING_FACTORY_MAP: Record<SecretScanningDataSource, TSecretScanningFactoryImplementation> = {
   [SecretScanningDataSource.GitHub]: GitHubSecretScanningFactory as TSecretScanningFactoryImplementation,

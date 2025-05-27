@@ -1,6 +1,7 @@
 import { TSecretScanningFindingsInsert, TSecretScanningResources, TSecretScanningScans } from "@app/db/schemas";
 import {
   TGitHubDataSource,
+  TGitHubDataSourceCredentials,
   TGitHubDataSourceInput,
   TGitHubDataSourceListItem,
   TGitHubDataSourceWithConnection,
@@ -8,11 +9,13 @@ import {
 } from "@app/ee/services/secret-scanning-v2/github";
 import {
   TGitLabDataSource,
+  TGitLabDataSourceCredentials,
   TGitLabDataSourceInput,
   TGitLabDataSourceListItem,
   TGitLabDataSourceWithConnection,
   TGitLabFinding
 } from "@app/ee/services/secret-scanning-v2/gitlab";
+import { TSecretScanningV2DALFactory } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-dal";
 import {
   SecretScanningDataSource,
   SecretScanningFindingStatus,
@@ -114,9 +117,36 @@ export type TSecretScanningFactoryGetScanPath<T extends TSecretScanningDataSourc
   tempFolder: string;
 }) => Promise<string>;
 
-export type TSecretScanningFactory<T extends TSecretScanningDataSourceWithConnection> = () => {
+export type TSecretScanningDataSourceRaw = NonNullable<
+  Awaited<ReturnType<TSecretScanningV2DALFactory["dataSources"]["findById"]>>
+>;
+
+export type TSecretScanningFactoryInitialize<
+  T extends TSecretScanningDataSourceWithConnection["connection"] | null,
+  C extends TSecretScanningDataSourceCredentials
+> = (
+  params: { payload: TCreateSecretScanningDataSourceDTO; connection: T },
+  callback: (credentials: C) => Promise<TSecretScanningDataSourceRaw>
+) => Promise<TSecretScanningDataSourceRaw>;
+
+export type TSecretScanningFactoryPostInitialize<
+  T extends TSecretScanningDataSourceWithConnection["connection"] | null,
+  C extends TSecretScanningDataSourceCredentials
+> = (params: {
+  payload: TCreateSecretScanningDataSourceDTO;
+  connection: T;
+  credentials: C;
+  dataSourceId: string;
+}) => Promise<void>;
+
+export type TSecretScanningFactory<
+  T extends TSecretScanningDataSourceWithConnection,
+  C extends TSecretScanningDataSourceCredentials
+> = () => {
   listRawResources: TSecretScanningFactoryListRawResources<T>;
   getScanPath: TSecretScanningFactoryGetScanPath<T>;
+  initialize: TSecretScanningFactoryInitialize<T["connection"] | null, C>;
+  postInitialize: TSecretScanningFactoryPostInitialize<T["connection"] | null, C>;
 };
 
 export type TFindingsPayload = Pick<TSecretScanningFindingsInsert, "details" | "fingerprint" | "severity" | "rule">[];
@@ -127,3 +157,5 @@ export type TUpdateSecretScanningFinding = {
   remarks?: string | null;
   findingId: string;
 };
+
+export type TSecretScanningDataSourceCredentials = TGitLabDataSourceCredentials | TGitHubDataSourceCredentials;

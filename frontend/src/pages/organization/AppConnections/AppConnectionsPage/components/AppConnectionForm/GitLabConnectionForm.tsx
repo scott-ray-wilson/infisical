@@ -31,7 +31,7 @@ const rootSchema = genericAppConnectionFieldsSchema.extend({
 
 const formSchema = z.discriminatedUnion("method", [
   rootSchema.extend({
-    method: z.literal(GitLabConnectionMethod.AccessToken),
+    method: z.nativeEnum(GitLabConnectionMethod),
     credentials: z.object({
       accessToken: z.string().trim().min(1, "Access Token required"),
       instanceUrl: z
@@ -55,7 +55,7 @@ export const GitLabConnectionForm = ({ appConnection, onSubmit }: Props) => {
     resolver: zodResolver(formSchema),
     defaultValues: appConnection ?? {
       app: AppConnection.GitLab,
-      method: GitLabConnectionMethod.AccessToken
+      method: GitLabConnectionMethod.ProjectAccessToken
     }
   });
 

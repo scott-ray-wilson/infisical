@@ -202,8 +202,11 @@ export const getAppConnectionMethodName = (method: TAppConnection["method"]) => 
     case WindmillConnectionMethod.AccessToken:
     case HCVaultConnectionMethod.AccessToken:
     case TeamCityConnectionMethod.AccessToken:
-    case GitLabConnectionMethod.AccessToken:
       return "Access Token";
+    case GitLabConnectionMethod.ProjectAccessToken:
+      return "Project Access Token";
+    case GitLabConnectionMethod.GroupAccessToken:
+      return "Group Access Token";
     case Auth0ConnectionMethod.ClientCredentials:
       return "Client Credentials";
     case HCVaultConnectionMethod.AppRole:

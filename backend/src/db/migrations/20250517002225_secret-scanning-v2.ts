@@ -15,6 +15,7 @@ export async function up(knex: Knex): Promise<void> {
       t.string("description");
       t.string("type").notNullable();
       t.jsonb("config").notNullable();
+      t.binary("encryptedCredentials"); // webhook credentials, etc.
       t.uuid("connectionId");
       t.boolean("isAutoScanEnabled").defaultTo(true);
       t.foreign("connectionId").references("id").inTable(TableName.AppConnection);

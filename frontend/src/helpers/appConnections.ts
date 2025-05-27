@@ -19,6 +19,7 @@ import {
   DatabricksConnectionMethod,
   GcpConnectionMethod,
   GitHubConnectionMethod,
+  GitLabConnectionMethod,
   HCVaultConnectionMethod,
   HumanitecConnectionMethod,
   LdapConnectionMethod,
@@ -98,6 +99,10 @@ export const getAppConnectionMethodDetails = (method: TAppConnection["method"]) 
     case TeamCityConnectionMethod.AccessToken:
     case WindmillConnectionMethod.AccessToken:
       return { name: "Access Token", icon: faKey };
+    case GitLabConnectionMethod.ProjectAccessToken:
+      return { name: "Project Access Token", icon: faKey };
+    case GitLabConnectionMethod.GroupAccessToken:
+      return { name: "Group Access Token", icon: faKey };
     case Auth0ConnectionMethod.ClientCredentials:
       return { name: "Client Credentials", icon: faServer };
     case HCVaultConnectionMethod.AppRole:

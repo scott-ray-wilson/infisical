@@ -7,3 +7,6 @@ export const GITHUB_SECRET_SCANNING_DATA_SOURCE_LIST_OPTION: TSecretScanningData
   type: SecretScanningDataSource.GitHub,
   connection: AppConnection.GitHub
 };
+
+// TODO: figure out why I need to prefix /api
+export const SECRET_SCANNING_WEBHOOK_PATH = "/api/v2/secret-scanning/webhooks";

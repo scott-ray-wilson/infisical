@@ -86,6 +86,7 @@ import { gitAppInstallSessionDALFactory } from "@app/ee/services/secret-scanning
 import { secretScanningDALFactory } from "@app/ee/services/secret-scanning/secret-scanning-dal";
 import { secretScanningQueueFactory } from "@app/ee/services/secret-scanning/secret-scanning-queue";
 import { secretScanningServiceFactory } from "@app/ee/services/secret-scanning/secret-scanning-service";
+import { SECRET_SCANNING_WEBHOOK_PATH } from "@app/ee/services/secret-scanning-v2/github";
 import { secretScanningV2DALFactory } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-dal";
 import { secretScanningV2QueueServiceFactory } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-queue";
 import { secretScanningV2ServiceFactory } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-service";
@@ -115,6 +116,7 @@ import { getConfig, TEnvConfig } from "@app/lib/config/env";
 import { logger } from "@app/lib/logger";
 import { TQueueServiceFactory } from "@app/queue";
 import { readLimit } from "@app/server/config/rateLimiter";
+import { registerSecretScanningV2Webhooks } from "@app/server/plugins/secret-scanner-v2";
 import { accessTokenQueueServiceFactory } from "@app/services/access-token-queue/access-token-queue";
 import { apiKeyDALFactory } from "@app/services/api-key/api-key-dal";
 import { apiKeyServiceFactory } from "@app/services/api-key/api-key-service";
@@ -302,6 +304,9 @@ export const registerRoutes = async (
 ) => {
   const appCfg = getConfig();
   await server.register(registerSecretScannerGhApp, { prefix: "/ss-webhook" });
+  await server.register(registerSecretScanningV2Webhooks, {
+    prefix: SECRET_SCANNING_WEBHOOK_PATH
+  });
 
   // db layers
   const userDAL = userDALFactory(db);

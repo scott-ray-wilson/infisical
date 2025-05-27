@@ -256,7 +256,7 @@ export const secretScanningV2ServiceFactory = ({
     try {
       const createdDataSource = await factory.initialize(
         { payload, connection: connection as TSecretScanningDataSourceWithConnection["connection"] },
-        async (credentials) => {
+        async ({ credentials, externalId }) => {
           let encryptedCredentials: Buffer | null = null;
 
           if (credentials) {
@@ -276,12 +276,13 @@ export const secretScanningV2ServiceFactory = ({
             const dataSource = await secretScanningV2DAL.dataSources.create(
               {
                 encryptedCredentials,
+                externalId,
                 ...payload
               },
               tx
             );
 
-            await factory.postInitialize({
+            await factory.postInitialization({
               payload,
               connection: connection as TSecretScanningDataSourceWithConnection["connection"],
               dataSourceId: dataSource.id,

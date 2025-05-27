@@ -11,6 +11,7 @@ export async function up(knex: Knex): Promise<void> {
   if (!(await knex.schema.hasTable(TableName.SecretScanningDataSource))) {
     await knex.schema.createTable(TableName.SecretScanningDataSource, (t) => {
       t.uuid("id", { primaryKey: true }).defaultTo(knex.fn.uuid());
+      t.string("externalId").index(); // if we need a unique way of identifying this data source from an external resource
       t.string("name", 48).notNullable();
       t.string("description");
       t.string("type").notNullable();

@@ -26,7 +26,7 @@ export const AppConnectionsSelect = ({ onSelect }: Props) => {
     <>
       <div className="grid grid-cols-4 gap-2">
         {appConnectionOptions?.map((option) => {
-          const { image, name, size = 50 } = APP_CONNECTION_MAP[option.app];
+          const { image, name, size = 50, icon } = APP_CONNECTION_MAP[option.app];
 
           return (
             <button
@@ -35,14 +35,22 @@ export const AppConnectionsSelect = ({ onSelect }: Props) => {
               onClick={() => onSelect(option.app)}
               className="group relative flex h-28 cursor-pointer flex-col items-center justify-center rounded-md border border-mineshaft-600 bg-mineshaft-700 p-4 duration-200 hover:bg-mineshaft-600"
             >
-              <img
-                src={`/images/integrations/${image}`}
-                style={{
-                  width: `${size}px`
-                }}
-                className="mt-auto"
-                alt={`${name} logo`}
-              />
+              <div className="relative">
+                <img
+                  src={`/images/integrations/${image}`}
+                  style={{
+                    width: `${size}px`
+                  }}
+                  className="mt-auto"
+                  alt={`${name} logo`}
+                />
+                {icon && (
+                  <FontAwesomeIcon
+                    className="absolute -bottom-2 -right-2 text-primary-700"
+                    icon={icon}
+                  />
+                )}
+              </div>
               <div className="mt-auto max-w-xs text-center text-xs font-medium text-gray-300 duration-200 group-hover:text-gray-200">
                 {name}
               </div>

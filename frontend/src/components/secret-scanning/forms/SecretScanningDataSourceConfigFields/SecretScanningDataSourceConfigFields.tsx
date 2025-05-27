@@ -5,11 +5,12 @@ import { RESOURCE_DESCRIPTION_HELPER } from "@app/helpers/secretScanningV2";
 import { SecretScanningDataSource } from "@app/hooks/api/secretScanningV2";
 
 import { TSecretScanningDataSourceForm } from "../schemas";
+import { GitHubDataSourceConfigFields } from "./GitHubDataSourceConfigFields";
 import { GitLabDataSourceConfigFields } from "./GitLabDataSourceConfigFields";
 
 const COMPONENT_MAP: Record<SecretScanningDataSource, React.FC> = {
-  [SecretScanningDataSource.GitHub]: GitLabDataSourceConfigFields,
-  [SecretScanningDataSource.GitLab]: GitLabDataSourceConfigFields // TODO: replace
+  [SecretScanningDataSource.GitLab]: GitLabDataSourceConfigFields,
+  [SecretScanningDataSource.GitHub]: GitHubDataSourceConfigFields
 };
 
 export const SecretScanningDataSourceConfigFields = () => {

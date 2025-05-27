@@ -1,10 +1,9 @@
 import { z } from "zod";
 
-import { TGitHubConnection } from "@app/services/app-connection/github";
+import { TGitHubRadarConnection } from "@app/services/app-connection/github-radar";
 
 import {
   CreateGitHubDataSourceSchema,
-  GitHubDataSourceCredentialsSchema,
   GitHubDataSourceListItemSchema,
   GitHubDataSourceSchema,
   GitHubFindingSchema
@@ -19,7 +18,5 @@ export type TGitHubDataSourceListItem = z.infer<typeof GitHubDataSourceListItemS
 export type TGitHubFinding = z.infer<typeof GitHubFindingSchema>;
 
 export type TGitHubDataSourceWithConnection = TGitHubDataSource & {
-  connection: TGitHubConnection;
+  connection: TGitHubRadarConnection;
 };
-
-export type TGitHubDataSourceCredentials = z.infer<typeof GitHubDataSourceCredentialsSchema>;

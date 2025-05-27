@@ -58,6 +58,12 @@ import {
   TValidateGitHubConnectionCredentialsSchema
 } from "./github";
 import {
+  TGitHubRadarConnection,
+  TGitHubRadarConnectionConfig,
+  TGitHubRadarConnectionInput,
+  TValidateGitHubRadarConnectionCredentialsSchema
+} from "./github-radar";
+import {
   TGitLabConnection,
   TGitLabConnectionConfig,
   TGitLabConnectionInput,
@@ -121,6 +127,7 @@ import {
 export type TAppConnection = { id: string } & (
   | TAwsConnection
   | TGitHubConnection
+  | TGitHubRadarConnection
   | TGcpConnection
   | TAzureKeyVaultConnection
   | TAzureAppConfigurationConnection
@@ -148,6 +155,7 @@ export type TSqlConnection = TPostgresConnection | TMsSqlConnection;
 export type TAppConnectionInput = { id: string } & (
   | TAwsConnectionInput
   | TGitHubConnectionInput
+  | TGitHubRadarConnectionInput
   | TGcpConnectionInput
   | TAzureKeyVaultConnectionInput
   | TAzureAppConfigurationConnectionInput
@@ -182,6 +190,7 @@ export type TUpdateAppConnectionDTO = Partial<Omit<TCreateAppConnectionDTO, "met
 export type TAppConnectionConfig =
   | TAwsConnectionConfig
   | TGitHubConnectionConfig
+  | TGitHubRadarConnectionConfig
   | TGcpConnectionConfig
   | TAzureKeyVaultConnectionConfig
   | TAzureAppConfigurationConnectionConfig
@@ -203,6 +212,7 @@ export type TAppConnectionConfig =
 export type TValidateAppConnectionCredentialsSchema =
   | TValidateAwsConnectionCredentialsSchema
   | TValidateGitHubConnectionCredentialsSchema
+  | TValidateGitHubRadarConnectionCredentialsSchema
   | TValidateGcpConnectionCredentialsSchema
   | TValidateAzureKeyVaultConnectionCredentialsSchema
   | TValidateAzureAppConfigurationConnectionCredentialsSchema

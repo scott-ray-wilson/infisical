@@ -7,7 +7,7 @@ export const SECRET_SCANNING_DATA_SOURCE_NAME_MAP: Record<SecretScanningDataSour
 };
 
 export const SECRET_SCANNING_DATA_SOURCE_CONNECTION_MAP: Record<SecretScanningDataSource, AppConnection> = {
-  [SecretScanningDataSource.GitHub]: AppConnection.GitHub,
+  [SecretScanningDataSource.GitHub]: AppConnection.GitHubRadar,
   [SecretScanningDataSource.GitLab]: AppConnection.GitLab
 };
 

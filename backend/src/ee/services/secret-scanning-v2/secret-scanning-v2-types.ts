@@ -1,7 +1,6 @@
 import { TSecretScanningFindingsInsert, TSecretScanningResources, TSecretScanningScans } from "@app/db/schemas";
 import {
   TGitHubDataSource,
-  TGitHubDataSourceCredentials,
   TGitHubDataSourceInput,
   TGitHubDataSourceListItem,
   TGitHubDataSourceWithConnection,
@@ -122,16 +121,16 @@ export type TSecretScanningDataSourceRaw = NonNullable<
 >;
 
 export type TSecretScanningFactoryInitialize<
-  T extends TSecretScanningDataSourceWithConnection["connection"] | null,
-  C extends TSecretScanningDataSourceCredentials
+  T extends TSecretScanningDataSourceWithConnection["connection"] | undefined = undefined,
+  C extends TSecretScanningDataSourceCredentials = undefined
 > = (
   params: { payload: TCreateSecretScanningDataSourceDTO; connection: T },
-  callback: (credentials: C) => Promise<TSecretScanningDataSourceRaw>
+  callback: (parameters: { credentials?: C; externalId?: string }) => Promise<TSecretScanningDataSourceRaw>
 ) => Promise<TSecretScanningDataSourceRaw>;
 
-export type TSecretScanningFactoryPostInitialize<
-  T extends TSecretScanningDataSourceWithConnection["connection"] | null,
-  C extends TSecretScanningDataSourceCredentials
+export type TSecretScanningFactoryPostInitialization<
+  T extends TSecretScanningDataSourceWithConnection["connection"] | undefined = undefined,
+  C extends TSecretScanningDataSourceCredentials = undefined
 > = (params: {
   payload: TCreateSecretScanningDataSourceDTO;
   connection: T;
@@ -145,8 +144,8 @@ export type TSecretScanningFactory<
 > = () => {
   listRawResources: TSecretScanningFactoryListRawResources<T>;
   getScanPath: TSecretScanningFactoryGetScanPath<T>;
-  initialize: TSecretScanningFactoryInitialize<T["connection"] | null, C>;
-  postInitialize: TSecretScanningFactoryPostInitialize<T["connection"] | null, C>;
+  initialize: TSecretScanningFactoryInitialize<T["connection"] | undefined, C>;
+  postInitialization: TSecretScanningFactoryPostInitialization<T["connection"] | undefined, C>;
 };
 
 export type TFindingsPayload = Pick<TSecretScanningFindingsInsert, "details" | "fingerprint" | "severity" | "rule">[];
@@ -158,4 +157,4 @@ export type TUpdateSecretScanningFinding = {
   findingId: string;
 };
 
-export type TSecretScanningDataSourceCredentials = TGitLabDataSourceCredentials | TGitHubDataSourceCredentials;
+export type TSecretScanningDataSourceCredentials = TGitLabDataSourceCredentials | undefined;

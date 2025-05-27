@@ -3,7 +3,8 @@ import {
   TSecretScanningDataSource
 } from "@app/hooks/api/secretScanningV2";
 
-import { GitLabConfigDisplay } from "./GitLabConfigDisplay";
+import { GitHubDataSourceConfigDisplay } from "./GitHubDataSourceConfigDisplay";
+import { GitLabDataSourceConfigDisplay } from "./GitLabDataSourceConfigDisplay";
 
 type Props = {
   dataSource: TSecretScanningDataSource;
@@ -12,8 +13,12 @@ type Props = {
 export const DataSourceConfigDisplay = ({ dataSource }: Props) => {
   switch (dataSource.type) {
     case SecretScanningDataSource.GitLab:
-      return <GitLabConfigDisplay dataSource={dataSource} />;
+      return <GitLabDataSourceConfigDisplay dataSource={dataSource} />;
+    case SecretScanningDataSource.GitHub:
+      return <GitHubDataSourceConfigDisplay dataSource={dataSource} />;
     default:
-      throw new Error(`Unhandled dataSource type ${dataSource.type as SecretScanningDataSource}`);
+      throw new Error(
+        `Unhandled dataSource type ${(dataSource as TSecretScanningDataSource).type}`
+      );
   }
 };

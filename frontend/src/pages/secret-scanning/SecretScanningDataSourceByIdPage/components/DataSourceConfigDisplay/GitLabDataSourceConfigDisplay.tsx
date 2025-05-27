@@ -5,7 +5,7 @@ type Props = {
   dataSource: TGitLabDataSource;
 };
 
-export const GitLabConfigDisplay = ({ dataSource }: Props) => {
+export const GitLabDataSourceConfigDisplay = ({ dataSource }: Props) => {
   const {
     config: { includeProjects }
   } = dataSource;

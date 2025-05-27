@@ -4,11 +4,12 @@ import { GenericFieldLabel } from "@app/components/v2";
 import { SecretScanningDataSource } from "@app/hooks/api/secretScanningV2";
 
 import { TSecretScanningDataSourceForm } from "../schemas";
+import { GitHubDataSourceReviewFields } from "./GitHubDataSourceReviewFields";
 import { GitLabDataSourceReviewFields } from "./GitLabDataSourceReviewFields";
 
 const COMPONENT_MAP: Record<SecretScanningDataSource, React.FC> = {
   [SecretScanningDataSource.GitLab]: GitLabDataSourceReviewFields,
-  [SecretScanningDataSource.GitHub]: GitLabDataSourceReviewFields // TODO: update to github
+  [SecretScanningDataSource.GitHub]: GitHubDataSourceReviewFields
 };
 
 export const SecretScanningDataSourceReviewFields = () => {

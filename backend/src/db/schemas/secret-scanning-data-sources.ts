@@ -11,6 +11,7 @@ import { TImmutableDBKeys } from "./models";
 
 export const SecretScanningDataSourcesSchema = z.object({
   id: z.string().uuid(),
+  externalId: z.string().nullable().optional(),
   name: z.string(),
   description: z.string().nullable().optional(),
   type: z.string(),

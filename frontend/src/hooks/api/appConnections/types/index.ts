@@ -1,3 +1,5 @@
+import { TGitHubRadarConnection } from "@app/hooks/api/appConnections";
+
 import { AppConnection } from "../enums";
 import { TAppConnectionOption } from "./app-options";
 import { TAuth0Connection } from "./auth0-connection";
@@ -30,6 +32,7 @@ export * from "./camunda-connection";
 export * from "./databricks-connection";
 export * from "./gcp-connection";
 export * from "./github-connection";
+export * from "./github-radar-connection";
 export * from "./gitlab-connection";
 export * from "./hc-vault-connection";
 export * from "./humanitec-connection";
@@ -45,6 +48,7 @@ export * from "./windmill-connection";
 export type TAppConnection =
   | TAwsConnection
   | TGitHubConnection
+  | TGitHubRadarConnection
   | TGcpConnection
   | TAzureKeyVaultConnection
   | TAzureAppConfigurationConnection
@@ -92,6 +96,7 @@ export type TDeleteAppConnectionDTO = {
 export type TAppConnectionMap = {
   [AppConnection.AWS]: TAwsConnection;
   [AppConnection.GitHub]: TGitHubConnection;
+  [AppConnection.GitHubRadar]: TGitHubRadarConnection;
   [AppConnection.GCP]: TGcpConnection;
   [AppConnection.AzureKeyVault]: TAzureKeyVaultConnection;
   [AppConnection.AzureAppConfiguration]: TAzureAppConfigurationConnection;

@@ -9,4 +9,5 @@ export const GITHUB_SECRET_SCANNING_DATA_SOURCE_LIST_OPTION: TSecretScanningData
 };
 
 // TODO: figure out why I need to prefix /api
-export const SECRET_SCANNING_WEBHOOK_PATH = "/api/v2/secret-scanning/webhooks";
+export const SECRET_SCANNING_WEBHOOK_PATH = "/secret-scanning/webhooks";
+// https://bubblegloop-swamp.ngrok.dev/secret-scanning/webhooks/gitlab

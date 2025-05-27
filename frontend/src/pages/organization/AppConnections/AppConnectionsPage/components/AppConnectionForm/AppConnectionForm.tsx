@@ -6,6 +6,7 @@ import {
   useUpdateAppConnection
 } from "@app/hooks/api/appConnections";
 import { AppConnection } from "@app/hooks/api/appConnections/enums";
+import { GitHubRadarConnectionForm } from "@app/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/GitHubRadarConnectionForm";
 import { GitLabConnectionForm } from "@app/pages/organization/AppConnections/AppConnectionsPage/components/AppConnectionForm/GitLabConnectionForm";
 import { DiscriminativePick } from "@app/types";
 
@@ -71,6 +72,8 @@ const CreateForm = ({ app, onComplete }: CreateFormProps) => {
       return <AwsConnectionForm onSubmit={onSubmit} />;
     case AppConnection.GitHub:
       return <GitHubConnectionForm />;
+    case AppConnection.GitHubRadar:
+      return <GitHubRadarConnectionForm />;
     case AppConnection.GCP:
       return <GcpConnectionForm onSubmit={onSubmit} />;
     case AppConnection.AzureKeyVault:
@@ -147,6 +150,8 @@ const UpdateForm = ({ appConnection, onComplete }: UpdateFormProps) => {
       return <AwsConnectionForm appConnection={appConnection} onSubmit={onSubmit} />;
     case AppConnection.GitHub:
       return <GitHubConnectionForm appConnection={appConnection} />;
+    case AppConnection.GitHubRadar:
+      return <GitHubRadarConnectionForm appConnection={appConnection} />;
     case AppConnection.GCP:
       return <GcpConnectionForm appConnection={appConnection} onSubmit={onSubmit} />;
     case AppConnection.AzureKeyVault:

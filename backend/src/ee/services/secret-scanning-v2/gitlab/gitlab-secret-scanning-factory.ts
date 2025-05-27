@@ -8,7 +8,7 @@ import {
   TSecretScanningFactoryGetScanPath,
   TSecretScanningFactoryInitialize,
   TSecretScanningFactoryListRawResources,
-  TSecretScanningFactoryPostInitialize
+  TSecretScanningFactoryPostInitialization
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-types";
 import { getConfig } from "@app/lib/config/env";
 import { BadRequestError, InternalServerError } from "@app/lib/errors";
@@ -68,10 +68,12 @@ export const GitLabSecretScanningFactory = () => {
 
         try {
           return await callback({
-            token,
-            hookId: hook.id,
-            projectId: project.id,
-            method: GitLabConnectionMethod.ProjectAccessToken
+            credentials: {
+              token,
+              hookId: hook.id,
+              projectId: project.id,
+              method: GitLabConnectionMethod.ProjectAccessToken
+            }
           });
         } catch (error) {
           try {
@@ -85,12 +87,12 @@ export const GitLabSecretScanningFactory = () => {
 
         break;
       }
-      case GitLabConnectionMethod.GroupAccessToken: {
-        // TODO
-        return callback({ token });
-
-        break;
-      }
+      // case GitLabConnectionMethod.GroupAccessToken: {
+      //   // TODO
+      //   return callback({ token });
+      //
+      //   break;
+      // }
       default:
         throw new InternalServerError({
           message: `Unhandled GitLab Connection Method: ${method as GitLabConnectionMethod}`
@@ -98,11 +100,10 @@ export const GitLabSecretScanningFactory = () => {
     }
   };
 
-  const postInitialize: TSecretScanningFactoryPostInitialize<TGitLabConnection, TGitLabDataSourceCredentials> = async ({
-    connection,
-    dataSourceId,
-    credentials
-  }) => {
+  const postInitialization: TSecretScanningFactoryPostInitialization<
+    TGitLabConnection,
+    TGitLabDataSourceCredentials
+  > = async ({ connection, dataSourceId, credentials }) => {
     const client = await getGitLabConnectionClient(connection);
     const appCfg = getConfig();
 
@@ -197,6 +198,6 @@ export const GitLabSecretScanningFactory = () => {
     listRawResources,
     getScanPath,
     initialize,
-    postInitialize
+    postInitialize: postInitialization
   };
 };

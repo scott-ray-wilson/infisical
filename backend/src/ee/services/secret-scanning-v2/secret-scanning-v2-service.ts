@@ -9,6 +9,7 @@ import {
   ProjectPermissionSecretScanningFindingActions,
   ProjectPermissionSub
 } from "@app/ee/services/permission/project-permission";
+import { githubSecretScanningService } from "@app/ee/services/secret-scanning-v2/github/github-secret-scanning-service";
 import { SecretScanningFindingStatus } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
 import { SECRET_SCANNING_FACTORY_MAP } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-factory";
 import { listSecretScanningDataSourceOptions } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-fns";
@@ -56,7 +57,10 @@ export type TSecretScanningV2ServiceFactoryDep = {
   keyStore: Pick<TKeyStoreFactory, "acquireLock" | "setItemWithExpiry" | "getItem">;
   queueService: Pick<TQueueServiceFactory, "queuePg">;
   appConnectionDAL: Pick<TAppConnectionDALFactory, "findById" | "update" | "updateById">;
-  secretScanningV2Queue: Pick<TSecretScanningV2QueueServiceFactory, "queueDataSourceFullScan">;
+  secretScanningV2Queue: Pick<
+    TSecretScanningV2QueueServiceFactory,
+    "queueDataSourceFullScan" | "queueResourceDiffScan"
+  >;
   kmsService: Pick<TKmsServiceFactory, "createCipherPairWithDataKey">;
 };
 
@@ -731,6 +735,6 @@ export const secretScanningV2ServiceFactory = ({
     getSecretScanningUnresolvedFindingsCountByProjectId,
     listSecretScanningFindingsByProjectId,
     updateSecretScanningFindingById,
-    github: {}
+    github: githubSecretScanningService(secretScanningV2DAL, secretScanningV2Queue)
   };
 };

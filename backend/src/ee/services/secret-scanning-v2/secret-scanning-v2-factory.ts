@@ -3,6 +3,7 @@ import { GitLabSecretScanningFactory } from "@app/ee/services/secret-scanning-v2
 
 import { SecretScanningDataSource } from "./secret-scanning-v2-enums";
 import {
+  TQueueSecretScanningResourceDiffScan,
   TSecretScanningDataSourceCredentials,
   TSecretScanningDataSourceWithConnection,
   TSecretScanningFactory
@@ -10,7 +11,8 @@ import {
 
 type TSecretScanningFactoryImplementation = TSecretScanningFactory<
   TSecretScanningDataSourceWithConnection,
-  TSecretScanningDataSourceCredentials
+  TSecretScanningDataSourceCredentials,
+  TQueueSecretScanningResourceDiffScan["payload"]
 >;
 
 export const SECRET_SCANNING_FACTORY_MAP: Record<SecretScanningDataSource, TSecretScanningFactoryImplementation> = {

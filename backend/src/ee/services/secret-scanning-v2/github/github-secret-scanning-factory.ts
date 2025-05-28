@@ -1,10 +1,17 @@
 import { join } from "path";
 import { ProbotOctokit } from "probot";
 
-import { SecretScanningResource } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
-import { cloneRepository } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-fns";
+import { scanContentAndGetFindings } from "@app/ee/services/secret-scanning/secret-scanning-queue/secret-scanning-fns";
+import { SecretMatch } from "@app/ee/services/secret-scanning/secret-scanning-queue/secret-scanning-queue-types";
 import {
-  TSecretScanningFactoryGetScanPath,
+  SecretScanningFindingSeverity,
+  SecretScanningResource
+} from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
+import { cloneRepository, titleCaseToCamelCase } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-fns";
+import {
+  TSecretScanningFactoryGetDiffScanFindingsPayload,
+  TSecretScanningFactoryGetDiffScanResourcePayload,
+  TSecretScanningFactoryGetFullScanPath,
   TSecretScanningFactoryInitialize,
   TSecretScanningFactoryListRawResources,
   TSecretScanningFactoryPostInitialization
@@ -12,7 +19,7 @@ import {
 import { getConfig } from "@app/lib/config/env";
 import { listGitHubRadarRepositories, TGitHubRadarConnection } from "@app/services/app-connection/github-radar";
 
-import { TGitHubDataSourceWithConnection } from "./github-secret-scanning-types";
+import { TGitHubDataSourceWithConnection, TQueueGitHubResourceDiffScan } from "./github-secret-scanning-types";
 
 export const GitHubSecretScanningFactory = () => {
   const initialize: TSecretScanningFactoryInitialize<TGitHubRadarConnection> = async ({ connection }, callback) => {
@@ -49,11 +56,11 @@ export const GitHubSecretScanningFactory = () => {
     return filteredRepos.map(({ id, full_name }) => ({
       name: full_name,
       externalId: id.toString(),
-      type: SecretScanningResource.Project
+      type: SecretScanningResource.Repository
     }));
   };
 
-  const getScanPath: TSecretScanningFactoryGetScanPath<TGitHubDataSourceWithConnection> = async ({
+  const getFullScanPath: TSecretScanningFactoryGetFullScanPath<TGitHubDataSourceWithConnection> = async ({
     dataSource,
     resourceName,
     tempFolder
@@ -89,10 +96,165 @@ export const GitHubSecretScanningFactory = () => {
     return repoPath;
   };
 
+  const getDiffScanResourcePayload: TSecretScanningFactoryGetDiffScanResourcePayload<
+    TQueueGitHubResourceDiffScan["payload"]
+  > = ({ repository }) => {
+    return {
+      name: repository.full_name,
+      externalId: repository.id.toString(),
+      type: SecretScanningResource.Repository
+    };
+  };
+
+  const getDiffScanFindingsPayload: TSecretScanningFactoryGetDiffScanFindingsPayload<
+    TGitHubDataSourceWithConnection,
+    TQueueGitHubResourceDiffScan["payload"]
+  > = async ({ dataSource, payload, resourceName }) => {
+    const appCfg = getConfig();
+    const {
+      connection: {
+        credentials: { installationId }
+      }
+    } = dataSource;
+
+    const octokit = new ProbotOctokit({
+      auth: {
+        appId: appCfg.INF_APP_CONNECTION_GITHUB_RADAR_APP_ID,
+        privateKey: appCfg.INF_APP_CONNECTION_GITHUB_RADAR_APP_PRIVATE_KEY,
+        installationId
+      }
+    });
+
+    const { commits, repository } = payload;
+
+    const [owner, repo] = repository.full_name.split("/");
+
+    const allFindings: SecretMatch[] = [];
+
+    for (const commit of commits) {
+      for (const filepath of [...commit.added, ...commit.modified]) {
+        // eslint-disable-next-line
+        const fileContentsResponse = await octokit.repos.getContent({
+          owner,
+          repo,
+          path: filepath
+        });
+
+        const { data } = fileContentsResponse;
+        const fileContent = Buffer.from((data as { content: string }).content, "base64").toString();
+
+        // eslint-disable-next-line
+        const findings = await scanContentAndGetFindings(`\n${fileContent}`); // extra line to count lines correctly
+
+        allFindings.push(
+          ...findings.map((finding) => ({
+            ...finding,
+            File: filepath,
+            Commit: commit.id,
+            Author: commit.author.name,
+            Email: commit.author.email,
+            Message: commit.message,
+            Fingerprint: `${commit.id}:${filepath}:${finding.RuleID}:${finding.StartLine}`,
+            Date: commit.timestamp,
+            Link: `https://github.com/${resourceName}/blob/${commit.id}/${filepath}#L${finding.StartLine}`
+          }))
+        );
+      }
+    }
+
+    return allFindings.map(
+      ({
+        // discard match and secret as we don't want to store
+        Match,
+        Secret,
+        ...finding
+      }) => ({
+        details: titleCaseToCamelCase(finding),
+        fingerprint: finding.Fingerprint,
+        severity: SecretScanningFindingSeverity.High,
+        rule: finding.RuleID
+      })
+    );
+  };
+
   return {
     initialize,
     postInitialization,
     listRawResources,
-    getScanPath
+    getFullScanPath,
+    getDiffScanResourcePayload,
+    getDiffScanFindingsPayload
   };
+};
+
+const test = {
+  "0": {
+    details: {
+      ruleID: "gcp-api-key",
+      description:
+        "Uncovered a GCP API key, which could lead to unauthorized access to Google Cloud services and data breaches.",
+      startLine: 1,
+      endLine: 1,
+      startColumn: 10,
+      endColumn: 48,
+
+      symlinkFile: "",
+
+      entropy: 4.6506615,
+
+      tags: []
+    },
+    fingerprint: "",
+    severity: "high",
+    rule: "gcp-api-key"
+  },
+  "1": {
+    details: {
+      ruleID: "gcp-api-key",
+      description:
+        "Uncovered a GCP API key, which could lead to unauthorized access to Google Cloud services and data breaches.",
+      startLine: 3,
+      endLine: 3,
+      startColumn: 12,
+      endColumn: 50,
+      symlinkFile: "",
+      commit: "",
+      entropy: 4.6506615,
+      author: "",
+      email: "",
+      date: "",
+      message: "",
+      tags: [],
+      fingerprint: ""
+    },
+    fingerprint: "",
+    severity: "high",
+    rule: "gcp-api-key"
+  },
+  "2": {
+    details: {
+      ruleID: "gcp-api-key",
+      description:
+        "Uncovered a GCP API key, which could lead to unauthorized access to Google Cloud services and data breaches.",
+      startLine: 5,
+      endLine: 5,
+      startColumn: 12,
+      endColumn: 50,
+      file: "",
+      symlinkFile: "",
+      commit: "",
+      entropy: 4.6506615,
+      author: "",
+      email: "",
+      date: "",
+      message: "",
+      tags: [],
+      fingerprint: ""
+    },
+    fingerprint: "",
+    severity: "high",
+    rule: "gcp-api-key"
+  },
+  reqId: "UNKNOWN_REQUEST_ID",
+  severity: "WARNING"
 };

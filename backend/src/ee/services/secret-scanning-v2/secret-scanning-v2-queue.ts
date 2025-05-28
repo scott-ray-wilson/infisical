@@ -30,6 +30,7 @@ import { SECRET_SCANNING_FACTORY_MAP } from "./secret-scanning-v2-factory";
 import {
   TFindingsPayload,
   TQueueSecretScanningDataSourceFullScan,
+  TQueueSecretScanningResourceDiffScan,
   TSecretScanningDataSourceWithConnection
 } from "./secret-scanning-v2-types";
 
@@ -65,6 +66,7 @@ export const secretScanningV2QueueServiceFactory = async ({
 
       let filteredRawResources = rawResources;
 
+      // TODO: should add indivial resource fetch to factory
       if (resourceExternalId) {
         filteredRawResources = rawResources.filter((resource) => resource.externalId === resourceExternalId);
       }
@@ -111,12 +113,8 @@ export const secretScanningV2QueueServiceFactory = async ({
     }
   };
 
-  // const queueResourceDiffScan = async (payload: TQueueSecretScanningResourceDiffScan) =>
-  //   queueService.queuePg(QueueJobs.SecretScanningV2FullScan, {
-  //     scanId: scan.id,
-  //     resourceId: scan.resourceId,
-  //     dataSourceId: dataSource.id
-  //   });
+  const queueResourceDiffScan = async (payload: TQueueSecretScanningResourceDiffScan) =>
+    queueService.queuePg(QueueJobs.SecretScanningV2DiffScan, payload);
 
   await queueService.startPg<QueueName.SecretScanningV2>(
     QueueJobs.SecretScanningV2FullScan,
@@ -151,7 +149,7 @@ export const secretScanningV2QueueServiceFactory = async ({
 
         const findingsPath = join(tempFolder, "findings.json");
 
-        const scanPath = await factory.getScanPath({
+        const scanPath = await factory.getFullScanPath({
           dataSource: {
             ...dataSource,
             connection
@@ -197,9 +195,7 @@ export const secretScanningV2QueueServiceFactory = async ({
 
         // TODO: send notification
 
-        logger.info(
-          `secretScanningV2Queue: Scan Complete ${logDetails} inputPath=[${scanPath}] outputPath=[${findingsPath}]`
-        );
+        logger.info(`secretScanningV2Queue: Full Scan Complete ${logDetails}`);
       } catch (error) {
         await secretScanningV2DAL.scans.update(
           { id: scanId },
@@ -211,10 +207,127 @@ export const secretScanningV2QueueServiceFactory = async ({
 
         // TODO: send error notification
 
-        logger.error(error, `secretScanningV2Queue: Scan Failed ${logDetails}`);
+        logger.error(error, `secretScanningV2Queue: Full Scan Failed ${logDetails}`);
         throw error;
       } finally {
         await deleteTempFolder(tempFolder);
+      }
+    },
+    {
+      batchSize: 1,
+      workerCount: 2,
+      pollingIntervalSeconds: 1
+    }
+  );
+
+  await queueService.startPg<QueueName.SecretScanningV2>(
+    QueueJobs.SecretScanningV2DiffScan,
+    async ([job]) => {
+      const { payload, dataSourceId } = job.data as TQueueSecretScanningResourceDiffScan;
+      const { retryCount, retryLimit } = job;
+
+      let scanId: string | undefined;
+      let logDetails = `[dataSourceId=${dataSourceId}] [jobId=${job.id}] retryCount=[${retryCount}/${retryLimit}]`;
+
+      try {
+        const dataSource = await secretScanningV2DAL.dataSources.findById(dataSourceId);
+
+        if (!dataSource) throw new Error(`Data source with ID "${dataSourceId}" not found`);
+
+        const factory = SECRET_SCANNING_FACTORY_MAP[dataSource.type as SecretScanningDataSource]();
+
+        const resourcePayload = factory.getDiffScanResourcePayload(payload);
+
+        const { resourceId, resourceName, resourceType } = await secretScanningV2DAL.resources.transaction(
+          async (tx) => {
+            const [resource] = await secretScanningV2DAL.resources.upsert(
+              [
+                {
+                  ...resourcePayload,
+                  dataSourceId
+                }
+              ],
+              ["externalId", "dataSourceId"],
+              tx
+            );
+
+            const scan = await secretScanningV2DAL.scans.create(
+              {
+                resourceId: resource.id,
+                type: SecretScanningScanType.DiffScan,
+                status: SecretScanningScanStatus.Scanning
+              },
+              tx
+            );
+
+            scanId = scan.id;
+
+            return {
+              resourceId: resource.id,
+              resourceName: resource.name,
+              resourceType: resource.type
+            };
+          }
+        );
+
+        logDetails += ` [scanId=${scanId}] [resourceId=${resourceId}]`;
+
+        let connection: TAppConnection | null = null;
+        if (dataSource.connection) connection = await decryptAppConnection(dataSource.connection, kmsService);
+
+        const findingsPayload = await factory.getDiffScanFindingsPayload({
+          dataSource: {
+            ...dataSource,
+            connection
+          } as TSecretScanningDataSourceWithConnection,
+          resourceName,
+          payload
+        });
+
+        logger.warn(findingsPayload, "findingsPayload");
+
+        await secretScanningV2DAL.findings.transaction(async (tx) => {
+          await secretScanningV2DAL.findings.upsert(
+            findingsPayload.map((findings) => ({
+              ...findings,
+              projectId: dataSource.projectId,
+              dataSourceName: dataSource.name,
+              dataSourceType: dataSource.type,
+              resourceName,
+              resourceType,
+              scanId,
+              status: SecretScanningFindingStatus.Unresolved
+            })),
+            ["projectId", "fingerprint"],
+            tx,
+            ["resourceName", "dataSourceName", "status"]
+          );
+
+          await secretScanningV2DAL.scans.update(
+            { id: scanId },
+            {
+              status: SecretScanningScanStatus.Completed
+            }
+          );
+        });
+
+        // TODO: send notification
+
+        logger.info(`secretScanningV2Queue: Diff Scan Complete ${logDetails}`);
+      } catch (error) {
+        if (scanId)
+          await secretScanningV2DAL.scans.update(
+            { id: scanId },
+            {
+              status: SecretScanningScanStatus.Failed,
+              statusMessage: parseScanErrorMessage(error)
+            }
+          );
+
+        // TODO: send error notification
+
+        logger.error(error, `secretScanningV2Queue: Diff Scan Failed ${logDetails}`);
+        throw error;
       }
     },
     {
@@ -282,6 +395,7 @@ export const secretScanningV2QueueServiceFactory = async ({
   // );
 
   return {
-    queueDataSourceFullScan
+    queueDataSourceFullScan,
+    queueResourceDiffScan
   };
 };

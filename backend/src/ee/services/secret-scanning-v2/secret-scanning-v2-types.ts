@@ -1,12 +1,11 @@
-import { PushEvent } from "@octokit/webhooks-types";
-
 import { TSecretScanningFindingsInsert, TSecretScanningResources, TSecretScanningScans } from "@app/db/schemas";
 import {
   TGitHubDataSource,
   TGitHubDataSourceInput,
   TGitHubDataSourceListItem,
   TGitHubDataSourceWithConnection,
-  TGitHubFinding
+  TGitHubFinding,
+  TQueueGitHubResourceDiffScan
 } from "@app/ee/services/secret-scanning-v2/github";
 import {
   TGitLabDataSource,
@@ -103,7 +102,7 @@ export type TQueueSecretScanningDataSourceFullScan = {
   scanId: string;
 };
 
-export type TQueueSecretScanningResourceDiffScan = { type: SecretScanningDataSource.GitHub; payload: PushEvent };
+export type TQueueSecretScanningResourceDiffScan = TQueueGitHubResourceDiffScan;
 
 export type TCloneRepository = {
   cloneUrl: string;
@@ -114,11 +113,20 @@ export type TSecretScanningFactoryListRawResources<T extends TSecretScanningData
   dataSource: T
 ) => Promise<Pick<TSecretScanningResources, "externalId" | "name" | "type">[]>;
 
-export type TSecretScanningFactoryGetScanPath<T extends TSecretScanningDataSourceWithConnection> = (parameters: {
+export type TSecretScanningFactoryGetDiffScanResourcePayload<
+  P extends TQueueSecretScanningResourceDiffScan["payload"]
+> = (payload: P) => Pick<TSecretScanningResources, "externalId" | "name" | "type">;
+
+export type TSecretScanningFactoryGetFullScanPath<T extends TSecretScanningDataSourceWithConnection> = (parameters: {
   dataSource: T;
   resourceName: string;
   tempFolder: string;
 }) => Promise<string>;
+
+export type TSecretScanningFactoryGetDiffScanFindingsPayload<
+  T extends TSecretScanningDataSourceWithConnection,
+  P extends TQueueSecretScanningResourceDiffScan["payload"]
+> = (parameters: { dataSource: T; resourceName: string; payload: P }) => Promise<TFindingsPayload>;
 
 export type TSecretScanningDataSourceRaw = NonNullable<
   Awaited<ReturnType<TSecretScanningV2DALFactory["dataSources"]["findById"]>>
@@ -144,12 +152,15 @@ export type TSecretScanningFactoryPostInitialization<
 
 export type TSecretScanningFactory<
   T extends TSecretScanningDataSourceWithConnection,
-  C extends TSecretScanningDataSourceCredentials
+  C extends TSecretScanningDataSourceCredentials,
+  P extends TQueueSecretScanningResourceDiffScan["payload"]
 > = () => {
   listRawResources: TSecretScanningFactoryListRawResources<T>;
-  getScanPath: TSecretScanningFactoryGetScanPath<T>;
+  getFullScanPath: TSecretScanningFactoryGetFullScanPath<T>;
   initialize: TSecretScanningFactoryInitialize<T["connection"] | undefined, C>;
   postInitialization: TSecretScanningFactoryPostInitialization<T["connection"] | undefined, C>;
+  getDiffScanResourcePayload: TSecretScanningFactoryGetDiffScanResourcePayload<P>;
+  getDiffScanFindingsPayload: TSecretScanningFactoryGetDiffScanFindingsPayload<T, P>;
 };
 
 export type TFindingsPayload = Pick<TSecretScanningFindingsInsert, "details" | "fingerprint" | "severity" | "rule">[];

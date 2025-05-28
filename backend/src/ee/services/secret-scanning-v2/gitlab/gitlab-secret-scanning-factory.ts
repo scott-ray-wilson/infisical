@@ -5,7 +5,7 @@ import { SECRET_SCANNING_WEBHOOK_PATH } from "@app/ee/services/secret-scanning-v
 import { SecretScanningResource } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
 import { cloneRepository } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-fns";
 import {
-  TSecretScanningFactoryGetScanPath,
+  TSecretScanningFactoryGetFullScanPath,
   TSecretScanningFactoryInitialize,
   TSecretScanningFactoryListRawResources,
   TSecretScanningFactoryPostInitialization
@@ -170,7 +170,7 @@ export const GitLabSecretScanningFactory = () => {
     }));
   };
 
-  const getScanPath: TSecretScanningFactoryGetScanPath<TGitLabDataSourceWithConnection> = async ({
+  const getScanPath: TSecretScanningFactoryGetFullScanPath<TGitLabDataSourceWithConnection> = async ({
     dataSource,
     resourceName,
     tempFolder

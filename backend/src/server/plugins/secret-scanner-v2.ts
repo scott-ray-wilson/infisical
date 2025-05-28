@@ -27,7 +27,7 @@ export const registerSecretScanningV2Webhooks = async (server: FastifyZodProvide
 
     app.on("push", async (context) => {
       const { payload } = context;
-      await server.services.secretScanning.handleRepoPushEvent(payload as PushEvent);
+      await server.services.secretScanningV2.github.handlePushEvent(payload as PushEvent);
     });
   };
 

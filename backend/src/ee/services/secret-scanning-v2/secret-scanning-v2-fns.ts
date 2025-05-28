@@ -44,7 +44,7 @@ export function scanDirectory(inputPath: string, outputPath: string): Promise<vo
   });
 }
 
-const titleCaseToCamelCase = (obj: unknown): unknown => {
+export const titleCaseToCamelCase = (obj: unknown): unknown => {
   if (typeof obj !== "object" || obj === null) {
     return obj;
   }

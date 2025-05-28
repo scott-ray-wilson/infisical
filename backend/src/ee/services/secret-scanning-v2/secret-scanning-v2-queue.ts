@@ -27,7 +27,11 @@ import {
   SecretScanningScanType
 } from "./secret-scanning-v2-enums";
 import { SECRET_SCANNING_FACTORY_MAP } from "./secret-scanning-v2-factory";
-import { TFindingsPayload, TSecretScanningDataSourceWithConnection } from "./secret-scanning-v2-types";
+import {
+  TFindingsPayload,
+  TQueueSecretScanningDataSourceFullScan,
+  TSecretScanningDataSourceWithConnection
+} from "./secret-scanning-v2-types";
 
 type TSecretRotationV2QueueServiceFactoryDep = {
   queueService: TQueueServiceFactory;
@@ -107,10 +111,17 @@ export const secretScanningV2QueueServiceFactory = async ({
     }
   };
 
+  // const queueResourceDiffScan = async (payload: TQueueSecretScanningResourceDiffScan) =>
+  //   queueService.queuePg(QueueJobs.SecretScanningV2FullScan, {
+  //     scanId: scan.id,
+  //     resourceId: scan.resourceId,
+  //     dataSourceId: dataSource.id
+  //   });
+
   await queueService.startPg<QueueName.SecretScanningV2>(
     QueueJobs.SecretScanningV2FullScan,
     async ([job]) => {
-      const { scanId, resourceId, dataSourceId } = job.data;
+      const { scanId, resourceId, dataSourceId } = job.data as TQueueSecretScanningDataSourceFullScan;
       const { retryCount, retryLimit } = job;
 
       const logDetails = `[scanId=${scanId}] [resourceId=${resourceId}] [dataSourceId=${dataSourceId}] [jobId=${job.id}] retryCount=[${retryCount}/${retryLimit}]`;

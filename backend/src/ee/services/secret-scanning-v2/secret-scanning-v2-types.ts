@@ -1,3 +1,5 @@
+import { PushEvent } from "@octokit/webhooks-types";
+
 import { TSecretScanningFindingsInsert, TSecretScanningResources, TSecretScanningScans } from "@app/db/schemas";
 import {
   TGitHubDataSource,
@@ -100,6 +102,8 @@ export type TQueueSecretScanningDataSourceFullScan = {
   resourceId: string;
   scanId: string;
 };
+
+export type TQueueSecretScanningResourceDiffScan = { type: SecretScanningDataSource.GitHub; payload: PushEvent };
 
 export type TCloneRepository = {
   cloneUrl: string;

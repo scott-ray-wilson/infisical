@@ -12,7 +12,10 @@ import {
   TScanFullRepoEventPayload,
   TScanPushEventPayload
 } from "@app/ee/services/secret-scanning/secret-scanning-queue/secret-scanning-queue-types";
-import { TQueueSecretScanningDataSourceFullScan } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-types";
+import {
+  TQueueSecretScanningDataSourceFullScan,
+  TQueueSecretScanningResourceDiffScan
+} from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-types";
 import { getConfig } from "@app/lib/config/env";
 import { logger } from "@app/lib/logger";
 import {
@@ -88,7 +91,7 @@ export enum QueueJobs {
   SecretRotationV2SendNotification = "secret-rotation-v2-send-notification",
   InvalidateCache = "invalidate-cache",
   SecretScanningV2FullScan = "secret-scanning-v2-full-scan",
-  SecretScanningV2PartialScan = "secret-scanning-v2-partial-scan"
+  SecretScanningV2DiffScan = "secret-scanning-v2-diff-scan"
 }
 
 export type TQueueJobTypes = {
@@ -249,10 +252,15 @@ export type TQueueJobTypes = {
       };
     };
   };
-  [QueueName.SecretScanningV2]: {
-    name: QueueJobs.SecretScanningV2FullScan;
-    payload: TQueueSecretScanningDataSourceFullScan;
-  };
+  [QueueName.SecretScanningV2]:
+    | {
+        name: QueueJobs.SecretScanningV2FullScan;
+        payload: TQueueSecretScanningDataSourceFullScan;
+      }
+    | {
+        name: QueueJobs.SecretScanningV2DiffScan;
+        payload: TQueueSecretScanningResourceDiffScan;
+      };
 };
 
 export type TQueueServiceFactory = ReturnType<typeof queueServiceFactory>;

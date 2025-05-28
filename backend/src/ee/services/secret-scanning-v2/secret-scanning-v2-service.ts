@@ -409,6 +409,7 @@ export const secretScanningV2ServiceFactory = ({
       });
 
     // TODO: clean up webhooks
+
     await secretScanningV2DAL.dataSources.deleteById(dataSourceId);
 
     return dataSource as TSecretScanningDataSource;
@@ -729,6 +730,7 @@ export const secretScanningV2ServiceFactory = ({
     listSecretScanningScansWithDetailsByDataSourceId,
     getSecretScanningUnresolvedFindingsCountByProjectId,
     listSecretScanningFindingsByProjectId,
-    updateSecretScanningFindingById
+    updateSecretScanningFindingById,
+    github: {}
   };
 };

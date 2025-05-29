@@ -242,7 +242,12 @@
           ]
         },
         "documentation/platform/secret-sharing",
-        "documentation/platform/secret-scanning"
+        {
+          "group": "Secret Scanning",
+          "pages": [
+            "documentation/platform/secret-scanning/overview"
+          ]
+        }
       ]
     },
     {

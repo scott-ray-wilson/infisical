@@ -46,7 +46,8 @@ export const AppConnectionsSelect = ({ onSelect }: Props) => {
                 />
                 {icon && (
                   <FontAwesomeIcon
-                    className="absolute -bottom-2 -right-2 text-primary-700"
+                    className="-right- absolute -bottom-1.5 -right-1.5 text-primary-700"
+                    size="xl"
                     icon={icon}
                   />
                 )}

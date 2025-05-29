@@ -1,5 +1,4 @@
 import { Controller, useForm } from "react-hook-form";
-import { faCheck, faWarning } from "@fortawesome/free-solid-svg-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
@@ -14,6 +13,7 @@ import {
   SelectItem,
   TextArea
 } from "@app/components/v2";
+import { SECRET_SCANNING_FINDING_STATUS_ICON_MAP } from "@app/helpers/secretScanningV2";
 import {
   SecretScanningFindingStatus,
   TSecretScanningFinding,
@@ -44,10 +44,7 @@ const Content = ({ finding, onComplete }: ContentProps) => {
   const { handleSubmit, control } = useForm<FormType>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      status:
-        finding.status === SecretScanningFindingStatus.Resolved
-          ? SecretScanningFindingStatus.Unresolved
-          : SecretScanningFindingStatus.Resolved,
+      status: finding.status,
       remarks: finding.remarks ?? ""
     }
   });
@@ -88,10 +85,8 @@ const Content = ({ finding, onComplete }: ContentProps) => {
                 className="w-full border border-mineshaft-500 capitalize"
                 position="popper"
                 dropdownContainerClassName="max-w-none"
-                icon={value === SecretScanningFindingStatus.Resolved ? faCheck : faWarning}
-                iconClassName={
-                  value === SecretScanningFindingStatus.Resolved ? "text-green" : "text-yellow"
-                }
+                icon={SECRET_SCANNING_FINDING_STATUS_ICON_MAP[value].icon}
+                iconClassName={SECRET_SCANNING_FINDING_STATUS_ICON_MAP[value].className}
               >
                 {Object.values(SecretScanningFindingStatus).map((status) => {
                   return (

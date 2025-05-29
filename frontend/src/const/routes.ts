@@ -27,10 +27,6 @@ export const ROUTE_PATHS = Object.freeze({
       "/organization/sso",
       "/_authenticate/_inject-org-details/_org-layout/organization/sso"
     ),
-    // SecretScanning: setRoute(
-    //   "/organization/secret-scanning",
-    //   "/_authenticate/_inject-org-details/_org-layout/organization/secret-scanning"
-    // ),
     SecretSharing: setRoute(
       "/organization/secret-sharing",
       "/_authenticate/_inject-org-details/_org-layout/organization/secret-sharing/"
@@ -326,6 +322,10 @@ export const ROUTE_PATHS = Object.freeze({
     DataSourceByIdPage: setRoute(
       "/secret-scanning/$projectId/data-sources/$type/$dataSourceId",
       "/_authenticate/_inject-org-details/_org-layout/secret-scanning/$projectId/_secret-scanning-layout/data-sources/$type/$dataSourceId"
+    ),
+    FindingsPage: setRoute(
+      "/secret-scanning/$projectId/findings",
+      "/_authenticate/_inject-org-details/_org-layout/secret-scanning/$projectId/_secret-scanning-layout/findings"
     )
   },
   Public: {

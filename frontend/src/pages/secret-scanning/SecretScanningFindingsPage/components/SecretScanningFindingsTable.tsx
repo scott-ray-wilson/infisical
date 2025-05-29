@@ -2,16 +2,13 @@ import { useMemo, useState } from "react";
 import {
   faArrowDown,
   faArrowUp,
-  faBan,
-  faCheck,
   faCheckCircle,
   faFilter,
   faMagnifyingGlass,
-  faMagnifyingGlassMinus,
-  faSearch,
-  faWarning
+  faSearch
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useSearch } from "@tanstack/react-router";
 import { twMerge } from "tailwind-merge";
 
 import {
@@ -31,7 +28,11 @@ import {
   THead,
   Tr
 } from "@app/components/v2";
-import { SECRET_SCANNING_DATA_SOURCE_MAP } from "@app/helpers/secretScanningV2";
+import { ROUTE_PATHS } from "@app/const/routes";
+import {
+  SECRET_SCANNING_DATA_SOURCE_MAP,
+  SECRET_SCANNING_FINDING_STATUS_ICON_MAP
+} from "@app/helpers/secretScanningV2";
 import { usePagination, usePopUp, useResetPageHelper } from "@app/hooks";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import {
@@ -39,19 +40,9 @@ import {
   SecretScanningFindingStatus,
   TSecretScanningFinding
 } from "@app/hooks/api/secretScanningV2";
-import { SecretScanningUpdateFindingModal } from "@app/pages/secret-scanning/SecretScanningFindingsPage/components/SecretScanningUpdateFindingModal";
 
 import { SecretScanningFindingRow } from "./SecretScanningFindingRow";
-
-const STATUS_ICON_MAP = {
-  [SecretScanningFindingStatus.Resolved]: { icon: faCheck, className: "text-green" },
-  [SecretScanningFindingStatus.Unresolved]: { icon: faWarning, className: "text-yellow" },
-  [SecretScanningFindingStatus.Ignore]: { icon: faBan, className: "text-mineshaft-400" },
-  [SecretScanningFindingStatus.FalsePositive]: {
-    icon: faMagnifyingGlassMinus,
-    className: "text-mineshaft-400"
-  }
-};
+import { SecretScanningUpdateFindingModal } from "./SecretScanningUpdateFindingModal";
 
 enum FindingsOrderBy {
   ResourceName = "resource-name",
@@ -72,9 +63,13 @@ type Props = {
 export const SecretScanningFindingsTable = ({ findings }: Props) => {
   const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp(["updateFinding"] as const);
 
+  const { search: initSearch, status: initStatus } = useSearch({
+    from: ROUTE_PATHS.SecretScanning.FindingsPage.id
+  });
+
   const [filters, setFilters] = useState<DataSourceFilters>({
     dataSourceTypes: [],
-    status: []
+    status: initStatus ? [initStatus] : []
   });
 
   const {
@@ -90,13 +85,13 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
     orderBy,
     setOrderDirection,
     setOrderBy
-  } = usePagination<FindingsOrderBy>(FindingsOrderBy.Timestamp, { initPerPage: 20 });
+  } = usePagination<FindingsOrderBy>(FindingsOrderBy.Timestamp, { initPerPage: 20, initSearch });
 
   const filteredFindings = useMemo(
     () =>
       findings
         .filter((finding) => {
-          const { rule, resourceName, dataSourceType, status } = finding;
+          const { rule, resourceName, dataSourceType, dataSourceName, status, scanId } = finding;
 
           if (filters.dataSourceTypes.length && !filters.dataSourceTypes.includes(dataSourceType))
             return false;
@@ -105,15 +100,18 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
             return false;
           }
 
-          const searchValue = search.trim().toLowerCase();
+          if (search.includes("scanId")) {
+            return search.split(":")[1] === scanId;
+          }
 
-          // const destinationValues = getSecretSyncDestinationColValues(dataSource);
+          const searchValue = search.trim().toLowerCase();
 
           return (
             SECRET_SCANNING_DATA_SOURCE_MAP[dataSourceType].name
               .toLowerCase()
               .includes(searchValue) ||
             resourceName.toLowerCase().includes(searchValue) ||
+            dataSourceName.toLowerCase().includes(searchValue) ||
             rule.toLowerCase().includes(searchValue)
           );
         })
@@ -220,10 +218,10 @@ export const SecretScanningFindingsTable = ({ findings }: Props) => {
               >
                 <div className="flex items-center gap-2">
                   <FontAwesomeIcon
-                    icon={STATUS_ICON_MAP[status].icon}
-                    className={STATUS_ICON_MAP[status].className}
+                    icon={SECRET_SCANNING_FINDING_STATUS_ICON_MAP[status].icon}
+                    className={SECRET_SCANNING_FINDING_STATUS_ICON_MAP[status].className}
                   />
-                  <span className="capitalize">{status}</span>
+                  <span className="capitalize">{status.replace("-", " ")}</span>
                 </div>
               </DropdownMenuItem>
             ))}

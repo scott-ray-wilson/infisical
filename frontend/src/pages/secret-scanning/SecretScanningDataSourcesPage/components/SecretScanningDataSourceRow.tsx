@@ -41,6 +41,7 @@ import {
 } from "@app/helpers/secretScanningV2";
 import { useToggle } from "@app/hooks";
 import {
+  SecretScanningFindingStatus,
   SecretScanningScanStatus,
   TSecretScanningDataSourceWithDetails
 } from "@app/hooks/api/secretScanningV2";
@@ -149,7 +150,20 @@ export const SecretScanningDataSourceRow = ({
           unresolvedFindings ? (
             <Badge
               variant="primary"
-              className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap"
+              className="flex h-5 w-min cursor-pointer items-center gap-1.5 whitespace-nowrap"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate({
+                  to: "/secret-scanning/$projectId/findings",
+                  params: {
+                    projectId
+                  },
+                  search: {
+                    search: name,
+                    status: SecretScanningFindingStatus.Unresolved
+                  }
+                });
+              }}
             >
               <FontAwesomeIcon icon={faWarning} />
               <span>

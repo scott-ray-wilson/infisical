@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { faCheck, faCopy, faEllipsisV, faWarning } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
@@ -17,6 +18,7 @@ import {
   Tooltip,
   Tr
 } from "@app/components/v2";
+import { useWorkspace } from "@app/context";
 import { useToggle } from "@app/hooks";
 import {
   SecretScanningScanStatus,
@@ -39,8 +41,9 @@ export const SecretScanningScanRow = ({ scan }: Props) => {
     resolvedFindings,
     type
   } = scan;
+  const { currentWorkspace } = useWorkspace();
   const totalFindings = resolvedFindings + unresolvedFindings;
-  console.log("totalFindings", totalFindings, resolvedFindings, unresolvedFindings);
+  const navigate = useNavigate();
 
   const [isIdCopied, setIsIdCopied] = useToggle(false);
 
@@ -79,7 +82,7 @@ export const SecretScanningScanRow = ({ scan }: Props) => {
         </div>
       </Td>
       <Td className="whitespace-nowrap">
-        {type === SecretScanningScanType.FullScan ? "Full scan" : "Diff Scan"}
+        {type === SecretScanningScanType.FullScan ? "Full scan" : "Diff scan"}
       </Td>
       <Td>
         {
@@ -90,9 +93,20 @@ export const SecretScanningScanRow = ({ scan }: Props) => {
           totalFindings ? (
             <div className="flex flex-col">
               <Badge
+                onClick={() =>
+                  navigate({
+                    to: "/secret-scanning/$projectId/findings",
+                    params: {
+                      projectId: currentWorkspace.id
+                    },
+                    search: {
+                      search: `scanId:${id}`
+                    }
+                  })
+                }
                 variant={unresolvedFindings ? "primary" : undefined}
                 className={twMerge(
-                  "flex h-5 w-min items-center gap-1.5 whitespace-nowrap",
+                  "flex h-5 w-min cursor-pointer items-center gap-1.5 whitespace-nowrap",
                   !unresolvedFindings && "bg-mineshaft-400/50 text-bunker-300"
                 )}
               >

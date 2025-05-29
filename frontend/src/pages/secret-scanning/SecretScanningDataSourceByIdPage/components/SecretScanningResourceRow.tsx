@@ -9,6 +9,7 @@ import {
   faWarning
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useNavigate } from "@tanstack/react-router";
 import { formatDistance } from "date-fns";
 import { twMerge } from "tailwind-merge";
 
@@ -33,6 +34,7 @@ import {
 import { RESOURCE_DESCRIPTION_HELPER } from "@app/helpers/secretScanningV2";
 import { useToggle } from "@app/hooks";
 import {
+  SecretScanningFindingStatus,
   SecretScanningScanStatus,
   TSecretScanningDataSource,
   TSecretScanningResourceWithDetails,
@@ -49,6 +51,8 @@ export const SecretScanningResourceRow = ({ resource, dataSource }: Props) => {
     resource;
 
   const triggerDataSourceScan = useTriggerSecretScanningDataSource();
+
+  const navigate = useNavigate();
 
   const handleTriggerScan = async () => {
     try {
@@ -121,8 +125,20 @@ export const SecretScanningResourceRow = ({ resource, dataSource }: Props) => {
           // eslint-disable-next-line no-nested-ternary
           unresolvedFindings ? (
             <Badge
+              onClick={() =>
+                navigate({
+                  to: "/secret-scanning/$projectId/findings",
+                  params: {
+                    projectId: dataSource.projectId
+                  },
+                  search: {
+                    search: name,
+                    status: SecretScanningFindingStatus.Unresolved
+                  }
+                })
+              }
               variant="primary"
-              className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap"
+              className="flex h-5 w-min cursor-pointer items-center gap-1.5 whitespace-nowrap"
             >
               <FontAwesomeIcon icon={faWarning} />
               <span>

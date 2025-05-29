@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { faCheck, faCopy, faEllipsisV, faUndo, faWarning } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faCopy, faEllipsisV } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { format } from "date-fns";
 import { twMerge } from "tailwind-merge";
@@ -18,7 +18,10 @@ import {
   Tooltip,
   Tr
 } from "@app/components/v2";
-import { SECRET_SCANNING_DATA_SOURCE_MAP } from "@app/helpers/secretScanningV2";
+import {
+  SECRET_SCANNING_DATA_SOURCE_MAP,
+  SECRET_SCANNING_FINDING_STATUS_ICON_MAP
+} from "@app/helpers/secretScanningV2";
 import { useToggle } from "@app/hooks";
 import {
   SecretScanningFindingStatus,
@@ -36,7 +39,7 @@ export const SecretScanningFindingRow = ({ finding, onUpdate }: Props) => {
     id,
     dataSourceType,
     createdAt,
-    resourceType,
+    dataSourceName,
     rule,
     status,
     details,
@@ -95,32 +98,27 @@ export const SecretScanningFindingRow = ({ finding, onUpdate }: Props) => {
         <Td className="!min-w-[8rem] max-w-0">
           <div className="w-full items-center">
             <p className="truncate">{resourceName}</p>
-            <p className="truncate text-xs text-mineshaft-400">{resourceType}</p>
+            <p className="truncate text-xs text-mineshaft-400">{dataSourceName}</p>
           </div>
         </Td>
         <Td className="whitespace-nowrap">{rule}</Td>
         <Td className="whitespace-nowrap">
-          {status === SecretScanningFindingStatus.Unresolved ? (
-            <Badge
-              variant="primary"
-              className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap"
-            >
-              <FontAwesomeIcon icon={faWarning} />
-              <span>Unresolved</span>
-            </Badge>
-          ) : (
-            <Tooltip position="left" content={remarks}>
-              <div className="w-min">
-                <Badge
-                  variant="success"
-                  className="flex h-5 w-min items-center gap-1.5 whitespace-nowrap"
-                >
-                  <FontAwesomeIcon icon={faCheck} />
-                  Resolved
-                </Badge>
-              </div>
-            </Tooltip>
-          )}
+          <Tooltip position="left" content={remarks}>
+            <div className="w-min">
+              <Badge
+                variant={status === SecretScanningFindingStatus.Resolved ? "success" : "primary"}
+                className={twMerge(
+                  "flex h-5 w-min items-center gap-1.5 whitespace-nowrap",
+                  (status === SecretScanningFindingStatus.FalsePositive ||
+                    status === SecretScanningFindingStatus.Ignore) &&
+                    "bg-mineshaft-400/50 text-bunker-300"
+                )}
+              >
+                <FontAwesomeIcon icon={SECRET_SCANNING_FINDING_STATUS_ICON_MAP[status].icon} />
+                <span className="capitalize">{status.replace("-", " ")}</span>
+              </Badge>
+            </div>
+          </Tooltip>
         </Td>
         <Td>
           <Tooltip className="max-w-sm text-center" content="Options">
@@ -199,14 +197,12 @@ export const SecretScanningFindingRow = ({ finding, onUpdate }: Props) => {
                 colorSchema="secondary"
                 leftIcon={
                   <FontAwesomeIcon
-                    className={
-                      status === SecretScanningFindingStatus.Unresolved ? "text-green" : undefined
-                    }
-                    icon={status === SecretScanningFindingStatus.Unresolved ? faCheck : faUndo}
+                    className={SECRET_SCANNING_FINDING_STATUS_ICON_MAP[status].className}
+                    icon={SECRET_SCANNING_FINDING_STATUS_ICON_MAP[status].icon}
                   />
                 }
               >
-                {status === SecretScanningFindingStatus.Unresolved ? "Resolve" : "Unresolve"}
+                Update Status
               </Button>
             </div>
           </div>

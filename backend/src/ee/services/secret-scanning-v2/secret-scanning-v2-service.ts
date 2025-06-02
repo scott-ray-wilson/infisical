@@ -810,7 +810,7 @@ export const secretScanningV2ServiceFactory = ({
     });
 
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionSecretScanningConfigActions.Read,
+      ProjectPermissionSecretScanningConfigActions.Update,
       ProjectPermissionSub.SecretScanningConfigs
     );
 

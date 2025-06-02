@@ -28,7 +28,6 @@ import { SmtpTemplates, TSmtpService } from "@app/services/smtp/smtp-service";
 import { TSecretScanningV2DALFactory } from "./secret-scanning-v2-dal";
 import {
   SecretScanningDataSource,
-  SecretScanningFindingStatus,
   SecretScanningResource,
   SecretScanningScanStatus,
   SecretScanningScanType
@@ -217,8 +216,7 @@ export const secretScanningV2QueueServiceFactory = async ({
                 dataSourceType: dataSource.type,
                 resourceName: resource.name,
                 resourceType: resource.type,
-                scanId,
-                status: SecretScanningFindingStatus.Unresolved
+                scanId
               })),
               ["projectId", "fingerprint"],
               tx,
@@ -441,8 +439,7 @@ export const secretScanningV2QueueServiceFactory = async ({
                 dataSourceType: dataSource.type,
                 resourceName: resource.name,
                 resourceType: resource.type,
-                scanId,
-                status: SecretScanningFindingStatus.Unresolved
+                scanId
               })),
               ["projectId", "fingerprint"],
               tx,

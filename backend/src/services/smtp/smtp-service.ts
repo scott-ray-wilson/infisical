@@ -48,7 +48,7 @@ export type TSmtpSendMail = {
 export type TSmtpService = ReturnType<typeof smtpServiceFactory>;
 
 export enum SmtpTemplates {
-  SignupEmailVerification = "signupEmailVerification",
+  SignupEmailVerification = "signupEmailVerification", //
   EmailVerification = "emailVerification",
   SecretReminder = "secretReminder",
   EmailMfa = "emailMfa",

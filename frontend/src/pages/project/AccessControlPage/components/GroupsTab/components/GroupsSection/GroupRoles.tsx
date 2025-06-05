@@ -329,7 +329,7 @@ export const GroupRoles = ({ roles = [], disableEdit = false, groupId }: TMember
           }}
         >
           {!disableEdit && (
-            <PopoverTrigger>
+            <PopoverTrigger onClick={(e) => e.stopPropagation()}>
               <IconButton size="sm" variant="plain" ariaLabel="update">
                 <FontAwesomeIcon icon={faEdit} />
               </IconButton>

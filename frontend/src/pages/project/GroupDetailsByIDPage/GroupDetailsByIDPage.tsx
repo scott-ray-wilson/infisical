@@ -3,19 +3,12 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "@tanstack/react-router";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
-import { PageHeader, Spinner } from "@app/components/v2";
-import { ProjectPermissionActions, ProjectPermissionSub } from "@app/context";
-import { useGetGroupById } from "@app/hooks/api/groups/queries";
+import { EmptyState, PageHeader, Spinner } from "@app/components/v2";
+import { ProjectPermissionActions, ProjectPermissionSub, useWorkspace } from "@app/context";
+import { useGetWorkspaceGroupMembershipDetails } from "@app/hooks/api/workspace/queries";
 
 import { GroupDetailsSection } from "./components/GroupDetailsSection";
 import { GroupMembersSection } from "./components/GroupMembersSection";
-
-export enum TabSections {
-  Member = "members",
-  Groups = "groups",
-  Roles = "roles",
-  Identities = "identities"
-}
 
 const Page = () => {
   const groupId = useParams({
@@ -23,7 +16,12 @@ const Page = () => {
     select: (el) => el.groupId as string
   });
 
-  const { data, isPending } = useGetGroupById(groupId);
+  const { currentWorkspace } = useWorkspace();
+
+  const { data: groupMembership, isPending } = useGetWorkspaceGroupMembershipDetails(
+    currentWorkspace.id,
+    groupId
+  );
 
   if (isPending)
     return (
@@ -34,16 +32,18 @@ const Page = () => {
 
   return (
     <div className="container mx-auto flex flex-col justify-between bg-bunker-800 text-white">
-      {data && (
+      {groupMembership ? (
         <div className="mx-auto mb-6 w-full max-w-7xl">
-          <PageHeader title={data.group.name} />
+          <PageHeader title={groupMembership.group.name} />
           <div className="flex">
             <div className="mr-4 w-96">
-              <GroupDetailsSection groupId={groupId} />
+              <GroupDetailsSection groupMembership={groupMembership} />
             </div>
-            <GroupMembersSection groupId={groupId} groupSlug={data.group.slug} />
+            <GroupMembersSection groupMembership={groupMembership} />
           </div>
         </div>
+      ) : (
+        <EmptyState title="Error: Unable to find the group." className="py-12" />
       )}
     </div>
   );

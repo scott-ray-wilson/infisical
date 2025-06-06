@@ -335,7 +335,7 @@ export const GroupRoles = ({ roles = [], disableEdit = false, groupId }: TMember
               </IconButton>
             </PopoverTrigger>
           )}
-          <PopoverContent hideCloseBtn className="pt-4">
+          <PopoverContent onClick={(e) => e.stopPropagation()} hideCloseBtn className="pt-4">
             {isRolesLoading ? (
               <div className="flex h-8 w-full items-center justify-center">
                 <Spinner />

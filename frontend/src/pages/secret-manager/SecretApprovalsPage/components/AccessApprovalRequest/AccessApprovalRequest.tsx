@@ -2,15 +2,20 @@
 /* eslint-disable react/jsx-no-useless-fragment */
 import { useCallback, useMemo, useState } from "react";
 import {
+  faArrowUpRightFromSquare,
+  faBookOpen,
   faCheck,
   faCheckCircle,
   faChevronDown,
   faLock,
-  faPlus
+  faMagnifyingGlass,
+  faPlus,
+  faSearch
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { formatDistance } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
+import { twMerge } from "tailwind-merge";
 
 import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
 import {
@@ -21,6 +26,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
   EmptyState,
+  Input,
   Tooltip
 } from "@app/components/v2";
 import { Badge } from "@app/components/v2/Badge";
@@ -120,29 +126,48 @@ export const AccessApprovalRequest = ({
     projectSlug
   });
 
-  const { data: requests, refetch: refetchRequests } = useGetAccessApprovalRequests({
+  const {
+    data: requests,
+    refetch: refetchRequests,
+    isPending: areRequestsPending
+  } = useGetAccessApprovalRequests({
     projectSlug,
     authorProjectMembershipId: requestedByFilter,
     envSlug: envFilter
   });
 
+  const [searchFilter, setSearchFilter] = useState("");
+
   const filteredRequests = useMemo(() => {
+    let accessRequests: typeof requests;
+
     if (statusFilter === "open")
-      return requests?.filter(
+      accessRequests = requests?.filter(
         (request) =>
           !request.policy.deletedAt &&
           !request.isApproved &&
           !request.reviewers.some((reviewer) => reviewer.status === ApprovalStatus.REJECTED)
       );
     if (statusFilter === "close")
-      return requests?.filter(
+      accessRequests = requests?.filter(
         (request) =>
           request.policy.deletedAt ||
           request.isApproved ||
           request.reviewers.some((reviewer) => reviewer.status === ApprovalStatus.REJECTED)
       );
 
-    return requests;
+    return accessRequests?.filter((request) => {
+      const { environmentName, requestedByUser } = request;
+
+      const searchValue = searchFilter.trim().toLowerCase();
+
+      return (
+        environmentName?.toLowerCase().includes(searchValue) ||
+        `${requestedByUser?.email ?? ""} ${requestedByUser?.firstName ?? ""} ${requestedByUser?.lastName ?? ""}`
+          .toLowerCase()
+          .includes(searchValue)
+      );
+    });
   }, [requests, statusFilter, requestedByFilter, envFilter]);
 
   const generateRequestDetails = useCallback(
@@ -226,46 +251,68 @@ export const AccessApprovalRequest = ({
   );
 
   return (
-    <div>
-      <div className="mb-6 flex items-end justify-between">
-        <div className="flex flex-col">
-          <span className="text-xl font-semibold text-mineshaft-100">Access Requests</span>
-          <div className="mt-2 text-sm text-bunker-300">
-            Request access to secrets in sensitive environments and folders.
-          </div>
-        </div>
-        <div>
-          <Tooltip
-            content="To submit Access Requests, your project needs to create Access Request policies first."
-            isDisabled={policiesLoading || !!policies?.length}
-          >
-            <Button
-              onClick={() => {
-                if (subscription && !subscription?.secretApproval) {
-                  handlePopUpOpen("upgradePlan");
-                  return;
-                }
-                handlePopUpOpen("requestAccess");
-              }}
-              leftIcon={<FontAwesomeIcon icon={faPlus} />}
-              isDisabled={policiesLoading || !policies?.length}
+    <AnimatePresence mode="wait">
+      <motion.div
+        key="approval-changes-list"
+        transition={{ duration: 0.1 }}
+        initial={{ opacity: 0, translateX: 30 }}
+        animate={{ opacity: 1, translateX: 0 }}
+        exit={{ opacity: 0, translateX: 30 }}
+        className="rounded-md text-gray-300"
+      >
+        <div className="w-full rounded-lg border border-mineshaft-600 bg-mineshaft-900 p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <div className="flex items-start gap-1">
+                <p className="text-xl font-semibold text-mineshaft-100">Access Requests</p>
+                <a
+                  href="https://infisical.com/docs/documentation/platform/access-controls/access-requests"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <div className="ml-1 mt-[0.32rem] inline-block rounded-md bg-yellow/20 px-1.5 text-sm text-yellow opacity-80 hover:opacity-100">
+                    <FontAwesomeIcon icon={faBookOpen} className="mr-1.5" />
+                    <span>Docs</span>
+                    <FontAwesomeIcon
+                      icon={faArrowUpRightFromSquare}
+                      className="mb-[0.07rem] ml-1.5 text-[10px]"
+                    />
+                  </div>
+                </a>
+              </div>
+              <p className="text-sm text-bunker-300">
+                Request and review access to secrets in sensitive environments and folders
+              </p>
+            </div>
+            <Tooltip
+              content="To submit Access Requests, your project needs to create Access Request policies first."
+              isDisabled={policiesLoading || !!policies?.length}
             >
-              Request access
-            </Button>
-          </Tooltip>
-        </div>
-      </div>
-
-      <AnimatePresence>
-        <motion.div
-          key="approval-changes-list"
-          transition={{ duration: 0.1 }}
-          initial={{ opacity: 0, translateX: 30 }}
-          animate={{ opacity: 1, translateX: 0 }}
-          exit={{ opacity: 0, translateX: 30 }}
-          className="rounded-md text-gray-300"
-        >
-          <div className="flex items-center space-x-8 rounded-t-md border-x border-t border-mineshaft-600 bg-mineshaft-800 p-4 px-8">
+              <Button
+                onClick={() => {
+                  if (subscription && !subscription?.secretApproval) {
+                    handlePopUpOpen("upgradePlan");
+                    return;
+                  }
+                  handlePopUpOpen("requestAccess");
+                }}
+                colorSchema="secondary"
+                leftIcon={<FontAwesomeIcon icon={faPlus} />}
+                isDisabled={policiesLoading || !policies?.length}
+              >
+                Request Access
+              </Button>
+            </Tooltip>
+          </div>
+          <Input
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            leftIcon={<FontAwesomeIcon icon={faMagnifyingGlass} />}
+            placeholder="Search approval requests by requesting user or environment..."
+            className="flex-1"
+            containerClassName="mb-4"
+          />
+          <div className="flex items-center space-x-8 rounded-t-md border-x border-t border-mineshaft-600 bg-mineshaft-800 px-8 py-3 text-sm">
             <div
               role="button"
               tabIndex={0}
@@ -273,17 +320,19 @@ export const AccessApprovalRequest = ({
               onKeyDown={(evt) => {
                 if (evt.key === "Enter") setStatusFilter("open");
               }}
-              className={
-                statusFilter === "close" ? "text-gray-500 duration-100 hover:text-gray-400" : ""
-              }
+              className={twMerge(
+                "font-medium",
+                statusFilter === "close" && "text-gray-500 duration-100 hover:text-gray-400"
+              )}
             >
               <FontAwesomeIcon icon={faLock} className="mr-2" />
               {!!requestCount && requestCount?.pendingCount} Pending
             </div>
             <div
-              className={
-                statusFilter === "open" ? "text-gray-500 duration-100 hover:text-gray-400" : ""
-              }
+              className={twMerge(
+                "font-medium",
+                statusFilter === "open" && "text-gray-500 duration-100 hover:text-gray-400"
+              )}
               role="button"
               tabIndex={0}
               onClick={() => setStatusFilter("close")}
@@ -306,8 +355,14 @@ export const AccessApprovalRequest = ({
                     Environments
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuLabel>Select an environment</DropdownMenuLabel>
+                <DropdownMenuContent
+                  align="end"
+                  sideOffset={1}
+                  className="thin-scrollbar max-h-[20rem] overflow-y-auto"
+                >
+                  <DropdownMenuLabel className="sticky top-0 bg-mineshaft-900">
+                    Select an Environment
+                  </DropdownMenuLabel>
                   {currentWorkspace?.environments.map(({ slug, name }) => (
                     <DropdownMenuItem
                       onClick={() => setEnvFilter((state) => (state === slug ? undefined : slug))}
@@ -337,8 +392,14 @@ export const AccessApprovalRequest = ({
                       Requested By
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Select an author</DropdownMenuLabel>
+                  <DropdownMenuContent
+                    align="end"
+                    sideOffset={1}
+                    className="thin-scrollbar max-h-[20rem] overflow-y-auto"
+                  >
+                    <DropdownMenuLabel className="sticky top-0 bg-mineshaft-900">
+                      Select Requesting User
+                    </DropdownMenuLabel>
                     {members?.map(({ user: membershipUser, id }) => (
                       <DropdownMenuItem
                         onClick={() =>
@@ -359,8 +420,13 @@ export const AccessApprovalRequest = ({
           <div className="flex flex-col rounded-b-md border-x border-b border-t border-mineshaft-600 bg-mineshaft-800">
             {filteredRequests?.length === 0 && (
               <div className="py-12">
-                <EmptyState title="No more access requests pending." />
+                <EmptyState
+                  title={`No ${statusFilter === "open" ? "Pending" : "Completed"} Access Requests`}
+                />
               </div>
+            )}
+            {Boolean(!filteredRequests?.length && requests?.length && !areRequestsPending) && (
+              <EmptyState title="No Requests Match Search" icon={faSearch} />
             )}
             {!!filteredRequests?.length &&
               filteredRequests?.map((request) => {
@@ -409,49 +475,48 @@ export const AccessApprovalRequest = ({
                 );
               })}
           </div>
-        </motion.div>
-      </AnimatePresence>
+        </div>
+        {!!policies && (
+          <RequestAccessModal
+            policies={policies}
+            isOpen={popUp.requestAccess.isOpen}
+            onOpenChange={() => {
+              queryClient.invalidateQueries({
+                queryKey: accessApprovalKeys.getAccessApprovalRequests(
+                  projectSlug,
+                  envFilter,
+                  requestedByFilter
+                )
+              });
+              handlePopUpClose("requestAccess");
+            }}
+          />
+        )}
 
-      {!!policies && (
-        <RequestAccessModal
-          policies={policies}
-          isOpen={popUp.requestAccess.isOpen}
-          onOpenChange={() => {
-            queryClient.invalidateQueries({
-              queryKey: accessApprovalKeys.getAccessApprovalRequests(
-                projectSlug,
-                envFilter,
-                requestedByFilter
-              )
-            });
-            handlePopUpClose("requestAccess");
-          }}
+        {!!selectedRequest && (
+          <ReviewAccessRequestModal
+            selectedEnvSlug={envFilter}
+            policies={policies || []}
+            selectedRequester={requestedByFilter}
+            projectSlug={projectSlug}
+            request={selectedRequest}
+            members={members || []}
+            isOpen={popUp.reviewRequest.isOpen}
+            onOpenChange={() => {
+              handlePopUpClose("reviewRequest");
+              setSelectedRequest(null);
+              refetchRequests();
+            }}
+            canBypass={generateRequestDetails(selectedRequest).canBypass}
+          />
+        )}
+
+        <UpgradePlanModal
+          text="You need to upgrade your plan to access this feature"
+          isOpen={popUp.upgradePlan.isOpen}
+          onOpenChange={() => handlePopUpClose("upgradePlan")}
         />
-      )}
-
-      {!!selectedRequest && (
-        <ReviewAccessRequestModal
-          selectedEnvSlug={envFilter}
-          policies={policies || []}
-          selectedRequester={requestedByFilter}
-          projectSlug={projectSlug}
-          request={selectedRequest}
-          members={members || []}
-          isOpen={popUp.reviewRequest.isOpen}
-          onOpenChange={() => {
-            handlePopUpClose("reviewRequest");
-            setSelectedRequest(null);
-            refetchRequests();
-          }}
-          canBypass={generateRequestDetails(selectedRequest).canBypass}
-        />
-      )}
-
-      <UpgradePlanModal
-        text="You need to upgrade your plan to access this feature"
-        isOpen={popUp.upgradePlan.isOpen}
-        onOpenChange={() => handlePopUpClose("upgradePlan")}
-      />
-    </div>
+      </motion.div>
+    </AnimatePresence>
   );
 };

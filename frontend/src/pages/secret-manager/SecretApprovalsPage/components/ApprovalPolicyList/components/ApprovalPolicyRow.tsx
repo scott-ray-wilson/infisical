@@ -1,7 +1,6 @@
 import { useMemo } from "react";
-import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
+import { faEdit, faEllipsisV, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { twMerge } from "tailwind-merge";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
 import {
@@ -9,6 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  IconButton,
   Td,
   Tr
 } from "@app/components/v2";
@@ -103,7 +103,7 @@ export const ApprovalPolicyRow = ({
         onClick={() => setIsExpanded.toggle()}
       >
         <Td>{policy.name}</Td>
-        <Td>{policy.environment.slug}</Td>
+        <Td>{policy.environment.name}</Td>
         <Td>{policy.secretPath || "*"}</Td>
         <Td>
           <Badge className={policyDetails[policy.policyType].className}>
@@ -113,25 +113,30 @@ export const ApprovalPolicyRow = ({
         <Td>
           <DropdownMenu>
             <DropdownMenuTrigger asChild className="cursor-pointer rounded-lg">
-              <div className="flex items-center justify-center transition-transform duration-300 ease-in-out hover:scale-125 hover:text-primary-400 data-[state=open]:scale-125 data-[state=open]:text-primary-400">
-                <FontAwesomeIcon size="sm" icon={faEllipsis} />
-              </div>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  ariaLabel="Options"
+                  colorSchema="secondary"
+                  className="w-6"
+                  variant="plain"
+                >
+                  <FontAwesomeIcon icon={faEllipsisV} />
+                </IconButton>
+              </DropdownMenuTrigger>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="min-w-[100%] p-1">
+            <DropdownMenuContent sideOffset={2} align="end" className="min-w-[12rem] p-1">
               <ProjectPermissionCan
                 I={ProjectPermissionActions.Edit}
                 a={ProjectPermissionSub.SecretApproval}
               >
                 {(isAllowed) => (
                   <DropdownMenuItem
-                    className={twMerge(
-                      !isAllowed && "pointer-events-none cursor-not-allowed opacity-50"
-                    )}
                     onClick={(e) => {
                       e.stopPropagation();
                       onEdit();
                     }}
-                    disabled={!isAllowed}
+                    isDisabled={!isAllowed}
+                    icon={<FontAwesomeIcon icon={faEdit} />}
                   >
                     Edit Policy
                   </DropdownMenuItem>
@@ -143,16 +148,12 @@ export const ApprovalPolicyRow = ({
               >
                 {(isAllowed) => (
                   <DropdownMenuItem
-                    className={twMerge(
-                      isAllowed
-                        ? "hover:!bg-red-500 hover:!text-white"
-                        : "pointer-events-none cursor-not-allowed opacity-50"
-                    )}
                     onClick={(e) => {
                       e.stopPropagation();
                       onDelete();
                     }}
-                    disabled={!isAllowed}
+                    isDisabled={!isAllowed}
+                    icon={<FontAwesomeIcon icon={faTrash} />}
                   >
                     Delete Policy
                   </DropdownMenuItem>

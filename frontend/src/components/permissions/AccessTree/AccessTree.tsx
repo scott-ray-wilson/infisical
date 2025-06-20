@@ -103,7 +103,7 @@ const AccessTreeContent = ({ permissions }: AccessTreeProps) => {
   return (
     <div
       className={twMerge(
-        "w-full",
+        "w-full flex-[1.2]",
         viewMode === ViewMode.Modal && "fixed inset-0 z-50 p-10",
         viewMode === ViewMode.Undocked &&
           "fixed bottom-4 left-20 z-50 h-[40%] w-[38%] min-w-[32rem] lg:w-[34%]"
@@ -111,7 +111,7 @@ const AccessTreeContent = ({ permissions }: AccessTreeProps) => {
     >
       <div
         className={twMerge(
-          "mb-4 h-full w-full rounded-lg border border-mineshaft-600 bg-mineshaft-900 transition-transform duration-500",
+          "flex h-full w-full flex-col rounded-lg border border-mineshaft-600 bg-mineshaft-900 transition-transform duration-500",
           viewMode === ViewMode.Docked ? "relative p-4" : "relative p-0"
         )}
       >
@@ -150,7 +150,7 @@ const AccessTreeContent = ({ permissions }: AccessTreeProps) => {
         <div
           className={twMerge(
             "flex items-center space-x-4",
-            viewMode === ViewMode.Docked ? "h-96" : "h-full"
+            viewMode === ViewMode.Docked ? "flex-1" : "h-full"
           )}
         >
           <div className="h-full w-full">

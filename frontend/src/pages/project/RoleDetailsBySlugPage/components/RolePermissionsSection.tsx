@@ -134,70 +134,74 @@ export const RolePermissionsSection = ({ roleSlug, isDisabled }: Props) => {
   );
 
   return (
-    <div className="w-full">
-      {currentWorkspace.type === ProjectType.SecretManager && (
-        <AccessTree permissions={formattedPermissions} />
-      )}
+    <div className="flex flex-1 gap-4 overflow-hidden">
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="w-full rounded-lg border border-mineshaft-600 bg-mineshaft-900 p-4"
+        className="flex h-full w-full flex-1 flex-col rounded-lg border border-mineshaft-600 bg-mineshaft-900 py-4"
       >
         <FormProvider {...form}>
-          <div className="flex items-center justify-between border-b border-mineshaft-400 pb-4">
-            <h3 className="text-lg font-semibold text-mineshaft-100">Policies</h3>
-            <div className="flex items-center space-x-4">
-              {isCustomRole && (
-                <>
-                  {isDirty && (
-                    <Button
-                      className="mr-4 text-mineshaft-300"
-                      variant="link"
-                      isDisabled={isSubmitting}
-                      isLoading={isSubmitting}
-                      onClick={() => reset()}
-                    >
-                      Discard
-                    </Button>
-                  )}
-                  <div className="flex items-center">
-                    <Button
-                      variant="outline_bg"
-                      type="submit"
-                      className={twMerge(
-                        "mr-4 h-10 border",
-                        isDirty && "bg-primary text-black hover:bg-primary hover:opacity-80"
-                      )}
-                      isDisabled={isSubmitting || !isDirty}
-                      isLoading={isSubmitting}
-                      leftIcon={<FontAwesomeIcon icon={faSave} />}
-                    >
-                      Save
-                    </Button>
-                    <AddPoliciesButton isDisabled={isDisabled} />
-                  </div>
-                </>
-              )}
+          <div className="mx-4 flex items-center justify-between border-b border-mineshaft-400 pb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-mineshaft-100">Policies</h3>
+              <p className="text-sm leading-3 text-mineshaft-400">
+                Configure granular access policies
+              </p>
+            </div>
+            {isCustomRole && (
+              <div className="flex items-center gap-2">
+                {isDirty && (
+                  <Button
+                    className="mr-4 text-mineshaft-300"
+                    variant="link"
+                    isDisabled={isSubmitting}
+                    isLoading={isSubmitting}
+                    onClick={() => reset()}
+                  >
+                    Discard
+                  </Button>
+                )}
+                <div className="flex items-center">
+                  <Button
+                    colorSchema="secondary"
+                    type="submit"
+                    className={twMerge("h-10 border")}
+                    isDisabled={isSubmitting || !isDirty}
+                    isLoading={isSubmitting}
+                    leftIcon={<FontAwesomeIcon icon={faSave} />}
+                  >
+                    Save
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-1 flex-col overflow-hidden pl-4 pr-1">
+            <div className="thin-scrollbar flex-1 overflow-y-scroll py-4">
+              {!isPending && <PermissionEmptyState />}
+              {(Object.keys(PROJECT_PERMISSION_OBJECT) as ProjectPermissionSub[])
+                .filter((subject) => !EXCLUDED_PERMISSION_SUBS.includes(subject))
+                .filter((subject) => ProjectTypePermissionSubjects[currentWorkspace.type][subject])
+                .map((subject) => (
+                  <GeneralPermissionPolicies
+                    subject={subject}
+                    actions={PROJECT_PERMISSION_OBJECT[subject].actions}
+                    title={PROJECT_PERMISSION_OBJECT[subject].title}
+                    key={`project-permission-${subject}`}
+                    isDisabled={isDisabled}
+                  >
+                    {renderConditionalComponents(subject, isDisabled)}
+                  </GeneralPermissionPolicies>
+                ))}
             </div>
           </div>
-          <div className="py-4">
-            {!isPending && <PermissionEmptyState />}
-            {(Object.keys(PROJECT_PERMISSION_OBJECT) as ProjectPermissionSub[])
-              .filter((subject) => !EXCLUDED_PERMISSION_SUBS.includes(subject))
-              .filter((subject) => ProjectTypePermissionSubjects[currentWorkspace.type][subject])
-              .map((subject) => (
-                <GeneralPermissionPolicies
-                  subject={subject}
-                  actions={PROJECT_PERMISSION_OBJECT[subject].actions}
-                  title={PROJECT_PERMISSION_OBJECT[subject].title}
-                  key={`project-permission-${subject}`}
-                  isDisabled={isDisabled}
-                >
-                  {renderConditionalComponents(subject, isDisabled)}
-                </GeneralPermissionPolicies>
-              ))}
+          <div className="mx-4 mt-auto flex items-center justify-end gap-2 border-t border-mineshaft-400 pt-4">
+            {isCustomRole && <AddPoliciesButton isDisabled={isDisabled} />}
           </div>
         </FormProvider>
       </form>
+      {currentWorkspace.type === ProjectType.SecretManager && (
+        <AccessTree permissions={formattedPermissions} />
+      )}
     </div>
   );
 };

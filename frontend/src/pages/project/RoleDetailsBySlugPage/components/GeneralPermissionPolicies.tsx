@@ -5,13 +5,20 @@ import {
   faChevronRight,
   faGripVertical,
   faInfoCircle,
-  faPlus,
   faTrash
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { twMerge } from "tailwind-merge";
 
-import { Button, Checkbox, Select, SelectItem, Tag, Tooltip } from "@app/components/v2";
+import {
+  Button,
+  Checkbox,
+  FilterableSelect,
+  Select,
+  SelectItem,
+  Tag,
+  Tooltip
+} from "@app/components/v2";
 import { ProjectPermissionSub } from "@app/context";
 import { useToggle } from "@app/hooks";
 
@@ -89,7 +96,7 @@ export const GeneralPermissionPolicies = <T extends keyof NonNullable<TFormSchem
   const [draggedItem, setDraggedItem] = useState<number | null>(null);
   const [dragOverItem, setDragOverItem] = useState<number | null>(null);
 
-  if (!watchFields || !Array.isArray(watchFields) || watchFields.length === 0) return <div />;
+  if (!watchFields || !Array.isArray(watchFields) || watchFields.length === 0) return null;
 
   const handleDragStart = (_: React.DragEvent, index: number) => {
     setDraggedItem(index);
@@ -146,7 +153,7 @@ export const GeneralPermissionPolicies = <T extends keyof NonNullable<TFormSchem
         )}
       </div>
       {isOpen && (
-        <div key={`select-${subject}-type`} className="flex flex-col space-y-4 bg-bunker-800 p-6">
+        <div key={`select-${subject}-type`} className="flex flex-col space-y-3 bg-bunker-700 p-3">
           {fields.map((el, rootIndex) => {
             let isFullReadAccessEnabled = false;
 
@@ -154,108 +161,133 @@ export const GeneralPermissionPolicies = <T extends keyof NonNullable<TFormSchem
               isFullReadAccessEnabled = watch(`permissions.${subject}.${rootIndex}.read` as any);
             }
 
+            const isInverted = watch(`permissions.${subject}.${rootIndex}.inverted`);
+
             return (
               <div
                 key={el.id}
                 className={twMerge(
-                  "relative bg-mineshaft-800 p-5 pr-10 first:rounded-t-md last:rounded-b-md",
-                  dragOverItem === rootIndex ? "border-2 border-blue-400" : "",
+                  "relative rounded-md border-l-[6px] bg-mineshaft-800 px-5 py-4",
+                  isInverted ? "border-l-red-600/50" : "border-l-green-600/50",
+                  dragOverItem === rootIndex ? "border-2 border-primary" : "",
                   draggedItem === rootIndex ? "opacity-50" : ""
                 )}
                 onDragOver={(e) => handleDragOver(e, rootIndex)}
                 onDrop={handleDrop}
               >
-                {!isDisabled && (
-                  <Tooltip position="left" content="Drag to reorder permission">
-                    <div
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, rootIndex)}
-                      onDragEnd={handleDragEnd}
-                      className="absolute right-3 top-2 cursor-move rounded-md bg-mineshaft-700 p-2 text-gray-400 hover:text-gray-200"
-                    >
-                      <FontAwesomeIcon icon={faGripVertical} />
-                    </div>
-                  </Tooltip>
-                )}
-
-                <div className="mb-4 flex items-center">
+                <div className="mb-4 flex items-center gap-3">
                   {isConditionalSubjects(subject) && (
-                    <div className="flex w-full items-center text-gray-300">
-                      <div className="w-1/4">Permission</div>
-                      <div className="mr-4 w-1/4">
-                        <Controller
-                          defaultValue={false as any}
-                          name={`permissions.${subject}.${rootIndex}.inverted`}
-                          render={({ field }) => (
-                            <Select
-                              value={String(field.value)}
-                              onValueChange={(val) => field.onChange(val === "true")}
-                              containerClassName="w-full"
-                              className="w-full"
-                              isDisabled={isDisabled}
-                            >
-                              <SelectItem value="false">Allow</SelectItem>
-                              <SelectItem value="true">Forbid</SelectItem>
-                            </Select>
-                          )}
-                        />
-                      </div>
-                      <div>
-                        <Tooltip
-                          asChild
-                          content={
-                            <>
-                              <p>
-                                Whether to allow or forbid the selected actions when the following
-                                conditions (if any) are met.
-                              </p>
-                              <p className="mt-2">Forbid rules must come after allow rules.</p>
-                            </>
-                          }
+                    <div className="flex w-full items-center gap-3 text-gray-300">
+                      <div>Permission</div>
+                      <Controller
+                        defaultValue={false as any}
+                        name={`permissions.${subject}.${rootIndex}.inverted`}
+                        render={({ field }) => (
+                          <Select
+                            value={String(field.value)}
+                            onValueChange={(val) => field.onChange(val === "true")}
+                            containerClassName="w-40"
+                            className="w-full"
+                            isDisabled={isDisabled}
+                          >
+                            <SelectItem value="false">Allow</SelectItem>
+                            <SelectItem value="true">Forbid</SelectItem>
+                          </Select>
+                        )}
+                      />
+                      <Tooltip
+                        asChild
+                        content={
+                          <>
+                            <p>
+                              Whether to allow or forbid the selected actions when the following
+                              conditions (if any) are met.
+                            </p>
+                            <p className="mt-2">Forbid rules must come after allow rules.</p>
+                          </>
+                        }
+                      >
+                        <FontAwesomeIcon icon={faInfoCircle} size="sm" className="text-gray-400" />
+                      </Tooltip>
+                      {!isDisabled && (
+                        <Button
+                          leftIcon={<FontAwesomeIcon icon={faTrash} />}
+                          variant="outline_bg"
+                          size="xs"
+                          className="ml-auto hover:border-red"
+                          onClick={() => remove(rootIndex)}
+                          isDisabled={isDisabled}
                         >
-                          <FontAwesomeIcon
-                            icon={faInfoCircle}
-                            size="sm"
-                            className="text-gray-400"
-                          />
+                          Remove Rule
+                        </Button>
+                      )}
+                      {!isDisabled && (
+                        <Tooltip position="left" content="Drag to reorder permission">
+                          <div
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, rootIndex)}
+                            onDragEnd={handleDragEnd}
+                            className="cursor-move text-gray-400 hover:text-gray-200"
+                          >
+                            <FontAwesomeIcon icon={faGripVertical} />
+                          </div>
                         </Tooltip>
-                      </div>
+                      )}
                     </div>
                   )}
                 </div>
-                <div className="flex gap-4 text-gray-300">
-                  <div className="w-1/4">Actions</div>
+                <div className="flex flex-col text-gray-300">
+                  <div className="mb-1 text-sm">Actions</div>
                   <div className="flex flex-grow flex-wrap justify-start gap-8">
-                    {actions.map(({ label, value }, index) => {
-                      if (typeof value !== "string") return undefined;
+                    <FilterableSelect
+                      value={[
+                        { value: "read", label: "Read" },
+                        { value: "read", label: "Create" },
+                        { value: "read", label: "Edit" },
+                        { value: "read", label: "Delete" },
+                        { value: "read", label: "Trigger Syncs" }
+                      ]}
+                      options={[
+                        { value: "read", label: "Read" },
+                        { value: "read", label: "Create" },
+                        { value: "read", label: "Edit" },
+                        { value: "read", label: "Delete" },
+                        { value: "read", label: "Trigger Syncs" },
+                        { value: "read", label: "Remove Secrets" },
+                        { value: "read", label: "Import Secrets" }
+                      ]}
+                      isMulti
+                    />
+                    {/* {actions.map(({ label, value }, index) => { */}
+                    {/*  if (typeof value !== "string") return undefined; */}
 
-                      if (
-                        subject === ProjectPermissionSub.Secrets &&
-                        value === "read" &&
-                        !isFullReadAccessEnabled
-                      ) {
-                        return null;
-                      }
+                    {/*  if ( */}
+                    {/*    subject === ProjectPermissionSub.Secrets && */}
+                    {/*    value === "read" && */}
+                    {/*    !isFullReadAccessEnabled */}
+                    {/*  ) { */}
+                    {/*    return null; */}
+                    {/*  } */}
 
-                      return (
-                        <ActionCheckbox
-                          key={`${el.id}-${index + 1}`}
-                          value={value}
-                          label={label}
-                          rootIndex={rootIndex}
-                          control={control}
-                          subject={subject}
-                          isDisabled={isDisabled}
-                        />
-                      );
-                    })}
+                    {/*  return ( */}
+                    {/*    <ActionCheckbox */}
+                    {/*      key={`${el.id}-${index + 1}`} */}
+                    {/*      value={value} */}
+                    {/*      label={label} */}
+                    {/*      rootIndex={rootIndex} */}
+                    {/*      control={control} */}
+                    {/*      subject={subject} */}
+                    {/*      isDisabled={isDisabled} */}
+                    {/*    /> */}
+                    {/*  ); */}
+                    {/* })} */}
                   </div>
                 </div>
                 {children &&
                   cloneElement(children, {
                     position: rootIndex
                   })}
-                <div
+                {/* <div
                   className={twMerge(
                     "mt-4 flex justify-start space-x-4",
                     isConditionalSubjects(subject) && "justify-end"
@@ -277,19 +309,7 @@ export const GeneralPermissionPolicies = <T extends keyof NonNullable<TFormSchem
                       Add policy
                     </Button>
                   )}
-                  {!isDisabled && (
-                    <Button
-                      leftIcon={<FontAwesomeIcon icon={faTrash} />}
-                      variant="outline_bg"
-                      size="xs"
-                      className="mt-2 hover:border-red"
-                      onClick={() => remove(rootIndex)}
-                      isDisabled={isDisabled}
-                    >
-                      Remove policy
-                    </Button>
-                  )}{" "}
-                </div>
+                </div> */}
               </div>
             );
           })}

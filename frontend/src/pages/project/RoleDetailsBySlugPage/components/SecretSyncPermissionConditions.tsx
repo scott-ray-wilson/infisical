@@ -45,13 +45,47 @@ export const SecretSyncPermissionConditions = ({ position = 0, isDisabled }: Pro
 
   return (
     <div className="mt-6 border-t border-t-mineshaft-600 bg-mineshaft-800 pt-2">
-      <p className="mt-2 text-gray-300">Conditions</p>
-      <p className="text-sm text-mineshaft-400">
-        Conditions determine when a policy will be applied (always if no conditions are present).
-      </p>
-      <p className="mb-3 text-sm leading-4 text-mineshaft-400">
-        All conditions must evaluate to true for the policy to take effect.
-      </p>
+      <div className="flex w-full items-center justify-between">
+        <p className="mt-2 text-sm text-gray-300">
+          Conditions
+          <Tooltip
+            className="max-w-sm"
+            content={
+              <>
+                <p>
+                  Conditions determine when a policy will be applied (always if no conditions are
+                  present).
+                </p>
+                <p className="mt-3">
+                  All conditions must evaluate to true for the policy to take effect.
+                </p>
+              </>
+            }
+          >
+            <FontAwesomeIcon
+              size="xs"
+              className="ml-1 mt-0.5 text-mineshaft-300"
+              icon={faInfoCircle}
+            />
+          </Tooltip>
+        </p>
+        <Button
+          leftIcon={<FontAwesomeIcon icon={faPlus} />}
+          variant="star"
+          size="xs"
+          className="mt-2"
+          isDisabled={isDisabled}
+          onClick={() =>
+            items.append({
+              lhs: "environment",
+              operator: PermissionConditionOperators.$EQ,
+              rhs: ""
+            })
+          }
+        >
+          Add Condition
+        </Button>
+      </div>
       <div className="mt-2 flex flex-col space-y-2">
         {items.fields.map((el, index) => {
           const condition = watch(
@@ -163,24 +197,6 @@ export const SecretSyncPermissionConditions = ({ position = 0, isDisabled }: Pro
           <span>{conditionErrorMessage}</span>
         </div>
       )}
-      <div>
-        <Button
-          leftIcon={<FontAwesomeIcon icon={faPlus} />}
-          variant="star"
-          size="xs"
-          className="mt-3"
-          isDisabled={isDisabled}
-          onClick={() =>
-            items.append({
-              lhs: "environment",
-              operator: PermissionConditionOperators.$EQ,
-              rhs: ""
-            })
-          }
-        >
-          Add Condition
-        </Button>
-      </div>
     </div>
   );
 };

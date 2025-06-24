@@ -103,7 +103,7 @@ const AccessTreeContent = ({ permissions }: AccessTreeProps) => {
   return (
     <div
       className={twMerge(
-        "w-full",
+        "mt-4 w-full",
         viewMode === ViewMode.Modal && "fixed inset-0 z-50 p-10",
         viewMode === ViewMode.Undocked &&
           "fixed bottom-4 left-20 z-50 h-[40%] w-[38%] min-w-[32rem] lg:w-[34%]"

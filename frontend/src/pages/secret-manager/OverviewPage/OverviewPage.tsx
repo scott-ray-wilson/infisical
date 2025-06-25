@@ -6,6 +6,7 @@ import { faCheckCircle } from "@fortawesome/free-regular-svg-icons";
 import {
   faAngleDown,
   faArrowDown,
+  faArrowRightToBracket,
   faArrowUp,
   faFileImport,
   faFingerprint,
@@ -1173,10 +1174,10 @@ export const OverviewPage = () => {
             className="thin-scrollbar rounded-b-none"
           >
             <Table>
-              <THead>
-                <Tr className="sticky top-0 z-20 border-0">
-                  <Th className="sticky left-0 z-20 min-w-[20rem] border-b-0 p-0">
-                    <div className="flex items-center border-b border-r border-mineshaft-600 pb-3 pl-3 pr-5 pt-3.5">
+              <THead className="h-24">
+                <Tr className="sticky top-0 z-20 h-24 border-0">
+                  <Th className="sticky left-0 z-20 h-24 min-w-[20rem] border-b-0 p-0">
+                    <div className="flex h-full items-center border-b border-mineshaft-600 pb-3 pl-3 pr-5 pt-3.5">
                       <Tooltip
                         className="max-w-[20rem] whitespace-nowrap capitalize"
                         content={
@@ -1223,27 +1224,45 @@ export const OverviewPage = () => {
 
                     return (
                       <Th
-                        className="min-table-row min-w-[11rem] border-b-0 p-0 text-center"
+                        className={twMerge(
+                          "min-table-row h-24 w-[1rem] border-b-0 p-0 text-xs",
+                          index === visibleEnvs.length - 1 && "mr-8"
+                        )}
                         key={`secret-overview-${name}-${index + 1}`}
                       >
-                        <div className="flex items-center justify-center border-b border-mineshaft-600 px-5 pb-[0.83rem] pt-3.5">
-                          <button
-                            type="button"
-                            className="text-sm font-medium duration-100 hover:text-mineshaft-100"
-                            onClick={() => handleExploreEnvClick(slug)}
-                          >
-                            {name}
-                          </button>
-                          {missingKeyCount > 0 && (
-                            <Tooltip
-                              className="max-w-none lowercase"
-                              content={`${missingKeyCount} secrets missing\n compared to other environments`}
-                            >
-                              <div className="ml-2 flex h-[1.1rem] cursor-default items-center justify-center rounded-sm border border-red-400 bg-red-600 p-1 text-xs font-medium text-bunker-100">
-                                <span className="text-bunker-100">{missingKeyCount}</span>
-                              </div>
-                            </Tooltip>
+                        <div className="relative z-50 -ml-[0.9rem] flex h-24 overflow-visible border-b border-mineshaft-600">
+                          <div
+                            className={twMerge(
+                              "h-24 skew-x-[16rad] transform border-l border-mineshaft-600 text-xs"
+                            )}
+                          />
+                          {index === visibleEnvs.length - 1 && "border-r" && (
+                            <div className="ml-[3.2rem] skew-x-[16rad] transform border-r border-mineshaft-600 text-xs" />
                           )}
+                          <Tooltip
+                            content={name}
+                            side="bottom"
+                            className="text-xs"
+                            arrowClassName="mr-[1.2rem]"
+                          >
+                            <div
+                              className="absolute -left-[0.8rem] bottom-10 w-20 rotate-[72.25deg] text-right !text-[10px] font-normal duration-100 hover:text-mineshaft-100"
+                              // onClick={() => handleExploreEnvClick(slug)}
+                            >
+                              <p className="truncate">{name}</p>
+                            </div>
+                          </Tooltip>
+
+                          {/* {missingKeyCount > 0 && ( */}
+                          {/*  <Tooltip */}
+                          {/*    className="max-w-none lowercase" */}
+                          {/*    content={`${missingKeyCount} secrets missing\n compared to other environments`} */}
+                          {/*  > */}
+                          {/*    <div className="ml-2 flex h-[1.1rem] cursor-default items-center justify-center rounded-sm border border-red-400 bg-red-600 p-1 text-xs font-medium text-bunker-100"> */}
+                          {/*      <span className="text-bunker-100">{missingKeyCount}</span> */}
+                          {/*    </div> */}
+                          {/*  </Tooltip> */}
+                          {/* )} */}
                         </div>
                       </Th>
                     );
@@ -1410,15 +1429,16 @@ export const OverviewPage = () => {
                   </Td>
                   {visibleEnvs?.map(({ name, slug }) => (
                     <Td key={`explore-${name}-btn`} className="border-0 border-mineshaft-600 p-0">
-                      <div className="flex w-full items-center justify-center border-r border-t border-mineshaft-600 px-5 py-2">
-                        <Button
+                      <div className="flex w-full items-center justify-center border-r border-t border-mineshaft-600 px-2 py-2">
+                        <IconButton
+                          ariaLabel="Explore Environment"
                           size="xs"
-                          variant="outline_bg"
-                          isFullWidth
+                          variant="plain"
+                          className="h-[1.76rem]"
                           onClick={() => handleExploreEnvClick(slug)}
                         >
-                          Explore
-                        </Button>
+                          <FontAwesomeIcon icon={faArrowRightToBracket} />
+                        </IconButton>
                       </div>
                     </Td>
                   ))}

@@ -14,6 +14,7 @@ export type TooltipProps = Omit<TooltipPrimitive.TooltipContentProps, "open" | "
   isDisabled?: boolean;
   center?: boolean;
   size?: "sm" | "md";
+  arrowClassName?: string;
 };
 
 export const Tooltip = ({
@@ -28,6 +29,7 @@ export const Tooltip = ({
   isDisabled,
   position = "top",
   size = "md",
+  arrowClassName,
   ...props
 }: TooltipProps) =>
   // just render children if tooltip content is empty
@@ -54,7 +56,11 @@ export const Tooltip = ({
         )}
       >
         {content}
-        <TooltipPrimitive.Arrow width={11} height={5} className="fill-mineshaft-600" />
+        <TooltipPrimitive.Arrow
+          width={11}
+          height={5}
+          className={twMerge("fill-mineshaft-600", arrowClassName)}
+        />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Root>
   ) : (

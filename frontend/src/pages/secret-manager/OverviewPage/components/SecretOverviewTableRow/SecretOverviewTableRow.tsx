@@ -152,7 +152,7 @@ export const SecretOverviewTableRow = ({
                 !isSecretPresent && !isSecretEmpty && !isSecretImported ? "text-red-600" : ""
               )}
             >
-              <div className="h-full w-full border-r border-mineshaft-600 px-5 py-[0.85rem]">
+              <div className="h-full w-full border-r border-mineshaft-600 px-2 py-[0.85rem]">
                 <div className="flex justify-center">
                   {!isSecretEmpty && (
                     <Tooltip

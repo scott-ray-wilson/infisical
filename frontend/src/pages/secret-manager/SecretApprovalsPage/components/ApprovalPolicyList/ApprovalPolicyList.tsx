@@ -4,12 +4,14 @@ import {
   faArrowUp,
   faArrowUpRightFromSquare,
   faBookOpen,
+  faCheck,
   faCheckCircle,
   faFileShield,
   faFilter,
   faMagnifyingGlass,
   faPlus,
-  faSearch
+  faSearch,
+  faWarning
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { AnimatePresence, motion } from "framer-motion";
@@ -30,6 +32,7 @@ import {
   IconButton,
   Input,
   Pagination,
+  Spinner,
   Table,
   TableContainer,
   TableSkeleton,
@@ -63,6 +66,7 @@ import {
 import { useGetAccessApprovalPolicies } from "@app/hooks/api/accessApproval/queries";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { PolicyType } from "@app/hooks/api/policies/enums";
+import { useGetSecretApprovalOpenRequestCountByPolicyId } from "@app/hooks/api/secretApprovalRequest/queries";
 import { TAccessApprovalPolicy, Workspace } from "@app/hooks/api/types";
 
 import { AccessPolicyForm } from "./components/AccessPolicyModal";
@@ -215,6 +219,22 @@ export const ApprovalPolicyList = ({ workspaceId }: IProps) => {
 
   const { mutateAsync: deleteSecretApprovalPolicy } = useDeleteSecretApprovalPolicy();
   const { mutateAsync: deleteAccessApprovalPolicy } = useDeleteAccessApprovalPolicy();
+
+  const deletePolicy = popUp.deletePolicy.data as TAccessApprovalPolicy | undefined;
+
+  const deleteSecretApprovalData = useGetSecretApprovalOpenRequestCountByPolicyId(
+    deletePolicy?.id!,
+    {
+      enabled: Boolean(deletePolicy?.id)
+    }
+  );
+
+  let deleteData: { data: number | undefined; isPending: boolean } = { data: 0, isPending: true };
+  if (deletePolicy?.policyType === PolicyType.ChangePolicy) {
+    deleteData = deleteSecretApprovalData;
+  } else {
+    // TODO
+  }
 
   const handleDeletePolicy = async () => {
     const { id, policyType } = popUp.deletePolicy.data as TAccessApprovalPolicy;
@@ -534,7 +554,42 @@ export const ApprovalPolicyList = ({ workspaceId }: IProps) => {
         title="Do you want to remove this policy?"
         onChange={(isOpen) => handlePopUpToggle("deletePolicy", isOpen)}
         onDeleteApproved={handleDeletePolicy}
-      />
+        isDisabled={deleteData.isPending}
+      >
+        {/* eslint-disable-next-line no-nested-ternary */}
+        {deleteData.isPending ? (
+          <div className="mt-4 flex w-full items-center gap-2 p-2">
+            <Spinner size="xs" className="text-mineshaft-600" />
+            <span className="text-sm text-mineshaft-400">Checking for open requests...</span>
+          </div>
+        ) : (
+          <div
+            className={twMerge(
+              "mt-4 flex w-full items-start gap-2 rounded border p-2 text-sm",
+              (deleteData.data ?? 0) > 0
+                ? "border-yellow/20 bg-yellow/10 text-yellow"
+                : "border-green/20 bg-green/10 text-green"
+            )}
+          >
+            {(deleteData.data ?? 0) > 0 ? (
+              <>
+                <FontAwesomeIcon className="mt-1" icon={faWarning} />
+                <div className="flex flex-col">
+                  <span>
+                    This policy has {deleteData.data} open request
+                    {(deleteData.data ?? 0) > 1 ? "s" : ""}.
+                  </span>
+                  <p className="text-xs text-mineshaft-200">
+                    Deleting this policy will close all open requests.
+                  </p>
+                </div>
+              </>
+            ) : (
+              <FontAwesomeIcon icon={faCheck} />
+            )}
+          </div>
+        )}
+      </DeleteActionModal>
       <UpgradePlanModal
         isOpen={popUp.upgradePlan.isOpen}
         onOpenChange={(isOpen) => handlePopUpToggle("upgradePlan", isOpen)}

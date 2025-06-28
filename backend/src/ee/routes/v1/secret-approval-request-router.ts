@@ -335,4 +335,31 @@ export const registerSecretApprovalRequestRouter = async (server: FastifyZodProv
       return { approval };
     }
   });
+
+  // this endpoint is for the UI when deleting a policy
+  server.route({
+    method: "GET",
+    url: "/:policyId/open-request-count",
+    config: {
+      rateLimit: readLimit
+    },
+    schema: {
+      params: z.object({
+        policyId: z.string().uuid()
+      }),
+      response: {
+        200: z.object({
+          openRequestCount: z.number()
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT]),
+    handler: async (req) => {
+      const openRequestCount = await server.services.secretApprovalRequest.getOpenRequestCountByPolicyId(
+        req.params.policyId,
+        req.permission
+      );
+      return { openRequestCount };
+    }
+  });
 };

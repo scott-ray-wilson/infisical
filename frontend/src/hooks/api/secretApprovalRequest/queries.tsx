@@ -37,7 +37,9 @@ export const secretApprovalRequestKeys = {
   count: ({ workspaceId }: TGetSecretApprovalRequestCount) => [
     { workspaceId },
     "secret-approval-request-count"
-  ]
+  ],
+  openCountByPolicyId: (policyId: string) =>
+    ["secret-approval-policies", "open-count", policyId] as const
 };
 
 export const decryptSecrets = (
@@ -232,4 +234,28 @@ export const useGetSecretApprovalRequestCount = ({
     refetchInterval: 15000,
     queryFn: () => fetchSecretApprovalRequestCount({ workspaceId }),
     enabled: Boolean(workspaceId) && (options?.enabled ?? true)
+  });
+
+export const useGetSecretApprovalOpenRequestCountByPolicyId = (
+  policyId: string,
+  options?: Omit<
+    UseQueryOptions<
+      number,
+      unknown,
+      number,
+      ReturnType<typeof secretApprovalRequestKeys.openCountByPolicyId>
+    >,
+    "queryKey" | "queryFn"
+  >
+) =>
+  useQuery({
+    queryKey: secretApprovalRequestKeys.openCountByPolicyId(policyId),
+    queryFn: async () => {
+      const { data } = await apiRequest.get<{ openRequestCount: number }>(
+        `/api/v1/secret-approval-requests/${policyId}/open-request-count`
+      );
+
+      return data.openRequestCount;
+    },
+    ...options
   });

@@ -17,7 +17,7 @@ import { BadRequestError, ForbiddenRequestError, NotFoundError } from "@app/lib/
 import { groupBy, pick, unique } from "@app/lib/fn";
 import { setKnexStringValue } from "@app/lib/knex";
 import { alphaNumericNanoId } from "@app/lib/nanoid";
-import { EnforcementLevel } from "@app/lib/types";
+import { EnforcementLevel, OrgServiceActor } from "@app/lib/types";
 import { triggerWorkflowIntegrationNotification } from "@app/lib/workflow-integrations/trigger-notification";
 import { TriggerFeature } from "@app/lib/workflow-integrations/types";
 import { ActorType } from "@app/services/auth/auth-type";
@@ -1590,6 +1590,26 @@ export const secretApprovalRequestServiceFactory = ({
     return secretApprovalRequest;
   };
 
+  const getOpenRequestCountByPolicyId = async (policyId: string, actor: OrgServiceActor) => {
+    const policy = await secretApprovalPolicyDAL.findById(policyId);
+
+    if (!policy) {
+      throw new BadRequestError({ message: `Could not find policy with ID "${policyId}"` });
+    }
+
+    await permissionService.getProjectPermission({
+      actor: actor.type,
+      actorId: actor.id,
+      actorAuthMethod: actor.authMethod,
+      actorOrgId: actor.orgId,
+      actionProjectType: ActionProjectType.SecretManager,
+      projectId: policy.projectId
+    });
+
+    const count = await secretApprovalRequestDAL.find({ policyId }, { count: true });
+
+    return Number(count[0]?.count ?? 0);
+  };
   return {
     generateSecretApprovalRequest,
     generateSecretApprovalRequestV2Bridge,
@@ -1598,6 +1618,7 @@ export const secretApprovalRequestServiceFactory = ({
     updateApprovalStatus,
     getSecretApprovals,
     getSecretApprovalDetails,
-    requestCount
+    requestCount,
+    getOpenRequestCountByPolicyId
   };
 };

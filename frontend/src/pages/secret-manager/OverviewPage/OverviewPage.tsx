@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  MouseEvent,
+  MouseEventHandler,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import { Helmet } from "react-helmet";
 import { useTranslation } from "react-i18next";
 import { subject } from "@casl/ability";
@@ -139,6 +147,97 @@ const DEFAULT_FILTER_STATE = {
   [RowType.Secret]: true,
   [RowType.Import]: true,
   [RowType.SecretRotation]: true
+};
+
+export const useResizableHeaderHeight = () => {
+  const [headerHeight, setHeaderHeight] = useState(96);
+  const [isResizing, setIsResizing] = useState(false);
+  const startY = useRef(0);
+  const startHeight = useRef(0);
+
+  const handleMouseDown = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsResizing(true);
+      startY.current = e.clientY;
+      startHeight.current = headerHeight;
+    },
+    [headerHeight]
+  );
+
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isResizing) return;
+
+      const deltaY = e.clientY - startY.current;
+      const newHeight = Math.max(96, Math.min(240, startHeight.current + deltaY));
+
+      setHeaderHeight(newHeight);
+    },
+    [isResizing]
+  );
+
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener(
+        "mousemove",
+        // @ts-expect-error native discrepency
+        handleMouseMove
+      );
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "ns-resize";
+      document.body.style.userSelect = "none";
+    }
+
+    return () => {
+      document.removeEventListener(
+        "mousemove",
+        // @ts-expect-error native discrepency
+        handleMouseMove
+      );
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [isResizing, handleMouseMove, handleMouseUp]);
+
+  return {
+    headerHeight,
+    handleMouseDown,
+    isResizing
+  };
+};
+
+export const HeaderResizer = ({
+  onMouseDown,
+  isActive
+}: {
+  onMouseDown: MouseEventHandler<HTMLDivElement>;
+  isActive: boolean;
+}) => {
+  return (
+    <div
+      tabIndex={-1}
+      role="button"
+      className={`absolute bottom-[0.02rem] left-0 z-30 h-1 w-full cursor-ns-resize hover:bg-blue-400 ${
+        isActive ? "bg-blue-500" : "bg-transparent"
+      }`}
+      onMouseDown={onMouseDown}
+      style={{
+        transform: "translateY(50%)"
+      }}
+    >
+      {/* Visual indicator */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="h-1 w-8 rounded bg-gray-400 opacity-50" />
+      </div>
+    </div>
+  );
 };
 
 export const OverviewPage = () => {
@@ -860,6 +959,8 @@ export const OverviewPage = () => {
     );
   }, [importedByEnvs, selectedEntries, selectedKeysCount]);
 
+  const { headerHeight, handleMouseDown, isResizing } = useResizableHeaderHeight();
+
   if (isProjectV3 && visibleEnvs.length > 0 && isOverviewLoading) {
     return (
       <div className="container mx-auto flex h-screen w-full items-center justify-center px-8 text-mineshaft-50 dark:[color-scheme:dark]">
@@ -891,6 +992,7 @@ export const OverviewPage = () => {
         <SecretV2MigrationSection />
       </div>
     );
+  // @ts-ignore
   return (
     <div className="">
       <Helmet>
@@ -1188,15 +1290,17 @@ export const OverviewPage = () => {
             className="thin-scrollbar rounded-b-none"
           >
             <Table>
-              <THead className={collapseEnvironments ? "h-24" : ""}>
+              <THead
+                className="relative"
+                style={{ height: collapseEnvironments ? headerHeight : undefined }}
+              >
                 <Tr
-                  className={twMerge("sticky top-0 z-20 border-0", collapseEnvironments && "h-24")}
+                  className="sticky top-0 z-20 border-0"
+                  style={{ height: collapseEnvironments ? headerHeight : undefined }}
                 >
                   <Th
-                    className={twMerge(
-                      "sticky left-0 z-20 min-w-[20rem] border-b-0 p-0",
-                      collapseEnvironments && "h-24"
-                    )}
+                    className="sticky left-0 z-20 min-w-[20rem] border-b-0 p-0"
+                    style={{ height: collapseEnvironments ? headerHeight : undefined }}
                   >
                     <div
                       className={twMerge(
@@ -1275,8 +1379,9 @@ export const OverviewPage = () => {
                         className={twMerge(
                           "min-table-row border-b-0 p-0 text-xs",
                           collapseEnvironments && index === visibleEnvs.length - 1 && "mr-8",
-                          collapseEnvironments ? "h-24 w-[1rem]" : "min-w-[11rem] text-center"
+                          collapseEnvironments ? "w-[1rem]" : "min-w-[11rem] text-center"
                         )}
+                        style={{ height: collapseEnvironments ? headerHeight : undefined }}
                         key={`secret-overview-${name}-${index + 1}`}
                       >
                         <Tooltip
@@ -1299,37 +1404,42 @@ export const OverviewPage = () => {
                             className={twMerge(
                               "border-b border-mineshaft-600",
                               collapseEnvironments
-                                ? "relative h-24 w-[2.9rem]"
+                                ? "relative w-[2.9rem]"
                                 : "flex items-center justify-center px-5 pb-[0.82rem] pt-3.5",
                               collapseEnvironments &&
                                 index === visibleEnvs.length - 1 &&
                                 "overflow-clip"
                             )}
+                            style={{ height: collapseEnvironments ? headerHeight : undefined }}
                           >
                             <div
                               className={twMerge(
                                 "border-mineshaft-600",
                                 collapseEnvironments
-                                  ? "ml-[0.85rem] h-24 -skew-x-[16rad] transform border-l text-xs"
+                                  ? "-skew-x-[16rad] transform border-l text-xs"
                                   : "flex items-center justify-center"
                               )}
+                              style={{
+                                height: collapseEnvironments ? headerHeight : undefined,
+                                marginLeft: collapseEnvironments ? headerHeight * 0.145 : undefined
+                              }}
                             />
-                            <button
-                              type="button"
-                              className={twMerge(
-                                "duration-100 hover:text-mineshaft-100",
-                                collapseEnvironments &&
-                                  (index === visibleEnvs.length - 1
-                                    ? "bottom-[1.75rem] w-14"
-                                    : "bottom-10 w-20"),
-                                collapseEnvironments
-                                  ? "absolute -rotate-[72.25deg] text-left !text-[12px] font-normal"
-                                  : "flex items-center text-center text-sm font-medium"
-                              )}
-                              onClick={() => handleExploreEnvClick(slug)}
-                            >
-                              <p className="truncate font-medium">{name}</p>
-                            </button>
+                            {/* <button */}
+                            {/*  type="button" */}
+                            {/*  className={twMerge( */}
+                            {/*    "duration-100 hover:text-mineshaft-100", */}
+                            {/*    collapseEnvironments && */}
+                            {/*      (index === visibleEnvs.length - 1 */}
+                            {/*        ? "bottom-[1.75rem] w-14" */}
+                            {/*        : "bottom-10 w-20"), */}
+                            {/*    collapseEnvironments */}
+                            {/*      ? "absolute -rotate-[72.25deg] text-left !text-[12px] font-normal" */}
+                            {/*      : "flex items-center text-center text-sm font-medium" */}
+                            {/*  )} */}
+                            {/*  onClick={() => handleExploreEnvClick(slug)} */}
+                            {/* > */}
+                            {/*  <p className="truncate font-medium">{name}</p> */}
+                            {/* </button> */}
                             {!collapseEnvironments && missingKeyCount > 0 && (
                               <Tooltip
                                 className="max-w-none lowercase"
@@ -1346,6 +1456,7 @@ export const OverviewPage = () => {
                     );
                   })}
                 </Tr>
+                <HeaderResizer onMouseDown={handleMouseDown} isActive={isResizing} />
               </THead>
               <TBody>
                 {canViewOverviewPage && isOverviewLoading && (

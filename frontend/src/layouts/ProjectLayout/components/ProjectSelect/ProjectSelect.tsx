@@ -31,7 +31,6 @@ import {
   useSubscription,
   useWorkspace
 } from "@app/context";
-import { getCurrentProductFromUrl, getProjectHomePage } from "@app/helpers/project";
 import { usePopUp } from "@app/hooks";
 import { useGetUserWorkspaces } from "@app/hooks/api";
 import { useUpdateUserProjectFavorites } from "@app/hooks/api/users/mutation";
@@ -102,9 +101,7 @@ export const ProjectSelect = () => {
     <div className="flex w-full items-center gap-2">
       <DropdownMenu modal={false}>
         <Link
-          to={getProjectHomePage(
-            getCurrentProductFromUrl(window.location.href) || currentWorkspace.defaultProduct
-          )}
+          to="/projects/$projectId/overview"
           params={{
             projectId: currentWorkspace.id
           }}
@@ -161,7 +158,7 @@ export const ProjectSelect = () => {
                       // to reproduce change this back to router.push and switch between two projects with different env count
                       // look into this on dashboard revamp
                       const url = linkOptions({
-                        to: getProjectHomePage(workspace.defaultProduct),
+                        to: "/projects/$projectId/overview",
                         params: {
                           projectId: workspace.id
                         }

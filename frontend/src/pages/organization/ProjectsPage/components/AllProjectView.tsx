@@ -27,7 +27,6 @@ import {
   Tooltip
 } from "@app/components/v2";
 import { OrgPermissionActions, OrgPermissionSubjects } from "@app/context";
-import { getProjectHomePage } from "@app/helpers/project";
 import {
   getUserTablePreference,
   PreferenceKey,
@@ -222,7 +221,7 @@ export const AllProjectView = ({
               onKeyDown={(evt) => {
                 if (evt.key === "Enter" && workspace.isMember) {
                   navigate({
-                    to: getProjectHomePage(workspace.defaultProduct),
+                    to: "/projects/$projectId/overview",
                     params: {
                       projectId: workspace.id
                     }
@@ -232,7 +231,7 @@ export const AllProjectView = ({
               onClick={() => {
                 if (workspace.isMember) {
                   navigate({
-                    to: getProjectHomePage(workspace.defaultProduct),
+                    to: "/projects/$projectId/overview",
                     params: {
                       projectId: workspace.id
                     }

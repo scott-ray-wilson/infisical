@@ -18,7 +18,6 @@ import { createNotification } from "@app/components/notifications";
 import { OrgPermissionCan } from "@app/components/permissions";
 import { Button, IconButton, Input, Pagination, Skeleton, Tooltip } from "@app/components/v2";
 import { OrgPermissionActions, OrgPermissionSubjects, useOrganization } from "@app/context";
-import { getProjectHomePage } from "@app/helpers/project";
 import {
   getUserTablePreference,
   PreferenceKey,
@@ -153,7 +152,7 @@ export const MyProjectView = ({
     <div
       onClick={() => {
         navigate({
-          to: getProjectHomePage(workspace.defaultProduct),
+          to: "/projects/$projectId/overview",
           params: {
             projectId: workspace.id
           }
@@ -215,7 +214,7 @@ export const MyProjectView = ({
     <div
       onClick={() => {
         navigate({
-          to: getProjectHomePage(workspace.defaultProduct),
+          to: "/projects/$projectId/overview",
           params: {
             projectId: workspace.id
           }

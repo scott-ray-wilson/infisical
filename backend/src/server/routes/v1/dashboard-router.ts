@@ -9,7 +9,7 @@ import { DASHBOARD } from "@app/lib/api-docs";
 import { BadRequestError } from "@app/lib/errors";
 import { removeTrailingSlash } from "@app/lib/fn";
 import { OrderByDirection } from "@app/lib/types";
-import { secretsLimit } from "@app/server/config/rateLimiter";
+import { readLimit, secretsLimit } from "@app/server/config/rateLimiter";
 import { getTelemetryDistinctId } from "@app/server/lib/telemetry";
 import { getUserAgentType } from "@app/server/plugins/audit-log";
 import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
@@ -1352,6 +1352,103 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       }
 
       return { secrets };
+    }
+  });
+
+  server.route({
+    method: "GET",
+    url: "/project-overview",
+    config: {
+      rateLimit: readLimit
+    },
+    schema: {
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      querystring: z.object({
+        projectId: z.string(),
+        projectSlug: z.string()
+      }),
+      response: {
+        200: z.object({
+          secretsManagement: z.object({
+            secretCount: z.number(),
+            environmentCount: z.number(),
+            pendingApprovalCount: z.number()
+          }),
+          // certificateManagement: z.object({
+          //   certificateCount: z.number(),
+          //   subscriberCount: z.number(),
+          //   alertCount: z.number()
+          // }),
+          kms: z.object({
+            keyCount: z.number(),
+            kmipClientCount: z.number()
+          }),
+          ssh: z.object({
+            hostCount: z.number(),
+            hostGroupCount: z.number()
+          }),
+          secretScanning: z.object({
+            dataSourceCount: z.number(),
+            resourceCount: z.number(),
+            findingCount: z.number()
+          })
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT]),
+    handler: async (req) => {
+      const {
+        query: { projectId, projectSlug },
+        permission
+      } = req;
+
+      const secretsManagement = await server.services.secret.getProjectSecretResourcesCount(projectId, permission);
+
+      const accessApprovals = await server.services.accessApprovalRequest.getCount({
+        projectSlug,
+        actor: permission.type,
+        actorId: permission.id,
+        actorOrgId: permission.orgId,
+        actorAuthMethod: permission.authMethod
+      });
+
+      const secretApprovals = await server.services.secretApprovalRequest.requestCount({
+        projectId,
+        actor: permission.type,
+        actorId: permission.id,
+        actorOrgId: permission.orgId,
+        actorAuthMethod: permission.authMethod
+      });
+
+      const keyCount = await server.services.cmek.getProjectKeyCount(projectId, permission);
+
+      const kmipClientCount = await server.services.kmip.getProjectClientCount(projectId, permission);
+
+      const hostCount = await server.services.sshHost.getProjectHostCount(projectId, permission);
+
+      const hostGroupCount = await server.services.sshHostGroup.getProjectHostGroupCount(projectId, permission);
+
+      const secretScanning = await server.services.secretScanningV2.getProjectResourcesCount(projectId, permission);
+
+      return {
+        secretsManagement: {
+          ...secretsManagement,
+          pendingApprovalCount: accessApprovals.count.pendingCount + secretApprovals.open
+        },
+        kms: {
+          keyCount,
+          kmipClientCount
+        },
+        ssh: {
+          hostCount,
+          hostGroupCount
+        },
+        secretScanning
+      };
     }
   });
 };

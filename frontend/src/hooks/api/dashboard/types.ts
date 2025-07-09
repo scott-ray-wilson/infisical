@@ -156,3 +156,29 @@ export type TGetAccessibleSecretsDTO = {
     | ProjectPermissionSecretActions.DescribeSecret
     | ProjectPermissionSecretActions.ReadValue;
 };
+
+export type TGetProjectOverview = {
+  projectId: string;
+  projectSlug: string;
+};
+
+export type TProjectOverview = {
+  secretsManagement: {
+    secretCount: number;
+    environmentCount: number;
+    pendingApprovalCount: number;
+  };
+  kms: {
+    keyCount: number;
+    kmipClientCount: number;
+  };
+  ssh: {
+    hostCount: number;
+    hostGroupCount: number;
+  };
+  secretScanning: {
+    dataSourceCount: number;
+    resourceCount: number;
+    findingCount: number;
+  };
+};

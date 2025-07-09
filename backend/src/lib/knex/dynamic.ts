@@ -4,7 +4,7 @@ import { UnauthorizedError } from "../errors";
 
 type TKnexDynamicPrimitiveOperator<T extends object> =
   | {
-      operator: "eq" | "ne" | "startsWith" | "endsWith";
+      operator: "eq" | "ne" | "startsWith" | "endsWith" | "lte";
       value: string;
       field: Extract<keyof T, string>;
     }
@@ -80,6 +80,10 @@ export const buildDynamicKnexQuery = <T extends object>(
             buildDynamicKnexQuery(subQueryBuilder, el);
           });
         });
+        break;
+      }
+      case "lte": {
+        void queryBuilder.whereRaw(`?? <= ??`, [filterAst.field, filterAst.value]);
         break;
       }
       default:

@@ -11,7 +11,7 @@ export const Route = createFileRoute(
       breadcrumbs: [
         ...context.breadcrumbs,
         {
-          label: "Settings"
+          label: "Overview"
         }
       ]
     };

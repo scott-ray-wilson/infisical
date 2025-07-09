@@ -1373,16 +1373,21 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       }),
       response: {
         200: z.object({
+          accessControl: z.object({
+            userCount: z.number(),
+            machineIdentityCount: z.number(),
+            groupCount: z.number()
+          }),
           secretsManagement: z.object({
             secretCount: z.number(),
             environmentCount: z.number(),
             pendingApprovalCount: z.number()
           }),
-          // certificateManagement: z.object({
-          //   certificateCount: z.number(),
-          //   subscriberCount: z.number(),
-          //   alertCount: z.number()
-          // }),
+          certificateManagement: z.object({
+            internalCaCount: z.number(),
+            externalCaCount: z.number(),
+            expiryCount: z.number()
+          }),
           kms: z.object({
             keyCount: z.number(),
             kmipClientCount: z.number()
@@ -1406,6 +1411,12 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         permission
       } = req;
 
+      const userCount = await server.services.projectMembership.getProjectMembershipCount(projectId, permission);
+
+      const machineIdentityCount = await server.services.identityProject.getProjectIdentityCount(projectId, permission);
+
+      const groupCount = await server.services.groupProject.getProjectGroupCount(projectId, permission);
+
       const secretsManagement = await server.services.secret.getProjectSecretResourcesCount(projectId, permission);
 
       const accessApprovals = await server.services.accessApprovalRequest.getCount({
@@ -1424,6 +1435,11 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         actorAuthMethod: permission.authMethod
       });
 
+      const certificateAuthorityCount = await server.services.certificateAuthority.getProjectCertificateAuthorityCount(
+        projectId,
+        permission
+      );
+
       const keyCount = await server.services.cmek.getProjectKeyCount(projectId, permission);
 
       const kmipClientCount = await server.services.kmip.getProjectClientCount(projectId, permission);
@@ -1435,9 +1451,18 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       const secretScanning = await server.services.secretScanningV2.getProjectResourcesCount(projectId, permission);
 
       return {
+        accessControl: {
+          userCount,
+          machineIdentityCount,
+          groupCount
+        },
         secretsManagement: {
           ...secretsManagement,
           pendingApprovalCount: accessApprovals.count.pendingCount + secretApprovals.open
+        },
+        certificateManagement: {
+          ...certificateAuthorityCount,
+          expiryCount: 2
         },
         kms: {
           keyCount,

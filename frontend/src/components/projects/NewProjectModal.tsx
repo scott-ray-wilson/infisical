@@ -31,7 +31,6 @@ import {
   useSubscription,
   useUser
 } from "@app/context";
-import { getProjectHomePage } from "@app/helpers/project";
 import { useCreateWorkspace, useGetExternalKmsList, useGetUserWorkspaces } from "@app/hooks/api";
 import { INTERNAL_KMS_KEY_ID } from "@app/hooks/api/kms/types";
 import { InfisicalProjectTemplate, useListProjectTemplates } from "@app/hooks/api/projectTemplates";
@@ -121,7 +120,7 @@ const NewProjectForm = ({ onOpenChange }: NewProjectFormProps) => {
       reset();
       onOpenChange(false);
       navigate({
-        to: getProjectHomePage(project.defaultProduct),
+        to: "/projects/$projectId/overview",
         params: { projectId: project.id }
       });
     } catch (err) {

@@ -10,7 +10,7 @@ export type TPkiAlertDALFactory = ReturnType<typeof pkiAlertDALFactory>;
 export const pkiAlertDALFactory = (db: TDbClient) => {
   const pkiAlertOrm = ormify(db, TableName.PkiAlert);
 
-  const getExpiringPkiCollectionItemsForAlerting = async () => {
+  const getExpiringPkiCollectionItemsForAlerting = async (projectId?: string) => {
     try {
       type AlertItem = {
         type: PkiItemType;
@@ -47,11 +47,16 @@ export const pkiAlertDALFactory = (db: TDbClient) => {
               `${PkiItemType.CERTIFICATE}.notAfter as expiryDate`,
               `${PkiItemType.CERTIFICATE}.serialNumber`,
               `${PkiItemType.CERTIFICATE}.friendlyName`,
-              "pci.pkiCollectionId"
+              "pci.pkiCollectionId",
+              "pci.projectId"
             )
             .from(`${TableName.Certificate} as ${PkiItemType.CERTIFICATE}`)
             .join(`${TableName.PkiCollectionItem} as pci`, `${PkiItemType.CERTIFICATE}.id`, "pci.certId");
         });
+
+      if (projectId) {
+        void combinedQuery.where(`pci.projectId`, projectId);
+      }
 
       /**
        * Gets alerts to send based on alertBeforeDays on PKI alerts connected to PKI collection items

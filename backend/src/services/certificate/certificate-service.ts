@@ -9,6 +9,7 @@ import {
   ProjectPermissionSub
 } from "@app/ee/services/permission/project-permission";
 import { BadRequestError, NotFoundError } from "@app/lib/errors";
+import { OrgServiceActor } from "@app/lib/types";
 import { TCertificateBodyDALFactory } from "@app/services/certificate/certificate-body-dal";
 import { TCertificateDALFactory } from "@app/services/certificate/certificate-dal";
 import { TCertificateAuthorityCertDALFactory } from "@app/services/certificate-authority/certificate-authority-cert-dal";
@@ -598,6 +599,31 @@ export const certificateServiceFactory = ({
       serialNumber,
       cert
     };
+  };
+
+  const getProjectExpiringCertificates = async (projectId: string, actor: OrgServiceActor) => {
+    // Anyone in the project should be able to get count.
+    await permissionService.getProjectPermission({
+      actor: actor.type,
+      actorId: actor.id,
+      projectId,
+      actorAuthMethod: actor.authMethod,
+      actorOrgId: actor.orgId
+    });
+
+    const expiringCertificates = await certificateDAL.find({
+      projectId,
+      $complex: {
+        operator: "and",
+        value: [
+          {
+            operator: "eq",
+            field: "folderId",
+            value: new Date()
+          }
+        ]
+      }
+    });
   };
 
   return {

@@ -4,6 +4,7 @@ import { TPermissionServiceFactory } from "@app/ee/services/permission/permissio
 import { ProjectPermissionActions, ProjectPermissionSub } from "@app/ee/services/permission/project-permission";
 import { ForbiddenRequestError, NotFoundError } from "@app/lib/errors";
 import { groupBy } from "@app/lib/fn";
+import { OrgServiceActor } from "@app/lib/types";
 import { TPkiCollectionDALFactory } from "@app/services/pki-collection/pki-collection-dal";
 import { pkiItemTypeToNameMap } from "@app/services/pki-collection/pki-collection-types";
 import { SmtpTemplates, TSmtpService } from "@app/services/smtp/smtp-service";
@@ -173,11 +174,27 @@ export const pkiAlertServiceFactory = ({
     return alert;
   };
 
+  const getPkiItemsAboutToExpire = async (projectId: string, actor: OrgServiceActor) => {
+    // Anyone in the project should be able to get count.
+    await permissionService.getProjectPermission({
+      actor: actor.type,
+      actorId: actor.id,
+      projectId,
+      actorAuthMethod: actor.authMethod,
+      actorOrgId: actor.orgId
+    });
+
+    const projectAlertItems = await pkiAlertDAL.getExpiringPkiCollectionItemsForAlerting(projectId);
+
+    return projectAlertItems.length;
+  };
+
   return {
     sendPkiItemExpiryNotices,
     createPkiAlert,
     getPkiAlertById,
     updatePkiAlert,
-    deletePkiAlert
+    deletePkiAlert,
+    getPkiItemsAboutToExpire
   };
 };

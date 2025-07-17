@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { faArrowUpRightFromSquare, faBookOpen } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import ms from "ms";
 
 import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
@@ -20,10 +22,11 @@ type Props = {
   presets?: Presets;
   refetchInterval?: number;
   showFilters?: boolean;
+  pageView?: boolean;
 };
 
 export const LogsSection = withPermission(
-  ({ presets, refetchInterval, showFilters = true }: Props) => {
+  ({ presets, refetchInterval, showFilters = true, pageView = false }: Props) => {
     const { subscription } = useSubscription();
 
     const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp(["upgradePlan"] as const);
@@ -43,6 +46,66 @@ export const LogsSection = withPermission(
         handlePopUpOpen("upgradePlan");
       }
     }, [subscription]);
+
+    if (pageView)
+      return (
+        <div className="w-full rounded-lg border border-mineshaft-600 bg-mineshaft-900 p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-1">
+                <p className="text-xl font-semibold text-mineshaft-100">Audit History</p>
+                <a
+                  href="https://infisical.com/docs/documentation/platform/audit-logs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <div className="ml-1 mt-[0.1rem] inline-block rounded-md bg-yellow/20 px-1.5 text-sm text-yellow opacity-80 hover:opacity-100">
+                    <FontAwesomeIcon icon={faBookOpen} className="mr-1.5" />
+                    <span>Docs</span>
+                    <FontAwesomeIcon
+                      icon={faArrowUpRightFromSquare}
+                      className="mb-[0.07rem] ml-1.5 text-[10px]"
+                    />
+                  </div>
+                </a>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              {showFilters && <LogsDateFilter filter={dateFilter} setFilter={setDateFilter} />}
+              {showFilters && (
+                <LogsFilter presets={presets} setFilter={setLogFilter} filter={logFilter} />
+              )}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <LogsTable
+              refetchInterval={refetchInterval}
+              filter={{
+                secretPath: logFilter.secretPath || undefined,
+                secretKey: logFilter.secretKey || undefined,
+                eventMetadata: logFilter?.eventMetadata,
+                projectId: logFilter?.project?.id,
+                actorType: presets?.actorType,
+                limit: 15,
+                eventType: logFilter?.eventType,
+                userAgentType: logFilter?.userAgentType,
+                startDate: dateFilter?.startDate,
+                endDate: dateFilter?.endDate,
+                environment: logFilter?.environment?.slug,
+                actor: logFilter?.actor
+              }}
+            />
+            <UpgradePlanModal
+              isOpen={popUp.upgradePlan.isOpen}
+              onOpenChange={(isOpen) => {
+                handlePopUpToggle("upgradePlan", isOpen);
+              }}
+              text="You can use audit logs if you switch to a paid Infisical plan."
+            />
+          </div>
+        </div>
+      );
+
     return (
       <div className="space-y-2">
         <div className="flex w-full justify-end">

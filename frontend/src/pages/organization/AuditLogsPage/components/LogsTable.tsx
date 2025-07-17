@@ -96,7 +96,7 @@ export const LogsTable = ({ filter, refetchInterval }: Props) => {
       </TableContainer>
       {!isEmpty && (
         <Button
-          className="mb-20 mt-4 px-4 py-3 text-sm"
+          className="mt-4 px-4 py-3 text-sm"
           isFullWidth
           variant="outline_bg"
           isLoading={isFetchingNextPage}

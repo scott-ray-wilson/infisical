@@ -4,6 +4,7 @@ import { Probot } from "probot";
 import { z } from "zod";
 
 import { TBitbucketPushEvent } from "@app/ee/services/secret-scanning-v2/bitbucket/bitbucket-secret-scanning-types";
+import { TGitLabDataSourcePushEventPayload } from "@app/ee/services/secret-scanning-v2/gitlab";
 import { GitLabWebHookEvent } from "@app/ee/services/secret-scanning-v2/gitlab/gitlab-secret-scanning-enums";
 import { getConfig } from "@app/lib/config/env";
 import { logger } from "@app/lib/logger";
@@ -123,7 +124,6 @@ export const registerSecretScanningV2Webhooks = async (server: FastifyZodProvide
       rateLimit: writeLimit
     },
     handler: async (req, res) => {
-      logger.warn(req, "GITLAB WEBHOOK");
       const event = req.headers["x-gitlab-event"] as GitLabWebHookEvent;
       const token = req.headers["x-gitlab-token"] as string;
       const dataSourceId = req.headers["x-data-source-id"] as string;
@@ -140,9 +140,11 @@ export const registerSecretScanningV2Webhooks = async (server: FastifyZodProvide
 
       await server.services.secretScanningV2.gitlab.handlePushEvent({
         dataSourceId,
-        payload: req.body,
+        payload: req.body as TGitLabDataSourcePushEventPayload,
         token
       });
+
+      console.log("PAYLOAD", req.body);
 
       return res.send("ok");
     }

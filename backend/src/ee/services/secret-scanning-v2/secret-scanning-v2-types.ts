@@ -27,7 +27,8 @@ import {
   TGitLabDataSourceInput,
   TGitLabDataSourceListItem,
   TGitLabDataSourceWithConnection,
-  TGitLabFinding
+  TGitLabFinding,
+  TQueueGitLabResourceDiffScan
 } from "@app/ee/services/secret-scanning-v2/gitlab";
 import { TSecretScanningV2DALFactory } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-dal";
 import {
@@ -132,7 +133,10 @@ export type TQueueSecretScanningDataSourceFullScan = {
   scanId: string;
 };
 
-export type TQueueSecretScanningResourceDiffScan = TQueueGitHubResourceDiffScan | TQueueBitbucketResourceDiffScan;
+export type TQueueSecretScanningResourceDiffScan =
+  | TQueueGitHubResourceDiffScan
+  | TQueueBitbucketResourceDiffScan
+  | TQueueGitLabResourceDiffScan;
 
 export type TQueueSecretScanningSendNotification = {
   dataSource: TSecretScanningDataSources;

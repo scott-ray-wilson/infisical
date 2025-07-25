@@ -1,7 +1,6 @@
 import { Camelize, GitbeakerRequestError, ProjectHookSchema } from "@gitbeaker/rest";
 import { join } from "path";
 
-import { TQueueBitbucketResourceDiffScan } from "@app/ee/services/secret-scanning-v2/bitbucket";
 import { TGitHubDataSourceWithConnection } from "@app/ee/services/secret-scanning-v2/github";
 import { GitLabDataSourceCredentialsType } from "@app/ee/services/secret-scanning-v2/gitlab/gitlab-secret-scanning-enums";
 import { SecretScanningResource } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
@@ -18,6 +17,7 @@ import {
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-types";
 import { getConfig } from "@app/lib/config/env";
 import { BadRequestError, InternalServerError } from "@app/lib/errors";
+import { logger } from "@app/lib/logger";
 import { alphaNumericNanoId } from "@app/lib/nanoid";
 import {
   getGitLabConnectionClient,
@@ -30,7 +30,8 @@ import {
 import {
   TGitLabDataSourceCredentials,
   TGitLabDataSourceInput,
-  TGitLabDataSourceWithConnection
+  TGitLabDataSourceWithConnection,
+  TQueueGitLabResourceDiffScan
 } from "./gitlab-secret-scanning-types";
 
 const getMainDomain = (instanceUrl: string) => {
@@ -216,19 +217,24 @@ export const GitLabSecretScanningFactory = ({ appConnectionDAL, kmsService }: TS
   };
 
   const getDiffScanResourcePayload: TSecretScanningFactoryGetDiffScanResourcePayload<
-    TQueueBitbucketResourceDiffScan["payload"]
-  > = ({ repository }) => {
-    // return {
-    //   name: repository.full_name,
-    //   externalId: repository.uuid,
-    //   type: SecretScanningResource.Repository
-    // };
+    TQueueGitLabResourceDiffScan["payload"]
+  > = ({ project }) => {
+    return {
+      name: project.path_with_namespace,
+      externalId: project.id.toString(),
+      type: SecretScanningResource.Project
+    };
   };
 
   const getDiffScanFindingsPayload: TSecretScanningFactoryGetDiffScanFindingsPayload<
     TGitLabDataSourceWithConnection,
-    TQueueBitbucketResourceDiffScan["payload"]
+    TQueueGitLabResourceDiffScan["payload"]
   > = async ({ dataSource, payload, resourceName, configPath }) => {
+    logger.warn(payload, "payload");
+
+    const { commits } = payload;
+
+    return [];
     // const {
     //   connection: {
     //     credentials: { apiToken, email }
@@ -339,6 +345,8 @@ export const GitLabSecretScanningFactory = ({ appConnectionDAL, kmsService }: TS
     getFullScanPath,
     initialize,
     postInitialization,
-    teardown
+    teardown,
+    getDiffScanResourcePayload,
+    getDiffScanFindingsPayload
   };
 };

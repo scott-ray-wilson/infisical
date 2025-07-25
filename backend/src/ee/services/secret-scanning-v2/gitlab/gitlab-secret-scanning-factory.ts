@@ -1,7 +1,9 @@
+import { Camelize, GitbeakerRequestError, ProjectHookSchema } from "@gitbeaker/rest";
 import { join } from "path";
 
 import { TQueueBitbucketResourceDiffScan } from "@app/ee/services/secret-scanning-v2/bitbucket";
 import { TGitHubDataSourceWithConnection } from "@app/ee/services/secret-scanning-v2/github";
+import { GitLabDataSourceCredentialsType } from "@app/ee/services/secret-scanning-v2/gitlab/gitlab-secret-scanning-enums";
 import { SecretScanningResource } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
 import { cloneRepository } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-fns";
 import {
@@ -70,25 +72,41 @@ export const GitLabSecretScanningFactory = ({ appConnectionDAL, kmsService }: TS
               throw new BadRequestError({ message: "Could not find project associated with access token." });
             }
 
-            const hook = await client.ProjectHooks.add(
-              project.id,
-              `${appCfg.SITE_URL}/secret-scanning/webhooks/gitlab`,
-              {
+            let hook: Camelize<ProjectHookSchema>;
+            try {
+              hook = await client.ProjectHooks.add(project.id, `${appCfg.SITE_URL}/secret-scanning/webhooks/gitlab`, {
                 token,
                 pushEvents: true,
                 enableSslVerification: true,
                 // @ts-expect-error gitbeaker is outdated, and the types don't support this field yet
-                name: "Infisical Secret Scanning"
+                name: `Infisical Secret Scanning - ${payload.name}`
+              });
+            } catch (error) {
+              if (error instanceof GitbeakerRequestError) {
+                throw new BadRequestError({ message: error.message });
               }
-            );
 
-            return callback({
-              credentials: {
-                token,
-                hookId: hook.id,
-                projectId: project.id
+              throw error;
+            }
+
+            try {
+              return await callback({
+                credentials: {
+                  token,
+                  type: GitLabDataSourceCredentialsType.Project,
+                  hookId: hook.id,
+                  projectId: project.id
+                }
+              });
+            } catch (error) {
+              try {
+                await client.ProjectHooks.remove(project.id, hook.id);
+              } catch {
+                // do nothing, just try to clean up webhook
               }
-            });
+
+              throw error;
+            }
           }
           default:
             throw new Error(`Unhandled GitLab Access Token Type: ${connection.credentials.accessTokenType}`);
@@ -100,36 +118,6 @@ export const GitLabSecretScanningFactory = ({ appConnectionDAL, kmsService }: TS
           message: `Unhandled GitLab Connection Method: ${connection.method as GitLabConnectionMethod}`
         });
     }
-
-    //
-    // try {
-    //   return await callback({
-    //     credentials: {
-    //       token,
-    //       hookId: hook.id,
-    //       projectId: project.id,
-    //       method: GitLabConnectionMethod.ProjectAccessToken
-    //     }
-    //   });
-    // } catch (error) {
-    //   try {
-    //     await client.ProjectHooks.remove(project.id, hook.id);
-    //   } catch {
-    //     // do nothing, just try to clean up webhook
-    //   }
-    //
-    //   throw error;
-    // }
-    //
-    // break;
-
-    // case GitLabConnectionMethod.GroupAccessToken: {
-    //   // TODO
-    //   return callback({ token });
-    //
-    //   break;
-    // }
-    // }
   };
 
   const postInitialization: TSecretScanningFactoryPostInitialization<
@@ -137,46 +125,34 @@ export const GitLabSecretScanningFactory = ({ appConnectionDAL, kmsService }: TS
     TGitLabConnection,
     TGitLabDataSourceCredentials
   > = async ({ connection, dataSourceId, credentials }) => {
-    // const client = await getGitLabConnectionClient(connection);
-    // const appCfg = getConfig();
-    //
-    // const { method } = connection;
-    //
-    // switch (method) {
-    //   case GitLabConnectionMethod.ProjectAccessToken: {
-    //     const { hookId, projectId } = credentials;
-    //
-    //     try {
-    //       await client.ProjectHooks.edit(
-    //         projectId,
-    //         hookId,
-    //         `${appCfg.SITE_URL}${SECRET_SCANNING_WEBHOOK_PATH}/gitlab`,
-    //         {
-    //           // @ts-expect-error gitbeaker is outdated, and the types don't support this field yet
-    //
-    //           custom_headers: [{ key: "x-data-source-id", value: dataSourceId }]
-    //         }
-    //       );
-    //     } catch (error) {
-    //       try {
-    //         await client.ProjectHooks.remove(projectId, hookId);
-    //       } catch {
-    //         // do nothing, just try to clean up webhook
-    //       }
-    //
-    //       throw error;
-    //     }
-    //
-    //     break;
-    //   }
-    //   case GitLabConnectionMethod.GroupAccessToken: {
-    //     break;
-    //   }
-    //   default:
-    //     throw new InternalServerError({
-    //       message: `Unhandled GitLab Connection Method: ${method as GitLabConnectionMethod}`
-    //     });
-    // }
+    const client = await getGitLabConnectionClient(connection, appConnectionDAL, kmsService);
+    const appCfg = getConfig();
+
+    switch (credentials.type) {
+      case GitLabDataSourceCredentialsType.Project: {
+        const { projectId, hookId } = credentials;
+        try {
+          await client.ProjectHooks.edit(projectId, hookId, `${appCfg.SITE_URL}/secret-scanning/webhooks/gitlab`, {
+            // @ts-expect-error gitbeaker is outdated, and the types don't support this field yet
+            name: `Infisical Secret Scanning - ${dataSourceId}`,
+            custom_headers: [{ key: "x-data-source-id", value: dataSourceId }]
+          });
+        } catch (error) {
+          try {
+            await client.ProjectHooks.remove(projectId, hookId);
+          } catch {
+            // do nothing, just try to clean up webhook
+          }
+
+          throw error;
+        }
+        break;
+      }
+      default:
+        throw new InternalServerError({
+          message: `Unhandled GitLab Data Source Credentials Type: ${credentials.type as GitLabDataSourceCredentialsType}`
+        });
+    }
   };
 
   const listRawResources: TSecretScanningFactoryListRawResources<TGitLabDataSourceWithConnection> = async (

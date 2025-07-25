@@ -4,14 +4,11 @@ import { TGitLabConnection } from "@app/services/app-connection/gitlab";
 
 import {
   CreateGitLabDataSourceSchema,
+  GitLabDataSourceCredentialsSchema,
   GitLabDataSourceListItemSchema,
   GitLabDataSourceSchema,
   GitLabFindingSchema
 } from "./gitlab-secret-scanning-schemas";
-
-export enum GitLabWebHookEvent {
-  Push = "Push Hook"
-}
 
 export type TGitLabDataSource = z.infer<typeof GitLabDataSourceSchema>;
 
@@ -25,13 +22,10 @@ export type TGitLabDataSourceWithConnection = TGitLabDataSource & {
   connection: TGitLabConnection;
 };
 
-export type TGitLabDataSourceCredentials = {
-  token: string;
-  projectId: number;
-  hookId: number;
-};
+export type TGitLabDataSourceCredentials = z.infer<typeof GitLabDataSourceCredentialsSchema>;
 
 export type GitLabDataSourcePushEventPayload = {
+  dataSourceId: string;
   token: string;
   payload: {
     object_kind: "push";

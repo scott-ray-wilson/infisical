@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { GitLabDataSourceCredentialsType } from "@app/ee/services/secret-scanning-v2/gitlab/gitlab-secret-scanning-enums";
 import {
   SecretScanningDataSource,
   SecretScanningResource
@@ -71,7 +72,11 @@ export const GitLabFindingSchema = BaseSecretScanningFindingSchema.extend({
   details: GitRepositoryScanFindingDetailsSchema
 });
 
-export const GitLabDataSourceCredentialsSchema = z.object({
-  token: z.string(),
-  projectId: z.string()
-});
+export const GitLabDataSourceCredentialsSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal(GitLabDataSourceCredentialsType.Project),
+    token: z.string(),
+    projectId: z.number().or(z.string()),
+    hookId: z.number()
+  })
+]);

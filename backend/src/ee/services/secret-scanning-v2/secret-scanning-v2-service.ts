@@ -54,6 +54,7 @@ import { TKmsServiceFactory } from "@app/services/kms/kms-service";
 import { KmsDataKey } from "@app/services/kms/kms-types";
 
 import { bitbucketSecretScanningService } from "./bitbucket/bitbucket-secret-scanning-service";
+import { gitlabSecretScanningService } from "./gitlab/gitlab-secret-scanning-service";
 import { TSecretScanningV2DALFactory } from "./secret-scanning-v2-dal";
 import { TSecretScanningV2QueueServiceFactory } from "./secret-scanning-v2-queue";
 
@@ -912,6 +913,7 @@ export const secretScanningV2ServiceFactory = ({
     findSecretScanningConfigByProjectId,
     upsertSecretScanningConfig,
     github: githubSecretScanningService(secretScanningV2DAL, secretScanningV2Queue),
-    bitbucket: bitbucketSecretScanningService(secretScanningV2DAL, secretScanningV2Queue, kmsService)
+    bitbucket: bitbucketSecretScanningService(secretScanningV2DAL, secretScanningV2Queue, kmsService),
+    gitlab: gitlabSecretScanningService(secretScanningV2DAL, secretScanningV2Queue, kmsService)
   };
 };

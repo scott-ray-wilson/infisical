@@ -14,9 +14,14 @@ import {
   TSecretScanningFactoryPostInitialization,
   TSecretScanningFactoryTeardown
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-types";
+import { getConfig } from "@app/lib/config/env";
+import { BadRequestError, InternalServerError } from "@app/lib/errors";
+import { alphaNumericNanoId } from "@app/lib/nanoid";
 import {
   getGitLabConnectionClient,
   getGitLabInstanceUrl,
+  GitLabAccessTokenType,
+  GitLabConnectionMethod,
   TGitLabConnection
 } from "@app/services/app-connection/gitlab";
 
@@ -43,66 +48,87 @@ export const GitLabSecretScanningFactory = ({ appConnectionDAL, kmsService }: TS
     TGitLabDataSourceInput,
     TGitLabConnection,
     TGitLabDataSourceCredentials
-  > = async ({ connection }, callback) => {
-    return callback({});
-    // const client = await getGitLabClient(connection);
-    // const appCfg = getConfig();
+  > = async ({ payload, connection }, callback) => {
+    const token = alphaNumericNanoId(64);
+
+    const client = await getGitLabConnectionClient(connection, appConnectionDAL, kmsService);
+    const appCfg = getConfig();
+
+    switch (connection.method) {
+      case GitLabConnectionMethod.AccessToken: {
+        switch (connection.credentials.accessTokenType) {
+          case GitLabAccessTokenType.Project: {
+            const [project] = await client.Projects.all({
+              archived: false,
+              includePendingDelete: false,
+              membership: true,
+              includeHidden: false,
+              imported: false
+            });
+
+            if (!project) {
+              throw new BadRequestError({ message: "Could not find project associated with access token." });
+            }
+
+            const hook = await client.ProjectHooks.add(
+              project.id,
+              `${appCfg.SITE_URL}/secret-scanning/webhooks/gitlab`,
+              {
+                token,
+                pushEvents: true,
+                enableSslVerification: true,
+                // @ts-expect-error gitbeaker is outdated, and the types don't support this field yet
+                name: "Infisical Secret Scanning"
+              }
+            );
+
+            return callback({
+              credentials: {
+                token,
+                hookId: hook.id,
+                projectId: project.id
+              }
+            });
+          }
+          default:
+            throw new Error(`Unhandled GitLab Access Token Type: ${connection.credentials.accessTokenType}`);
+        }
+        break;
+      }
+      default:
+        throw new InternalServerError({
+          message: `Unhandled GitLab Connection Method: ${connection.method as GitLabConnectionMethod}`
+        });
+    }
+
     //
-    // const { method } = connection;
-    //
-    // const token = generatePassword();
-    //
-    // switch (method) {
-    //   case GitLabConnectionMethod.ProjectAccessToken: {
-    //     const [project] = await listGitLabConnectionProjects(connection);
-    //
-    //     if (!project) {
-    //       throw new BadRequestError({ message: "Could not find project associated with access token" });
+    // try {
+    //   return await callback({
+    //     credentials: {
+    //       token,
+    //       hookId: hook.id,
+    //       projectId: project.id,
+    //       method: GitLabConnectionMethod.ProjectAccessToken
     //     }
-    //
-    //     const hook = await client.ProjectHooks.add(
-    //       project.id,
-    //       `${appCfg.SITE_URL}${SECRET_SCANNING_WEBHOOK_PATH}/gitlab`,
-    //       {
-    //         token,
-    //         pushEvents: true,
-    //         enableSslVerification: true,
-    //         // @ts-expect-error gitbeaker is outdated, and the types don't support this field yet
-    //         name: "Infisical Secret Scanning"
-    //       }
-    //     );
-    //
-    //     try {
-    //       return await callback({
-    //         credentials: {
-    //           token,
-    //           hookId: hook.id,
-    //           projectId: project.id,
-    //           method: GitLabConnectionMethod.ProjectAccessToken
-    //         }
-    //       });
-    //     } catch (error) {
-    //       try {
-    //         await client.ProjectHooks.remove(project.id, hook.id);
-    //       } catch {
-    //         // do nothing, just try to clean up webhook
-    //       }
-    //
-    //       throw error;
-    //     }
-    //
-    //     break;
+    //   });
+    // } catch (error) {
+    //   try {
+    //     await client.ProjectHooks.remove(project.id, hook.id);
+    //   } catch {
+    //     // do nothing, just try to clean up webhook
     //   }
-    //   // case GitLabConnectionMethod.GroupAccessToken: {
-    //   //   // TODO
-    //   //   return callback({ token });
-    //   //
-    //   //   break;
-    //   // }
-    //   default:
-    //     throw new InternalServerError({
-    //       message: `Unhandled GitLab Connection Method: ${method as GitLabConnectionMethod}`
-    //     });
+    //
+    //   throw error;
+    // }
+    //
+    // break;
+
+    // case GitLabConnectionMethod.GroupAccessToken: {
+    //   // TODO
+    //   return callback({ token });
+    //
+    //   break;
+    // }
     // }
   };
 

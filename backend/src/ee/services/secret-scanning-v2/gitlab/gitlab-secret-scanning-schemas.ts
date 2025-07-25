@@ -72,5 +72,6 @@ export const GitLabFindingSchema = BaseSecretScanningFindingSchema.extend({
 });
 
 export const GitLabDataSourceCredentialsSchema = z.object({
-  token: z.string()
+  token: z.string(),
+  projectId: z.string()
 });

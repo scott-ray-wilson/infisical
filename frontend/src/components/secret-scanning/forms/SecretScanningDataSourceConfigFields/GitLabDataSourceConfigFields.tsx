@@ -104,7 +104,7 @@ export const GitLabDataSourceConfigFields = () => {
                 isLoading={isProjectsPending && Boolean(connectionId)}
                 isDisabled={!connectionId}
                 isMulti
-                value={projects?.find((project) => value.includes(project.name))}
+                value={projects?.filter((project) => value.includes(project.name))}
                 onChange={(newValue) => {
                   onChange(
                     newValue ? (newValue as MultiValue<TGitLabProject>).map((p) => p.name) : null

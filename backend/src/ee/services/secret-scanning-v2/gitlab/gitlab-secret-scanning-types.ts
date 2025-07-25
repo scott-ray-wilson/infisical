@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { GitLabConnectionMethod, TGitLabConnection } from "@app/services/app-connection/gitlab";
+import { TGitLabConnection } from "@app/services/app-connection/gitlab";
 
 import {
   CreateGitLabDataSourceSchema,
@@ -26,7 +26,6 @@ export type TGitLabDataSourceWithConnection = TGitLabDataSource & {
 };
 
 export type TGitLabDataSourceCredentials = {
-  method: GitLabConnectionMethod;
   token: string;
   projectId: number;
   hookId: number;

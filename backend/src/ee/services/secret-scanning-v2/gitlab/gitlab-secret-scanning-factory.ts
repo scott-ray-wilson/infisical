@@ -1,18 +1,22 @@
 import { join } from "path";
 
+import { TQueueBitbucketResourceDiffScan } from "@app/ee/services/secret-scanning-v2/bitbucket";
+import { TGitHubDataSourceWithConnection } from "@app/ee/services/secret-scanning-v2/github";
 import { SecretScanningResource } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
 import { cloneRepository } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-fns";
 import {
+  TSecretScanningFactoryGetDiffScanFindingsPayload,
+  TSecretScanningFactoryGetDiffScanResourcePayload,
   TSecretScanningFactoryGetFullScanPath,
   TSecretScanningFactoryInitialize,
   TSecretScanningFactoryListRawResources,
   TSecretScanningFactoryParams,
-  TSecretScanningFactoryPostInitialization
+  TSecretScanningFactoryPostInitialization,
+  TSecretScanningFactoryTeardown
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-types";
 import {
   getGitLabConnectionClient,
-  getGitLabConnectionUrl,
-  listGitLabProjects,
+  getGitLabInstanceUrl,
   TGitLabConnection
 } from "@app/services/app-connection/gitlab";
 
@@ -157,32 +161,40 @@ export const GitLabSecretScanningFactory = ({ appConnectionDAL, kmsService }: TS
       config: { includeProjects }
     } = dataSource;
 
-    const projects = await listGitLabProjects({ appConnection: connection, appConnectionDAL, kmsService });
+    const client = await getGitLabConnectionClient(connection, appConnectionDAL, kmsService);
+
+    const projects = await client.Projects.all({
+      archived: false,
+      includePendingDelete: false,
+      membership: true,
+      includeHidden: false,
+      imported: false
+    });
 
     const filteredProjects: typeof projects = [];
     if (!includeProjects || includeProjects.includes("*")) {
       filteredProjects.push(...projects);
     } else {
-      filteredProjects.push(...projects.filter((project) => includeProjects.includes(project.name)));
+      filteredProjects.push(...projects.filter((project) => includeProjects.includes(project.pathWithNamespace)));
     }
 
-    return filteredProjects.map(({ id, name }) => ({
-      name,
+    return filteredProjects.map(({ id, pathWithNamespace }) => ({
+      name: pathWithNamespace,
       externalId: id.toString(),
       type: SecretScanningResource.Project
     }));
   };
 
-  const getScanPath: TSecretScanningFactoryGetFullScanPath<TGitLabDataSourceWithConnection> = async ({
+  const getFullScanPath: TSecretScanningFactoryGetFullScanPath<TGitLabDataSourceWithConnection> = async ({
     dataSource,
     resourceName,
     tempFolder
   }) => {
     const { connection } = dataSource;
 
-    const instanceUrl = await getGitLabConnectionUrl(connection);
+    const instanceUrl = await getGitLabInstanceUrl(connection.credentials.instanceUrl);
 
-    const client = await getGitLabConnectionClient(connection);
+    const client = await getGitLabConnectionClient(connection, appConnectionDAL, kmsService);
 
     const user = await client.Users.showCurrentUser();
 
@@ -197,10 +209,134 @@ export const GitLabSecretScanningFactory = ({ appConnectionDAL, kmsService }: TS
     return repoPath;
   };
 
+  const teardown: TSecretScanningFactoryTeardown<TGitHubDataSourceWithConnection> = async () => {
+    // no teardown required
+  };
+
+  const getDiffScanResourcePayload: TSecretScanningFactoryGetDiffScanResourcePayload<
+    TQueueBitbucketResourceDiffScan["payload"]
+  > = ({ repository }) => {
+    // return {
+    //   name: repository.full_name,
+    //   externalId: repository.uuid,
+    //   type: SecretScanningResource.Repository
+    // };
+  };
+
+  const getDiffScanFindingsPayload: TSecretScanningFactoryGetDiffScanFindingsPayload<
+    TGitLabDataSourceWithConnection,
+    TQueueBitbucketResourceDiffScan["payload"]
+  > = async ({ dataSource, payload, resourceName, configPath }) => {
+    // const {
+    //   connection: {
+    //     credentials: { apiToken, email }
+    //   }
+    // } = dataSource;
+    //
+    // const { push, repository } = payload;
+    //
+    // const allFindings: SecretMatch[] = [];
+    //
+    // const authHeader = `Basic ${Buffer.from(`${email}:${apiToken}`).toString("base64")}`;
+    //
+    // for (const change of push.changes) {
+    //   for (const commit of change.commits) {
+    //     // eslint-disable-next-line no-await-in-loop
+    //     const { data: diffstat } = await request.get<{
+    //       values: {
+    //         status: "added" | "modified" | "removed" | "renamed";
+    //         new?: { path: string };
+    //         old?: { path: string };
+    //       }[];
+    //     }>(`${IntegrationUrls.BITBUCKET_API_URL}/2.0/repositories/${repository.full_name}/diffstat/${commit.hash}`, {
+    //       headers: {
+    //         Authorization: authHeader,
+    //         Accept: "application/json"
+    //       }
+    //     });
+    //
+    //     // eslint-disable-next-line no-continue
+    //     if (!diffstat.values) continue;
+    //
+    //     for (const file of diffstat.values) {
+    //       if ((file.status === "added" || file.status === "modified") && file.new?.path) {
+    //         const filePath = file.new.path;
+    //
+    //         // eslint-disable-next-line no-await-in-loop
+    //         const { data: patch } = await request.get<string>(
+    //           `https://api.bitbucket.org/2.0/repositories/${repository.full_name}/diff/${commit.hash}`,
+    //           {
+    //             params: {
+    //               path: filePath
+    //             },
+    //             headers: {
+    //               Authorization: authHeader
+    //             },
+    //             responseType: "text"
+    //           }
+    //         );
+    //
+    //         // eslint-disable-next-line no-continue
+    //         if (!patch) continue;
+    //
+    //         // eslint-disable-next-line no-await-in-loop
+    //         const findings = await scanContentAndGetFindings(replaceNonChangesWithNewlines(`\n${patch}`), configPath);
+    //
+    //         const adjustedFindings = findings.map((finding) => {
+    //           const startLine = convertPatchLineToFileLineNumber(patch, finding.StartLine);
+    //           const endLine =
+    //             finding.StartLine === finding.EndLine
+    //               ? startLine
+    //               : convertPatchLineToFileLineNumber(patch, finding.EndLine);
+    //           const startColumn = finding.StartColumn - 1; // subtract 1 for +
+    //           const endColumn = finding.EndColumn - 1; // subtract 1 for +
+    //           const authorName = commit.author.user?.display_name || commit.author.raw.split(" <")[0];
+    //           const emailMatch = commit.author.raw.match(/<(.*)>/);
+    //           const authorEmail = emailMatch?.[1] ?? "";
+    //
+    //           return {
+    //             ...finding,
+    //             StartLine: startLine,
+    //             EndLine: endLine,
+    //             StartColumn: startColumn,
+    //             EndColumn: endColumn,
+    //             File: filePath,
+    //             Commit: commit.hash,
+    //             Author: authorName,
+    //             Email: authorEmail,
+    //             Message: commit.message,
+    //             Fingerprint: `${commit.hash}:${filePath}:${finding.RuleID}:${startLine}:${startColumn}`,
+    //             Date: commit.date,
+    //             Link: `https://bitbucket.org/${resourceName}/src/${commit.hash}/${filePath}#lines-${startLine}`
+    //           };
+    //         });
+    //
+    //         allFindings.push(...adjustedFindings);
+    //       }
+    //     }
+    //   }
+    // }
+    //
+    // return allFindings.map(
+    //   ({
+    //      // discard match and secret as we don't want to store
+    //      Match,
+    //      Secret,
+    //      ...finding
+    //    }) => ({
+    //     details: titleCaseToCamelCase(finding),
+    //     fingerprint: finding.Fingerprint,
+    //     severity: SecretScanningFindingSeverity.High,
+    //     rule: finding.RuleID
+    //   })
+    // );
+  };
+
   return {
     listRawResources,
-    getScanPath,
+    getFullScanPath,
     initialize,
-    postInitialize: postInitialization
+    postInitialization,
+    teardown
   };
 };

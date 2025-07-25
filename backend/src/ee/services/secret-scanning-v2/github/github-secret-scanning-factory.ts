@@ -64,7 +64,7 @@ export const GitHubSecretScanningFactory = () => {
   };
 
   const teardown: TSecretScanningFactoryTeardown<TGitHubDataSourceWithConnection> = async () => {
-    // no termination required
+    // no teardown required
   };
 
   const listRawResources: TSecretScanningFactoryListRawResources<TGitHubDataSourceWithConnection> = async (

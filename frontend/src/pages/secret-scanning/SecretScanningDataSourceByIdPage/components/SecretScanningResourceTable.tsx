@@ -38,6 +38,7 @@ import { RESOURCE_DESCRIPTION_HELPER } from "@app/helpers/secretScanningV2";
 import { usePagination, useResetPageHelper } from "@app/hooks";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import {
+  SecretScanningDataSource,
   SecretScanningScanStatus,
   TSecretScanningDataSource,
   useListSecretScanningResources
@@ -104,12 +105,24 @@ export const SecretScanningResourcesTable = ({ dataSource }: Props) => {
       resources
         .filter((resource) => {
           const { name } = resource;
-          const {
-            config: { includeRepos }
-          } = dataSource;
 
-          // scott: will need to be differentiated by type once other data sources are available
-          const isActive = includeRepos.includes("*") || includeRepos.includes(name);
+          let isActive: boolean;
+
+          switch (dataSource.type) {
+            case SecretScanningDataSource.Bitbucket:
+            case SecretScanningDataSource.GitHub:
+              isActive =
+                dataSource.config.includeRepos.includes("*") ||
+                dataSource.config.includeRepos.includes(name);
+              break;
+            case SecretScanningDataSource.GitLab:
+              isActive =
+                dataSource.config.includeProjects.includes("*") ||
+                dataSource.config.includeProjects.includes(name);
+              break;
+            default:
+              throw new Error("Unhandled Data Source Type: Active Filter");
+          }
 
           if (filters.status.length === 1) {
             if (filters.status.includes(ResourceStatus.Active) && !isActive) {

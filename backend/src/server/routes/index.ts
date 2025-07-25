@@ -1923,7 +1923,8 @@ export const registerRoutes = async (
     projectMembershipDAL,
     smtpService,
     kmsService,
-    keyStore
+    keyStore,
+    appConnectionDAL
   });
 
   const secretScanningV2Service = secretScanningV2ServiceFactory({

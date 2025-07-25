@@ -78,8 +78,8 @@ export const secretScanningV2ServiceFactory = ({
   appConnectionService,
   licenseService,
   secretScanningV2Queue,
-  kmsService,
-  appConnectionDAL
+  appConnectionDAL,
+  kmsService
 }: TSecretScanningV2ServiceFactoryDep) => {
   const $checkListSecretScanningDataSourcesByProjectIdPermissions = async (
     projectId: string,
@@ -258,7 +258,10 @@ export const secretScanningV2ServiceFactory = ({
       );
     }
 
-    const factory = SECRET_SCANNING_FACTORY_MAP[payload.type]();
+    const factory = SECRET_SCANNING_FACTORY_MAP[payload.type]({
+      appConnectionDAL,
+      kmsService
+    });
 
     try {
       const createdDataSource = await factory.initialize(
@@ -419,7 +422,10 @@ export const secretScanningV2ServiceFactory = ({
         message: `Secret Scanning Data Source with ID "${dataSourceId}" is not configured for ${SECRET_SCANNING_DATA_SOURCE_NAME_MAP[type]}`
       });
 
-    const factory = SECRET_SCANNING_FACTORY_MAP[type]();
+    const factory = SECRET_SCANNING_FACTORY_MAP[type]({
+      appConnectionDAL,
+      kmsService
+    });
 
     let connection: TAppConnection | null = null;
     if (dataSource.connection) {

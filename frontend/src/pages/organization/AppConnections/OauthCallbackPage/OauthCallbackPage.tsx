@@ -65,7 +65,7 @@ type AzureDevOpsFormData = BaseFormData &
 type FormDataMap = {
   [AppConnection.GitHub]: GithubFormData & { app: AppConnection.GitHub };
   [AppConnection.GitHubRadar]: GithubRadarFormData & { app: AppConnection.GitHubRadar };
-  [AppConnection.GitLab]: GitLabFormData & { app: AppConnection.Gitlab };
+  [AppConnection.GitLab]: GitLabFormData & { app: AppConnection.GitLab };
   [AppConnection.AzureKeyVault]: AzureKeyVaultFormData & { app: AppConnection.AzureKeyVault };
   [AppConnection.AzureAppConfiguration]: AzureAppConfigurationFormData & {
     app: AppConnection.AzureAppConfiguration;

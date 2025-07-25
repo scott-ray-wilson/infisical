@@ -124,7 +124,7 @@ export type TFlyioConnectionOption = TAppConnectionOptionBase & {
 };
 
 export type TGitlabConnectionOption = TAppConnectionOptionBase & {
-  app: AppConnection.Gitlab;
+  app: AppConnection.GitLab;
   oauthClientId?: string;
 };
 

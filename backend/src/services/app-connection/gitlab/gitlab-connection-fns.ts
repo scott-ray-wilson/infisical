@@ -222,6 +222,10 @@ export const validateGitLabConnectionCredentials = async (config: TGitLabConnect
   return inputCredentials;
 };
 
+export const getGitLabConnectionClient = async(appConnection: TGitLabConnection,
+appConnectionDAL: Pick<TAppConnectionDALFactory, "updateById">;
+kmsService: Pick<TKmsServiceFactory, "createCipherPairWithDataKey">;)
+
 export const listGitLabProjects = async ({
   appConnection,
   appConnectionDAL,

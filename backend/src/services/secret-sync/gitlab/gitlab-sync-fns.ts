@@ -2,12 +2,7 @@
 import { GitbeakerRequestError } from "@gitbeaker/rest";
 
 import { TAppConnectionDALFactory } from "@app/services/app-connection/app-connection-dal";
-import {
-  getGitLabClient,
-  GitLabConnectionMethod,
-  refreshGitLabToken,
-  TGitLabConnection
-} from "@app/services/app-connection/gitlab";
+import { getGitLabClient, GitLabConnectionMethod, TGitLabConnection } from "@app/services/app-connection/gitlab";
 import { TKmsServiceFactory } from "@app/services/kms/kms-service";
 import { TGitLabSyncWithCredentials, TGitLabVariable } from "@app/services/secret-sync/gitlab/gitlab-sync-types";
 import { SecretSyncError } from "@app/services/secret-sync/secret-sync-errors";
@@ -37,29 +32,6 @@ interface TGitLabVariableUpdate extends Omit<TGitLabVariablePayload, "key"> {}
 type TGitLabSyncFactoryDeps = {
   appConnectionDAL: Pick<TAppConnectionDALFactory, "updateById">;
   kmsService: Pick<TKmsServiceFactory, "createCipherPairWithDataKey">;
-};
-
-const getValidAccessToken = async (
-  connection: TGitLabConnection,
-  appConnectionDAL: Pick<TAppConnectionDALFactory, "updateById">,
-  kmsService: Pick<TKmsServiceFactory, "createCipherPairWithDataKey">
-): Promise<string> => {
-  if (
-    connection.method === GitLabConnectionMethod.OAuth &&
-    connection.credentials.refreshToken &&
-    new Date(connection.credentials.expiresAt) < new Date()
-  ) {
-    const accessToken = await refreshGitLabToken(
-      connection.credentials.refreshToken,
-      connection.id,
-      connection.orgId,
-      appConnectionDAL,
-      kmsService,
-      connection.credentials.instanceUrl
-    );
-    return accessToken;
-  }
-  return connection.credentials.accessToken;
 };
 
 const getGitLabVariables = async ({

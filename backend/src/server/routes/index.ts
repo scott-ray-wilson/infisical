@@ -1932,7 +1932,8 @@ export const registerRoutes = async (
     licenseService,
     secretScanningV2DAL,
     secretScanningV2Queue,
-    kmsService
+    kmsService,
+    appConnectionDAL
   });
 
   // setup the communication with license key server

@@ -46,6 +46,7 @@ import {
 import { DatabaseErrorCode } from "@app/lib/error-codes";
 import { BadRequestError, DatabaseError, NotFoundError } from "@app/lib/errors";
 import { OrgServiceActor } from "@app/lib/types";
+import { TAppConnectionDALFactory } from "@app/services/app-connection/app-connection-dal";
 import { decryptAppConnection } from "@app/services/app-connection/app-connection-fns";
 import { TAppConnectionServiceFactory } from "@app/services/app-connection/app-connection-service";
 import { TAppConnection } from "@app/services/app-connection/app-connection-types";
@@ -59,6 +60,7 @@ import { TSecretScanningV2QueueServiceFactory } from "./secret-scanning-v2-queue
 export type TSecretScanningV2ServiceFactoryDep = {
   secretScanningV2DAL: TSecretScanningV2DALFactory;
   appConnectionService: Pick<TAppConnectionServiceFactory, "connectAppConnectionById">;
+  appConnectionDAL: Pick<TAppConnectionDALFactory, "updateById">;
   permissionService: Pick<TPermissionServiceFactory, "getProjectPermission" | "getOrgPermission">;
   licenseService: Pick<TLicenseServiceFactory, "getPlan">;
   secretScanningV2Queue: Pick<
@@ -76,7 +78,8 @@ export const secretScanningV2ServiceFactory = ({
   appConnectionService,
   licenseService,
   secretScanningV2Queue,
-  kmsService
+  kmsService,
+  appConnectionDAL
 }: TSecretScanningV2ServiceFactoryDep) => {
   const $checkListSecretScanningDataSourcesByProjectIdPermissions = async (
     projectId: string,

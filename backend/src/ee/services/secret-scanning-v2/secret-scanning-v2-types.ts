@@ -21,14 +21,24 @@ import {
   TGitHubFinding,
   TQueueGitHubResourceDiffScan
 } from "@app/ee/services/secret-scanning-v2/github";
+import {
+  TGitLabDataSource,
+  TGitLabDataSourceCredentials,
+  TGitLabDataSourceInput,
+  TGitLabDataSourceListItem,
+  TGitLabDataSourceWithConnection,
+  TGitLabFinding
+} from "@app/ee/services/secret-scanning-v2/gitlab";
 import { TSecretScanningV2DALFactory } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-dal";
 import {
   SecretScanningDataSource,
   SecretScanningFindingStatus,
   SecretScanningScanStatus
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
+import { TAppConnectionDALFactory } from "@app/services/app-connection/app-connection-dal";
+import { TKmsServiceFactory } from "@app/services/kms/kms-service";
 
-export type TSecretScanningDataSource = TGitHubDataSource | TBitbucketDataSource;
+export type TSecretScanningDataSource = TGitHubDataSource | TBitbucketDataSource | TGitLabDataSource;
 
 export type TSecretScanningDataSourceWithDetails = TSecretScanningDataSource & {
   lastScannedAt?: Date | null;
@@ -52,15 +62,25 @@ export type TSecretScanningScanWithDetails = TSecretScanningScans & {
 
 export type TSecretScanningDataSourceWithConnection =
   | TGitHubDataSourceWithConnection
-  | TBitbucketDataSourceWithConnection;
+  | TBitbucketDataSourceWithConnection
+  | TGitLabDataSourceWithConnection;
 
-export type TSecretScanningDataSourceInput = TGitHubDataSourceInput | TBitbucketDataSourceInput;
+export type TSecretScanningDataSourceInput =
+  | TGitHubDataSourceInput
+  | TBitbucketDataSourceInput
+  | TGitLabDataSourceInput;
 
-export type TSecretScanningDataSourceListItem = TGitHubDataSourceListItem | TBitbucketDataSourceListItem;
+export type TSecretScanningDataSourceListItem =
+  | TGitHubDataSourceListItem
+  | TBitbucketDataSourceListItem
+  | TGitLabDataSourceListItem;
 
-export type TSecretScanningDataSourceCredentials = TBitbucketDataSourceCredentials | undefined;
+export type TSecretScanningDataSourceCredentials =
+  | TBitbucketDataSourceCredentials
+  | TGitLabDataSourceCredentials
+  | undefined;
 
-export type TSecretScanningFinding = TGitHubFinding | TBitbucketFinding;
+export type TSecretScanningFinding = TGitHubFinding | TBitbucketFinding | TGitLabFinding;
 
 export type TListSecretScanningDataSourcesByProjectId = {
   projectId: string;
@@ -181,12 +201,17 @@ export type TSecretScanningFactoryTeardown<
   C extends TSecretScanningDataSourceCredentials = undefined
 > = (params: { dataSource: T; credentials: C }) => Promise<void>;
 
+export type TSecretScanningFactoryParams = {
+  appConnectionDAL: Pick<TAppConnectionDALFactory, "updateById">;
+  kmsService: Pick<TKmsServiceFactory, "createCipherPairWithDataKey">;
+};
+
 export type TSecretScanningFactory<
   T extends TSecretScanningDataSourceWithConnection,
   P extends TQueueSecretScanningResourceDiffScan["payload"],
   I extends TSecretScanningDataSourceInput,
   C extends TSecretScanningDataSourceCredentials | undefined = undefined
-> = () => {
+> = (params: TSecretScanningFactoryParams) => {
   listRawResources: TSecretScanningFactoryListRawResources<T>;
   getFullScanPath: TSecretScanningFactoryGetFullScanPath<T>;
   initialize: TSecretScanningFactoryInitialize<I, T["connection"] | undefined, C>;

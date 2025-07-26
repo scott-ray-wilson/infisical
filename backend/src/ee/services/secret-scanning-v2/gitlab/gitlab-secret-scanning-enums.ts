@@ -1,4 +1,4 @@
-export enum GitLabDataSourceCredentialsType {
+export enum GitLabDataSourceScope {
   Project = "project",
   Group = "group"
 }

@@ -1,10 +1,18 @@
 import { Camelize, GitbeakerRequestError, ProjectHookSchema } from "@gitbeaker/rest";
 import { join } from "path";
 
-import { TGitHubDataSourceWithConnection } from "@app/ee/services/secret-scanning-v2/github";
-import { GitLabDataSourceCredentialsType } from "@app/ee/services/secret-scanning-v2/gitlab/gitlab-secret-scanning-enums";
-import { SecretScanningResource } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
-import { cloneRepository } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-fns";
+import { scanContentAndGetFindings } from "@app/ee/services/secret-scanning/secret-scanning-queue/secret-scanning-fns";
+import { SecretMatch } from "@app/ee/services/secret-scanning/secret-scanning-queue/secret-scanning-queue-types";
+import { GitLabDataSourceScope } from "@app/ee/services/secret-scanning-v2/gitlab/gitlab-secret-scanning-enums";
+import {
+  SecretScanningFindingSeverity,
+  SecretScanningResource
+} from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-enums";
+import {
+  cloneRepository,
+  convertPatchLineToFileLineNumber,
+  replaceNonChangesWithNewlines
+} from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-fns";
 import {
   TSecretScanningFactoryGetDiffScanFindingsPayload,
   TSecretScanningFactoryGetDiffScanResourcePayload,
@@ -17,13 +25,11 @@ import {
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-types";
 import { getConfig } from "@app/lib/config/env";
 import { BadRequestError, InternalServerError } from "@app/lib/errors";
-import { logger } from "@app/lib/logger";
+import { titleCaseToCamelCase } from "@app/lib/fn";
 import { alphaNumericNanoId } from "@app/lib/nanoid";
 import {
   getGitLabConnectionClient,
   getGitLabInstanceUrl,
-  GitLabAccessTokenType,
-  GitLabConnectionMethod,
   TGitLabConnection
 } from "@app/services/app-connection/gitlab";
 
@@ -51,109 +57,90 @@ export const GitLabSecretScanningFactory = ({ appConnectionDAL, kmsService }: TS
     TGitLabDataSourceInput,
     TGitLabConnection,
     TGitLabDataSourceCredentials
-  > = async ({ payload, connection }, callback) => {
+  > = async ({ payload: { config, name }, connection }, callback) => {
     const token = alphaNumericNanoId(64);
 
     const client = await getGitLabConnectionClient(connection, appConnectionDAL, kmsService);
     const appCfg = getConfig();
 
-    switch (connection.method) {
-      case GitLabConnectionMethod.AccessToken: {
-        switch (connection.credentials.accessTokenType) {
-          case GitLabAccessTokenType.Project: {
-            const [project] = await client.Projects.all({
-              archived: false,
-              includePendingDelete: false,
-              membership: true,
-              includeHidden: false,
-              imported: false
-            });
+    if (config.scope === GitLabDataSourceScope.Project) {
+      const { projectId } = config;
+      const project = await client.Projects.show(projectId);
 
-            if (!project) {
-              throw new BadRequestError({ message: "Could not find project associated with access token." });
-            }
-
-            let hook: Camelize<ProjectHookSchema>;
-            try {
-              hook = await client.ProjectHooks.add(project.id, `${appCfg.SITE_URL}/secret-scanning/webhooks/gitlab`, {
-                token,
-                pushEvents: true,
-                enableSslVerification: true,
-                // @ts-expect-error gitbeaker is outdated, and the types don't support this field yet
-                name: `Infisical Secret Scanning - ${payload.name}`
-              });
-            } catch (error) {
-              if (error instanceof GitbeakerRequestError) {
-                throw new BadRequestError({ message: error.message });
-              }
-
-              throw error;
-            }
-
-            try {
-              return await callback({
-                credentials: {
-                  token,
-                  type: GitLabDataSourceCredentialsType.Project,
-                  hookId: hook.id,
-                  projectId: project.id
-                }
-              });
-            } catch (error) {
-              try {
-                await client.ProjectHooks.remove(project.id, hook.id);
-              } catch {
-                // do nothing, just try to clean up webhook
-              }
-
-              throw error;
-            }
-          }
-          default:
-            throw new Error(`Unhandled GitLab Access Token Type: ${connection.credentials.accessTokenType}`);
-        }
-        break;
+      if (!project) {
+        throw new BadRequestError({ message: `Could not find project with ID ${projectId}.` });
       }
-      default:
-        throw new InternalServerError({
-          message: `Unhandled GitLab Connection Method: ${connection.method as GitLabConnectionMethod}`
+
+      let hook: Camelize<ProjectHookSchema>;
+      try {
+        hook = await client.ProjectHooks.add(projectId, `${appCfg.SITE_URL}/secret-scanning/webhooks/gitlab`, {
+          token,
+          pushEvents: true,
+          enableSslVerification: true,
+          // @ts-expect-error gitbeaker is outdated, and the types don't support this field yet
+          name: `Infisical Secret Scanning - ${name}`
         });
+      } catch (error) {
+        if (error instanceof GitbeakerRequestError) {
+          throw new BadRequestError({ message: error.message });
+        }
+
+        throw error;
+      }
+
+      try {
+        return await callback({
+          credentials: {
+            token,
+            hookId: hook.id
+          }
+        });
+      } catch (error) {
+        try {
+          await client.ProjectHooks.remove(projectId, hook.id);
+        } catch {
+          // do nothing, just try to clean up webhook
+        }
+
+        throw error;
+      }
     }
+
+    // group scope
   };
 
   const postInitialization: TSecretScanningFactoryPostInitialization<
     TGitLabDataSourceInput,
     TGitLabConnection,
     TGitLabDataSourceCredentials
-  > = async ({ connection, dataSourceId, credentials }) => {
+  > = async ({ connection, dataSourceId, credentials, payload: { config } }) => {
     const client = await getGitLabConnectionClient(connection, appConnectionDAL, kmsService);
     const appCfg = getConfig();
 
-    switch (credentials.type) {
-      case GitLabDataSourceCredentialsType.Project: {
-        const { projectId, hookId } = credentials;
-        try {
-          await client.ProjectHooks.edit(projectId, hookId, `${appCfg.SITE_URL}/secret-scanning/webhooks/gitlab`, {
-            // @ts-expect-error gitbeaker is outdated, and the types don't support this field yet
-            name: `Infisical Secret Scanning - ${dataSourceId}`,
-            custom_headers: [{ key: "x-data-source-id", value: dataSourceId }]
-          });
-        } catch (error) {
-          try {
-            await client.ProjectHooks.remove(projectId, hookId);
-          } catch {
-            // do nothing, just try to clean up webhook
-          }
+    const hookUrl = `${appCfg.SITE_URL}/secret-scanning/webhooks/gitlab`;
 
-          throw error;
-        }
-        break;
-      }
-      default:
-        throw new InternalServerError({
-          message: `Unhandled GitLab Data Source Credentials Type: ${credentials.type as GitLabDataSourceCredentialsType}`
+    if (config.scope === GitLabDataSourceScope.Project) {
+      const { hookId } = credentials;
+      const { projectId } = config;
+
+      try {
+        await client.ProjectHooks.edit(projectId, hookId, hookUrl, {
+          // @ts-expect-error gitbeaker is outdated, and the types don't support this field yet
+          name: `Infisical Secret Scanning - ${dataSourceId}`,
+          custom_headers: [{ key: "x-data-source-id", value: dataSourceId }]
         });
+      } catch (error) {
+        try {
+          await client.ProjectHooks.remove(projectId, hookId);
+        } catch {
+          // do nothing, just try to clean up webhook
+        }
+
+        throw error;
+      }
     }
+
+    // group-scope
   };
 
   const listRawResources: TSecretScanningFactoryListRawResources<TGitLabDataSourceWithConnection> = async (
@@ -204,7 +191,6 @@ export const GitLabSecretScanningFactory = ({ appConnectionDAL, kmsService }: TS
     const repoPath = join(tempFolder, "repo.git");
 
     await cloneRepository({
-      // TODO: test main domain with self-hosted
       cloneUrl: `https://${user.username}:${connection.credentials.accessToken}@${getMainDomain(instanceUrl)}/${resourceName}.git`,
       repoPath
     });
@@ -212,8 +198,27 @@ export const GitLabSecretScanningFactory = ({ appConnectionDAL, kmsService }: TS
     return repoPath;
   };
 
-  const teardown: TSecretScanningFactoryTeardown<TGitHubDataSourceWithConnection> = async () => {
-    // no teardown required
+  const teardown: TSecretScanningFactoryTeardown<
+    TGitLabDataSourceWithConnection,
+    TGitLabDataSourceCredentials
+  > = async ({ dataSource, credentials }) => {
+    const client = await getGitLabConnectionClient(dataSource.connection, appConnectionDAL, kmsService);
+
+    switch (credentials.type) {
+      case GitLabDataSourceScope.Project: {
+        const { projectId, hookId } = credentials;
+        try {
+          await client.ProjectHooks.remove(projectId, hookId);
+        } catch (error) {
+          // do nothing, just try to clean up webhook
+        }
+        break;
+      }
+      default:
+        throw new InternalServerError({
+          message: `Unhandled GitLab Data Source Credentials Type: ${credentials.type as GitLabDataSourceScope}`
+        });
+    }
   };
 
   const getDiffScanResourcePayload: TSecretScanningFactoryGetDiffScanResourcePayload<
@@ -230,114 +235,73 @@ export const GitLabSecretScanningFactory = ({ appConnectionDAL, kmsService }: TS
     TGitLabDataSourceWithConnection,
     TQueueGitLabResourceDiffScan["payload"]
   > = async ({ dataSource, payload, resourceName, configPath }) => {
-    logger.warn(payload, "payload");
+    const { connection } = dataSource;
 
-    const { commits } = payload;
+    const client = await getGitLabConnectionClient(connection, appConnectionDAL, kmsService);
 
-    return [];
-    // const {
-    //   connection: {
-    //     credentials: { apiToken, email }
-    //   }
-    // } = dataSource;
-    //
-    // const { push, repository } = payload;
-    //
-    // const allFindings: SecretMatch[] = [];
-    //
-    // const authHeader = `Basic ${Buffer.from(`${email}:${apiToken}`).toString("base64")}`;
-    //
-    // for (const change of push.changes) {
-    //   for (const commit of change.commits) {
-    //     // eslint-disable-next-line no-await-in-loop
-    //     const { data: diffstat } = await request.get<{
-    //       values: {
-    //         status: "added" | "modified" | "removed" | "renamed";
-    //         new?: { path: string };
-    //         old?: { path: string };
-    //       }[];
-    //     }>(`${IntegrationUrls.BITBUCKET_API_URL}/2.0/repositories/${repository.full_name}/diffstat/${commit.hash}`, {
-    //       headers: {
-    //         Authorization: authHeader,
-    //         Accept: "application/json"
-    //       }
-    //     });
-    //
-    //     // eslint-disable-next-line no-continue
-    //     if (!diffstat.values) continue;
-    //
-    //     for (const file of diffstat.values) {
-    //       if ((file.status === "added" || file.status === "modified") && file.new?.path) {
-    //         const filePath = file.new.path;
-    //
-    //         // eslint-disable-next-line no-await-in-loop
-    //         const { data: patch } = await request.get<string>(
-    //           `https://api.bitbucket.org/2.0/repositories/${repository.full_name}/diff/${commit.hash}`,
-    //           {
-    //             params: {
-    //               path: filePath
-    //             },
-    //             headers: {
-    //               Authorization: authHeader
-    //             },
-    //             responseType: "text"
-    //           }
-    //         );
-    //
-    //         // eslint-disable-next-line no-continue
-    //         if (!patch) continue;
-    //
-    //         // eslint-disable-next-line no-await-in-loop
-    //         const findings = await scanContentAndGetFindings(replaceNonChangesWithNewlines(`\n${patch}`), configPath);
-    //
-    //         const adjustedFindings = findings.map((finding) => {
-    //           const startLine = convertPatchLineToFileLineNumber(patch, finding.StartLine);
-    //           const endLine =
-    //             finding.StartLine === finding.EndLine
-    //               ? startLine
-    //               : convertPatchLineToFileLineNumber(patch, finding.EndLine);
-    //           const startColumn = finding.StartColumn - 1; // subtract 1 for +
-    //           const endColumn = finding.EndColumn - 1; // subtract 1 for +
-    //           const authorName = commit.author.user?.display_name || commit.author.raw.split(" <")[0];
-    //           const emailMatch = commit.author.raw.match(/<(.*)>/);
-    //           const authorEmail = emailMatch?.[1] ?? "";
-    //
-    //           return {
-    //             ...finding,
-    //             StartLine: startLine,
-    //             EndLine: endLine,
-    //             StartColumn: startColumn,
-    //             EndColumn: endColumn,
-    //             File: filePath,
-    //             Commit: commit.hash,
-    //             Author: authorName,
-    //             Email: authorEmail,
-    //             Message: commit.message,
-    //             Fingerprint: `${commit.hash}:${filePath}:${finding.RuleID}:${startLine}:${startColumn}`,
-    //             Date: commit.date,
-    //             Link: `https://bitbucket.org/${resourceName}/src/${commit.hash}/${filePath}#lines-${startLine}`
-    //           };
-    //         });
-    //
-    //         allFindings.push(...adjustedFindings);
-    //       }
-    //     }
-    //   }
-    // }
-    //
-    // return allFindings.map(
-    //   ({
-    //      // discard match and secret as we don't want to store
-    //      Match,
-    //      Secret,
-    //      ...finding
-    //    }) => ({
-    //     details: titleCaseToCamelCase(finding),
-    //     fingerprint: finding.Fingerprint,
-    //     severity: SecretScanningFindingSeverity.High,
-    //     rule: finding.RuleID
-    //   })
-    // );
+    const { commits, project } = payload;
+
+    const allFindings: SecretMatch[] = [];
+
+    for (const commit of commits) {
+      // eslint-disable-next-line no-await-in-loop
+      const commitDiffs = await client.Commits.showDiff(project.id, commit.id);
+
+      for (const commitDiff of commitDiffs) {
+        // eslint-disable-next-line no-continue
+        if (commitDiff.deletedFile) continue;
+
+        // eslint-disable-next-line no-await-in-loop
+        const findings = await scanContentAndGetFindings(
+          replaceNonChangesWithNewlines(`\n${commitDiff.diff}`),
+          configPath
+        );
+
+        const adjustedFindings = findings.map((finding) => {
+          const startLine = convertPatchLineToFileLineNumber(commitDiff.diff, finding.StartLine);
+          const endLine =
+            finding.StartLine === finding.EndLine
+              ? startLine
+              : convertPatchLineToFileLineNumber(commitDiff.diff, finding.EndLine);
+          const startColumn = finding.StartColumn - 1; // subtract 1 for +
+          const endColumn = finding.EndColumn - 1; // subtract 1 for +
+          const authorName = commit.author.name;
+          const authorEmail = commit.author.email;
+
+          return {
+            ...finding,
+            StartLine: startLine,
+            EndLine: endLine,
+            StartColumn: startColumn,
+            EndColumn: endColumn,
+            File: commitDiff.newPath,
+            Commit: commit.id,
+            Author: authorName,
+            Email: authorEmail,
+            Message: commit.message,
+            Fingerprint: `${commit.id}:${commitDiff.newPath}:${finding.RuleID}:${startLine}:${startColumn}`,
+            Date: commit.timestamp,
+            Link: `https://gitlab.com/${resourceName}/blob/${commit.id}/${commitDiff.newPath}#L${startLine}`
+          };
+        });
+
+        allFindings.push(...adjustedFindings);
+      }
+    }
+
+    return allFindings.map(
+      ({
+        // discard match and secret as we don't want to store
+        Match,
+        Secret,
+        ...finding
+      }) => ({
+        details: titleCaseToCamelCase(finding),
+        fingerprint: finding.Fingerprint,
+        severity: SecretScanningFindingSeverity.High,
+        rule: finding.RuleID
+      })
+    );
   };
 
   return {

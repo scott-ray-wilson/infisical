@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { GitLabDataSourceCredentialsType } from "@app/ee/services/secret-scanning-v2/gitlab/gitlab-secret-scanning-enums";
+import { GitLabDataSourceScope } from "@app/ee/services/secret-scanning-v2/gitlab/gitlab-secret-scanning-enums";
 import {
   SecretScanningDataSource,
   SecretScanningResource
@@ -12,11 +12,32 @@ import {
   BaseUpdateSecretScanningDataSourceSchema,
   GitRepositoryScanFindingDetailsSchema
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-schemas";
+import { SecretScanningDataSources } from "@app/lib/api-docs";
+import { BasicRepositoryRegex } from "@app/lib/regex";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 
-export const GitLabDataSourceConfigSchema = z.object({
-  includeProjects: z.array(z.string()).nonempty("One or more projects required").default(["*"])
-});
+export const GitLabDataSourceConfigSchema = z.discriminatedUnion("scope", [
+  z.object({
+    scope: z.literal(GitLabDataSourceScope.Group).describe(SecretScanningDataSources.CONFIG.GITLAB.scope),
+    groupId: z.number().describe(SecretScanningDataSources.CONFIG.GITLAB.groupId),
+    includeProjects: z
+      .array(
+        z
+          .string()
+          .min(1)
+          .max(256)
+          .refine((value) => value === "*" || BasicRepositoryRegex.test(value), "Invalid project name format")
+      )
+      .nonempty("One or more projects required")
+      .max(100, "Cannot configure more than 100 projects")
+      .default(["*"])
+      .describe(SecretScanningDataSources.CONFIG.GITLAB.includeProjects)
+  }),
+  z.object({
+    scope: z.literal(GitLabDataSourceScope.Project).describe(SecretScanningDataSources.CONFIG.GITLAB.scope),
+    projectId: z.number().describe(SecretScanningDataSources.CONFIG.GITLAB.projectId)
+  })
+]);
 
 export const GitLabDataSourceSchema = BaseSecretScanningDataSourceSchema({
   type: SecretScanningDataSource.GitLab,
@@ -74,7 +95,7 @@ export const GitLabFindingSchema = BaseSecretScanningFindingSchema.extend({
 
 export const GitLabDataSourceCredentialsSchema = z.discriminatedUnion("type", [
   z.object({
-    type: z.literal(GitLabDataSourceCredentialsType.Project),
+    type: z.literal(GitLabDataSourceScope.Project),
     token: z.string(),
     projectId: z.number().or(z.string()),
     hookId: z.number()

@@ -2695,6 +2695,12 @@ export const SecretScanningDataSources = {
     GITHUB: {
       includeRepos: 'The repositories to include when scanning. Defaults to all repositories (["*"]).'
     },
+    GITLAB: {
+      includeProjects: 'The projects to include when scanning. Defaults to all projects (["*"]).',
+      scope: "The GitLab scope scanning should occur at (project or group level).",
+      projectId: "The ID of the project to scan.",
+      groupId: "The ID of the group to scan projects from."
+    },
     BITBUCKET: {
       workspaceSlug: "The workspace to scan.",
       includeRepos: 'The repositories to include when scanning. Defaults to all repositories (["*"]).'

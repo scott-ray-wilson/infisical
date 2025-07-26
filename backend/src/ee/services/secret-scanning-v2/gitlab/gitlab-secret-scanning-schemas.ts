@@ -20,6 +20,7 @@ export const GitLabDataSourceConfigSchema = z.discriminatedUnion("scope", [
   z.object({
     scope: z.literal(GitLabDataSourceScope.Group).describe(SecretScanningDataSources.CONFIG.GITLAB.scope),
     groupId: z.number().describe(SecretScanningDataSources.CONFIG.GITLAB.groupId),
+    groupName: z.string().trim().max(256).optional().describe(SecretScanningDataSources.CONFIG.GITLAB.groupName),
     includeProjects: z
       .array(
         z
@@ -35,6 +36,7 @@ export const GitLabDataSourceConfigSchema = z.discriminatedUnion("scope", [
   }),
   z.object({
     scope: z.literal(GitLabDataSourceScope.Project).describe(SecretScanningDataSources.CONFIG.GITLAB.scope),
+    projectName: z.string().trim().max(256).optional().describe(SecretScanningDataSources.CONFIG.GITLAB.projectName),
     projectId: z.number().describe(SecretScanningDataSources.CONFIG.GITLAB.projectId)
   })
 ]);
@@ -93,11 +95,7 @@ export const GitLabFindingSchema = BaseSecretScanningFindingSchema.extend({
   details: GitRepositoryScanFindingDetailsSchema
 });
 
-export const GitLabDataSourceCredentialsSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal(GitLabDataSourceScope.Project),
-    token: z.string(),
-    projectId: z.number().or(z.string()),
-    hookId: z.number()
-  })
-]);
+export const GitLabDataSourceCredentialsSchema = z.object({
+  token: z.string(),
+  hookId: z.number()
+});

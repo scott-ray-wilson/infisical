@@ -42,6 +42,7 @@ import {
   TSecretScanningResourceWithDetails,
   useTriggerSecretScanningDataSource
 } from "@app/hooks/api/secretScanningV2";
+import { GitLabDataSourceScope } from "@app/hooks/api/secretScanningV2/types/gitlab-data-source";
 
 type Props = {
   resource: TSecretScanningResourceWithDetails;
@@ -61,11 +62,16 @@ export const SecretScanningResourceRow = ({ resource, dataSource }: Props) => {
         dataSource.config.includeRepos.includes("*") ||
         dataSource.config.includeRepos.includes(name);
       break;
-    case SecretScanningDataSource.GitLab:
-      isActive =
-        dataSource.config.includeProjects.includes("*") ||
-        dataSource.config.includeProjects.includes(name);
+    case SecretScanningDataSource.GitLab: {
+      if (dataSource.config.scope === GitLabDataSourceScope.Project) {
+        isActive = true; // always active
+      } else {
+        isActive =
+          dataSource.config.includeProjects.includes("*") ||
+          dataSource.config.includeProjects.includes(name);
+      }
       break;
+    }
     default:
       throw new Error("Unhandled Data Source Type: Active Status");
   }

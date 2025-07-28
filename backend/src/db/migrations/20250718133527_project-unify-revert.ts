@@ -318,88 +318,88 @@ const BATCH_SIZE = 1000;
 const MIGRATION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
 export async function up(knex: Knex): Promise<void> {
-  const result = await knex.raw("SHOW statement_timeout");
-  const originalTimeout = result.rows[0].statement_timeout;
-
-  try {
-    await knex.raw(`SET statement_timeout = ${MIGRATION_TIMEOUT}`);
-
-    const hasTemplateTypeColumn = await knex.schema.hasColumn(TableName.ProjectTemplates, "type");
-    if (hasTemplateTypeColumn) {
-      await knex(TableName.ProjectTemplates).whereNull("type").update({
-        type: ProjectType.SecretManager
-      });
-      await knex.schema.alterTable(TableName.ProjectTemplates, (t) => {
-        t.string("type").notNullable().defaultTo(ProjectType.SecretManager).alter();
-      });
-    }
-
-    const hasTypeColumn = await knex.schema.hasColumn(TableName.Project, "type");
-    const hasDefaultTypeColumn = await knex.schema.hasColumn(TableName.Project, "defaultProduct");
-    if (hasTypeColumn && hasDefaultTypeColumn) {
-      await knex(TableName.Project).update({
-        // eslint-disable-next-line
-        // @ts-ignore this is because this field is created later
-        type: knex.raw(`"defaultProduct"`)
-      });
-
-      await knex.schema.alterTable(TableName.Project, (t) => {
-        t.string("type").notNullable().alter();
-        t.string("defaultProduct").nullable().alter();
-      });
-
-      // Get all projects that need kickouts in a single query
-      const projectsNeedingKickouts = await getProjectsNeedingKickouts(knex);
-
-      // Process projects in batches to avoid overwhelming the database
-      for (let i = 0; i < projectsNeedingKickouts.length; i += projectsNeedingKickouts.length) {
-        const batch = projectsNeedingKickouts.slice(i, i + BATCH_SIZE);
-        const processedIds: string[] = [];
-
-        for (const project of batch) {
-          const kickoutPromises: Promise<void>[] = [];
-
-          // Only add kickouts that are actually needed (flags are pre-computed)
-          if (project.needsSecretManager) {
-            kickoutPromises.push(kickOutSecretManagerProject(knex, project.id));
-          }
-          if (project.needsCertManager) {
-            kickoutPromises.push(kickOutCertManagerProject(knex, project.id));
-          }
-          if (project.needsKms) {
-            kickoutPromises.push(kickOutKmsProject(knex, project.id));
-          }
-          if (project.needsSsh) {
-            kickoutPromises.push(kickOutSshProject(knex, project.id));
-          }
-          if (project.needsSecretScanning) {
-            kickoutPromises.push(kickOutSecretScanningProject(knex, project.id));
-          }
-
-          // Execute all kickouts in parallel and handle any failures gracefully
-          if (kickoutPromises.length > 0) {
-            const results = await Promise.allSettled(kickoutPromises);
-
-            // Log any failures for debugging
-            results.forEach((res) => {
-              if (res.status === "rejected") {
-                throw new Error(`Migration failed for project ${project.id}: ${res.reason}`);
-              }
-            });
-          }
-
-          processedIds.push(project.id);
-        }
-
-        // Clear defaultProduct for the processed batch
-        if (processedIds.length > 0) {
-          await knex(TableName.Project).whereIn("id", processedIds).update("defaultProduct", null);
-        }
-      }
-    }
-  } finally {
-    await knex.raw(`SET statement_timeout = '${originalTimeout}'`);
-  }
+  // const result = await knex.raw("SHOW statement_timeout");
+  // const originalTimeout = result.rows[0].statement_timeout;
+  //
+  // try {
+  //   await knex.raw(`SET statement_timeout = ${MIGRATION_TIMEOUT}`);
+  //
+  //   const hasTemplateTypeColumn = await knex.schema.hasColumn(TableName.ProjectTemplates, "type");
+  //   if (hasTemplateTypeColumn) {
+  //     await knex(TableName.ProjectTemplates).whereNull("type").update({
+  //       type: ProjectType.SecretManager
+  //     });
+  //     await knex.schema.alterTable(TableName.ProjectTemplates, (t) => {
+  //       t.string("type").notNullable().defaultTo(ProjectType.SecretManager).alter();
+  //     });
+  //   }
+  //
+  //   const hasTypeColumn = await knex.schema.hasColumn(TableName.Project, "type");
+  //   const hasDefaultTypeColumn = await knex.schema.hasColumn(TableName.Project, "defaultProduct");
+  //   if (hasTypeColumn && hasDefaultTypeColumn) {
+  //     await knex(TableName.Project).update({
+  //       // eslint-disable-next-line
+  //       // @ts-ignore this is because this field is created later
+  //       type: knex.raw(`"defaultProduct"`)
+  //     });
+  //
+  //     await knex.schema.alterTable(TableName.Project, (t) => {
+  //       t.string("type").notNullable().alter();
+  //       t.string("defaultProduct").nullable().alter();
+  //     });
+  //
+  //     // Get all projects that need kickouts in a single query
+  //     const projectsNeedingKickouts = await getProjectsNeedingKickouts(knex);
+  //
+  //     // Process projects in batches to avoid overwhelming the database
+  //     for (let i = 0; i < projectsNeedingKickouts.length; i += projectsNeedingKickouts.length) {
+  //       const batch = projectsNeedingKickouts.slice(i, i + BATCH_SIZE);
+  //       const processedIds: string[] = [];
+  //
+  //       for (const project of batch) {
+  //         const kickoutPromises: Promise<void>[] = [];
+  //
+  //         // Only add kickouts that are actually needed (flags are pre-computed)
+  //         if (project.needsSecretManager) {
+  //           kickoutPromises.push(kickOutSecretManagerProject(knex, project.id));
+  //         }
+  //         if (project.needsCertManager) {
+  //           kickoutPromises.push(kickOutCertManagerProject(knex, project.id));
+  //         }
+  //         if (project.needsKms) {
+  //           kickoutPromises.push(kickOutKmsProject(knex, project.id));
+  //         }
+  //         if (project.needsSsh) {
+  //           kickoutPromises.push(kickOutSshProject(knex, project.id));
+  //         }
+  //         if (project.needsSecretScanning) {
+  //           kickoutPromises.push(kickOutSecretScanningProject(knex, project.id));
+  //         }
+  //
+  //         // Execute all kickouts in parallel and handle any failures gracefully
+  //         if (kickoutPromises.length > 0) {
+  //           const results = await Promise.allSettled(kickoutPromises);
+  //
+  //           // Log any failures for debugging
+  //           results.forEach((res) => {
+  //             if (res.status === "rejected") {
+  //               throw new Error(`Migration failed for project ${project.id}: ${res.reason}`);
+  //             }
+  //           });
+  //         }
+  //
+  //         processedIds.push(project.id);
+  //       }
+  //
+  //       // Clear defaultProduct for the processed batch
+  //       if (processedIds.length > 0) {
+  //         await knex(TableName.Project).whereIn("id", processedIds).update("defaultProduct", null);
+  //       }
+  //     }
+  //   }
+  // } finally {
+  //   await knex.raw(`SET statement_timeout = '${originalTimeout}'`);
+  // }
 }
 
 export async function down(knex: Knex): Promise<void> {

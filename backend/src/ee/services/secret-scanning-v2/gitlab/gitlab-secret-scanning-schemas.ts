@@ -13,7 +13,7 @@ import {
   GitRepositoryScanFindingDetailsSchema
 } from "@app/ee/services/secret-scanning-v2/secret-scanning-v2-schemas";
 import { SecretScanningDataSources } from "@app/lib/api-docs";
-import { BasicRepositoryRegex } from "@app/lib/regex";
+import { GitLabProjectRegex } from "@app/lib/regex";
 import { AppConnection } from "@app/services/app-connection/app-connection-enums";
 
 export const GitLabDataSourceConfigSchema = z.discriminatedUnion("scope", [
@@ -27,7 +27,7 @@ export const GitLabDataSourceConfigSchema = z.discriminatedUnion("scope", [
           .string()
           .min(1)
           .max(256)
-          .refine((value) => value === "*" || BasicRepositoryRegex.test(value), "Invalid project name format")
+          .refine((value) => value === "*" || GitLabProjectRegex.test(value), "Invalid project name format")
       )
       .nonempty("One or more projects required")
       .max(100, "Cannot configure more than 100 projects")

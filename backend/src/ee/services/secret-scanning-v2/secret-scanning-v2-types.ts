@@ -194,6 +194,19 @@ export type TSecretScanningFactoryInitialize<
   callback: (parameters: { credentials?: C; externalId?: string }) => Promise<TSecretScanningDataSourceRaw>
 ) => Promise<TSecretScanningDataSourceRaw>;
 
+export type TSecretScanningFactoryUpdate<
+  P extends TSecretScanningDataSourceInput,
+  T extends TSecretScanningDataSourceWithConnection,
+  C extends TSecretScanningDataSourceCredentials = undefined
+> = (
+  params: {
+    payload: P;
+    dataSource: T;
+    secretScanningV2DAL: TSecretScanningV2DALFactory;
+  },
+  callback: (parameters: { credentials?: C }) => Promise<TSecretScanningDataSourceRaw>
+) => Promise<TSecretScanningDataSourceRaw>;
+
 export type TSecretScanningFactoryPostInitialization<
   P extends TSecretScanningDataSourceInput,
   T extends TSecretScanningDataSourceWithConnection["connection"] | undefined = undefined,
@@ -218,9 +231,10 @@ export type TSecretScanningFactory<
 > = (params: TSecretScanningFactoryParams) => {
   listRawResources: TSecretScanningFactoryListRawResources<T>;
   getFullScanPath: TSecretScanningFactoryGetFullScanPath<T>;
-  initialize: TSecretScanningFactoryInitialize<I, T["connection"] | undefined, C>;
-  postInitialization: TSecretScanningFactoryPostInitialization<I, T["connection"] | undefined, C>;
-  teardown: TSecretScanningFactoryTeardown<T, C>;
+  initialize?: TSecretScanningFactoryInitialize<I, T["connection"] | undefined, C>;
+  postInitialization?: TSecretScanningFactoryPostInitialization<I, T["connection"] | undefined, C>;
+  teardown?: TSecretScanningFactoryTeardown<T, C>;
+  update?: TSecretScanningFactoryUpdate<I, T, C>;
   getDiffScanResourcePayload: TSecretScanningFactoryGetDiffScanResourcePayload<P>;
   getDiffScanFindingsPayload: TSecretScanningFactoryGetDiffScanFindingsPayload<T, P>;
 };

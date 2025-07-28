@@ -62,7 +62,9 @@ export const GitLabDataSourceConfigFields = () => {
     setValue("config.includeProjects", []);
     setValue("config.projectName", "");
     setValue("config.groupName", "");
+    // @ts-expect-error rhf doesn't like this but we need to reset
     setValue("config.projectId", undefined);
+    // @ts-expect-error rhf doesn't like this but we need to reset
     setValue("config.groupId", undefined);
   };
 

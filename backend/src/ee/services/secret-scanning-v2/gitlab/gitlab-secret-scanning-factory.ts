@@ -26,6 +26,7 @@ import { getConfig } from "@app/lib/config/env";
 import { BadRequestError } from "@app/lib/errors";
 import { titleCaseToCamelCase } from "@app/lib/fn";
 import { alphaNumericNanoId } from "@app/lib/nanoid";
+import { GitLabProjectRegex } from "@app/lib/regex";
 import {
   getGitLabConnectionClient,
   getGitLabInstanceUrl,
@@ -82,7 +83,7 @@ export const GitLabSecretScanningFactory = ({ appConnectionDAL, kmsService }: TS
         });
       } catch (error) {
         if (error instanceof GitbeakerRequestError) {
-          throw new BadRequestError({ message: error.message });
+          throw new BadRequestError({ message: `${error.message}: ${error.cause?.description ?? "Unknown Error"}` });
         }
 
         throw error;
@@ -265,6 +266,10 @@ export const GitLabSecretScanningFactory = ({ appConnectionDAL, kmsService }: TS
     const user = await client.Users.showCurrentUser();
 
     const repoPath = join(tempFolder, "repo.git");
+
+    if (!GitLabProjectRegex.test(resourceName)) {
+      throw new Error("Invalid GitLab project name");
+    }
 
     await cloneRepository({
       cloneUrl: `https://${user.username}:${connection.credentials.accessToken}@${getMainDomain(instanceUrl)}/${resourceName}.git`,

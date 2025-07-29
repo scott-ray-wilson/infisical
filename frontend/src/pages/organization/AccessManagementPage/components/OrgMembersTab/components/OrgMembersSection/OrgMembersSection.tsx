@@ -13,6 +13,8 @@ import {
   useSubscription
 } from "@app/context";
 import { useDeleteOrgMembership, useUpdateOrgMembership } from "@app/hooks/api";
+import { useDeleteOrgMembershipBatch } from "@app/hooks/api/users/queries";
+import { OrgUser } from "@app/hooks/api/users/types";
 import { usePopUp } from "@app/hooks/usePopUp";
 
 import { AddOrgMemberModal } from "./AddOrgMemberModal";
@@ -33,10 +35,14 @@ export const OrgMembersSection = () => {
     "removeMember",
     "deactivateMember",
     "upgradePlan",
-    "setUpEmail"
+    "setUpEmail",
+    "removeMembers"
   ] as const);
 
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+
   const { mutateAsync: deleteMutateAsync } = useDeleteOrgMembership();
+  const { mutateAsync: deleteBatchMutateAsync } = useDeleteOrgMembershipBatch();
   const { mutateAsync: updateOrgMembership } = useUpdateOrgMembership();
 
   const isMoreIdentitiesAllowed = subscription?.identityLimit
@@ -109,6 +115,28 @@ export const OrgMembersSection = () => {
     handlePopUpClose("removeMember");
   };
 
+  const handleRemoveMembers = async (members: OrgUser[]) => {
+    try {
+      await deleteBatchMutateAsync({
+        orgId,
+        membershipIds: members.map((member) => member.id)
+      });
+
+      createNotification({
+        text: "Successfully removed users from organization",
+        type: "success"
+      });
+
+      setSelectedMemberIds([]);
+      handlePopUpClose("removeMembers");
+    } catch {
+      createNotification({
+        text: "Failed to remove users from the organization",
+        type: "error"
+      });
+    }
+  };
+
   return (
     <div className="mb-6 rounded-lg border border-mineshaft-600 bg-mineshaft-900 p-4">
       <div className="mb-4 flex items-center justify-between">
@@ -130,6 +158,9 @@ export const OrgMembersSection = () => {
       <OrgMembersTable
         handlePopUpOpen={handlePopUpOpen}
         setCompleteInviteLinks={setCompleteInviteLinks}
+        isRemoveMembersModalOpen={popUp.removeMembers.isOpen}
+        selectedMemberIds={selectedMemberIds}
+        setSelectedMemberIds={setSelectedMemberIds}
       />
       <AddOrgMemberModal
         popUp={popUp}
@@ -164,6 +195,34 @@ export const OrgMembersSection = () => {
         }
         buttonText="Deactivate"
       />
+      <DeleteActionModal
+        isOpen={popUp.removeMembers.isOpen}
+        title="Are you sure you want to remove the following members?"
+        onChange={(isOpen) => handlePopUpToggle("removeMembers", isOpen)}
+        deleteKey="confirm"
+        onDeleteApproved={() =>
+          handleRemoveMembers(popUp.removeMembers.data.selectedOrgMemberships as OrgUser[])
+        }
+        buttonText="Remove"
+      >
+        <div className="mt-4 text-sm text-mineshaft-400">
+          The following members will be removed:
+        </div>
+        <div className="mt-2 max-h-[20rem] overflow-y-auto rounded border border-red/40 bg-red/10 p-4 text-sm text-red-200">
+          <ul className="">
+            {(popUp.removeMembers.data?.selectedOrgMemberships as OrgUser[])?.map((member) => {
+              const email = member.user.email ?? member.user.username ?? member.inviteEmail;
+              return (
+                <li>
+                  {member.user.firstName || member.user.lastName
+                    ? `${`${member.user.firstName} ${member.user.lastName}`.trim()} (${email})`
+                    : email}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </DeleteActionModal>
       <UpgradePlanModal
         isOpen={popUp.upgradePlan.isOpen}
         onOpenChange={(isOpen) => handlePopUpToggle("upgradePlan", isOpen)}

@@ -16,6 +16,17 @@ type TDeleteOrgMembership = {
   projectUserAdditionalPrivilegeDAL: Pick<TProjectUserAdditionalPrivilegeDALFactory, "delete">;
 };
 
+type TDeleteOrgMemberships = {
+  orgMembershipIds: string[];
+  orgId: string;
+  orgDAL: Pick<TOrgDALFactory, "findMembership" | "deleteMembershipsById" | "transaction">;
+  projectMembershipDAL: Pick<TProjectMembershipDALFactory, "delete" | "findProjectMembershipsByUserIds">;
+  projectKeyDAL: Pick<TProjectKeyDALFactory, "find" | "delete">;
+  userAliasDAL: Pick<TUserAliasDALFactory, "delete">;
+  licenseService: Pick<TLicenseServiceFactory, "updateSubscriptionOrgMemberCount">;
+  projectUserAdditionalPrivilegeDAL: Pick<TProjectUserAdditionalPrivilegeDALFactory, "delete">;
+};
+
 export const deleteOrgMembershipFn = async ({
   orgMembershipId,
   orgId,
@@ -85,4 +96,83 @@ export const deleteOrgMembershipFn = async ({
   });
 
   return deletedMembership;
+};
+
+export const deleteOrgMembershipsFn = async ({
+  orgMembershipIds,
+  orgId,
+  orgDAL,
+  projectMembershipDAL,
+  projectUserAdditionalPrivilegeDAL,
+  projectKeyDAL,
+  userAliasDAL,
+  licenseService
+}: TDeleteOrgMemberships) => {
+  const deletedMemberships = await orgDAL.transaction(async (tx) => {
+    const orgMemberships = await orgDAL.deleteMembershipsById(orgMembershipIds, orgId, tx);
+
+    const membershipUserIds = orgMemberships
+      .filter((member) => Boolean(member.userId))
+      .map((member) => member.userId) as string[];
+
+    if (!membershipUserIds.length) {
+      await licenseService.updateSubscriptionOrgMemberCount(orgId);
+      return orgMemberships;
+    }
+
+    await userAliasDAL.delete(
+      {
+        $in: {
+          userId: membershipUserIds
+        },
+        orgId
+      },
+      tx
+    );
+
+    await projectUserAdditionalPrivilegeDAL.delete(
+      {
+        $in: {
+          userId: membershipUserIds
+        }
+      },
+      tx
+    );
+
+    // Get all the project memberships of the users in the organization
+    const projectMemberships = await projectMembershipDAL.findProjectMembershipsByUserIds(orgId, membershipUserIds);
+
+    // Delete all the project memberships of the users in the organization
+    await projectMembershipDAL.delete(
+      {
+        $in: {
+          id: projectMemberships.map((membership) => membership.id)
+        }
+      },
+      tx
+    );
+
+    // Get all the project keys of the user in the organization
+    const projectKeys = await projectKeyDAL.find({
+      $in: {
+        projectId: projectMemberships.map((membership) => membership.projectId),
+        receiverId: membershipUserIds
+      }
+    });
+
+    // Delete all the project keys of the user in the organization
+    await projectKeyDAL.delete(
+      {
+        $in: {
+          id: projectKeys.map((key) => key.id)
+        }
+      },
+      tx
+    );
+
+    await licenseService.updateSubscriptionOrgMemberCount(orgId);
+    return orgMemberships;
+  });
+
+  return deletedMemberships;
 };

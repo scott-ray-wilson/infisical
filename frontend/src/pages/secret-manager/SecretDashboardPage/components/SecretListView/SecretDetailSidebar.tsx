@@ -1,15 +1,15 @@
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { subject } from "@casl/ability";
 import { faCircleQuestion, faEye } from "@fortawesome/free-regular-svg-icons";
 import {
   faArrowRotateRight,
   faCheckCircle,
-  faClock,
   faCopy,
   faDesktop,
   faEyeSlash,
   faPlus,
+  faSearch,
   faServer,
   faShare,
   faTag,
@@ -53,16 +53,14 @@ import {
 } from "@app/context";
 import { ProjectPermissionSecretActions } from "@app/context/ProjectPermissionContext/types";
 import { getProjectBaseURL } from "@app/helpers/project";
-import { usePopUp, useToggle } from "@app/hooks";
+import { usePopUp } from "@app/hooks";
 import { useGetSecretVersion } from "@app/hooks/api";
 import { ActorType } from "@app/hooks/api/auditLogs/enums";
-import { useGetReminder } from "@app/hooks/api/reminders";
 import { useGetSecretAccessList } from "@app/hooks/api/secrets/queries";
 import { SecretV3RawSanitized, WsTag } from "@app/hooks/api/types";
 import { hasSecretReadValueOrDescribePermission } from "@app/lib/fn/permission";
 import { camelCaseToSpaces } from "@app/lib/fn/string";
 
-import { CreateReminderForm } from "./CreateReminderForm";
 import { HIDDEN_SECRET_VALUE } from "./SecretItem";
 import { formSchema, SecretActionType, TFormSchema } from "./SecretListView.utils";
 
@@ -115,7 +113,6 @@ export const SecretDetailSidebar = ({
 
   const { permission } = useProjectPermission();
   const { currentWorkspace } = useWorkspace();
-  const { data: reminderData } = useGetReminder(secret?.id);
 
   const tagFields = useFieldArray({
     control,
@@ -222,8 +219,6 @@ export const SecretDetailSidebar = ({
     await onSaveSecret(secret, { ...secret, ...data }, () => reset());
   };
 
-  const [createReminderFormOpen, setCreateReminderFormOpen] = useToggle(false);
-
   useEffect(() => {
     setValue(
       "reminderRecipients",
@@ -289,34 +284,8 @@ export const SecretDetailSidebar = ({
     }
   };
 
-  const getDaysUntilReminder = useMemo(() => {
-    return (): string => {
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-
-      const target = new Date(reminderData?.nextReminderDate || "");
-      target.setHours(0, 0, 0, 0);
-
-      const diffTime = target.getTime() - now.getTime();
-      const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      return `Days until next reminder: ${daysRemaining}`;
-    };
-  }, [reminderData]);
-
   return (
     <>
-      <CreateReminderForm
-        isOpen={createReminderFormOpen}
-        onOpenChange={() => {
-          setCreateReminderFormOpen.toggle();
-        }}
-        workspaceId={currentWorkspace.id}
-        environment={environment}
-        secretPath={secretPath}
-        secretId={secret?.id}
-        reminder={reminderData}
-      />
       <UpgradePlanModal
         isOpen={popUp.secretAccessUpgradePlan.isOpen}
         onOpenChange={(isUpgradeModalOpen) =>
@@ -401,13 +370,13 @@ export const SecretDetailSidebar = ({
                                     !secret?.secretValueHidden && currentWorkspace.secretSharing
                                   }
                                 >
-                                  <Button
+                                  <IconButton
+                                    variant="outline_bg"
+                                    ariaLabel="Share Secret"
                                     isDisabled={
                                       secret?.secretValueHidden || !currentWorkspace.secretSharing
                                     }
                                     className="px-2 py-[0.43rem] font-normal"
-                                    variant="outline_bg"
-                                    leftIcon={<FontAwesomeIcon icon={faShare} />}
                                     onClick={() => {
                                       const value = secret?.valueOverride ?? secret?.value;
                                       if (value) {
@@ -415,9 +384,50 @@ export const SecretDetailSidebar = ({
                                       }
                                     }}
                                   >
-                                    Share
-                                  </Button>
+                                    <FontAwesomeIcon icon={faShare} />
+                                  </IconButton>
                                 </Tooltip>
+                                <Tooltip content="Copy Secret ID">
+                                  <IconButton
+                                    variant="outline_bg"
+                                    ariaLabel="Copy Secret ID"
+                                    onClick={async () => {
+                                      await navigator.clipboard.writeText(secret.id);
+
+                                      createNotification({
+                                        title: "Secret ID Copied",
+                                        text: "The secret ID has been copied to your clipboard.",
+                                        type: "success"
+                                      });
+                                    }}
+                                  >
+                                    <FontAwesomeIcon icon={faCopy} />
+                                  </IconButton>
+                                </Tooltip>
+                                <ProjectPermissionCan
+                                  I={ProjectPermissionActions.Delete}
+                                  a={subject(ProjectPermissionSub.Secrets, {
+                                    environment,
+                                    secretPath,
+                                    secretName: secretKey,
+                                    secretTags: selectTagSlugs
+                                  })}
+                                >
+                                  {(isAllowed) => (
+                                    <Tooltip content="Delete Secret">
+                                      <IconButton
+                                        colorSchema="danger"
+                                        variant="outline_bg"
+                                        ariaLabel="Delete Secret"
+                                        className="border border-mineshaft-600 bg-mineshaft-700 hover:border-red-500/70 hover:bg-red-600/20"
+                                        isDisabled={!isAllowed}
+                                        onClick={onDeleteSecret}
+                                      >
+                                        <FontAwesomeIcon icon={faTrash} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  )}
+                                </ProjectPermissionCan>
                               </div>
                             </FormControl>
                           </div>
@@ -470,53 +480,6 @@ export const SecretDetailSidebar = ({
                 <div
                   className={`mb-4 w-full border-t border-mineshaft-600 ${isOverridden ? "block" : "hidden"}`}
                 />
-                <ProjectPermissionCan
-                  I={ProjectPermissionActions.Edit}
-                  a={subject(ProjectPermissionSub.Secrets, {
-                    environment,
-                    secretPath,
-                    secretName: secretKey,
-                    secretTags: selectTagSlugs
-                  })}
-                >
-                  {(isAllowed) => (
-                    <div className="flex items-center justify-between px-4 pb-4">
-                      <span className="w-max text-sm text-mineshaft-300">
-                        Override with a personal value
-                        <Tooltip
-                          content="Override the secret value with a personal value that does not get shared with other users and machines."
-                          className="z-[100]"
-                        >
-                          <FontAwesomeIcon icon={faCircleQuestion} className="ml-2" />
-                        </Tooltip>
-                      </span>
-                      <Switch
-                        isDisabled={!isAllowed}
-                        id="personal-override"
-                        onCheckedChange={handleOverrideClick}
-                        isChecked={isOverridden}
-                        className="justify-start"
-                      />
-                    </div>
-                  )}
-                </ProjectPermissionCan>
-                {isOverridden && (
-                  <Controller
-                    name="valueOverride"
-                    control={control}
-                    render={({ field }) => (
-                      <FormControl label="Override Value" className="px-4">
-                        <InfisicalSecretInput
-                          isReadOnly={isReadOnly}
-                          environment={environment}
-                          secretPath={secretPath}
-                          containerClassName="text-bunker-300 hover:border-primary-400/50 border border-mineshaft-600 bg-bunker-800 px-2 py-1.5"
-                          {...field}
-                        />
-                      </FormControl>
-                    )}
-                  />
-                )}
               </div>
               <div className="mb-4 mt-2 flex flex-col rounded-md border border-mineshaft-600 bg-mineshaft-900 p-4 px-0 pb-0">
                 <div
@@ -718,46 +681,16 @@ export const SecretDetailSidebar = ({
                     className="mb-0"
                   >
                     <TextArea
-                      className="border border-mineshaft-600 bg-bunker-800 text-sm"
+                      className="!resize-none border border-mineshaft-600 bg-bunker-800 text-sm"
                       readOnly={isReadOnly}
+                      placeholder="add a comment or note to this secret..."
                       rows={5}
                       {...field}
                     />
                   </FormControl>
                 )}
               />
-              <FormControl>
-                {reminderData && reminderData.nextReminderDate ? (
-                  <div className="flex items-center justify-between px-2">
-                    <div className="flex items-center space-x-2">
-                      <FontAwesomeIcon className="text-primary-500" icon={faClock} />
-                      <span className="text-sm text-bunker-300">{getDaysUntilReminder()}</span>
-                    </div>
-                    <div>
-                      <Button
-                        className="px-2 py-1"
-                        variant="outline_bg"
-                        onClick={() => setCreateReminderFormOpen.on()}
-                      >
-                        Update
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="ml-1 flex items-center space-x-2">
-                    <Button
-                      className="w-full px-2 py-2 font-normal"
-                      variant="outline_bg"
-                      leftIcon={<FontAwesomeIcon icon={faClock} />}
-                      onClick={() => setCreateReminderFormOpen.on()}
-                      isDisabled={cannotEditSecret}
-                    >
-                      Create Reminder
-                    </Button>
-                  </div>
-                )}
-              </FormControl>
-              <div className="mb-4flex-grow dark cursor-default text-sm text-bunker-300">
+              <div className="dark flex-1 cursor-default text-sm text-bunker-300">
                 <div className="mb-2 pl-1">Version History</div>
                 <div className="thin-scrollbar flex h-48 flex-col space-y-2 overflow-y-auto overflow-x-hidden rounded-md border border-mineshaft-600 bg-mineshaft-900 p-4 dark:[color-scheme:dark]">
                   {secretVersion?.map(
@@ -939,7 +872,7 @@ export const SecretDetailSidebar = ({
                   )}
                 </div>
               </div>
-              <div className="dark mb-4 flex-grow text-sm text-bunker-300">
+              <div className="dark flex-1 text-sm text-bunker-300">
                 <div className="mb-2 mt-4">
                   Access List
                   <Tooltip
@@ -949,23 +882,7 @@ export const SecretDetailSidebar = ({
                     <FontAwesomeIcon icon={faCircleQuestion} className="ml-2" />
                   </Tooltip>
                 </div>
-                {isPending && (
-                  <Button className="w-full px-2 py-1" variant="outline_bg" isDisabled>
-                    Analyze Access
-                  </Button>
-                )}
-                {!isPending && secretAccessList === undefined && (
-                  <Button
-                    className="w-full px-2 py-1"
-                    variant="outline_bg"
-                    onClick={() => {
-                      handlePopUpOpen("secretAccessUpgradePlan");
-                    }}
-                  >
-                    Analyze Access
-                  </Button>
-                )}
-                {!isPending && secretAccessList && (
+                {secretAccessList ? (
                   <div className="mb-4 flex max-h-72 flex-col space-y-2 overflow-y-auto overflow-x-hidden rounded-md border border-mineshaft-600 bg-mineshaft-900 p-4 dark:[color-scheme:dark]">
                     {secretAccessList.users.length > 0 && (
                       <div className="pb-3">
@@ -974,6 +891,7 @@ export const SecretDetailSidebar = ({
                           {secretAccessList.users.map((user) => (
                             <div className="rounded-md bg-bunker-500">
                               <Tooltip
+                                side="left"
                                 content={user.allowedActions
                                   .map((action) => camelCaseToSpaces(action))
                                   .join(", ")}
@@ -987,7 +905,7 @@ export const SecretDetailSidebar = ({
                                     projectId: currentWorkspace.id,
                                     membershipId: user.membershipId
                                   }}
-                                  className="text-secondary/80 rounded-md border border-mineshaft-600 bg-mineshaft-700 px-1 py-0.5 text-sm hover:text-primary"
+                                  className="text-secondary/80 rounded-md border border-mineshaft-600 bg-mineshaft-700 px-1 py-0.5 text-sm hover:text-mineshaft-100"
                                 >
                                   {user.name}
                                 </Link>
@@ -1004,6 +922,7 @@ export const SecretDetailSidebar = ({
                           {secretAccessList.identities.map((identity) => (
                             <div className="rounded-md bg-bunker-500">
                               <Tooltip
+                                side="left"
                                 content={identity.allowedActions
                                   .map(
                                     (action) =>
@@ -1020,7 +939,7 @@ export const SecretDetailSidebar = ({
                                     projectId: currentWorkspace.id,
                                     identityId: identity.id
                                   }}
-                                  className="text-secondary/80 rounded-md border border-mineshaft-600 bg-mineshaft-700 px-1 py-0.5 text-sm hover:text-primary"
+                                  className="text-secondary/80 rounded-md border border-mineshaft-600 bg-mineshaft-700 px-1 py-0.5 text-sm hover:text-mineshaft-100"
                                 >
                                   {identity.name}
                                 </Link>
@@ -1037,6 +956,7 @@ export const SecretDetailSidebar = ({
                           {secretAccessList.groups.map((group) => (
                             <div className="rounded-md bg-bunker-500">
                               <Tooltip
+                                side="left"
                                 content={group.allowedActions
                                   .map(
                                     (action) =>
@@ -1050,7 +970,7 @@ export const SecretDetailSidebar = ({
                                   params={{
                                     groupId: group.id
                                   }}
-                                  className="text-secondary/80 rounded-md border border-mineshaft-600 bg-mineshaft-700 px-1 py-0.5 text-sm hover:text-primary"
+                                  className="text-secondary/80 rounded-md border border-mineshaft-600 bg-mineshaft-700 px-1 py-0.5 text-sm hover:text-mineshaft-100"
                                 >
                                   {group.name}
                                 </Link>
@@ -1061,75 +981,18 @@ export const SecretDetailSidebar = ({
                       </div>
                     )}
                   </div>
-                )}
-              </div>
-              <div className="flex flex-col space-y-4">
-                <div className="mb-4 flex items-center space-x-4">
-                  <ProjectPermissionCan
-                    I={ProjectPermissionActions.Edit}
-                    a={subject(ProjectPermissionSub.Secrets, {
-                      environment,
-                      secretPath,
-                      secretName: secretKey,
-                      secretTags: selectTagSlugs
-                    })}
+                ) : (
+                  <Button
+                    className="w-full"
+                    leftIcon={<FontAwesomeIcon icon={faSearch} />}
+                    variant="outline_bg"
+                    isDisabled={isPending}
+                    isLoading={isPending}
+                    onClick={() => handlePopUpOpen("secretAccessUpgradePlan")}
                   >
-                    {(isAllowed) => (
-                      <Button
-                        isFullWidth
-                        type="submit"
-                        variant="outline_bg"
-                        isDisabled={isSubmitting || !isDirty || !isAllowed}
-                        isLoading={isSubmitting}
-                      >
-                        Apply Changes
-                      </Button>
-                    )}
-                  </ProjectPermissionCan>
-                  <div className="flex items-center gap-2">
-                    <Tooltip content="Copy Secret ID">
-                      <IconButton
-                        variant="outline_bg"
-                        ariaLabel="Copy Secret ID"
-                        onClick={async () => {
-                          await navigator.clipboard.writeText(secret.id);
-
-                          createNotification({
-                            title: "Secret ID Copied",
-                            text: "The secret ID has been copied to your clipboard.",
-                            type: "success"
-                          });
-                        }}
-                      >
-                        <FontAwesomeIcon icon={faCopy} />
-                      </IconButton>
-                    </Tooltip>
-                    <ProjectPermissionCan
-                      I={ProjectPermissionActions.Delete}
-                      a={subject(ProjectPermissionSub.Secrets, {
-                        environment,
-                        secretPath,
-                        secretName: secretKey,
-                        secretTags: selectTagSlugs
-                      })}
-                    >
-                      {(isAllowed) => (
-                        <Tooltip content="Delete Secret">
-                          <IconButton
-                            colorSchema="danger"
-                            variant="outline_bg"
-                            ariaLabel="Delete Secret"
-                            className="border border-mineshaft-600 bg-mineshaft-700 hover:border-red-500/70 hover:bg-red-600/20"
-                            isDisabled={!isAllowed}
-                            onClick={onDeleteSecret}
-                          >
-                            <FontAwesomeIcon icon={faTrash} />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </ProjectPermissionCan>
-                  </div>
-                </div>
+                    Analyze Access
+                  </Button>
+                )}
               </div>
             </div>
           </form>

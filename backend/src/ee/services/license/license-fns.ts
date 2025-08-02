@@ -26,7 +26,7 @@ export const getDefaultOnPremFeatures = (): TFeatureSet => ({
   githubOrgSync: false,
   customRateLimits: false,
   customAlerts: false,
-  secretAccessInsights: false,
+  secretAccessInsights: true,
   auditLogs: false,
   auditLogsRetentionDays: 0,
   auditLogStreams: false,

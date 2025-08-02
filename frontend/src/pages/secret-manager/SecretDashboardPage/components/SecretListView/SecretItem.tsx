@@ -12,11 +12,9 @@ import {
   DropdownMenuTrigger,
   FontAwesomeSymbol,
   FormControl,
+  GenericFieldLabel,
   IconButton,
   Input,
-  Modal,
-  ModalContent,
-  ModalTrigger,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -41,16 +39,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { memo, useCallback, useEffect, useRef } from "react";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { twMerge } from "tailwind-merge";
-import {
-  hasSecretReference,
-  SecretReferenceTree
-} from "@app/components/secrets/SecretReferenceDetails";
 
 import { ProjectPermissionSecretActions } from "@app/context/ProjectPermissionContext/types";
 import { hasSecretReadValueOrDescribePermission } from "@app/lib/fn/permission";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEyeSlash, faKey, faRotate } from "@fortawesome/free-solid-svg-icons";
 import { PendingAction } from "@app/hooks/api/secretFolders/types";
+import { format } from "date-fns";
+import { CreateReminderForm } from "@app/pages/secret-manager/SecretDashboardPage/components/SecretListView/CreateReminderForm";
 import {
   FontAwesomeSpriteName,
   formSchema,
@@ -113,7 +109,8 @@ export const SecretItem = memo(
     colWidth
   }: Props) => {
     const { handlePopUpOpen, handlePopUpToggle, handlePopUpClose, popUp } = usePopUp([
-      "editSecret"
+      "editSecret",
+      "reminder"
     ] as const);
     const { currentWorkspace } = useWorkspace();
     const { permission } = useProjectPermission();
@@ -489,43 +486,94 @@ export const SecretItem = memo(
                     })}
                   >
                     {(isAllowed) => (
-                      <Modal>
-                        <ModalTrigger asChild>
-                          <IconButton
-                            className="w-0 overflow-hidden p-0 group-hover:w-5"
-                            variant="plain"
-                            size="md"
-                            ariaLabel="reference-tree"
-                            isDisabled={!isAllowed || !hasSecretReference(secret?.value)}
-                          >
-                            <Tooltip
-                              content={
-                                hasSecretReference(secret?.value)
-                                  ? "Secret Reference Tree"
-                                  : "Secret does not contain references"
-                              }
-                            >
-                              <FontAwesomeSymbol
-                                className="h-3.5 w-3.5"
-                                symbolName={FontAwesomeSpriteName.SecretReferenceTree}
-                              />
-                            </Tooltip>
-                          </IconButton>
-                        </ModalTrigger>
-                        <ModalContent
-                          title="Secret Reference Details"
-                          subTitle="Visual breakdown of secrets referenced by this secret."
-                          onOpenAutoFocus={(e) => e.preventDefault()}
+                      <IconButton
+                        className={twMerge(
+                          "w-0 overflow-hidden p-0 group-hover:w-5",
+                          secret.reminder && "w-5 text-primary"
+                        )}
+                        onClick={() => handlePopUpOpen("reminder")}
+                        variant="plain"
+                        size="md"
+                        ariaLabel="Secret reminder"
+                        isDisabled={!isAllowed}
+                      >
+                        <Tooltip
+                          className="max-w-2xl"
+                          content={
+                            secret.reminder ? (
+                              <div className="flex flex-col gap-y-1">
+                                <GenericFieldLabel label="Reminder Date">
+                                  {secret.reminder.nextReminderDate
+                                    ? format(
+                                        new Date(secret.reminder.nextReminderDate),
+                                        "h:mm aa - MMM d yyyy"
+                                      )
+                                    : undefined}
+                                </GenericFieldLabel>
+                                <GenericFieldLabel label="Message">
+                                  {secret.reminder.message}
+                                </GenericFieldLabel>
+                              </div>
+                            ) : (
+                              "Set Secret Reminder"
+                            )
+                          }
                         >
-                          <SecretReferenceTree
-                            secretPath={secretPath}
-                            environment={environment}
-                            secretKey={secret?.key}
+                          <FontAwesomeSymbol
+                            className="h-3.5 w-3.5"
+                            symbolName={FontAwesomeSpriteName.Reminder}
                           />
-                        </ModalContent>
-                      </Modal>
+                        </Tooltip>
+                      </IconButton>
                     )}
                   </ProjectPermissionCan>
+                  {/* <ProjectPermissionCan */}
+                  {/*  I={ProjectPermissionActions.Edit} */}
+                  {/*  a={subject(ProjectPermissionSub.Secrets, { */}
+                  {/*    environment, */}
+                  {/*    secretPath, */}
+                  {/*    secretName, */}
+                  {/*    secretTags: selectedTagSlugs */}
+                  {/*  })} */}
+                  {/* > */}
+                  {/*  {(isAllowed) => ( */}
+                  {/*    <Modal> */}
+                  {/*      <ModalTrigger asChild> */}
+                  {/*        <IconButton */}
+                  {/*          className="w-0 overflow-hidden p-0 group-hover:w-5" */}
+                  {/*          variant="plain" */}
+                  {/*          size="md" */}
+                  {/*          ariaLabel="reference-tree" */}
+                  {/*          isDisabled={!isAllowed || !hasSecretReference(secret?.value)} */}
+                  {/*        > */}
+                  {/*          <Tooltip */}
+                  {/*            content={ */}
+                  {/*              hasSecretReference(secret?.value) */}
+                  {/*                ? "Secret Reference Tree" */}
+                  {/*                : "Secret does not contain references" */}
+                  {/*            } */}
+                  {/*          > */}
+                  {/*            <FontAwesomeSymbol */}
+                  {/*              className="h-3.5 w-3.5" */}
+                  {/*              symbolName={FontAwesomeSpriteName.SecretReferenceTree} */}
+                  {/*            /> */}
+                  {/*          </Tooltip> */}
+                  {/*        </IconButton> */}
+                  {/*      </ModalTrigger> */}
+                  {/*      <ModalContent */}
+                  {/*        title="Secret Reference Details" */}
+                  {/*        subTitle="Visual breakdown of secrets referenced by this secret." */}
+                  {/*        onOpenAutoFocus={(e) => e.preventDefault()} */}
+                  {/*      > */}
+                  {/*        <SecretReferenceTree */}
+                  {/*          secretPath={secretPath} */}
+                  {/*          environment={environment} */}
+                  {/*          secretKey={secret?.key} */}
+                  {/*        /> */}
+                  {/*      </ModalContent> */}
+                  {/*    </Modal> */}
+                  {/*  )} */}
+                  {/* </ProjectPermissionCan> */}
                   <DropdownMenu>
                     <ProjectPermissionCan
                       I={ProjectPermissionActions.Edit}
@@ -957,6 +1005,17 @@ export const SecretItem = memo(
             </AnimatePresence>
           </div>
         </div>
+        {secret.reminder && (
+          <CreateReminderForm
+            isOpen={popUp.reminder.isOpen}
+            onOpenChange={() => handlePopUpToggle("reminder")}
+            workspaceId={currentWorkspace.id}
+            environment={environment}
+            secretPath={secretPath}
+            secretId={secret?.id}
+            reminder={secret.reminder}
+          />
+        )}
         <DeleteActionModal
           isOpen={popUp.editSecret.isOpen}
           deleteKey="confirm"

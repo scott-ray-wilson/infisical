@@ -1,7 +1,7 @@
 // this will show a loading animation with text below
 // if you pass array it will say it one by one giving user clear instruction on what's happening
 
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { twMerge } from "tailwind-merge";
 
@@ -12,6 +12,18 @@ type Props = {
   frequency?: number;
   className?: string;
 };
+
+const LottieContext = createContext();
+
+export function LottieProvider({ children }) {
+  const [frame, setFrame] = useState(0);
+
+  return <LottieContext.Provider value={{ frame, setFrame }}>{children}</LottieContext.Provider>;
+}
+
+export function useLottieAnimation() {
+  return useContext(LottieContext);
+}
 
 export const ContentLoader = ({ text, frequency = 2000, className }: Props) => {
   const [pos, setPos] = useState(0);
@@ -26,6 +38,8 @@ export const ContentLoader = ({ text, frequency = 2000, className }: Props) => {
     return () => clearInterval(interval);
   }, []);
 
+  const { frame, setFrame } = useLottieAnimation();
+
   return (
     <div
       className={twMerge(
@@ -33,7 +47,13 @@ export const ContentLoader = ({ text, frequency = 2000, className }: Props) => {
         className
       )}
     >
-      <Lottie isAutoPlay icon="infisical_loading" className="h-32 w-32" />
+      <Lottie
+        frame={frame}
+        setFrame={setFrame}
+        isAutoPlay
+        icon="infisical_loading"
+        className="h-32 w-32"
+      />
       {text && isTextArray && (
         <AnimatePresence mode="wait">
           <motion.div

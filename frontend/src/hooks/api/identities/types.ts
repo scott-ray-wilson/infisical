@@ -1,7 +1,7 @@
 import { OrderByDirection } from "../generic/types";
 import { OrgIdentityOrderBy } from "../organization/types";
 import { TOrgRole } from "../roles/types";
-import { ProjectUserMembershipTemporaryMode, Workspace } from "../workspace/types";
+import { ProjectType, ProjectUserMembershipTemporaryMode, Workspace } from "../workspace/types";
 import { IdentityAuthMethod, IdentityJwtConfigurationType } from "./enums";
 
 export type IdentityTrustedIp = {
@@ -19,7 +19,17 @@ export type Identity = {
   createdAt: string;
   updatedAt: string;
   isInstanceAdmin?: boolean;
+  orgId: string;
+  projectId?: string;
+  project?: {
+    id: string;
+    name: string;
+    slug: string;
+    type: ProjectType;
+  };
 };
+
+export type ProjectIdentity = Identity & { membership: {} };
 
 export type IdentityAccessToken = {
   id: string;
@@ -84,6 +94,14 @@ export type CreateIdentityDTO = {
   name: string;
   organizationId: string;
   role?: string;
+  hasDeleteProtection: boolean;
+  metadata?: { key: string; value: string }[];
+};
+
+export type CreateProjectIdentityDTO = {
+  name: string;
+  projectId: string;
+  roles?: { role: string }[];
   hasDeleteProtection: boolean;
   metadata?: { key: string; value: string }[];
 };

@@ -88,7 +88,7 @@ export const IdentityProjectAdditionalPrivilegeSection = ({ identityMembershipDe
               identityId={identityId}
               privilegeId={(popUp?.modifyPrivilege?.data as { id: string })?.id}
               isDisabled={permission.cannot(
-                ProjectPermissionIdentityActions.Edit,
+                ProjectPermissionIdentityActions.Edit_DEPRECATED,
                 subject(ProjectPermissionSub.Identity, {
                   identityId
                 })

@@ -60,12 +60,25 @@ export enum ProjectPermissionDynamicSecretActions {
 }
 
 export enum ProjectPermissionIdentityActions {
-  Read = "read",
-  Create = "create",
-  Edit = "edit",
-  Delete = "delete",
+  CreateProjectIdentity = "create-project-identity",
+  UpdateProjectIdentity = "update-project-identity",
+  DeleteProjectIdentity = "delete-project-identity",
+  ReadProjectIdentity = "read-project-identity",
   GrantPrivileges = "grant-privileges",
-  AssumePrivileges = "assume-privileges"
+  AssumePrivileges = "assume-privileges",
+  RevokeAuth = "revoke-auth",
+  CreateToken = "create-token",
+  GetToken = "get-token",
+  DeleteToken = "delete-token",
+  AssignOrgIdentity = "assign-org-identity",
+  UpdateOrgIdentity = "update-org-identity",
+  RemoveOrgIdentity = "remove-org-identity",
+
+  // deprecated in favor of above for new project identities
+  Read_DEPRECATED = "read",
+  Create_DEPRECATED = "create",
+  Edit_DEPRECATED = "edit",
+  Delete_DEPRECATED = "delete"
 }
 
 export enum ProjectPermissionMemberActions {

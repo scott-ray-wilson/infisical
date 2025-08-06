@@ -66,7 +66,7 @@ export const identityProjectServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Create,
+      ProjectPermissionIdentityActions.Create_DEPRECATED,
       subject(ProjectPermissionSub.Identity, {
         identityId
       })
@@ -186,7 +186,7 @@ export const identityProjectServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Edit,
+      ProjectPermissionIdentityActions.Edit_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId })
     );
 
@@ -297,7 +297,7 @@ export const identityProjectServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Delete,
+      ProjectPermissionIdentityActions.Delete_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId })
     );
 
@@ -326,7 +326,7 @@ export const identityProjectServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Read,
+      ProjectPermissionIdentityActions.Read_DEPRECATED,
       ProjectPermissionSub.Identity
     );
 
@@ -361,7 +361,7 @@ export const identityProjectServiceFactory = ({
     });
 
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Read,
+      ProjectPermissionIdentityActions.Read_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId })
     );
 
@@ -398,7 +398,7 @@ export const identityProjectServiceFactory = ({
     });
 
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Read,
+      ProjectPermissionIdentityActions.Read_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId: membership.identityId })
     );
 

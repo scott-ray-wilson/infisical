@@ -67,7 +67,7 @@ export const IdentityRoleModify = ({ identityProjectMembership }: Props) => {
   const { data: projectRoles, isPending: isRolesLoading } = useGetProjectRoles(workspaceId);
   const { permission } = useProjectPermission();
   const isIdentityEditDisabled = permission.cannot(
-    ProjectPermissionIdentityActions.Edit,
+    ProjectPermissionIdentityActions.Edit_DEPRECATED,
     ProjectPermissionSub.Identity
   );
 

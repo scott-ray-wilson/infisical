@@ -11,9 +11,10 @@ import { IdentityProjectsTable } from "./IdentityProjectsTable";
 
 type Props = {
   identityId: string;
+  isProjectManaged: boolean;
 };
 
-export const IdentityProjectsSection = ({ identityId }: Props) => {
+export const IdentityProjectsSection = ({ identityId, isProjectManaged }: Props) => {
   const { mutateAsync: deleteMutateAsync } = useDeleteIdentityFromWorkspace();
 
   const { popUp, handlePopUpOpen, handlePopUpClose, handlePopUpToggle } = usePopUp([
@@ -50,16 +51,18 @@ export const IdentityProjectsSection = ({ identityId }: Props) => {
     <div className="w-full rounded-lg border border-mineshaft-600 bg-mineshaft-900 p-4">
       <div className="flex items-center justify-between border-b border-mineshaft-400 pb-4">
         <h3 className="text-lg font-semibold text-mineshaft-100">Projects</h3>
-        <IconButton
-          ariaLabel="copy icon"
-          variant="plain"
-          className="group relative"
-          onClick={() => {
-            handlePopUpOpen("addIdentityToProject");
-          }}
-        >
-          <FontAwesomeIcon icon={faPlus} />
-        </IconButton>
+        {!isProjectManaged && (
+          <IconButton
+            ariaLabel="copy icon"
+            variant="plain"
+            className="group relative"
+            onClick={() => {
+              handlePopUpOpen("addIdentityToProject");
+            }}
+          >
+            <FontAwesomeIcon icon={faPlus} />
+          </IconButton>
+        )}
       </div>
       <div className="py-4">
         <IdentityProjectsTable identityId={identityId} handlePopUpOpen={handlePopUpOpen} />

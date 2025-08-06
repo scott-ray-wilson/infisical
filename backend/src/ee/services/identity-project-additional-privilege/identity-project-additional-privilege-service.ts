@@ -78,7 +78,7 @@ export const identityProjectAdditionalPrivilegeServiceFactory = ({
     });
 
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Edit,
+      ProjectPermissionIdentityActions.Edit_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId })
     );
 
@@ -180,7 +180,7 @@ export const identityProjectAdditionalPrivilegeServiceFactory = ({
     });
 
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Edit,
+      ProjectPermissionIdentityActions.Edit_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId })
     );
 
@@ -297,7 +297,7 @@ export const identityProjectAdditionalPrivilegeServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Edit,
+      ProjectPermissionIdentityActions.Edit_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId })
     );
 
@@ -370,7 +370,7 @@ export const identityProjectAdditionalPrivilegeServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Read,
+      ProjectPermissionIdentityActions.Read_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId })
     );
 
@@ -414,7 +414,7 @@ export const identityProjectAdditionalPrivilegeServiceFactory = ({
     });
 
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Read,
+      ProjectPermissionIdentityActions.Read_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId })
     );
 

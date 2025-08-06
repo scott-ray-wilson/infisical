@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { apiRequest } from "@app/config/request";
+import { workspaceKeys } from "@app/hooks/api";
 
 import { organizationKeys } from "../organization/queries";
 import { subscriptionQueryKeys } from "../subscriptions/queries";
@@ -22,6 +23,7 @@ import {
   CreateIdentityDTO,
   CreateIdentityUniversalAuthClientSecretDTO,
   CreateIdentityUniversalAuthClientSecretRes,
+  CreateProjectIdentityDTO,
   CreateTokenIdentityTokenAuthDTO,
   CreateTokenIdentityTokenAuthRes,
   DeleteIdentityAliCloudAuthDTO,
@@ -52,6 +54,7 @@ import {
   IdentityTlsCertAuth,
   IdentityTokenAuth,
   IdentityUniversalAuth,
+  ProjectIdentity,
   RevokeTokenDTO,
   RevokeTokenRes,
   UpdateIdentityAliCloudAuthDTO,
@@ -87,6 +90,30 @@ export const useCreateIdentity = () => {
         queryKey: subscriptionQueryKeys.getOrgSubsription(organizationId)
       });
       queryClient.invalidateQueries({ queryKey: identitiesKeys.searchIdentitiesRoot });
+    }
+  });
+};
+
+export const useCreateProjectIdentity = () => {
+  const queryClient = useQueryClient();
+  return useMutation<ProjectIdentity, object, CreateProjectIdentityDTO>({
+    mutationFn: async ({ projectId, ...payload }) => {
+      const {
+        data: { projectIdentity }
+      } = await apiRequest.post(`/api/v3/projects/${projectId}/identities`, payload);
+      return projectIdentity;
+    },
+    onSuccess: ({ orgId }, { projectId }) => {
+      queryClient.invalidateQueries({
+        queryKey: organizationKeys.getOrgIdentityMemberships(orgId)
+      });
+      queryClient.invalidateQueries({
+        queryKey: subscriptionQueryKeys.getOrgSubsription(orgId)
+      });
+      queryClient.invalidateQueries({ queryKey: identitiesKeys.searchIdentitiesRoot });
+      queryClient.invalidateQueries({
+        queryKey: workspaceKeys.getWorkspaceIdentityMemberships(projectId)
+      });
     }
   });
 };

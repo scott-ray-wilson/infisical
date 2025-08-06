@@ -1,9 +1,12 @@
-import { subject } from "@casl/ability";
+import { MongoAbility, MongoQuery, subject } from "@casl/ability";
+import { faCircleQuestion } from "@fortawesome/free-regular-svg-icons";
 import {
   faArrowDown,
   faArrowUp,
   faArrowUpRightFromSquare,
   faBookOpen,
+  faBuilding,
+  faChevronDown,
   faCircleXmark,
   faClock,
   faEllipsisV,
@@ -45,7 +48,14 @@ import {
   Tooltip,
   Tr
 } from "@app/components/v2";
-import { ProjectPermissionActions, ProjectPermissionSub, useWorkspace } from "@app/context";
+import {
+  ProjectPermissionActions,
+  ProjectPermissionIdentityActions,
+  ProjectPermissionSub,
+  useProjectPermission,
+  useWorkspace
+} from "@app/context";
+import { ProjectPermissionSet } from "@app/context/ProjectPermissionContext";
 import { getProjectBaseURL } from "@app/helpers/project";
 import { formatProjectRoleName } from "@app/helpers/roles";
 import {
@@ -60,15 +70,28 @@ import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { ProjectIdentityOrderBy } from "@app/hooks/api/workspace/types";
 import { usePopUp } from "@app/hooks/usePopUp";
 
-import { IdentityModal } from "./components/IdentityModal";
+import { AssignOrgIdentityModal } from "./components/AssignOrgIdentityModal";
+import { ProjectIdentityModal } from "./components/ProjectIdentityModal";
 
 const MAX_ROLES_TO_BE_SHOWN_IN_TABLE = 2;
+
+const getProjectIdentityPermission = (
+  permission: MongoAbility<ProjectPermissionSet, MongoQuery>,
+  actions: [ProjectPermissionIdentityActions, ...ProjectPermissionIdentityActions[]]
+) => {
+  // eslint-disable-next-line no-restricted-syntax
+  for (const action of actions) {
+    if (permission.can(action, ProjectPermissionSub.Identity)) return action;
+  }
+
+  return actions[0];
+};
 
 export const IdentityTab = withProjectPermission(
   () => {
     const { currentWorkspace } = useWorkspace();
     const navigate = useNavigate();
-
+    const { permission } = useProjectPermission();
     const {
       offset,
       limit,
@@ -118,6 +141,7 @@ export const IdentityTab = withProjectPermission(
 
     const { popUp, handlePopUpOpen, handlePopUpClose, handlePopUpToggle } = usePopUp([
       "identity",
+      "createProjectIdentity",
       "deleteIdentity",
       "upgradePlan"
     ] as const);
@@ -186,22 +210,78 @@ export const IdentityTab = withProjectPermission(
                 </div>
               </a>
             </div>
-            <ProjectPermissionCan
-              I={ProjectPermissionActions.Create}
-              a={ProjectPermissionSub.Identity}
-            >
-              {(isAllowed) => (
-                <Button
-                  colorSchema="secondary"
-                  type="submit"
-                  leftIcon={<FontAwesomeIcon icon={faPlus} />}
-                  onClick={() => handlePopUpOpen("identity")}
-                  isDisabled={!isAllowed}
+            <DropdownMenu>
+              <ProjectPermissionCan
+                I={getProjectIdentityPermission(permission, [
+                  ProjectPermissionIdentityActions.Create_DEPRECATED,
+                  ProjectPermissionIdentityActions.AssignOrgIdentity,
+                  ProjectPermissionIdentityActions.CreateProjectIdentity
+                ])}
+                a={ProjectPermissionSub.Identity}
+              >
+                {(isAllowed) => (
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      colorSchema="secondary"
+                      rightIcon={<FontAwesomeIcon icon={faChevronDown} className="ml-2" />}
+                      isDisabled={!isAllowed}
+                    >
+                      Add Identity
+                    </Button>
+                  </DropdownMenuTrigger>
+                )}
+              </ProjectPermissionCan>
+              <DropdownMenuContent sideOffset={2} align="end">
+                <ProjectPermissionCan
+                  I={ProjectPermissionIdentityActions.CreateProjectIdentity}
+                  a={ProjectPermissionSub.Identity}
                 >
-                  Add Identity
-                </Button>
-              )}
-            </ProjectPermissionCan>
+                  {(isAllowed) => (
+                    <DropdownMenuItem
+                      isDisabled={!isAllowed}
+                      icon={<FontAwesomeIcon icon={faPlus} />}
+                      onClick={() => handlePopUpOpen("createProjectIdentity")}
+                    >
+                      <div className="flex w-full items-center justify-between">
+                        <span>Create Project Identity</span>
+                        <Tooltip
+                          className="text-center"
+                          content="Create an identity that will be managed by this project."
+                        >
+                          <FontAwesomeIcon icon={faCircleQuestion} className="text-mineshaft-400" />
+                        </Tooltip>
+                      </div>
+                    </DropdownMenuItem>
+                  )}
+                </ProjectPermissionCan>
+                <ProjectPermissionCan
+                  I={getProjectIdentityPermission(permission, [
+                    ProjectPermissionIdentityActions.Create_DEPRECATED,
+                    ProjectPermissionIdentityActions.AssignOrgIdentity
+                  ])}
+                  a={ProjectPermissionSub.Identity}
+                >
+                  {(isAllowed) => (
+                    <DropdownMenuItem
+                      icon={<FontAwesomeIcon icon={faBuilding} />}
+                      onClick={() => handlePopUpOpen("identity")}
+                      isDisabled={!isAllowed}
+                    >
+                      <div className="flex w-full items-center justify-between">
+                        <span>Assign Org Identity</span>
+                        <Tooltip
+                          side="bottom"
+                          className="text-center"
+                          content="Assign an existing organization identity to this project."
+                        >
+                          <FontAwesomeIcon icon={faCircleQuestion} className="text-mineshaft-400" />
+                        </Tooltip>
+                      </div>
+                    </DropdownMenuItem>
+                  )}
+                </ProjectPermissionCan>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <Input
             containerClassName="mb-4"
@@ -445,7 +525,11 @@ export const IdentityTab = withProjectPermission(
               />
             )}
           </TableContainer>
-          <IdentityModal popUp={popUp} handlePopUpToggle={handlePopUpToggle} />
+          <AssignOrgIdentityModal popUp={popUp} handlePopUpToggle={handlePopUpToggle} />
+          <ProjectIdentityModal
+            isOpen={popUp.createProjectIdentity.isOpen}
+            onOpenChange={(isOpen) => handlePopUpToggle("createProjectIdentity", isOpen)}
+          />
           <DeleteActionModal
             isOpen={popUp.deleteIdentity.isOpen}
             title={`Are you sure you want to remove ${

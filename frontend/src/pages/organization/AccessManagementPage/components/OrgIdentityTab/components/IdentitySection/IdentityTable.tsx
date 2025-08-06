@@ -40,14 +40,11 @@ import {
   Td,
   Th,
   THead,
+  Tooltip,
   Tr
 } from "@app/components/v2";
 import { OrgPermissionIdentityActions, OrgPermissionSubjects, useOrganization } from "@app/context";
-import {
-  getUserTablePreference,
-  PreferenceKey,
-  setUserTablePreference
-} from "@app/helpers/userTablePreferences";
+import { getUserTablePreference, PreferenceKey, setUserTablePreference } from "@app/helpers/userTablePreferences";
 import { usePagination, useResetPageHelper } from "@app/hooks";
 import { useGetOrgRoles, useSearchIdentities, useUpdateIdentity } from "@app/hooks/api";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
@@ -278,13 +275,15 @@ export const IdentityTable = ({ handlePopUpOpen }: Props) => {
                   </IconButton>
                 </div>
               </Th>
+              <Th>Managed By</Th>
               <Th className="w-16">{isFetching ? <Spinner size="xs" /> : null}</Th>
             </Tr>
           </THead>
           <TBody>
-            {isPending && <TableSkeleton columns={3} innerKey="org-identities" />}
+            {isPending && <TableSkeleton columns={4} innerKey="org-identities" />}
             {!isPending &&
-              data?.identities?.map(({ identity: { id, name }, role, customRole }) => {
+              data?.identities?.map(({ identity: { id, name, project }, role, customRole }) => {
+                const isProjectManaged = Boolean(project);
                 return (
                   <Tr
                     className="h-10 cursor-pointer transition-colors duration-100 hover:bg-mineshaft-700"
@@ -329,18 +328,30 @@ export const IdentityTable = ({ handlePopUpOpen }: Props) => {
                         }}
                       </OrgPermissionCan>
                     </Td>
+                    <Td className={project ? "undefined" : "text-mineshaft-400"}>
+                      {isProjectManaged && (
+                        <p className="text-xs leading-3 text-mineshaft-400">Project</p>
+                      )}
+                      {project?.name ?? "Organization"}
+                    </Td>
                     <Td>
                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <IconButton
-                            ariaLabel="Options"
-                            className="w-6"
-                            colorSchema="secondary"
-                            variant="plain"
-                          >
-                            <FontAwesomeIcon icon={faEllipsisV} />
-                          </IconButton>
-                        </DropdownMenuTrigger>
+                        <Tooltip
+                          side="left"
+                          content={isProjectManaged ? "Cannot edit project managed identity" : ""}
+                        >
+                          <DropdownMenuTrigger disabled={Boolean(project)} asChild>
+                            <IconButton
+                              ariaLabel="Options"
+                              className="w-6"
+                              colorSchema="secondary"
+                              variant="plain"
+                              isDisabled={Boolean(project)}
+                            >
+                              <FontAwesomeIcon icon={faEllipsisV} />
+                            </IconButton>
+                          </DropdownMenuTrigger>
+                        </Tooltip>
                         <DropdownMenuContent sideOffset={2} align="end">
                           <OrgPermissionCan
                             I={OrgPermissionIdentityActions.Edit}

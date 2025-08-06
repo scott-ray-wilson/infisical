@@ -249,8 +249,22 @@ export const registerIdentityRouter = async (server: FastifyZodProvider) => {
               permissions: true,
               description: true
             }).optional(),
-            identity: IdentitiesSchema.pick({ name: true, id: true, hasDeleteProtection: true }).extend({
-              authMethods: z.array(z.string())
+            identity: IdentitiesSchema.pick({
+              name: true,
+              id: true,
+              hasDeleteProtection: true,
+              projectId: true,
+              orgId: true
+            }).extend({
+              authMethods: z.array(z.string()),
+              project: z
+                .object({
+                  id: z.string(),
+                  name: z.string(),
+                  slug: z.string(),
+                  type: z.string()
+                })
+                .nullish()
             })
           })
         })
@@ -298,7 +312,13 @@ export const registerIdentityRouter = async (server: FastifyZodProvider) => {
               permissions: true,
               description: true
             }).optional(),
-            identity: IdentitiesSchema.pick({ name: true, id: true, hasDeleteProtection: true }).extend({
+            identity: IdentitiesSchema.pick({
+              name: true,
+              id: true,
+              hasDeleteProtection: true,
+              projectId: true,
+              orgId: true
+            }).extend({
               authMethods: z.array(z.string())
             })
           }).array(),
@@ -393,7 +413,15 @@ export const registerIdentityRouter = async (server: FastifyZodProvider) => {
               description: true
             }).optional(),
             identity: IdentitiesSchema.pick({ name: true, id: true, hasDeleteProtection: true }).extend({
-              authMethods: z.array(z.string())
+              authMethods: z.array(z.string()),
+              project: z
+                .object({
+                  id: z.string(),
+                  name: z.string(),
+                  slug: z.string(),
+                  type: z.string()
+                })
+                .nullish()
             })
           }).array(),
           totalCount: z.number()

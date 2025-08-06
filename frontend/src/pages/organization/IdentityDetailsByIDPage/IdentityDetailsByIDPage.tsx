@@ -1,5 +1,7 @@
 import { Helmet } from "react-helmet";
 import { useTranslation } from "react-i18next";
+import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useNavigate, useParams } from "@tanstack/react-router";
 
 import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
@@ -8,6 +10,7 @@ import { OrgPermissionCan } from "@app/components/permissions";
 import { DeleteActionModal, PageHeader } from "@app/components/v2";
 import { ROUTE_PATHS } from "@app/const/routes";
 import { OrgPermissionIdentityActions, OrgPermissionSubjects, useOrganization } from "@app/context";
+import { getProjectBaseURL, getProjectHomePage } from "@app/helpers/project";
 import { useDeleteIdentity, useGetIdentityById } from "@app/hooks/api";
 import { usePopUp } from "@app/hooks/usePopUp";
 import { ViewIdentityAuthModal } from "@app/pages/organization/IdentityDetailsByIDPage/components/ViewIdentityAuthModal/ViewIdentityAuthModal";
@@ -76,15 +79,58 @@ const Page = () => {
       {data && (
         <div className="mx-auto mb-6 w-full max-w-7xl">
           <PageHeader title={data.identity.name} />
+          {data.identity.project && (
+            <div className="mb-4 flex w-full items-center rounded-md border border-blue-500/50 bg-blue-500/30 px-4 py-2 text-sm text-blue-200">
+              <FontAwesomeIcon icon={faInfoCircle} className="mr-2.5 text-base text-blue-200" />
+              This Identity is managed by the project &#34;
+              <button
+                type="button"
+                onClick={() => {
+                  navigate({
+                    to: `${getProjectHomePage(data.identity.project!.type)}`,
+                    params: {
+                      projectId: data.identity.project!.id
+                    }
+                  });
+                }}
+                className="underline decoration-blue-500 underline-offset-1"
+              >
+                {data.identity.project.name}
+              </button>
+              &#34;
+              <button
+                className="ml-auto underline underline-offset-1"
+                type="button"
+                onClick={() => {
+                  navigate({
+                    to: `${getProjectBaseURL(data.identity.project!.type)}/identities/$identityId`,
+                    params: {
+                      projectId: data.identity.project!.id,
+                      identityId: data.identity.id
+                    }
+                  });
+                }}
+              >
+                View Project Identity
+              </button>
+            </div>
+          )}
           <div className="flex">
             <div className="mr-4 w-96">
-              <IdentityDetailsSection identityId={identityId} handlePopUpOpen={handlePopUpOpen} />
+              <IdentityDetailsSection
+                identityId={identityId}
+                handlePopUpOpen={handlePopUpOpen}
+                isProjectManaged={Boolean(data.identity.projectId)}
+              />
               <IdentityAuthenticationSection
                 identityId={identityId}
                 handlePopUpOpen={handlePopUpOpen}
               />
             </div>
-            <IdentityProjectsSection identityId={identityId} />
+            <IdentityProjectsSection
+              identityId={identityId}
+              isProjectManaged={Boolean(data.identity.projectId)}
+            />
           </div>
         </div>
       )}

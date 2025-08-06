@@ -65,7 +65,7 @@ export const identityProjectAdditionalPrivilegeV2ServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Edit,
+      ProjectPermissionIdentityActions.Edit_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId })
     );
     const { permission: targetIdentityPermission, membership } = await permissionService.getProjectPermission({
@@ -164,7 +164,7 @@ export const identityProjectAdditionalPrivilegeV2ServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Edit,
+      ProjectPermissionIdentityActions.Edit_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId: identityProjectMembership.identityId })
     );
     const { permission: targetIdentityPermission, membership } = await permissionService.getProjectPermission({
@@ -264,7 +264,7 @@ export const identityProjectAdditionalPrivilegeV2ServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Edit,
+      ProjectPermissionIdentityActions.Edit_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId: identityProjectMembership.identityId })
     );
     const { permission: identityRolePermission } = await permissionService.getProjectPermission({
@@ -325,7 +325,7 @@ export const identityProjectAdditionalPrivilegeV2ServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Read,
+      ProjectPermissionIdentityActions.Read_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId: identityProjectMembership.identityId })
     );
 
@@ -360,7 +360,7 @@ export const identityProjectAdditionalPrivilegeV2ServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Read,
+      ProjectPermissionIdentityActions.Read_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId: identityProjectMembership.identityId })
     );
 
@@ -396,7 +396,7 @@ export const identityProjectAdditionalPrivilegeV2ServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
     ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Read,
+      ProjectPermissionIdentityActions.Read_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId: identityProjectMembership.identityId })
     );
 

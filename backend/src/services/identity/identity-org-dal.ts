@@ -15,7 +15,8 @@ import {
   TIdentityTlsCertAuths,
   TIdentityTokenAuths,
   TIdentityUniversalAuths,
-  TOrgRoles
+  TOrgRoles,
+  TProjects
 } from "@app/db/schemas";
 import { TIdentityLdapAuths } from "@app/db/schemas/identity-ldap-auths";
 import { BadRequestError, DatabaseError } from "@app/lib/errors";
@@ -121,7 +122,8 @@ export const identityOrgDALFactory = (db: TDbClient) => {
           db.ref("id").as("ldapId").withSchema(TableName.IdentityLdapAuth),
           db.ref("id").as("tlsCertId").withSchema(TableName.IdentityTlsCertAuth),
           db.ref("name").withSchema(TableName.Identity),
-          db.ref("hasDeleteProtection").withSchema(TableName.Identity)
+          db.ref("hasDeleteProtection").withSchema(TableName.Identity),
+          db.ref("projectId").withSchema(TableName.Identity)
         );
 
       if (data) {
@@ -130,6 +132,7 @@ export const identityOrgDALFactory = (db: TDbClient) => {
           ...data,
           identity: {
             id: data.identityId,
+            projectId: data.projectId,
             name,
             hasDeleteProtection,
             authMethods: buildAuthMethods(data)
@@ -164,7 +167,8 @@ export const identityOrgDALFactory = (db: TDbClient) => {
         .select(
           selectAllTableCols(TableName.IdentityOrgMembership),
           db.ref("name").withSchema(TableName.Identity).as("identityName"),
-          db.ref("hasDeleteProtection").withSchema(TableName.Identity)
+          db.ref("hasDeleteProtection").withSchema(TableName.Identity),
+          db.ref("projectId").withSchema(TableName.Identity)
         )
         .where(filter)
         .as("paginatedIdentity");
@@ -182,7 +186,7 @@ export const identityOrgDALFactory = (db: TDbClient) => {
       const query = (tx || db.replicaNode())
         .from<TSubquery[number], TSubquery>(paginatedIdentity)
         .leftJoin<TOrgRoles>(TableName.OrgRoles, `paginatedIdentity.roleId`, `${TableName.OrgRoles}.id`)
-
+        .leftJoin<TProjects>(TableName.Project, "paginatedIdentity.projectId", `${TableName.Project}.id`)
         .leftJoin(TableName.IdentityMetadata, (queryBuilder) => {
           void queryBuilder
             .on(`paginatedIdentity.identityId`, `${TableName.IdentityMetadata}.identityId`)
@@ -260,6 +264,11 @@ export const identityOrgDALFactory = (db: TDbClient) => {
           db.ref("identityName").withSchema("paginatedIdentity"),
           db.ref("hasDeleteProtection").withSchema("paginatedIdentity"),
 
+          db.ref("projectId").withSchema("paginatedIdentity"),
+          db.ref("name").as("projectName").withSchema(TableName.Project),
+          db.ref("slug").as("projectSlug").withSchema(TableName.Project),
+          db.ref("type").as("projectType").withSchema(TableName.Project),
+
           db.ref("id").as("uaId").withSchema(TableName.IdentityUniversalAuth),
           db.ref("id").as("gcpId").withSchema(TableName.IdentityGcpAuth),
           db.ref("id").as("alicloudId").withSchema(TableName.IdentityAliCloudAuth),
@@ -319,7 +328,11 @@ export const identityOrgDALFactory = (db: TDbClient) => {
           ldapId,
           tlsCertId,
           createdAt,
-          updatedAt
+          updatedAt,
+          projectId,
+          projectName,
+          projectSlug,
+          projectType
         }) => ({
           role,
           roleId,
@@ -341,6 +354,16 @@ export const identityOrgDALFactory = (db: TDbClient) => {
             id: identityId,
             name: identityName,
             hasDeleteProtection,
+            orgId,
+            projectId,
+            project: projectId
+              ? {
+                  id: projectId,
+                  name: projectName,
+                  slug: projectSlug,
+                  type: projectType
+                }
+              : null,
             authMethods: buildAuthMethods({
               uaId,
               alicloudId,
@@ -429,6 +452,7 @@ export const identityOrgDALFactory = (db: TDbClient) => {
         .join<TSubquery>(searchQuery, `${TableName.IdentityOrgMembership}.id`, "searchedIdentities.id")
         .join(TableName.Identity, `${TableName.IdentityOrgMembership}.identityId`, `${TableName.Identity}.id`)
         .leftJoin(TableName.OrgRoles, `${TableName.IdentityOrgMembership}.roleId`, `${TableName.OrgRoles}.id`)
+        .leftJoin(TableName.Project, `${TableName.Identity}.projectId`, `${TableName.Project}.id`)
         .leftJoin(TableName.IdentityMetadata, (queryBuilder) => {
           void queryBuilder
             .on(`${TableName.IdentityOrgMembership}.identityId`, `${TableName.IdentityMetadata}.identityId`)
@@ -500,6 +524,11 @@ export const identityOrgDALFactory = (db: TDbClient) => {
           db.ref("identityId").withSchema(TableName.IdentityOrgMembership).as("identityId"),
           db.ref("name").withSchema(TableName.Identity).as("identityName"),
           db.ref("hasDeleteProtection").withSchema(TableName.Identity),
+
+          db.ref("projectId").withSchema(TableName.Identity),
+          db.ref("name").as("projectName").withSchema(TableName.Project),
+          db.ref("slug").as("projectSlug").withSchema(TableName.Project),
+          db.ref("type").as("projectType").withSchema(TableName.Project),
 
           db.ref("id").as("uaId").withSchema(TableName.IdentityUniversalAuth),
           db.ref("id").as("gcpId").withSchema(TableName.IdentityGcpAuth),
@@ -576,7 +605,11 @@ export const identityOrgDALFactory = (db: TDbClient) => {
           tokenId,
           ldapId,
           createdAt,
-          updatedAt
+          updatedAt,
+          projectId,
+          projectName,
+          projectSlug,
+          projectType
         }) => ({
           role,
           roleId,
@@ -611,7 +644,16 @@ export const identityOrgDALFactory = (db: TDbClient) => {
               tokenId,
               jwtId,
               ldapId
-            })
+            }),
+            projectId,
+            project: projectId
+              ? {
+                  id: projectId,
+                  name: projectName,
+                  slug: projectSlug,
+                  type: projectType
+                }
+              : null
           }
         }),
         childrenMapper: [

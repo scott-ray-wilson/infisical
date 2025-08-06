@@ -144,12 +144,23 @@ const buildAdminPermissionRules = () => {
 
   can(
     [
-      ProjectPermissionIdentityActions.Create,
-      ProjectPermissionIdentityActions.Edit,
-      ProjectPermissionIdentityActions.Delete,
-      ProjectPermissionIdentityActions.Read,
+      ProjectPermissionIdentityActions.Create_DEPRECATED,
+      ProjectPermissionIdentityActions.Edit_DEPRECATED,
+      ProjectPermissionIdentityActions.Delete_DEPRECATED,
+      ProjectPermissionIdentityActions.Read_DEPRECATED,
       ProjectPermissionIdentityActions.GrantPrivileges,
-      ProjectPermissionIdentityActions.AssumePrivileges
+      ProjectPermissionIdentityActions.AssumePrivileges,
+      ProjectPermissionIdentityActions.CreateProjectIdentity,
+      ProjectPermissionIdentityActions.ReadProjectIdentity,
+      ProjectPermissionIdentityActions.UpdateProjectIdentity,
+      ProjectPermissionIdentityActions.DeleteProjectIdentity,
+      ProjectPermissionIdentityActions.AssignOrgIdentity,
+      ProjectPermissionIdentityActions.UpdateOrgIdentity,
+      ProjectPermissionIdentityActions.RemoveOrgIdentity,
+      ProjectPermissionIdentityActions.CreateToken,
+      ProjectPermissionIdentityActions.GetToken,
+      ProjectPermissionIdentityActions.RevokeAuth,
+      ProjectPermissionIdentityActions.DeleteToken
     ],
     ProjectPermissionSub.Identity
   );
@@ -336,10 +347,17 @@ const buildMemberPermissionRules = () => {
 
   can(
     [
-      ProjectPermissionIdentityActions.Read,
-      ProjectPermissionIdentityActions.Edit,
-      ProjectPermissionIdentityActions.Create,
-      ProjectPermissionIdentityActions.Delete
+      ProjectPermissionIdentityActions.Read_DEPRECATED,
+      ProjectPermissionIdentityActions.Edit_DEPRECATED,
+      ProjectPermissionIdentityActions.Create_DEPRECATED,
+      ProjectPermissionIdentityActions.Delete_DEPRECATED,
+      ProjectPermissionIdentityActions.CreateProjectIdentity,
+      ProjectPermissionIdentityActions.ReadProjectIdentity,
+      ProjectPermissionIdentityActions.UpdateProjectIdentity,
+      ProjectPermissionIdentityActions.DeleteProjectIdentity,
+      ProjectPermissionIdentityActions.AssignOrgIdentity,
+      ProjectPermissionIdentityActions.UpdateOrgIdentity,
+      ProjectPermissionIdentityActions.RemoveOrgIdentity
     ],
     ProjectPermissionSub.Identity
   );
@@ -478,7 +496,8 @@ const buildViewerPermissionRules = () => {
   can(ProjectPermissionActions.Read, ProjectPermissionSub.Role);
   can(ProjectPermissionActions.Read, ProjectPermissionSub.Integrations);
   can(ProjectPermissionActions.Read, ProjectPermissionSub.Webhooks);
-  can(ProjectPermissionIdentityActions.Read, ProjectPermissionSub.Identity);
+  can(ProjectPermissionIdentityActions.Read_DEPRECATED, ProjectPermissionSub.Identity);
+  can(ProjectPermissionIdentityActions.ReadProjectIdentity, ProjectPermissionSub.Identity);
   can(ProjectPermissionActions.Read, ProjectPermissionSub.ServiceTokens);
   can(ProjectPermissionActions.Read, ProjectPermissionSub.Settings);
   can(ProjectPermissionActions.Read, ProjectPermissionSub.Environments);

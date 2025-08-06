@@ -99,7 +99,7 @@ export const identityServiceFactory = ({
     }
 
     const identity = await identityDAL.transaction(async (tx) => {
-      const newIdentity = await identityDAL.create({ name, hasDeleteProtection }, tx);
+      const newIdentity = await identityDAL.create({ name, hasDeleteProtection, orgId }, tx);
       await identityOrgMembershipDAL.create(
         {
           identityId: newIdentity.id,
@@ -154,6 +154,16 @@ export const identityServiceFactory = ({
 
     const identityOrgMembership = await identityOrgMembershipDAL.findOne({ identityId: id });
     if (!identityOrgMembership) throw new NotFoundError({ message: `Failed to find identity with id ${id}` });
+
+    if (
+      identityOrgMembership.identity.projectId &&
+      // scott: need to allow updating of role, but throw on anything else
+      (name !== undefined || metadata !== undefined || hasDeleteProtection !== undefined)
+    ) {
+      throw new BadRequestError({
+        message: `This identity is managed by the project with ID "${identityOrgMembership.identity.projectId}". You can only modify the organization role.`
+      });
+    }
 
     const { permission, membership } = await permissionService.getOrgPermission(
       actor,
@@ -270,6 +280,12 @@ export const identityServiceFactory = ({
 
     const identityOrgMembership = await identityOrgMembershipDAL.findOne({ identityId: id });
     if (!identityOrgMembership) throw new NotFoundError({ message: `Failed to find identity with id ${id}` });
+
+    if (identityOrgMembership.identity.projectId) {
+      throw new BadRequestError({
+        message: `This identity is managed by the project with ID "${identityOrgMembership.identity.projectId}"`
+      });
+    }
 
     const { permission } = await permissionService.getOrgPermission(
       actor,

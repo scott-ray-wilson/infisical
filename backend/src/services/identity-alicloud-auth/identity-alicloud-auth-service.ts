@@ -136,7 +136,8 @@ export const identityAliCloudAuthServiceFactory = ({
     actorAuthMethod,
     actor,
     actorOrgId,
-    isActorSuperAdmin
+    isActorSuperAdmin,
+    isProjectEndpoint
   }: TAttachAliCloudAuthDTO) => {
     await validateIdentityUpdateForSuperAdminPrivileges(identityId, isActorSuperAdmin);
 

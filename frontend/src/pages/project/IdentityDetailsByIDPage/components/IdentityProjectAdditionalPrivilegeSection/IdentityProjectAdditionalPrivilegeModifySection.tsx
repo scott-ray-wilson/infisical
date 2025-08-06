@@ -87,7 +87,7 @@ export const IdentityProjectAdditionalPrivilegeModifySection = ({
   });
   const { permission } = useProjectPermission();
   const isIdentityEditDisabled = permission.cannot(
-    ProjectPermissionIdentityActions.Edit,
+    ProjectPermissionIdentityActions.Edit_DEPRECATED,
     subject(ProjectPermissionSub.Identity, { identityId })
   );
 

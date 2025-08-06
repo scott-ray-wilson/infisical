@@ -1,11 +1,4 @@
-import {
-  faCheck,
-  faChevronDown,
-  faCopy,
-  faEdit,
-  faKey,
-  faTrash
-} from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faChevronDown, faCopy, faEdit, faKey, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { twMerge } from "tailwind-merge";
 
@@ -31,9 +24,14 @@ type Props = {
     popUpName: keyof UsePopUpState<["identity", "identityAuthMethod", "deleteIdentity"]>,
     data?: object
   ) => void;
+  isProjectManaged: boolean;
 };
 
-export const IdentityDetailsSection = ({ identityId, handlePopUpOpen }: Props) => {
+export const IdentityDetailsSection = ({
+  identityId,
+  handlePopUpOpen,
+  isProjectManaged
+}: Props) => {
   const [copyTextId, isCopyingId, setCopyTextId] = useTimedReset<string>({
     initialState: "Copy ID to clipboard"
   });
@@ -43,74 +41,76 @@ export const IdentityDetailsSection = ({ identityId, handlePopUpOpen }: Props) =
     <div className="rounded-lg border border-mineshaft-600 bg-mineshaft-900 p-4">
       <div className="flex items-center justify-between border-b border-mineshaft-400 pb-4">
         <h3 className="text-lg font-semibold text-mineshaft-100">Identity Details</h3>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="xs"
-              rightIcon={
-                <FontAwesomeIcon
-                  className="ml-1 transition-transform duration-200 group-data-[state=open]:rotate-180"
-                  icon={faChevronDown}
-                />
-              }
-              colorSchema="secondary"
-              className="group select-none"
-            >
-              Options
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="mt-3 min-w-[120px]" align="end">
-            <OrgPermissionCan
-              I={OrgPermissionIdentityActions.Edit}
-              a={OrgPermissionSubjects.Identity}
-            >
-              {(isAllowed) => (
-                <DropdownMenuItem
-                  className={twMerge(
-                    !isAllowed && "pointer-events-none cursor-not-allowed opacity-50"
-                  )}
-                  icon={<FontAwesomeIcon icon={faEdit} />}
-                  onClick={async () => {
-                    handlePopUpOpen("identity", {
-                      identityId,
-                      name: data.identity.name,
-                      hasDeleteProtection: data.identity.hasDeleteProtection,
-                      role: data.role,
-                      customRole: data.customRole
-                    });
-                  }}
-                  disabled={!isAllowed}
-                >
-                  Edit Identity
-                </DropdownMenuItem>
-              )}
-            </OrgPermissionCan>
-            <OrgPermissionCan
-              I={OrgPermissionIdentityActions.Delete}
-              a={OrgPermissionSubjects.Identity}
-            >
-              {(isAllowed) => (
-                <DropdownMenuItem
-                  className={twMerge(
-                    isAllowed
-                      ? "hover:!bg-red-500 hover:!text-white"
-                      : "pointer-events-none cursor-not-allowed opacity-50"
-                  )}
-                  onClick={async () => {
-                    handlePopUpOpen("deleteIdentity", {
-                      identityId,
-                      name: data.identity.name
-                    });
-                  }}
-                  icon={<FontAwesomeIcon icon={faTrash} />}
-                  disabled={!isAllowed}
-                >
-                  Delete Identity
-                </DropdownMenuItem>
-              )}
-            </OrgPermissionCan>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {!isProjectManaged && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="xs"
+                rightIcon={
+                  <FontAwesomeIcon
+                    className="ml-1 transition-transform duration-200 group-data-[state=open]:rotate-180"
+                    icon={faChevronDown}
+                  />
+                }
+                colorSchema="secondary"
+                className="group select-none"
+              >
+                Options
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="mt-3 min-w-[120px]" align="end">
+              <OrgPermissionCan
+                I={OrgPermissionIdentityActions.Edit}
+                a={OrgPermissionSubjects.Identity}
+              >
+                {(isAllowed) => (
+                  <DropdownMenuItem
+                    className={twMerge(
+                      !isAllowed && "pointer-events-none cursor-not-allowed opacity-50"
+                    )}
+                    icon={<FontAwesomeIcon icon={faEdit} />}
+                    onClick={async () => {
+                      handlePopUpOpen("identity", {
+                        identityId,
+                        name: data.identity.name,
+                        hasDeleteProtection: data.identity.hasDeleteProtection,
+                        role: data.role,
+                        customRole: data.customRole
+                      });
+                    }}
+                    disabled={!isAllowed}
+                  >
+                    Edit Identity
+                  </DropdownMenuItem>
+                )}
+              </OrgPermissionCan>
+              <OrgPermissionCan
+                I={OrgPermissionIdentityActions.Delete}
+                a={OrgPermissionSubjects.Identity}
+              >
+                {(isAllowed) => (
+                  <DropdownMenuItem
+                    className={twMerge(
+                      isAllowed
+                        ? "hover:!bg-red-500 hover:!text-white"
+                        : "pointer-events-none cursor-not-allowed opacity-50"
+                    )}
+                    onClick={async () => {
+                      handlePopUpOpen("deleteIdentity", {
+                        identityId,
+                        name: data.identity.name
+                      });
+                    }}
+                    icon={<FontAwesomeIcon icon={faTrash} />}
+                    disabled={!isAllowed}
+                  >
+                    Delete Identity
+                  </DropdownMenuItem>
+                )}
+              </OrgPermissionCan>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
       <div className="pt-4">
         <div className="mb-4">

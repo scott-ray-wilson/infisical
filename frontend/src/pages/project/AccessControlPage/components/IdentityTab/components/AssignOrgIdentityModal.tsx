@@ -191,7 +191,7 @@ const Content = ({ popUp, handlePopUpToggle }: Props) => {
   );
 };
 
-export const IdentityModal = ({ popUp, handlePopUpToggle }: Props) => {
+export const AssignOrgIdentityModal = ({ popUp, handlePopUpToggle }: Props) => {
   return (
     <Modal
       isOpen={popUp?.identity?.isOpen}
@@ -199,7 +199,7 @@ export const IdentityModal = ({ popUp, handlePopUpToggle }: Props) => {
         handlePopUpToggle("identity", isOpen);
       }}
     >
-      <ModalContent title="Add Identity to Project" bodyClassName="overflow-visible">
+      <ModalContent title="Add Org Identity to Project" bodyClassName="overflow-visible">
         <Content popUp={popUp} handlePopUpToggle={handlePopUpToggle} />
       </ModalContent>
     </Modal>

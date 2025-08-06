@@ -146,10 +146,10 @@ const MemberPolicyActionSchema = z.object({
 });
 
 const IdentityPolicyActionSchema = z.object({
-  [ProjectPermissionIdentityActions.Read]: z.boolean().optional(),
-  [ProjectPermissionIdentityActions.Create]: z.boolean().optional(),
-  [ProjectPermissionIdentityActions.Edit]: z.boolean().optional(),
-  [ProjectPermissionIdentityActions.Delete]: z.boolean().optional(),
+  [ProjectPermissionIdentityActions.Read_DEPRECATED]: z.boolean().optional(),
+  [ProjectPermissionIdentityActions.Create_DEPRECATED]: z.boolean().optional(),
+  [ProjectPermissionIdentityActions.Edit_DEPRECATED]: z.boolean().optional(),
+  [ProjectPermissionIdentityActions.Delete_DEPRECATED]: z.boolean().optional(),
   [ProjectPermissionIdentityActions.GrantPrivileges]: z.boolean().optional(),
   [ProjectPermissionIdentityActions.AssumePrivileges]: z.boolean().optional()
 });
@@ -777,10 +777,10 @@ export const rolePermission2Form = (permissions: TProjectPermission[] = []) => {
     }
 
     if (subject === ProjectPermissionSub.Identity) {
-      const canRead = action.includes(ProjectPermissionIdentityActions.Read);
-      const canCreate = action.includes(ProjectPermissionIdentityActions.Create);
-      const canEdit = action.includes(ProjectPermissionIdentityActions.Edit);
-      const canDelete = action.includes(ProjectPermissionIdentityActions.Delete);
+      const canRead = action.includes(ProjectPermissionIdentityActions.Read_DEPRECATED);
+      const canCreate = action.includes(ProjectPermissionIdentityActions.Create_DEPRECATED);
+      const canEdit = action.includes(ProjectPermissionIdentityActions.Edit_DEPRECATED);
+      const canDelete = action.includes(ProjectPermissionIdentityActions.Delete_DEPRECATED);
       const canGrantPrivileges = action.includes(ProjectPermissionIdentityActions.GrantPrivileges);
       const canAssumePrivileges = action.includes(
         ProjectPermissionIdentityActions.AssumePrivileges
@@ -789,10 +789,12 @@ export const rolePermission2Form = (permissions: TProjectPermission[] = []) => {
       if (!formVal[subject]) formVal[subject] = [{ conditions: [] }];
 
       // from above statement we are sure it won't be undefined
-      if (canRead) formVal[subject]![0][ProjectPermissionIdentityActions.Read] = true;
-      if (canCreate) formVal[subject]![0][ProjectPermissionIdentityActions.Create] = true;
-      if (canEdit) formVal[subject]![0][ProjectPermissionIdentityActions.Edit] = true;
-      if (canDelete) formVal[subject]![0][ProjectPermissionIdentityActions.Delete] = true;
+      if (canRead) formVal[subject]![0][ProjectPermissionIdentityActions.Read_DEPRECATED] = true;
+      if (canCreate)
+        formVal[subject]![0][ProjectPermissionIdentityActions.Create_DEPRECATED] = true;
+      if (canEdit) formVal[subject]![0][ProjectPermissionIdentityActions.Edit_DEPRECATED] = true;
+      if (canDelete)
+        formVal[subject]![0][ProjectPermissionIdentityActions.Delete_DEPRECATED] = true;
       if (canGrantPrivileges)
         formVal[subject]![0][ProjectPermissionIdentityActions.GrantPrivileges] = true;
       if (canAssumePrivileges)
@@ -1213,10 +1215,10 @@ export const PROJECT_PERMISSION_OBJECT: TProjectPermissionObject = {
   [ProjectPermissionSub.Identity]: {
     title: "Machine Identity Management",
     actions: [
-      { label: "Read", value: ProjectPermissionIdentityActions.Read },
-      { label: "Add", value: ProjectPermissionIdentityActions.Create },
-      { label: "Modify", value: ProjectPermissionIdentityActions.Edit },
-      { label: "Remove", value: ProjectPermissionIdentityActions.Delete },
+      { label: "Read", value: ProjectPermissionIdentityActions.Read_DEPRECATED },
+      { label: "Add", value: ProjectPermissionIdentityActions.Create_DEPRECATED },
+      { label: "Modify", value: ProjectPermissionIdentityActions.Edit_DEPRECATED },
+      { label: "Remove", value: ProjectPermissionIdentityActions.Delete_DEPRECATED },
       { label: "Grant Privileges", value: ProjectPermissionIdentityActions.GrantPrivileges },
       { label: "Assume Privileges", value: ProjectPermissionIdentityActions.AssumePrivileges }
     ]

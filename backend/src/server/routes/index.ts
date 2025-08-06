@@ -45,6 +45,8 @@ import { groupServiceFactory } from "@app/ee/services/group/group-service";
 import { userGroupMembershipDALFactory } from "@app/ee/services/group/user-group-membership-dal";
 import { hsmServiceFactory } from "@app/ee/services/hsm/hsm-service";
 import { HsmModule } from "@app/ee/services/hsm/hsm-types";
+import { identityAuthTemplateDALFactory } from "@app/ee/services/identity-auth-template/identity-auth-template-dal";
+import { identityAuthTemplateServiceFactory } from "@app/ee/services/identity-auth-template/identity-auth-template-service";
 import { identityProjectAdditionalPrivilegeDALFactory } from "@app/ee/services/identity-project-additional-privilege/identity-project-additional-privilege-dal";
 import { identityProjectAdditionalPrivilegeServiceFactory } from "@app/ee/services/identity-project-additional-privilege/identity-project-additional-privilege-service";
 import { identityProjectAdditionalPrivilegeV2ServiceFactory } from "@app/ee/services/identity-project-additional-privilege-v2/identity-project-additional-privilege-v2-service";
@@ -179,8 +181,6 @@ import { identityAccessTokenDALFactory } from "@app/services/identity-access-tok
 import { identityAccessTokenServiceFactory } from "@app/services/identity-access-token/identity-access-token-service";
 import { identityAliCloudAuthDALFactory } from "@app/services/identity-alicloud-auth/identity-alicloud-auth-dal";
 import { identityAliCloudAuthServiceFactory } from "@app/services/identity-alicloud-auth/identity-alicloud-auth-service";
-import { identityAuthTemplateDALFactory } from "@app/ee/services/identity-auth-template/identity-auth-template-dal";
-import { identityAuthTemplateServiceFactory } from "@app/ee/services/identity-auth-template/identity-auth-template-service";
 import { identityAwsAuthDALFactory } from "@app/services/identity-aws-auth/identity-aws-auth-dal";
 import { identityAwsAuthServiceFactory } from "@app/services/identity-aws-auth/identity-aws-auth-service";
 import { identityAzureAuthDALFactory } from "@app/services/identity-azure-auth/identity-azure-auth-dal";
@@ -200,6 +200,7 @@ import { identityOidcAuthServiceFactory } from "@app/services/identity-oidc-auth
 import { identityProjectDALFactory } from "@app/services/identity-project/identity-project-dal";
 import { identityProjectMembershipRoleDALFactory } from "@app/services/identity-project/identity-project-membership-role-dal";
 import { identityProjectServiceFactory } from "@app/services/identity-project/identity-project-service";
+import { identityProjectV2ServiceFactory } from "@app/services/identity-project/identity-project-v2-service";
 import { identityTlsCertAuthDALFactory } from "@app/services/identity-tls-cert-auth/identity-tls-cert-auth-dal";
 import { identityTlsCertAuthServiceFactory } from "@app/services/identity-tls-cert-auth/identity-tls-cert-auth-service";
 import { identityTokenAuthDALFactory } from "@app/services/identity-token-auth/identity-token-auth-dal";
@@ -1483,6 +1484,16 @@ export const registerRoutes = async (
     identityProjectMembershipRoleDAL,
     projectRoleDAL
   });
+  const identityProjectV2Service = identityProjectV2ServiceFactory({
+    permissionService,
+    projectDAL,
+    identityProjectDAL,
+    identityOrgMembershipDAL,
+    identityProjectMembershipRoleDAL,
+    projectRoleDAL,
+    identityDAL,
+    identityMetadataDAL
+  });
   const identityProjectAdditionalPrivilegeService = identityProjectAdditionalPrivilegeServiceFactory({
     projectDAL,
     identityProjectAdditionalPrivilegeDAL,
@@ -2092,7 +2103,8 @@ export const registerRoutes = async (
     secretScanningV2: secretScanningV2Service,
     reminder: reminderService,
     bus: eventBusService,
-    sse: sseService
+    sse: sseService,
+    identityProjectV2: identityProjectV2Service
   });
 
   const cronJobs: CronJob[] = [];

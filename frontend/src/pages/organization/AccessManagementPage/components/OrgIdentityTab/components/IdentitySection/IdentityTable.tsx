@@ -44,7 +44,11 @@ import {
   Tr
 } from "@app/components/v2";
 import { OrgPermissionIdentityActions, OrgPermissionSubjects, useOrganization } from "@app/context";
-import { getUserTablePreference, PreferenceKey, setUserTablePreference } from "@app/helpers/userTablePreferences";
+import {
+  getUserTablePreference,
+  PreferenceKey,
+  setUserTablePreference
+} from "@app/helpers/userTablePreferences";
 import { usePagination, useResetPageHelper } from "@app/hooks";
 import { useGetOrgRoles, useSearchIdentities, useUpdateIdentity } from "@app/hooks/api";
 import { OrderByDirection } from "@app/hooks/api/generic/types";

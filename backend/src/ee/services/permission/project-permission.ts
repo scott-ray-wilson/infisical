@@ -63,7 +63,6 @@ export enum ProjectPermissionIdentityActions {
   CreateProjectIdentity = "create-project-identity",
   UpdateProjectIdentity = "update-project-identity",
   DeleteProjectIdentity = "delete-project-identity",
-  ReadProjectIdentity = "read-project-identity",
   GrantPrivileges = "grant-privileges",
   AssumePrivileges = "assume-privileges",
   RevokeAuth = "revoke-auth",
@@ -73,7 +72,7 @@ export enum ProjectPermissionIdentityActions {
   AssignOrgIdentity = "assign-org-identity",
   UpdateOrgIdentity = "update-org-identity",
   RemoveOrgIdentity = "remove-org-identity",
-
+  ReadIdentity = "read-identity",
   // deprecated in favor of above for new project identities
   Read_DEPRECATED = "read",
   Create_DEPRECATED = "create",

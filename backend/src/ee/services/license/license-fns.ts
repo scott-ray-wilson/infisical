@@ -13,6 +13,7 @@ export const getDefaultOnPremFeatures = (): TFeatureSet => ({
   workspaceLimit: null,
   workspacesUsed: 0,
   memberLimit: null,
+
   membersUsed: 0,
   environmentLimit: null,
   environmentsUsed: 0,
@@ -27,8 +28,8 @@ export const getDefaultOnPremFeatures = (): TFeatureSet => ({
   customRateLimits: false,
   customAlerts: false,
   secretAccessInsights: false,
-  auditLogs: false,
-  auditLogsRetentionDays: 0,
+  auditLogs: true,
+  auditLogsRetentionDays: 30,
   auditLogStreams: false,
   auditLogStreamLimit: 3,
   samlSSO: false,
@@ -50,6 +51,7 @@ export const getDefaultOnPremFeatures = (): TFeatureSet => ({
     writeLimit: 200,
     secretsLimit: 40
   },
+
   pkiEst: false,
   enforceMfa: false,
   projectTemplates: false,

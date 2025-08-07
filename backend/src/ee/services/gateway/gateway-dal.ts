@@ -39,7 +39,7 @@ export const gatewayDALFactory = (db: TDbClient) => {
 
       return docs.map((el) => ({
         ...GatewaysSchema.parse(el),
-        orgId: el.identityOrgId as string, // todo(daniel): figure out why typescript is not inferring this as a string
+        orgId: el.identityOrgId, // todo(daniel): figure out why typescript is not inferring this as a string
         identity: { id: el.identityId, name: el.identityName }
       }));
     } catch (error) {

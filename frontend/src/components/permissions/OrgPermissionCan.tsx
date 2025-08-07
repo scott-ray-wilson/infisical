@@ -42,16 +42,16 @@ export const OrgPermissionCan: FunctionComponent<Props> = ({
             ? children(isAllowed, ability as TOrgPermission)
             : children;
 
+        if (!isAllowed && renderGuardBanner) {
+          return <OrgPermissionGuardBanner />;
+        }
+
         if (!isAllowed && passThrough) {
           return <Tooltip content={label}>{finalChild}</Tooltip>;
         }
 
         if (isAllowed && renderTooltip && allowedLabel) {
           return <Tooltip content={allowedLabel}>{finalChild}</Tooltip>;
-        }
-
-        if (!isAllowed && renderGuardBanner) {
-          return <OrgPermissionGuardBanner />;
         }
 
         if (!isAllowed) return null;

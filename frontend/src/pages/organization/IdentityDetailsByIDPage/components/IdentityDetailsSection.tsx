@@ -1,4 +1,11 @@
-import { faCheck, faChevronDown, faCopy, faEdit, faKey, faTrash } from "@fortawesome/free-solid-svg-icons";
+import {
+  faCheck,
+  faChevronDown,
+  faCopy,
+  faEdit,
+  faKey,
+  faTrash
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { twMerge } from "tailwind-merge";
 

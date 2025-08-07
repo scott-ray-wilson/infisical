@@ -1,8 +1,7 @@
-import { ForbiddenError, subject } from "@casl/ability";
-
 import { ActionProjectType, ProjectMembershipRole } from "@app/db/schemas";
 import {
   constructPermissionErrorMessage,
+  throwUnlessCanProjectIdentityActionWithDeprecationHandling,
   validatePrivilegeChangeOperation
 } from "@app/ee/services/permission/permission-fns";
 import { TPermissionServiceFactory } from "@app/ee/services/permission/permission-service-types";
@@ -65,11 +64,10 @@ export const identityProjectServiceFactory = ({
       actorOrgId,
       actionProjectType: ActionProjectType.Any
     });
-    ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Create_DEPRECATED,
-      subject(ProjectPermissionSub.Identity, {
-        identityId
-      })
+    throwUnlessCanProjectIdentityActionWithDeprecationHandling(
+      permission,
+      ProjectPermissionIdentityActions.AssignOrgIdentity,
+      { identityId }
     );
 
     const existingIdentity = await identityProjectDAL.findOne({ identityId, projectId });
@@ -87,6 +85,18 @@ export const identityProjectServiceFactory = ({
       throw new NotFoundError({
         message: `Failed to find identity with ID ${identityId}`
       });
+
+    if (identityOrgMembership.identity.projectId) {
+      if (identityOrgMembership.identity.projectId === projectId) {
+        throw new BadRequestError({
+          message: `Identity is already managed by this project.`
+        });
+      }
+
+      throw new BadRequestError({
+        message: `Identity is managed by project with ID "${identityOrgMembership.identity.projectId}" and cannot be added.`
+      });
+    }
 
     for await (const { role: requestedRoleChange } of roles) {
       const { permission: rolePermission } = await permissionService.getProjectPermissionByRole(
@@ -185,9 +195,11 @@ export const identityProjectServiceFactory = ({
       actorOrgId,
       actionProjectType: ActionProjectType.Any
     });
-    ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Edit_DEPRECATED,
-      subject(ProjectPermissionSub.Identity, { identityId })
+
+    throwUnlessCanProjectIdentityActionWithDeprecationHandling(
+      permission,
+      ProjectPermissionIdentityActions.UpdateOrgIdentity,
+      { identityId }
     );
 
     const projectIdentity = await identityProjectDAL.findOne({ identityId, projectId });
@@ -288,6 +300,10 @@ export const identityProjectServiceFactory = ({
       throw new NotFoundError({ message: `Failed to find identity with ID ${identityId}` });
     }
 
+    if (identityProjectMembership.projectId) {
+      throw new BadRequestError({ message: "Cannot remove membership of project managed identity." });
+    }
+
     const { permission } = await permissionService.getProjectPermission({
       actor,
       actorId,
@@ -296,9 +312,11 @@ export const identityProjectServiceFactory = ({
       actorOrgId,
       actionProjectType: ActionProjectType.Any
     });
-    ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Delete_DEPRECATED,
-      subject(ProjectPermissionSub.Identity, { identityId })
+
+    throwUnlessCanProjectIdentityActionWithDeprecationHandling(
+      permission,
+      ProjectPermissionIdentityActions.RemoveOrgIdentity,
+      { identityId }
     );
 
     const [deletedIdentity] = await identityProjectDAL.delete({ identityId, projectId });
@@ -325,9 +343,9 @@ export const identityProjectServiceFactory = ({
       actorOrgId,
       actionProjectType: ActionProjectType.Any
     });
-    ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Read_DEPRECATED,
-      ProjectPermissionSub.Identity
+    throwUnlessCanProjectIdentityActionWithDeprecationHandling(
+      permission,
+      ProjectPermissionIdentityActions.ReadIdentity
     );
 
     const identityMemberships = await identityProjectDAL.findByProjectId(projectId, {
@@ -360,9 +378,10 @@ export const identityProjectServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
 
-    ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Read_DEPRECATED,
-      subject(ProjectPermissionSub.Identity, { identityId })
+    throwUnlessCanProjectIdentityActionWithDeprecationHandling(
+      permission,
+      ProjectPermissionIdentityActions.ReadIdentity,
+      { identityId }
     );
 
     const [identityMembership] = await identityProjectDAL.findByProjectId(projectId, { identityId });
@@ -397,9 +416,10 @@ export const identityProjectServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
 
-    ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.Read_DEPRECATED,
-      subject(ProjectPermissionSub.Identity, { identityId: membership.identityId })
+    throwUnlessCanProjectIdentityActionWithDeprecationHandling(
+      permission,
+      ProjectPermissionIdentityActions.ReadIdentity,
+      { identityId: membership.identityId }
     );
 
     const [identityMembership] = await identityProjectDAL.findByProjectId(membership.projectId, {

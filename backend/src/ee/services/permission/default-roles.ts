@@ -151,7 +151,7 @@ const buildAdminPermissionRules = () => {
       ProjectPermissionIdentityActions.GrantPrivileges,
       ProjectPermissionIdentityActions.AssumePrivileges,
       ProjectPermissionIdentityActions.CreateProjectIdentity,
-      ProjectPermissionIdentityActions.ReadProjectIdentity,
+      ProjectPermissionIdentityActions.ReadIdentity,
       ProjectPermissionIdentityActions.UpdateProjectIdentity,
       ProjectPermissionIdentityActions.DeleteProjectIdentity,
       ProjectPermissionIdentityActions.AssignOrgIdentity,
@@ -352,7 +352,7 @@ const buildMemberPermissionRules = () => {
       ProjectPermissionIdentityActions.Create_DEPRECATED,
       ProjectPermissionIdentityActions.Delete_DEPRECATED,
       ProjectPermissionIdentityActions.CreateProjectIdentity,
-      ProjectPermissionIdentityActions.ReadProjectIdentity,
+      ProjectPermissionIdentityActions.ReadIdentity,
       ProjectPermissionIdentityActions.UpdateProjectIdentity,
       ProjectPermissionIdentityActions.DeleteProjectIdentity,
       ProjectPermissionIdentityActions.AssignOrgIdentity,
@@ -497,7 +497,7 @@ const buildViewerPermissionRules = () => {
   can(ProjectPermissionActions.Read, ProjectPermissionSub.Integrations);
   can(ProjectPermissionActions.Read, ProjectPermissionSub.Webhooks);
   can(ProjectPermissionIdentityActions.Read_DEPRECATED, ProjectPermissionSub.Identity);
-  can(ProjectPermissionIdentityActions.ReadProjectIdentity, ProjectPermissionSub.Identity);
+  can(ProjectPermissionIdentityActions.ReadIdentity, ProjectPermissionSub.Identity);
   can(ProjectPermissionActions.Read, ProjectPermissionSub.ServiceTokens);
   can(ProjectPermissionActions.Read, ProjectPermissionSub.Settings);
   can(ProjectPermissionActions.Read, ProjectPermissionSub.Environments);

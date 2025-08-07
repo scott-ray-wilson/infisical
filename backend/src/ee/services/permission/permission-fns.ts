@@ -9,6 +9,8 @@ import { ActorAuthMethod, AuthMethod } from "@app/services/auth/auth-type";
 
 import { OrgPermissionSet } from "./org-permission";
 import {
+  IdentityManagementSubjectFields,
+  ProjectPermissionIdentityActions,
   ProjectPermissionSecretActions,
   ProjectPermissionSet,
   ProjectPermissionSub,
@@ -209,4 +211,35 @@ export {
   isAuthMethodSaml,
   validateOrgSSO,
   validatePrivilegeChangeOperation
+};
+
+const ProjectIdentityEquivalentDeprecatedActionMap = {
+  [ProjectPermissionIdentityActions.ReadIdentity]: ProjectPermissionIdentityActions.Read_DEPRECATED,
+  [ProjectPermissionIdentityActions.CreateProjectIdentity]: ProjectPermissionIdentityActions.Create_DEPRECATED,
+  [ProjectPermissionIdentityActions.UpdateProjectIdentity]: ProjectPermissionIdentityActions.Edit_DEPRECATED,
+  [ProjectPermissionIdentityActions.DeleteProjectIdentity]: ProjectPermissionIdentityActions.Delete_DEPRECATED,
+  [ProjectPermissionIdentityActions.AssignOrgIdentity]: ProjectPermissionIdentityActions.Create_DEPRECATED,
+  [ProjectPermissionIdentityActions.UpdateOrgIdentity]: ProjectPermissionIdentityActions.Edit_DEPRECATED,
+  [ProjectPermissionIdentityActions.RemoveOrgIdentity]: ProjectPermissionIdentityActions.Delete_DEPRECATED
+};
+
+export const throwUnlessCanProjectIdentityActionWithDeprecationHandling = (
+  permission: MongoAbility<ProjectPermissionSet>,
+  action:
+    | ProjectPermissionIdentityActions.ReadIdentity
+    | ProjectPermissionIdentityActions.CreateProjectIdentity
+    | ProjectPermissionIdentityActions.UpdateProjectIdentity
+    | ProjectPermissionIdentityActions.DeleteProjectIdentity
+    | ProjectPermissionIdentityActions.AssignOrgIdentity
+    | ProjectPermissionIdentityActions.UpdateOrgIdentity
+    | ProjectPermissionIdentityActions.RemoveOrgIdentity,
+  subjectFields?: IdentityManagementSubjectFields
+) => {
+  const sub = subjectFields ? subject(ProjectPermissionSub.Identity, subjectFields) : ProjectPermissionSub.Identity;
+
+  try {
+    ForbiddenError.from(permission).throwUnlessCan(action, sub);
+  } catch {
+    ForbiddenError.from(permission).throwUnlessCan(ProjectIdentityEquivalentDeprecatedActionMap[action], sub);
+  }
 };

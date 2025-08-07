@@ -10,7 +10,11 @@ import { ActorType } from "@app/services/auth/auth-type";
 import { TIdentityProjectDALFactory } from "@app/services/identity-project/identity-project-dal";
 import { TProjectDALFactory } from "@app/services/project/project-dal";
 
-import { constructPermissionErrorMessage, validatePrivilegeChangeOperation } from "../permission/permission-fns";
+import {
+  constructPermissionErrorMessage,
+  throwUnlessCanProjectIdentityActionWithDeprecationHandling,
+  validatePrivilegeChangeOperation
+} from "../permission/permission-fns";
 import { TPermissionServiceFactory } from "../permission/permission-service-types";
 import {
   ProjectPermissionIdentityActions,
@@ -77,6 +81,11 @@ export const identityProjectAdditionalPrivilegeServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
 
+    throwUnlessCanProjectIdentityActionWithDeprecationHandling(
+      permission,
+      ProjectPermissionIdentityActions.UpdateProjectIdentity,
+      { identityId }
+    );
     ForbiddenError.from(permission).throwUnlessCan(
       ProjectPermissionIdentityActions.Edit_DEPRECATED,
       subject(ProjectPermissionSub.Identity, { identityId })

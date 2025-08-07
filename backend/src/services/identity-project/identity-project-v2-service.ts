@@ -1,8 +1,7 @@
-import { ForbiddenError } from "@casl/ability";
-
 import { ActionProjectType, OrgMembershipRole, ProjectMembershipRole } from "@app/db/schemas";
 import {
   constructPermissionErrorMessage,
+  throwUnlessCanProjectIdentityActionWithDeprecationHandling,
   validatePrivilegeChangeOperation
 } from "@app/ee/services/permission/permission-fns";
 import { TPermissionServiceFactory } from "@app/ee/services/permission/permission-service-types";
@@ -73,9 +72,9 @@ export const identityProjectV2ServiceFactory = ({
       actionProjectType: ActionProjectType.Any
     });
 
-    ForbiddenError.from(permission).throwUnlessCan(
-      ProjectPermissionIdentityActions.CreateProjectIdentity,
-      ProjectPermissionSub.Identity
+    throwUnlessCanProjectIdentityActionWithDeprecationHandling(
+      permission,
+      ProjectPermissionIdentityActions.CreateProjectIdentity
     );
 
     for await (const { role: requestedRoleChange } of roles) {

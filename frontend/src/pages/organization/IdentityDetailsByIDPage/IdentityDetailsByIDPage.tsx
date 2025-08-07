@@ -74,6 +74,8 @@ const Page = () => {
     }
   };
 
+  const isProjectManaged = Boolean(data?.identity.projectId);
+
   return (
     <div className="container mx-auto flex flex-col justify-between bg-bunker-800 text-white">
       {data && (
@@ -120,17 +122,15 @@ const Page = () => {
               <IdentityDetailsSection
                 identityId={identityId}
                 handlePopUpOpen={handlePopUpOpen}
-                isProjectManaged={Boolean(data.identity.projectId)}
+                isProjectManaged={isProjectManaged}
               />
               <IdentityAuthenticationSection
                 identityId={identityId}
                 handlePopUpOpen={handlePopUpOpen}
+                isProjectManaged={isProjectManaged}
               />
             </div>
-            <IdentityProjectsSection
-              identityId={identityId}
-              isProjectManaged={Boolean(data.identity.projectId)}
-            />
+            <IdentityProjectsSection identityId={identityId} isProjectManaged={isProjectManaged} />
           </div>
         </div>
       )}
@@ -177,7 +177,7 @@ export const IdentityDetailsByIDPage = () => {
         <link rel="icon" href="/infisical.ico" />
       </Helmet>
       <OrgPermissionCan
-        passThrough={false}
+        renderGuardBanner
         I={OrgPermissionIdentityActions.Read}
         a={OrgPermissionSubjects.Identity}
       >

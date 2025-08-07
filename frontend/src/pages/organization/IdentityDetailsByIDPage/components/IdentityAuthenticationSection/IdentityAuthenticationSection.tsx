@@ -1,5 +1,6 @@
 import { faCog, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { twMerge } from "tailwind-merge";
 
 import { OrgPermissionCan } from "@app/components/permissions";
 import { Button } from "@app/components/v2";
@@ -13,9 +14,14 @@ type Props = {
     popUpName: keyof UsePopUpState<["identityAuthMethod", "viewAuthMethod"]>,
     data?: object | IdentityAuthMethod
   ) => void;
+  isProjectManaged: boolean;
 };
 
-export const IdentityAuthenticationSection = ({ identityId, handlePopUpOpen }: Props) => {
+export const IdentityAuthenticationSection = ({
+  identityId,
+  handlePopUpOpen,
+  isProjectManaged
+}: Props) => {
   const { data } = useGetIdentityById(identityId);
 
   return data ? (
@@ -28,12 +34,18 @@ export const IdentityAuthenticationSection = ({ identityId, handlePopUpOpen }: P
           {data.identity.authMethods.map((authMethod) => (
             <button
               key={authMethod}
+              disabled={isProjectManaged}
               onClick={() => handlePopUpOpen("viewAuthMethod", authMethod)}
               type="button"
-              className="flex w-full items-center justify-between bg-mineshaft-900 px-4 py-2 text-sm hover:bg-mineshaft-700 data-[state=open]:bg-mineshaft-600"
+              className={twMerge(
+                "flex w-full items-center justify-between bg-mineshaft-900 px-4 py-2 text-sm hover:bg-mineshaft-700 data-[state=open]:bg-mineshaft-600",
+                isProjectManaged && "pointer-events-none"
+              )}
             >
               <span>{identityAuthToNameMap[authMethod]}</span>
-              <FontAwesomeIcon icon={faCog} size="xs" className="text-mineshaft-400" />
+              {!isProjectManaged && (
+                <FontAwesomeIcon icon={faCog} size="xs" className="text-mineshaft-400" />
+              )}
             </button>
           ))}
         </div>
@@ -44,30 +56,35 @@ export const IdentityAuthenticationSection = ({ identityId, handlePopUpOpen }: P
           </p>
         </div>
       )}
-      {!Object.values(IdentityAuthMethod).every((method) =>
-        data.identity.authMethods.includes(method)
-      ) && (
-        <OrgPermissionCan I={OrgPermissionIdentityActions.Edit} a={OrgPermissionSubjects.Identity}>
-          {(isAllowed) => (
-            <Button
-              isDisabled={!isAllowed}
-              onClick={() => {
-                handlePopUpOpen("identityAuthMethod", {
-                  identityId,
-                  name: data.identity.name,
-                  allAuthMethods: data.identity.authMethods
-                });
-              }}
-              variant="outline_bg"
-              className="mt-3 w-full"
-              size="xs"
-              leftIcon={<FontAwesomeIcon icon={faPlus} />}
+      {isProjectManaged
+        ? null
+        : !Object.values(IdentityAuthMethod).every((method) =>
+            data.identity.authMethods.includes(method)
+          ) && (
+            <OrgPermissionCan
+              I={OrgPermissionIdentityActions.Edit}
+              a={OrgPermissionSubjects.Identity}
             >
-              {data.identity.authMethods.length ? "Add" : "Create"} Auth Method
-            </Button>
+              {(isAllowed) => (
+                <Button
+                  isDisabled={!isAllowed}
+                  onClick={() => {
+                    handlePopUpOpen("identityAuthMethod", {
+                      identityId,
+                      name: data.identity.name,
+                      allAuthMethods: data.identity.authMethods
+                    });
+                  }}
+                  variant="outline_bg"
+                  className="mt-3 w-full"
+                  size="xs"
+                  leftIcon={<FontAwesomeIcon icon={faPlus} />}
+                >
+                  {data.identity.authMethods.length ? "Add" : "Create"} Auth Method
+                </Button>
+              )}
+            </OrgPermissionCan>
           )}
-        </OrgPermissionCan>
-      )}
     </div>
   ) : (
     <div />

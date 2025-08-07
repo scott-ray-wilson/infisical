@@ -21,7 +21,6 @@ export type TAttachAliCloudAuthDTO = {
   accessTokenNumUsesLimit: number;
   accessTokenTrustedIps: { ipAddress: string }[];
   isActorSuperAdmin?: boolean;
-  isProjectEndpoint?: boolean;
 } & Omit<TProjectPermission, "projectId">;
 
 export type TUpdateAliCloudAuthDTO = {

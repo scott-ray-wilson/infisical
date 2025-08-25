@@ -64,6 +64,7 @@ import { ActionBar } from "./components/ActionBar";
 import { CommitForm } from "./components/CommitForm";
 import { CreateSecretForm } from "./components/CreateSecretForm";
 import { DynamicSecretListView } from "./components/DynamicSecretListView";
+import { EnvironmentTabs } from "./components/EnvironmentTabs";
 import { FolderListView } from "./components/FolderListView";
 import { PitDrawer } from "./components/PitDrawer";
 import { SecretDropzone } from "./components/SecretDropzone";
@@ -713,9 +714,7 @@ const Page = () => {
   return (
     <div className="container mx-auto flex max-w-7xl flex-col text-mineshaft-50 dark:[color-scheme:dark]">
       <PageHeader
-        title={
-          currentWorkspace.environments.find((env) => env.slug === environment)?.name ?? environment
-        }
+        title="Secrets Management"
         description={
           <p className="text-md text-bunker-300">
             Inject your secrets using
@@ -797,6 +796,7 @@ const Page = () => {
               }))
             }
           />
+          <EnvironmentTabs />
           <div
             ref={tableRef}
             className={twMerge(

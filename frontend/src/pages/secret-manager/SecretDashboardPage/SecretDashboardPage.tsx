@@ -52,6 +52,7 @@ import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { PendingAction } from "@app/hooks/api/secretFolders/types";
 import { useCreateCommit } from "@app/hooks/api/secrets/mutations";
 import { SecretV3RawSanitized } from "@app/hooks/api/types";
+import { ProjectVersion } from "@app/hooks/api/workspace/types";
 import { usePathAccessPolicies } from "@app/hooks/usePathAccessPolicies";
 import { useResizableColWidth } from "@app/hooks/useResizableColWidth";
 import { hasSecretReadValueOrDescribePermission } from "@app/lib/fn/permission";
@@ -711,6 +712,14 @@ const Page = () => {
 
   const mergedSecrets = getMergedSecretsWithPending();
   const mergedFolders = getMergedFoldersWithPending();
+
+  if (!(currentWorkspace?.version === ProjectVersion.V3))
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center px-6 text-mineshaft-50 dark:[color-scheme:dark]">
+        <SecretV2MigrationSection />
+      </div>
+    );
+
   return (
     <div className="container mx-auto flex max-w-7xl flex-col text-mineshaft-50 dark:[color-scheme:dark]">
       <PageHeader
@@ -796,7 +805,7 @@ const Page = () => {
               }))
             }
           />
-          <EnvironmentTabs />
+          <EnvironmentTabs secretPath={secretPath} />
           <div
             ref={tableRef}
             className={twMerge(

@@ -34,6 +34,7 @@ type Props = {
     secretName: string
   ) => { secret?: SecretV3RawSanitized; environmentInfo?: WorkspaceEnv } | undefined;
   colWidth: number;
+  tableWidth: number;
 };
 
 export const SecretRow = ({
@@ -43,7 +44,8 @@ export const SecretRow = ({
   getSecretByKey,
   isImportedSecretPresentInEnv,
   getImportedSecretByKey,
-  colWidth
+  colWidth,
+  tableWidth
 }: Props) => {
   const [isFormExpanded, setIsFormExpanded] = useToggle();
   const totalCols = environments.length + 1; // secret key row
@@ -116,23 +118,32 @@ export const SecretRow = ({
         })}
       </Tr>
       {isFormExpanded && (
-        <Tr>
-          <Td colSpan={totalCols} className="px-0 py-0">
-            <div>
+        <Tr className="border-b-0">
+          <Td
+            colSpan={totalCols}
+            style={{ minWidth: tableWidth, maxWidth: tableWidth }}
+            className="sticky left-0 bg-mineshaft-800 bg-clip-padding px-0 py-0"
+          >
+            <div
+              style={{ minWidth: tableWidth, maxWidth: tableWidth }}
+              className="sticky left-0 bg-mineshaft-800 bg-clip-padding px-0 py-0"
+            >
               <TableContainer className="rounded-none border-0">
                 <table className="secret-table bg-mineshaft-700/50">
                   <thead>
                     <tr className="h-10 border-b-2 border-mineshaft-600">
                       <th
-                        style={{ padding: "0.5rem 1rem" }}
-                        className="min-table-row min-w-[11rem]"
+                        style={{
+                          width: colWidth
+                        }}
+                        className="min-table-row"
                       >
-                        Environment
+                        <span className="truncate">Environment</span>
                       </th>
                       <th style={{ padding: "0.5rem 1rem" }} className="border-none">
                         Value
                       </th>
-                      <div className="absolute right-0 top-0 ml-auto mr-1 mt-1 w-min">
+                      <div className="absolute right-0 top-[1px] ml-auto mr-1 mt-1 w-min">
                         <Button
                           variant="plain"
                           colorSchema="secondary"
@@ -154,13 +165,21 @@ export const SecretRow = ({
                       return (
                         <tr
                           key={`secret-expanded-${slug}-${secretKey}`}
-                          className="hover:bg-mineshaft-700/75"
+                          className="h-full hover:bg-mineshaft-700/75"
                         >
                           <td
-                            className="flex h-full items-center"
-                            style={{ padding: "0.25rem 1rem" }}
+                            className="h-[1px] border-none !p-0"
+                            style={{
+                              width: colWidth
+                            }}
                           >
-                            <div title={name} className="flex h-8 w-[8rem] items-center space-x-2">
+                            <div
+                              title={name}
+                              style={{
+                                width: colWidth
+                              }}
+                              className="flex h-full min-h-[40px] w-[8rem] items-center space-x-2 border-r border-mineshaft-500 px-4"
+                            >
                               <span className="truncate">{name}</span>
                               {isImportedSecret && (
                                 <Tooltip

@@ -17,6 +17,7 @@ type Props = {
   isSecretRotationInEnv: (name: string, env: string) => boolean;
   getSecretRotationByName: (slug: string, name: string) => TSecretRotationV2 | undefined;
   colWidth: number;
+  tableWidth: number;
 };
 
 export const SecretRotationRow = ({
@@ -24,7 +25,8 @@ export const SecretRotationRow = ({
   environments = [],
   isSecretRotationInEnv,
   colWidth,
-  getSecretRotationByName
+  getSecretRotationByName,
+  tableWidth
 }: Props) => {
   const [isExpanded, setIsExpanded] = useToggle(false);
   const [isSecretVisible, setIsSecretVisible] = useToggle();
@@ -67,97 +69,102 @@ export const SecretRotationRow = ({
             <Tr key={`secret-rotation-${slug}-${secretRotationName}`} className="border-b-0">
               <Td
                 colSpan={totalCols}
-                className="!sticky !left-0 w-[20vw] bg-mineshaft-800 bg-clip-padding px-0 py-0"
+                style={{ minWidth: tableWidth, maxWidth: tableWidth }}
+                className="sticky left-0 bg-mineshaft-800 bg-clip-padding px-0 py-0"
               >
-                <div className="flex items-center justify-between bg-mineshaft-700/50 px-4 py-1">
-                  <div className="w-full">
-                    <div className="flex w-full flex-wrap items-center">
-                      <span>{envName}</span>
-                      <Tag className="mx-2.5 flex items-center gap-1 px-1.5 py-0 text-xs normal-case">
-                        <img
-                          src={`/images/integrations/${image}`}
-                          style={{
-                            width: "11px"
-                          }}
-                          alt={`${rotationType} logo`}
-                        />
-                        {rotationType}
-                      </Tag>
-                      {description && (
-                        <Tooltip content={description}>
-                          <FontAwesomeIcon icon={faInfoCircle} className="text-mineshaft-400" />
-                        </Tooltip>
-                      )}
+                <div
+                  style={{ minWidth: tableWidth, maxWidth: tableWidth }}
+                  className="sticky left-0 bg-mineshaft-800 bg-clip-padding px-0 py-0"
+                >
+                  <div className="flex !h-[40px] items-center justify-between gap-x-2 bg-mineshaft-700/50 px-4">
+                    <div className="w-full">
+                      <div className="flex w-full flex-wrap items-center gap-x-2.5">
+                        <span>{envName}</span>
+                        <Tag className="flex items-center gap-1 px-1.5 py-0 text-xs normal-case">
+                          <img
+                            src={`/images/integrations/${image}`}
+                            className="w-[11px]"
+                            alt={`${rotationType} logo`}
+                          />
+                          {rotationType}
+                        </Tag>
+                        {description && (
+                          <Tooltip content={description}>
+                            <FontAwesomeIcon icon={faInfoCircle} className="text-mineshaft-400" />
+                          </Tooltip>
+                        )}
+                      </div>
                     </div>
+                    <Button
+                      variant="plain"
+                      colorSchema="secondary"
+                      leftIcon={<FontAwesomeIcon icon={isSecretVisible ? faEyeSlash : faEye} />}
+                      onClick={() => setIsSecretVisible.toggle()}
+                    >
+                      {isSecretVisible ? "Hide Values" : "Reveal Values"}
+                    </Button>
                   </div>
-                  <Button
-                    variant="plain"
-                    colorSchema="secondary"
-                    leftIcon={<FontAwesomeIcon icon={isSecretVisible ? faEyeSlash : faEye} />}
-                    onClick={() => setIsSecretVisible.toggle()}
-                  >
-                    {isSecretVisible ? "Hide Values" : "Reveal Values"}
-                  </Button>
-                </div>
-                <TableContainer className="rounded-none border-0">
-                  <table className="secret-table w-full border-b-0 bg-mineshaft-700/50">
-                    <tbody className="!last:border-b-0 w-full border-t-2 border-mineshaft-600">
-                      {secrets.map((secret, index) => {
-                        return (
-                          <Tooltip
-                            className="max-w-sm"
-                            content={
-                              secret ? undefined : "You do not have permission to view this secret."
-                            }
-                            // eslint-disable-next-line react/no-array-index-key
-                            key={`rotation-secret-${secretRotation.id}-${index}`}
-                          >
-                            <tr className="h-full hover:bg-mineshaft-700">
-                              <td
-                                style={{
-                                  width: colWidth,
-                                  padding: 0
-                                }}
-                                className="border-none"
-                              >
-                                <div
-                                  className="flex h-9 items-center border-r border-mineshaft-500 px-4 py-1"
+                  <TableContainer className="rounded-none border-0">
+                    <table className="secret-table w-full border-b-0 bg-mineshaft-700/50">
+                      <tbody className="!last:border-b-0 w-full border-t-2 border-mineshaft-600">
+                        {secrets.map((secret, index) => {
+                          return (
+                            <Tooltip
+                              className="max-w-sm"
+                              content={
+                                secret
+                                  ? undefined
+                                  : "You do not have permission to view this secret."
+                              }
+                              // eslint-disable-next-line react/no-array-index-key
+                              key={`rotation-secret-${secretRotation.id}-${index}`}
+                            >
+                              <tr className="hover:bg-mineshaft-700">
+                                <td
                                   style={{
                                     width: colWidth
                                   }}
+                                  className="!h-[1px] border-none !p-0"
                                 >
-                                  <span className={twMerge(!secret && "blur", "truncate")}>
-                                    {secret?.key ?? "********"}
-                                  </span>
-                                </div>
-                              </td>
-                              <td style={{ padding: "0.5rem 1rem" }}>
-                                {/* eslint-disable-next-line no-nested-ternary */}
-                                {!secret ? (
-                                  <div className="h-full pl-4 blur">********</div>
-                                ) : secret.secretValueHidden ? (
-                                  <Blur
-                                    className="py-0"
-                                    tooltipText="You do not have permission to read the value of this secret."
-                                  />
-                                ) : (
-                                  <InfisicalSecretInput
-                                    isReadOnly
-                                    value={secret.value}
-                                    isVisible={isSecretVisible}
-                                    secretPath={secretRotation.folder.path}
-                                    environment={secretRotation.environment.slug}
-                                    onChange={() => {}}
-                                  />
-                                )}
-                              </td>
-                            </tr>
-                          </Tooltip>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </TableContainer>
+                                  <div
+                                    className="flex h-full flex-1 items-center border-r border-mineshaft-500 px-4 py-1"
+                                    style={{
+                                      width: colWidth
+                                    }}
+                                  >
+                                    <span className={twMerge(!secret && "blur", "truncate")}>
+                                      {secret?.key ?? "********"}
+                                    </span>
+                                  </div>
+                                </td>
+                                <td className="!h-[40px] !px-4">
+                                  {/* eslint-disable-next-line no-nested-ternary */}
+                                  {!secret ? (
+                                    <div className="h-full pl-4 blur">********</div>
+                                  ) : secret.secretValueHidden ? (
+                                    <Blur
+                                      className="py-0"
+                                      tooltipText="You do not have permission to read the value of this secret."
+                                    />
+                                  ) : (
+                                    <InfisicalSecretInput
+                                      isReadOnly
+                                      value={secret.value}
+                                      isVisible={isSecretVisible}
+                                      secretPath={secretRotation.folder.path}
+                                      environment={secretRotation.environment.slug}
+                                      onChange={() => {}}
+                                    />
+                                  )}
+                                </td>
+                              </tr>
+                            </Tooltip>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </TableContainer>
+                </div>
               </Td>
             </Tr>
           );

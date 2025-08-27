@@ -17,7 +17,7 @@ export const TableContainer = ({
 }: TableContainerProps): JSX.Element => (
   <div
     className={twMerge(
-      "thin-scrollbar relative w-full overflow-x-auto border border-solid border-mineshaft-700 bg-mineshaft-800 font-inter",
+      "relative w-full overflow-x-auto border border-solid border-mineshaft-700 bg-mineshaft-800 font-inter",
       isRounded && "rounded-lg",
       className
     )}

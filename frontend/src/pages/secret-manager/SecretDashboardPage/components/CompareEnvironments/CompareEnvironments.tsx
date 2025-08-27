@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { MultiValue } from "react-select";
 import {
   faArrowDown,
@@ -80,6 +80,8 @@ const DEFAULT_FILTER_STATE = {
   [RowType.Secret]: false,
   [RowType.SecretRotation]: false
 };
+
+const TABLE_WIDTH_OFFSET = 0.989;
 
 export const CompareEnvironments = ({ secretPath }: Props) => {
   const { currentWorkspace } = useWorkspace();
@@ -211,6 +213,8 @@ export const CompareEnvironments = ({ secretPath }: Props) => {
     [secrets]
   );
 
+  const [tableWidth, setTableWidth] = useState(0);
+
   const { data: tags } = useGetWsTags(
     permission.can(ProjectPermissionActions.Read, ProjectPermissionSub.Tags) ? workspaceId : ""
   );
@@ -221,7 +225,7 @@ export const CompareEnvironments = ({ secretPath }: Props) => {
     initialWidth: 320,
     minWidth: 160,
     maxWidth: tableRef.current
-      ? tableRef.current.clientWidth - 148 // ensure value column can't collapse completely
+      ? tableRef.current.clientWidth - 200 // ensure value column can't collapse completely
       : 800
   });
 
@@ -239,6 +243,21 @@ export const CompareEnvironments = ({ secretPath }: Props) => {
   const isTableEmpty = totalCount === 0;
 
   const isTableFiltered = isFilteredByResources;
+
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver((entries) => {
+      // eslint-disable-next-line no-restricted-syntax
+      for (const entry of entries) {
+        setTableWidth(entry.contentRect.width * TABLE_WIDTH_OFFSET);
+      }
+    });
+
+    if (tableRef.current) {
+      resizeObserver.observe(tableRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   return (
     <div className="flex flex-1 flex-col-reverse overflow-hidden">
@@ -376,9 +395,9 @@ export const CompareEnvironments = ({ secretPath }: Props) => {
                     isSecretRotationInEnv={isSecretRotationPresentInEnv}
                     environments={compareEnvironments}
                     getSecretRotationByName={getSecretRotationByName}
-                    getSecretRotationStatusesByName={getSecretRotationStatusesByName}
                     key={`overview-${secretRotationName}-${index + 1}`}
                     colWidth={colWidth}
+                    tableWidth={tableWidth}
                   />
                 ))}
                 {secKeys.map((key, index) => (
@@ -391,6 +410,7 @@ export const CompareEnvironments = ({ secretPath }: Props) => {
                     environments={compareEnvironments}
                     secretKey={key}
                     getSecretByKey={getSecretByKey}
+                    tableWidth={tableWidth}
                   />
                 ))}
                 <SecretNoAccessRow

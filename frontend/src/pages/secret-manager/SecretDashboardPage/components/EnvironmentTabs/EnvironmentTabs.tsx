@@ -1,9 +1,16 @@
 import { useState } from "react";
-import { faArrowRightArrowLeft, faEllipsisH, faMagnifyingGlass, faPlus } from "@fortawesome/free-solid-svg-icons";
+import {
+  faArrowRightArrowLeft,
+  faEllipsisH,
+  faMagnifyingGlass,
+  faPlus
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 
+import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
+import { ProjectPermissionCan } from "@app/components/permissions";
 import {
   Button,
   DropdownMenu,
@@ -18,17 +25,18 @@ import {
   Tabs
 } from "@app/components/v2";
 import { ROUTE_PATHS } from "@app/const/routes";
-import { ProjectPermissionActions, ProjectPermissionSub, useSubscription, useWorkspace } from "@app/context";
+import {
+  ProjectPermissionActions,
+  ProjectPermissionSub,
+  useSubscription,
+  useWorkspace
+} from "@app/context";
 import { usePopUp } from "@app/hooks";
 import { workspaceKeys } from "@app/hooks/api";
 import { WorkspaceEnv } from "@app/hooks/api/workspace/types";
-import {
-  AddEnvironmentModal
-} from "@app/pages/secret-manager/SettingsPage/components/EnvironmentSection/AddEnvironmentModal";
+import { AddEnvironmentModal } from "@app/pages/secret-manager/SettingsPage/components/EnvironmentSection/AddEnvironmentModal";
 
 import { CompareEnvironments } from "../CompareEnvironments";
-import { ProjectPermissionCan } from "@app/components/permissions";
-import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
 
 const COMPARE_ENVIRONMENT_TAB = "__COMPARE_ENVIRONMENT_TAB__";
 const VIEW_MORE_ENVIRONMENT_TAB = "__VIEW_MORE_ENVIRONMENT_TAB__";

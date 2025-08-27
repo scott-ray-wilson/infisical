@@ -1,17 +1,13 @@
 import { subject } from "@casl/ability";
-import { faCircle } from "@fortawesome/free-regular-svg-icons";
 import {
-  faCheck,
   faCodeBranch,
   faEye,
   faEyeSlash,
   faFileImport,
   faKey,
-  faRotate,
-  faXmark
+  faRotate
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { twMerge } from "tailwind-merge";
 
 import { Button, TableContainer, Td, Tooltip, Tr } from "@app/components/v2";
 import { useProjectPermission } from "@app/context";
@@ -22,10 +18,10 @@ import {
 import { useToggle } from "@app/hooks";
 import { SecretV3RawSanitized } from "@app/hooks/api/secrets/types";
 import { WorkspaceEnv } from "@app/hooks/api/types";
-import { ResourceNameCell } from "@app/pages/secret-manager/SecretDashboardPage/components/CompareEnvironments/components/shared";
 import { HIDDEN_SECRET_VALUE } from "@app/pages/secret-manager/SecretDashboardPage/components/SecretListView/SecretItem";
 
-import { SecretEditRow } from "./SecretEditRow";
+import { EnvironmentStatus, EnvironmentStatusCell, ResourceNameCell } from "../shared";
+import { EnvironmentSecretRow } from "./EnvironmentSecretRow";
 
 type Props = {
   secretKey: string;
@@ -85,7 +81,7 @@ export const SecretRow = ({
       >
         <ResourceNameCell
           colWidth={colWidth}
-          name={secretKey}
+          label={secretKey}
           icon={faKey}
           iconClassName="text-bunker-300"
           isRowExpanded={isFormExpanded}
@@ -97,61 +93,34 @@ export const SecretRow = ({
 
           const isSecretPresent = Boolean(secret);
           const isSecretEmpty = secret?.value === "";
+
+          let status: EnvironmentStatus;
+
+          if (isSecretEmpty) {
+            status = "empty";
+          } else if (isSecretPresent) {
+            status = "present";
+          } else if (isSecretImported) {
+            status = "imported";
+          } else {
+            status = "missing";
+          }
+
           return (
-            <Td
+            <EnvironmentStatusCell
+              isLast={i === environments.length - 1}
               key={`sec-overview-${slug}-${i + 1}-value`}
-              className={twMerge(
-                "border-mineshaft-500 px-0 py-3 group-hover:bg-mineshaft-600",
-                isFormExpanded && "border-t-2 border-mineshaft-500",
-                i < environments.length - 1 && "border-r",
-                (isSecretPresent && !isSecretEmpty) || isSecretImported ? "text-green-600" : "",
-                isSecretPresent && isSecretEmpty && !isSecretImported ? "text-mineshaft-400" : "",
-                !isSecretPresent && !isSecretEmpty && !isSecretImported ? "text-red-600" : ""
-              )}
-            >
-              <div className="mx-auto flex w-[0.03rem] justify-center">
-                <div className="flex justify-center">
-                  {!isSecretEmpty && (
-                    <Tooltip
-                      center
-                      content={
-                        // eslint-disable-next-line no-nested-ternary
-                        isSecretPresent
-                          ? "Present secret"
-                          : isSecretImported
-                            ? "Imported secret"
-                            : "Missing secret"
-                      }
-                    >
-                      <FontAwesomeIcon
-                        className={isSecretPresent || isSecretImported ? "h-3 w-3" : "h-3.5 w-3.5"}
-                        // eslint-disable-next-line no-nested-ternary
-                        icon={isSecretPresent ? faCheck : isSecretImported ? faFileImport : faXmark}
-                      />
-                    </Tooltip>
-                  )}
-                  {isSecretEmpty && (
-                    <Tooltip content="Empty value">
-                      <FontAwesomeIcon icon={faCircle} className="h-3 w-3 text-yellow" />
-                    </Tooltip>
-                  )}
-                </div>
-              </div>
-            </Td>
+              status={status}
+            />
           );
         })}
       </Tr>
       {isFormExpanded && (
         <Tr>
-          <Td
-            colSpan={totalCols}
-            className={`bg-bunker-600 px-0 py-0 ${
-              isFormExpanded && "border-b-2 border-mineshaft-500"
-            }`}
-          >
-            <div className="ml-2 p-2">
-              <TableContainer>
-                <table className="secret-table">
+          <Td colSpan={totalCols} className="px-0 py-0">
+            <div>
+              <TableContainer className="rounded-none border-0">
+                <table className="secret-table bg-mineshaft-700/50">
                   <thead>
                     <tr className="h-10 border-b-2 border-mineshaft-600">
                       <th
@@ -165,8 +134,8 @@ export const SecretRow = ({
                       </th>
                       <div className="absolute right-0 top-0 ml-auto mr-1 mt-1 w-min">
                         <Button
-                          variant="outline_bg"
-                          className="p-1"
+                          variant="plain"
+                          colorSchema="secondary"
                           leftIcon={<FontAwesomeIcon icon={isSecretVisible ? faEyeSlash : faEye} />}
                           onClick={() => setIsSecretVisible.toggle()}
                         >
@@ -178,7 +147,6 @@ export const SecretRow = ({
                   <tbody className="border-t-2 border-mineshaft-600">
                     {environments.map(({ name, slug }) => {
                       const secret = getSecretByKey(slug, secretKey);
-                      const isCreatable = !secret;
 
                       const isImportedSecret = isImportedSecretPresentInEnv(slug, secretKey);
                       const importedSecret = getImportedSecretByKey(slug, secretKey);
@@ -186,7 +154,7 @@ export const SecretRow = ({
                       return (
                         <tr
                           key={`secret-expanded-${slug}-${secretKey}`}
-                          className="hover:bg-mineshaft-700"
+                          className="hover:bg-mineshaft-700/75"
                         >
                           <td
                             className="flex h-full items-center"
@@ -214,18 +182,14 @@ export const SecretRow = ({
                             </div>
                           </td>
                           <td className="col-span-2 h-8 w-full">
-                            <SecretEditRow
+                            <EnvironmentSecretRow
                               secretPath={secretPath}
                               isVisible={isSecretVisible}
-                              secretName={secretKey}
                               secretValueHidden={secret?.secretValueHidden || false}
                               defaultValue={getDefaultValue(secret, importedSecret)}
-                              secretId={secret?.id}
                               isOverride={Boolean(secret?.valueOverride)}
                               isImportedSecret={isImportedSecret}
-                              isCreatable={isCreatable}
                               environment={slug}
-                              isRotatedSecret={secret?.isRotatedSecret}
                             />
                           </td>
                         </tr>

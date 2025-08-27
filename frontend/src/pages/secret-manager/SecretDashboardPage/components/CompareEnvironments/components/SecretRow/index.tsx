@@ -1,2 +1,2 @@
-export { SecretNoAccessOverviewTableRow } from "./SecretNoAccessOverviewTableRow";
+export { SecretNoAccessRow } from "./SecretNoAccessRow";
 export { SecretRow } from "./SecretRow";

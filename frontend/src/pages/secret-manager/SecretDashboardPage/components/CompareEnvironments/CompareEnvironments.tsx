@@ -9,12 +9,14 @@ import {
   faFolder,
   faKey,
   faRotate,
-  faSearch
+  faSearch,
+  faWarning
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { twMerge } from "tailwind-merge";
 
 import {
+  Badge,
   Button,
   DropdownMenu,
   DropdownMenuContent,
@@ -25,26 +27,18 @@ import {
   FormLabel,
   IconButton,
   Input,
+  Lottie,
   Pagination,
   Table,
   TableContainer,
   TBody,
   Th,
   THead,
+  Tooltip,
   Tr
 } from "@app/components/v2";
-import { HeaderResizer } from "@app/components/v2/HeaderResizer/HeaderResizer";
-import {
-  ProjectPermissionActions,
-  ProjectPermissionSub,
-  useProjectPermission,
-  useWorkspace
-} from "@app/context";
-import {
-  getUserTablePreference,
-  PreferenceKey,
-  setUserTablePreference
-} from "@app/helpers/userTablePreferences";
+import { ProjectPermissionActions, ProjectPermissionSub, useProjectPermission, useWorkspace } from "@app/context";
+import { getUserTablePreference, PreferenceKey, setUserTablePreference } from "@app/helpers/userTablePreferences";
 import { useDebounce, usePagination, useResetPageHelper } from "@app/hooks";
 import { useGetImportedSecretsAllEnvs, useGetWsTags } from "@app/hooks/api";
 import { useGetProjectSecretsOverview } from "@app/hooks/api/dashboard";
@@ -58,19 +52,14 @@ import {
   useSecretOverview,
   useSecretRotationOverview
 } from "@app/hooks/utils";
-import { SecretOverviewDynamicSecretRow } from "@app/pages/secret-manager/OverviewPage/components/SecretOverviewDynamicSecretRow";
-import { SecretOverviewFolderRow } from "@app/pages/secret-manager/OverviewPage/components/SecretOverviewFolderRow";
-import { SecretOverviewSecretRotationRow } from "@app/pages/secret-manager/OverviewPage/components/SecretOverviewSecretRotationRow";
-import {
-  SecretNoAccessOverviewTableRow,
-  SecretOverviewTableRow
-} from "@app/pages/secret-manager/OverviewPage/components/SecretOverviewTableRow";
-import { SecretSearchInput } from "@app/pages/secret-manager/OverviewPage/components/SecretSearchInput";
 import { SecretTableResourceCount } from "@app/pages/secret-manager/OverviewPage/components/SecretTableResourceCount";
-import { SecretRow } from "@app/pages/secret-manager/SecretDashboardPage/components/CompareEnvironments/components/SecretRow";
+
+import { DynamicSecretRow } from "./components/DynamicSecretRow";
+import { FolderRow } from "./components/FolderRow";
+import { SecretRotationRow } from "./components/SecretRotationRow";
+import { SecretNoAccessRow, SecretRow } from "./components/SecretRow";
 
 type Props = {
-  currentEnvSlug: string;
   secretPath: string;
 };
 
@@ -92,14 +81,10 @@ const DEFAULT_FILTER_STATE = {
   [RowType.SecretRotation]: false
 };
 
-export const CompareEnvironments = ({ currentEnvSlug, secretPath }: Props) => {
+export const CompareEnvironments = ({ secretPath }: Props) => {
   const { currentWorkspace } = useWorkspace();
 
-  const [selectedEnvironments, setSelectedEnvironments] = useState<WorkspaceEnv[]>(() =>
-    currentEnvSlug
-      ? [currentWorkspace.environments.find((env) => env.slug === currentEnvSlug)!]
-      : []
-  );
+  const [selectedEnvironments, setSelectedEnvironments] = useState<WorkspaceEnv[]>([]);
 
   const [filter, setFilter] = useState<Filter>(DEFAULT_FILTER_STATE);
 
@@ -178,9 +163,7 @@ export const CompareEnvironments = ({ currentEnvSlug, secretPath }: Props) => {
     totalUniqueSecretsInPage,
     totalUniqueSecretImportsInPage,
     totalUniqueDynamicSecretsInPage,
-    totalUniqueSecretRotationsInPage,
-    importedByEnvs,
-    usedBySecretSyncs
+    totalUniqueSecretRotationsInPage
   } = overview ?? {};
 
   const secretImportsShaped = secretImports
@@ -204,8 +187,7 @@ export const CompareEnvironments = ({ currentEnvSlug, secretPath }: Props) => {
     setPage
   });
 
-  const { folderNamesAndDescriptions, getFolderByNameAndEnv, isFolderPresentInEnv } =
-    useFolderOverview(folders);
+  const { folderNamesAndDescriptions, isFolderPresentInEnv } = useFolderOverview(folders);
 
   const { dynamicSecretNames, isDynamicSecretPresentInEnv } =
     useDynamicSecretOverview(dynamicSecrets);
@@ -237,7 +219,7 @@ export const CompareEnvironments = ({ currentEnvSlug, secretPath }: Props) => {
 
   const { handleMouseDown, isResizing, colWidth } = useResizableColWidth({
     initialWidth: 320,
-    minWidth: 100,
+    minWidth: 160,
     maxWidth: tableRef.current
       ? tableRef.current.clientWidth - 148 // ensure value column can't collapse completely
       : 800
@@ -259,7 +241,7 @@ export const CompareEnvironments = ({ currentEnvSlug, secretPath }: Props) => {
   const isTableFiltered = isFilteredByResources;
 
   return (
-    <div className="flex flex-col-reverse">
+    <div className="flex flex-1 flex-col-reverse overflow-hidden">
       {!isOverviewLoading && totalCount > 0 && (
         <Pagination
           startAdornment={
@@ -271,7 +253,7 @@ export const CompareEnvironments = ({ currentEnvSlug, secretPath }: Props) => {
               secretRotationCount={totalSecretRotationCount}
             />
           }
-          className="rounded-b-md border border-solid border-mineshaft-500 bg-mineshaft-700"
+          className="rounded-b-lg border border-solid border-mineshaft-500 bg-mineshaft-700"
           count={totalCount}
           page={page}
           perPage={perPage}
@@ -279,95 +261,154 @@ export const CompareEnvironments = ({ currentEnvSlug, secretPath }: Props) => {
           onChangePerPage={handlePerPageChange}
         />
       )}
-      <div ref={tableRef}>
+      <div ref={tableRef} className="thin-scrollbar flex flex-1 flex-col overflow-y-auto">
         <TableContainer
-          className="mt-4 rounded-b-none border-mineshaft-500"
-          // onScroll={(e) => setScrollOffset(e.currentTarget.scrollLeft)}
+          className={twMerge(
+            "mt-4 flex flex-1 flex-col border-mineshaft-500 bg-mineshaft-700",
+            !isTableEmpty && "rounded-b-none"
+          )}
         >
-          <Table className="bg-mineshaft-700">
-            <THead>
-              <Tr className="">
-                <Th className="sticky left-0 z-10 p-0" style={{ width: colWidth }}>
-                  <div className="relative">
-                    <div
-                      tabIndex={-1}
-                      role="button"
-                      className={`absolute -right-[0.02rem] z-40 h-full w-0.5 cursor-ew-resize hover:bg-blue-400/20 ${
-                        isResizing ? "bg-blue-400/75" : "bg-transparent"
-                      }`}
-                      onMouseDown={handleMouseDown}
-                    />
-                    <div className="pointer-events-none absolute -right-[0.02rem] top-[0.67rem] z-30">
-                      <div className="h-5 w-0.5 rounded-[1.5px] bg-gray-400 opacity-50" />
-                    </div>
-                    <div className="flex h-full items-center border-r border-mineshaft-500 bg-mineshaft-700 bg-clip-padding p-0 px-4 py-2.5">
-                      Name
-                      <IconButton
-                        variant="plain"
-                        className="ml-2"
-                        ariaLabel="sort"
-                        onClick={() =>
-                          setOrderDirection((prev) =>
-                            prev === OrderByDirection.ASC
-                              ? OrderByDirection.DESC
-                              : OrderByDirection.ASC
-                          )
-                        }
-                      >
-                        <FontAwesomeIcon
-                          icon={orderDirection === "asc" ? faArrowDown : faArrowUp}
-                        />
-                      </IconButton>
-                    </div>
-                  </div>
-                </Th>
-                {compareEnvironments?.map(({ name, slug }, index) => {
-                  const envSecKeyCount = getEnvSecretKeyCount(slug);
-                  const importedSecKeyCount = getEnvImportedSecretKeyCount(slug);
-                  const missingKeyCount = secKeys.length - envSecKeyCount - importedSecKeyCount;
-
-                  return (
-                    <Th className="whitespace-nowrap p-0 text-center" key={`environment-${slug}`}>
-                      <div
-                        className={twMerge(
-                          "h-full w-full border-mineshaft-500 bg-mineshaft-700 p-0 px-4 py-3 text-center",
-                          index < compareEnvironments.length - 1 && "border-r"
-                        )}
-                      >
-                        {name}
-                      </div>
-                    </Th>
-                  );
-                })}
-              </Tr>
-            </THead>
-            <TBody>
-              {secKeys.map((key, index) => (
-                <SecretRow
-                  colWidth={colWidth}
-                  secretPath={secretPath}
-                  getImportedSecretByKey={getImportedSecretByKey}
-                  isImportedSecretPresentInEnv={handleIsImportedSecretPresentInEnv}
-                  key={`overview-${key}-${index + 1}`}
-                  environments={compareEnvironments}
-                  secretKey={key}
-                  getSecretByKey={getSecretByKey}
-                />
-              ))}
-              <SecretNoAccessOverviewTableRow
-                environments={selectedEnvironments}
-                count={Math.max(
-                  (page * perPage > totalCount ? totalCount % perPage : perPage) -
-                    (totalUniqueFoldersInPage || 0) -
-                    (totalUniqueDynamicSecretsInPage || 0) -
-                    (totalUniqueSecretsInPage || 0) -
-                    (totalUniqueSecretImportsInPage || 0) -
-                    (totalUniqueSecretRotationsInPage || 0),
-                  0
-                )}
+          {isOverviewLoading ? (
+            <div className="flex h-full flex-col items-center justify-center">
+              <Lottie
+                isAutoPlay
+                icon="infisical_loading"
+                className="h-10 place-self-center self-center"
               />
-            </TBody>
-          </Table>
+            </div>
+          ) : (
+            <Table className="border-collapse bg-mineshaft-700">
+              <THead className="sticky top-0 z-20">
+                <Tr className="sticky top-0 z-20">
+                  <Th className="sticky left-0 z-10 border-none p-0" style={{ width: colWidth }}>
+                    <div className="relative">
+                      <div
+                        tabIndex={-1}
+                        role="button"
+                        className={`absolute -right-[0.02rem] z-40 h-full w-0.5 cursor-ew-resize hover:bg-blue-400/20 ${
+                          isResizing ? "bg-blue-400/75" : "bg-transparent"
+                        }`}
+                        onMouseDown={handleMouseDown}
+                      />
+                      <div className="pointer-events-none absolute -right-[0.02rem] top-[0.67rem] z-30">
+                        <div className="h-5 w-0.5 rounded-[1.5px] bg-gray-400 opacity-50" />
+                      </div>
+                      <div className="flex h-full items-center border-b-2 border-r border-mineshaft-500 bg-mineshaft-700 bg-clip-padding p-0 px-4 py-2.5">
+                        Name
+                        <IconButton
+                          variant="plain"
+                          className="ml-2"
+                          ariaLabel="sort"
+                          onClick={() =>
+                            setOrderDirection((prev) =>
+                              prev === OrderByDirection.ASC
+                                ? OrderByDirection.DESC
+                                : OrderByDirection.ASC
+                            )
+                          }
+                        >
+                          <FontAwesomeIcon
+                            icon={orderDirection === "asc" ? faArrowDown : faArrowUp}
+                          />
+                        </IconButton>
+                      </div>
+                    </div>
+                  </Th>
+                  {compareEnvironments?.map(({ name, slug }, index) => {
+                    const envSecKeyCount = getEnvSecretKeyCount(slug);
+                    const importedSecKeyCount = getEnvImportedSecretKeyCount(slug);
+                    const missingKeyCount = secKeys.length - envSecKeyCount - importedSecKeyCount;
+
+                    return (
+                      <Th
+                        className="whitespace-nowrap border-none p-0 text-center"
+                        key={`environment-${slug}`}
+                      >
+                        <div
+                          className={twMerge(
+                            "flex h-full w-full items-center justify-center gap-x-2 border-b-2 border-mineshaft-500 bg-mineshaft-700 p-0 px-4 py-3 text-center",
+                            index < compareEnvironments.length - 1 && "border-r"
+                          )}
+                        >
+                          {name}
+                          {missingKeyCount > 0 && (
+                            <Tooltip
+                              className="max-w-none lowercase"
+                              content={`${missingKeyCount} secrets missing\n compared to other environments`}
+                            >
+                              <Badge
+                                variant="primary"
+                                className="-mt-[0.05rem] flex h-4 items-center gap-x-1 pt-[0.1rem] font-normal leading-3"
+                              >
+                                <FontAwesomeIcon icon={faWarning} />
+                                {missingKeyCount}
+                              </Badge>
+                            </Tooltip>
+                          )}
+                        </div>
+                      </Th>
+                    );
+                  })}
+                </Tr>
+              </THead>
+              <TBody>
+                {folderNamesAndDescriptions.map(({ name: folderName }, index) => (
+                  <FolderRow
+                    folderName={folderName}
+                    isFolderPresentInEnv={isFolderPresentInEnv}
+                    environments={compareEnvironments}
+                    key={`overview-${folderName}-${index + 1}`}
+                    colWidth={colWidth}
+                  />
+                ))}
+                {dynamicSecretNames.map((dynamicSecretName, index) => (
+                  <DynamicSecretRow
+                    dynamicSecretName={dynamicSecretName}
+                    isDynamicSecretInEnv={isDynamicSecretPresentInEnv}
+                    environments={compareEnvironments}
+                    key={`overview-${dynamicSecretName}-${index + 1}`}
+                    colWidth={colWidth}
+                  />
+                ))}
+                {secretRotationNames.map((secretRotationName, index) => (
+                  <SecretRotationRow
+                    secretRotationName={secretRotationName}
+                    isSecretRotationInEnv={isSecretRotationPresentInEnv}
+                    environments={compareEnvironments}
+                    getSecretRotationByName={getSecretRotationByName}
+                    getSecretRotationStatusesByName={getSecretRotationStatusesByName}
+                    key={`overview-${secretRotationName}-${index + 1}`}
+                    colWidth={colWidth}
+                  />
+                ))}
+                {secKeys.map((key, index) => (
+                  <SecretRow
+                    colWidth={colWidth}
+                    secretPath={secretPath}
+                    getImportedSecretByKey={getImportedSecretByKey}
+                    isImportedSecretPresentInEnv={handleIsImportedSecretPresentInEnv}
+                    key={`overview-${key}-${index + 1}`}
+                    environments={compareEnvironments}
+                    secretKey={key}
+                    getSecretByKey={getSecretByKey}
+                  />
+                ))}
+                <SecretNoAccessRow
+                  colWidth={colWidth}
+                  environments={compareEnvironments}
+                  count={Math.max(
+                    (page * perPage > totalCount ? totalCount % perPage : perPage) -
+                      (totalUniqueFoldersInPage || 0) -
+                      (totalUniqueDynamicSecretsInPage || 0) -
+                      (totalUniqueSecretsInPage || 0) -
+                      (totalUniqueSecretImportsInPage || 0) -
+                      (totalUniqueSecretRotationsInPage || 0),
+                    0
+                  )}
+                />
+              </TBody>
+            </Table>
+          )}
         </TableContainer>
       </div>
       <div className="mt-3 flex flex-row items-center justify-center space-x-2">
@@ -481,6 +522,7 @@ export const CompareEnvironments = ({ currentEnvSlug, secretPath }: Props) => {
 
             setSelectedEnvironments((selected as WorkspaceEnv[]) ?? []);
           }}
+          placeholder="Leave blank to compare all environments"
           options={currentWorkspace.environments}
           getOptionValue={(option) => option.slug}
           getOptionLabel={(option) => option.name}

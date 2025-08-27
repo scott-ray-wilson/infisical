@@ -96,26 +96,28 @@ export const EnvironmentTabs = ({ secretPath }: Props) => {
               <p className="truncate">{environment.name}</p>
             </Tab>
           ))}
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <Tab value={COMPARE_ENVIRONMENT_TAB}>
-                <FontAwesomeIcon icon={faEllipsisVertical} />
-              </Tab>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent sideOffset={2} align="end">
-              {dropdownEnvironments.map((environment) => (
-                <DropdownMenuItem
-                  key={environment.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSelect(environment.slug);
-                  }}
-                >
-                  {environment.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {dropdownEnvironments.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Tab value={COMPARE_ENVIRONMENT_TAB}>
+                  <FontAwesomeIcon icon={faEllipsisVertical} />
+                </Tab>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent sideOffset={2} align="end">
+                {dropdownEnvironments.map((environment) => (
+                  <DropdownMenuItem
+                    key={environment.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelect(environment.slug);
+                    }}
+                  >
+                    {environment.name}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           {currentWorkspace.environments.length > 1 && (
             // <DropdownMenu>
             //   <DropdownMenuTrigger className="ml-auto">
@@ -156,8 +158,8 @@ export const EnvironmentTabs = ({ secretPath }: Props) => {
         <ModalContent
           title="Compare Environments"
           subTitle="Compare secrets across multiple environments"
-          className="!w-[98vw] max-w-none"
-          bodyClassName="!overflow-visible"
+          className="flex h-full !w-[95vw] max-w-none flex-col"
+          bodyClassName="flex-1 flex flex-col overflow-hidden"
         >
           <CompareEnvironments currentEnvSlug={currentEnv} secretPath={secretPath} />
         </ModalContent>

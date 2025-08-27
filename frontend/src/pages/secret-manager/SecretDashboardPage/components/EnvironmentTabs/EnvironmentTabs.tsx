@@ -1,13 +1,16 @@
 import { useState } from "react";
-import { faArrowRightArrowLeft, faEllipsisVertical } from "@fortawesome/free-solid-svg-icons";
+import { faArrowRightArrowLeft, faEllipsisH, faMagnifyingGlass, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "@tanstack/react-router";
 
 import {
+  Button,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  Input,
   Modal,
   ModalContent,
   Tab,
@@ -15,13 +18,20 @@ import {
   Tabs
 } from "@app/components/v2";
 import { ROUTE_PATHS } from "@app/const/routes";
-import { useWorkspace } from "@app/context";
+import { ProjectPermissionActions, ProjectPermissionSub, useSubscription, useWorkspace } from "@app/context";
 import { usePopUp } from "@app/hooks";
+import { workspaceKeys } from "@app/hooks/api";
 import { WorkspaceEnv } from "@app/hooks/api/workspace/types";
+import {
+  AddEnvironmentModal
+} from "@app/pages/secret-manager/SettingsPage/components/EnvironmentSection/AddEnvironmentModal";
 
 import { CompareEnvironments } from "../CompareEnvironments";
+import { ProjectPermissionCan } from "@app/components/permissions";
+import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
 
 const COMPARE_ENVIRONMENT_TAB = "__COMPARE_ENVIRONMENT_TAB__";
+const VIEW_MORE_ENVIRONMENT_TAB = "__VIEW_MORE_ENVIRONMENT_TAB__";
 
 type Props = {
   secretPath: string;
@@ -36,11 +46,23 @@ export const EnvironmentTabs = ({ secretPath }: Props) => {
     select: (el) => el.envSlug
   });
 
+  const { subscription } = useSubscription();
+
+  const isMoreEnvironmentsAllowed =
+    subscription?.environmentLimit && currentWorkspace?.environments
+      ? currentWorkspace.environments.length < subscription.environmentLimit
+      : true;
+
+  const [search, setSearch] = useState("");
   const [isNavigating, setIsNavigating] = useState(false);
 
   const navigate = useNavigate();
 
-  const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp(["compareEnvironments"] as const);
+  const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp([
+    "compareEnvironments",
+    "createEnvironment",
+    "upgradePlan"
+  ] as const);
 
   const selectedIndex = currentWorkspace.environments.findIndex((env) => env.slug === currentEnv);
 
@@ -60,6 +82,8 @@ export const EnvironmentTabs = ({ secretPath }: Props) => {
       .filter((env) => env.slug !== currentEnv);
   }
 
+  const queryClient = useQueryClient();
+
   const handleSelect = async (envSlug: string) => {
     if (isNavigating) return;
 
@@ -75,6 +99,10 @@ export const EnvironmentTabs = ({ secretPath }: Props) => {
     setIsNavigating(false);
   };
 
+  const filteredEnvironments = dropdownEnvironments.filter(
+    (env) => env.name.toLowerCase().includes(search) || env.slug.toLowerCase().includes(search)
+  );
+
   return (
     <>
       <Tabs
@@ -87,7 +115,6 @@ export const EnvironmentTabs = ({ secretPath }: Props) => {
 
           handleSelect(value);
         }}
-        className="mt-6"
         defaultValue="environment-tabs"
       >
         <TabList>
@@ -96,58 +123,84 @@ export const EnvironmentTabs = ({ secretPath }: Props) => {
               <p className="truncate">{environment.name}</p>
             </Tab>
           ))}
-          {dropdownEnvironments.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Tab value={COMPARE_ENVIRONMENT_TAB}>
-                  <FontAwesomeIcon icon={faEllipsisVertical} />
-                </Tab>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent sideOffset={2} align="end">
-                {dropdownEnvironments.map((environment) => (
-                  <DropdownMenuItem
-                    key={environment.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSelect(environment.slug);
-                    }}
-                  >
-                    {environment.name}
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <Tab value={VIEW_MORE_ENVIRONMENT_TAB}>
+                <FontAwesomeIcon icon={faEllipsisH} />
+              </Tab>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              className="thin-scrollbar max-h-[70vh] overflow-y-auto"
+              sideOffset={2}
+              align="end"
+            >
+              <div className="border-b border-b-mineshaft-600">
+                <Input
+                  value={search}
+                  onChange={(evt) => setSearch(evt.target.value || "")}
+                  leftIcon={<FontAwesomeIcon icon={faMagnifyingGlass} className="w-3.5" />}
+                  size="xs"
+                  variant="plain"
+                  className="!rounded-b-none rounded-t py-2 outline-4"
+                  placeholder="Search environments"
+                />
+              </div>
+              <div className="thin-scrollbar max-h-[40vh] overflow-auto">
+                {filteredEnvironments.length ? (
+                  filteredEnvironments.map((environment) => (
+                    <DropdownMenuItem
+                      key={environment.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelect(environment.slug);
+                      }}
+                    >
+                      {environment.name}
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <DropdownMenuItem isDisabled disabled>
+                    No environments match search
                   </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                )}
+              </div>
+              <div className="h-1 border-t border-mineshaft-600" />
+              <ProjectPermissionCan
+                I={ProjectPermissionActions.Create}
+                a={ProjectPermissionSub.Environments}
+              >
+                {(isAllowed) => (
+                  <DropdownMenuItem
+                    isDisabled={!isAllowed}
+                    onClick={() => {
+                      if (isMoreEnvironmentsAllowed) {
+                        handlePopUpOpen("createEnvironment");
+                      } else {
+                        handlePopUpOpen("upgradePlan");
+                      }
+                    }}
+                    className="data-[highlighted]:bg-mineshaft-900"
+                  >
+                    <Button
+                      size="xs"
+                      variant="outline_bg"
+                      leftIcon={<FontAwesomeIcon icon={faPlus} />}
+                      className="w-full"
+                    >
+                      Add Environment
+                    </Button>
+                  </DropdownMenuItem>
+                )}
+              </ProjectPermissionCan>
+            </DropdownMenuContent>
+          </DropdownMenu>
           {currentWorkspace.environments.length > 1 && (
-            // <DropdownMenu>
-            //   <DropdownMenuTrigger className="ml-auto">
             <Tab className="ml-auto" value={COMPARE_ENVIRONMENT_TAB}>
               <div className="flex items-center gap-x-2 whitespace-nowrap">
                 <FontAwesomeIcon icon={faArrowRightArrowLeft} />
                 Compare Environments
               </div>
             </Tab>
-            //   </DropdownMenuTrigger>
-            //   <DropdownMenuContent sideOffset={2} align="end">
-            //     <div className="p-2">
-            //       <div className="text-mineshaft-400">
-            //         Select two or more environments to compare
-            //       </div>
-            //       <FilterableSelect
-            //         value={selectedEnvironments}
-            //         onChange={(value) => {
-            //           const selected = value as MultiValue<WorkspaceEnv>;
-            //
-            //           setSelectedEnvironments((selected as WorkspaceEnv[]) ?? []);
-            //         }}
-            //         options={currentWorkspace.environments}
-            //         getOptionValue={(option) => option.slug}
-            //         getOptionLabel={(option) => option.name}
-            //         isMulti
-            //       />
-            //     </div>
-            //   </DropdownMenuContent>
-            // </DropdownMenu>
           )}
         </TabList>
       </Tabs>
@@ -161,9 +214,24 @@ export const EnvironmentTabs = ({ secretPath }: Props) => {
           className="flex h-full !w-[95vw] max-w-none flex-col"
           bodyClassName="flex-1 flex flex-col overflow-hidden"
         >
-          <CompareEnvironments currentEnvSlug={currentEnv} secretPath={secretPath} />
+          <CompareEnvironments secretPath={secretPath} />
         </ModalContent>
       </Modal>
+      <UpgradePlanModal
+        isOpen={popUp.upgradePlan.isOpen}
+        onOpenChange={(isOpen) => handlePopUpToggle("upgradePlan", isOpen)}
+        text="You can add custom environments if you switch to Infisical's Team plan."
+      />
+      <AddEnvironmentModal
+        isOpen={popUp.createEnvironment.isOpen}
+        onOpenChange={(isOpen) => handlePopUpToggle("createEnvironment", isOpen)}
+        onComplete={async (env) => {
+          await queryClient.refetchQueries({
+            queryKey: workspaceKeys.getWorkspaceById(currentWorkspace.id)
+          });
+          handleSelect(env.slug);
+        }}
+      />
     </>
   );
 };

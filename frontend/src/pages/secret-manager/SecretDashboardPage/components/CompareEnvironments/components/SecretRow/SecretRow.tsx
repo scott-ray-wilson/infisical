@@ -129,7 +129,7 @@ export const SecretRow = ({
               className="sticky left-0 bg-mineshaft-800 bg-clip-padding px-0 py-0"
             >
               <TableContainer className="rounded-none border-0">
-                <table className="secret-table bg-mineshaft-700/50">
+                <table className="secret-table">
                   <thead>
                     <tr className="h-10 border-b-2 border-mineshaft-600">
                       <th
@@ -143,7 +143,7 @@ export const SecretRow = ({
                       <th style={{ padding: "0.5rem 1rem" }} className="border-none">
                         Value
                       </th>
-                      <div className="absolute right-0 top-[1px] ml-auto mr-1 mt-1 w-min">
+                      <div className="absolute right-3 top-[1px] ml-auto mr-1 mt-1 w-min">
                         <Button
                           variant="plain"
                           colorSchema="secondary"
@@ -165,7 +165,7 @@ export const SecretRow = ({
                       return (
                         <tr
                           key={`secret-expanded-${slug}-${secretKey}`}
-                          className="h-full hover:bg-mineshaft-700/75"
+                          className="h-full hover:bg-mineshaft-700/70"
                         >
                           <td
                             className="h-[1px] border-none !p-0"

@@ -37,10 +37,14 @@ import {
   Tooltip,
   Tr
 } from "@app/components/v2";
-import { ProjectPermissionActions, ProjectPermissionSub, useProjectPermission, useWorkspace } from "@app/context";
-import { getUserTablePreference, PreferenceKey, setUserTablePreference } from "@app/helpers/userTablePreferences";
+import { useWorkspace } from "@app/context";
+import {
+  getUserTablePreference,
+  PreferenceKey,
+  setUserTablePreference
+} from "@app/helpers/userTablePreferences";
 import { useDebounce, usePagination, useResetPageHelper } from "@app/hooks";
-import { useGetImportedSecretsAllEnvs, useGetWsTags } from "@app/hooks/api";
+import { useGetImportedSecretsAllEnvs } from "@app/hooks/api";
 import { useGetProjectSecretsOverview } from "@app/hooks/api/dashboard";
 import { DashboardSecretsOrderBy } from "@app/hooks/api/dashboard/types";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
@@ -81,12 +85,32 @@ const DEFAULT_FILTER_STATE = {
   [RowType.SecretRotation]: false
 };
 
-const TABLE_WIDTH_OFFSET = 0.989;
+const TABLE_WIDTH_OFFSET = 17;
+const COL_WIDTH_OFFSET = 200;
 
 export const CompareEnvironments = ({ secretPath }: Props) => {
   const { currentWorkspace } = useWorkspace();
+  const compareEnvironmentsKey = `compare-environments-${currentWorkspace.id}`;
 
-  const [selectedEnvironments, setSelectedEnvironments] = useState<WorkspaceEnv[]>([]);
+  const [selectedEnvironments, setSelectedEnvironments] = useState<WorkspaceEnv[]>(() => {
+    try {
+      const storedEnvironments = JSON.parse(localStorage.getItem(compareEnvironmentsKey) ?? "[]");
+
+      if (Array.isArray(storedEnvironments)) {
+        const potentialEnvs: string[] = [];
+        storedEnvironments.forEach((env) => {
+          if (typeof env === "string") {
+            potentialEnvs.push(env);
+          }
+        });
+
+        return currentWorkspace.environments.filter((env) => potentialEnvs.includes(env.id));
+      }
+    } catch {
+      // do nothing and proceed
+    }
+    return currentWorkspace.environments.slice(0, 2);
+  });
 
   const [filter, setFilter] = useState<Filter>(DEFAULT_FILTER_STATE);
 
@@ -109,11 +133,17 @@ export const CompareEnvironments = ({ secretPath }: Props) => {
     setUserTablePreference("secretCompareTable", PreferenceKey.PerPage, newPerPage);
   };
 
-  const { permission } = useProjectPermission();
-
   const workspaceId = currentWorkspace.id;
   const [searchFilter, setSearchFilter] = useState("");
-  const [debouncedSearchFilter, setDebouncedSearchFilter] = useDebounce(searchFilter);
+  const [debouncedSearchFilter] = useDebounce(searchFilter);
+  const [debouncedSelectedEnvironments] = useDebounce(selectedEnvironments);
+
+  useEffect(() => {
+    localStorage.setItem(
+      compareEnvironmentsKey,
+      JSON.stringify(selectedEnvironments.map((env) => env.id))
+    );
+  }, [debouncedSelectedEnvironments]);
 
   const {
     secretImports,
@@ -194,12 +224,8 @@ export const CompareEnvironments = ({ secretPath }: Props) => {
   const { dynamicSecretNames, isDynamicSecretPresentInEnv } =
     useDynamicSecretOverview(dynamicSecrets);
 
-  const {
-    secretRotationNames,
-    isSecretRotationPresentInEnv,
-    getSecretRotationByName,
-    getSecretRotationStatusesByName
-  } = useSecretRotationOverview(secretRotations);
+  const { secretRotationNames, isSecretRotationPresentInEnv, getSecretRotationByName } =
+    useSecretRotationOverview(secretRotations);
 
   const { secKeys, getEnvSecretKeyCount } = useSecretOverview(
     secrets?.concat(secretImportsShaped) || []
@@ -215,17 +241,13 @@ export const CompareEnvironments = ({ secretPath }: Props) => {
 
   const [tableWidth, setTableWidth] = useState(0);
 
-  const { data: tags } = useGetWsTags(
-    permission.can(ProjectPermissionActions.Read, ProjectPermissionSub.Tags) ? workspaceId : ""
-  );
-
   const tableRef = useRef<HTMLDivElement>(null);
 
   const { handleMouseDown, isResizing, colWidth } = useResizableColWidth({
     initialWidth: 320,
     minWidth: 160,
     maxWidth: tableRef.current
-      ? tableRef.current.clientWidth - 200 // ensure value column can't collapse completely
+      ? tableRef.current.clientWidth - COL_WIDTH_OFFSET // ensure value column can't collapse completely
       : 800
   });
 
@@ -248,7 +270,7 @@ export const CompareEnvironments = ({ secretPath }: Props) => {
     const resizeObserver = new ResizeObserver((entries) => {
       // eslint-disable-next-line no-restricted-syntax
       for (const entry of entries) {
-        setTableWidth(entry.contentRect.width * TABLE_WIDTH_OFFSET);
+        setTableWidth(entry.contentRect.width - TABLE_WIDTH_OFFSET);
       }
     });
 
@@ -359,7 +381,7 @@ export const CompareEnvironments = ({ secretPath }: Props) => {
                                 variant="primary"
                                 className="-mt-[0.05rem] flex h-4 items-center gap-x-1 pt-[0.1rem] font-normal leading-3"
                               >
-                                <FontAwesomeIcon icon={faWarning} />
+                                <FontAwesomeIcon icon={faWarning} className="-mt-[0.1rem] w-2.5" />
                                 {missingKeyCount}
                               </Badge>
                             </Tooltip>

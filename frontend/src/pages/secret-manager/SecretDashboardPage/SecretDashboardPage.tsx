@@ -767,6 +767,7 @@ const Page = () => {
         }
       />
       <SecretV2MigrationSection />
+      <EnvironmentTabs secretPath={secretPath} />
       {!isRollbackMode ? (
         <>
           <ActionBar
@@ -805,7 +806,6 @@ const Page = () => {
               }))
             }
           />
-          <EnvironmentTabs secretPath={secretPath} />
           <div
             ref={tableRef}
             className={twMerge(

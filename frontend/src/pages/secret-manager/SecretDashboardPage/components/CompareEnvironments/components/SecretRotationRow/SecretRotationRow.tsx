@@ -76,7 +76,7 @@ export const SecretRotationRow = ({
                   style={{ minWidth: tableWidth, maxWidth: tableWidth }}
                   className="sticky left-0 bg-mineshaft-800 bg-clip-padding px-0 py-0"
                 >
-                  <div className="flex !h-[40px] items-center justify-between gap-x-2 bg-mineshaft-700/50 px-4">
+                  <div className="flex !h-[40px] items-center justify-between gap-x-2 px-4">
                     <div className="w-full">
                       <div className="flex w-full flex-wrap items-center gap-x-2.5">
                         <span>{envName}</span>
@@ -105,7 +105,7 @@ export const SecretRotationRow = ({
                     </Button>
                   </div>
                   <TableContainer className="rounded-none border-0">
-                    <table className="secret-table w-full border-b-0 bg-mineshaft-700/50">
+                    <table className="secret-table w-full border-b-0">
                       <tbody className="!last:border-b-0 w-full border-t-2 border-mineshaft-600">
                         {secrets.map((secret, index) => {
                           return (
@@ -119,7 +119,7 @@ export const SecretRotationRow = ({
                               // eslint-disable-next-line react/no-array-index-key
                               key={`rotation-secret-${secretRotation.id}-${index}`}
                             >
-                              <tr className="hover:bg-mineshaft-700">
+                              <tr className="hover:bg-mineshaft-700/70">
                                 <td
                                   style={{
                                     width: colWidth

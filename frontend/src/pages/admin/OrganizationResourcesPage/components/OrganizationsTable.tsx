@@ -1,9 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
+  faArrowDown,
+  faArrowUp,
   faBuilding,
   faCircleQuestion,
-  faEllipsis,
-  faMagnifyingGlass
+  faEllipsisV,
+  faMagnifyingGlass,
+  faTrash,
+  faUserMinus,
+  faUsers,
+  faUserXmark
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -17,9 +23,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   EmptyState,
+  IconButton,
   Input,
   Modal,
   ModalContent,
+  Pagination,
   Table,
   TableContainer,
   TableSkeleton,
@@ -30,7 +38,7 @@ import {
   Tooltip,
   Tr
 } from "@app/components/v2";
-import { useDebounce, usePopUp } from "@app/hooks";
+import { useDebounce, usePagination, usePopUp, useResetPageHelper } from "@app/hooks";
 import {
   useAdminDeleteOrganization,
   useAdminDeleteOrganizationMembership,
@@ -38,7 +46,15 @@ import {
   useAdminGetOrganizations
 } from "@app/hooks/api";
 import { OrganizationWithProjects } from "@app/hooks/api/admin/types";
+import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { UsePopUpState } from "@app/hooks/usePopUp";
+
+enum MembersOrderBy {
+  Name = "firstName",
+  Email = "email"
+}
+
+const ORG_MEMBERS_TABLE_LIMIT = 15;
 
 const ViewMembersModalContent = ({
   popUp,
@@ -59,70 +75,227 @@ const ViewMembersModalContent = ({
 }) => {
   const organization = popUp.viewMembers?.data?.organization as OrganizationWithProjects;
 
+  const members = organization?.members ?? [];
+
+  const {
+    search,
+    setSearch,
+    setPage,
+    page,
+    perPage,
+    setPerPage,
+    offset,
+    orderDirection,
+    orderBy,
+    setOrderBy,
+    setOrderDirection,
+    toggleOrderDirection
+  } = usePagination<MembersOrderBy>(MembersOrderBy.Name, {
+    initPerPage: ORG_MEMBERS_TABLE_LIMIT
+  });
+
+  const filteredMembers = useMemo(
+    () =>
+      members
+        ?.filter(
+          ({ user: u }) =>
+            u?.firstName?.toLowerCase().includes(search.toLowerCase()) ||
+            u?.lastName?.toLowerCase().includes(search.toLowerCase()) ||
+            u?.username?.toLowerCase().includes(search.toLowerCase()) ||
+            u?.email?.toLowerCase().includes(search.toLowerCase())
+        )
+        .sort((a, b) => {
+          const [memberOne, memberTwo] = orderDirection === OrderByDirection.ASC ? [a, b] : [b, a];
+
+          let valueOne: string | null;
+          let valueTwo: string | null;
+
+          switch (orderBy) {
+            case MembersOrderBy.Email:
+              valueOne = memberOne.user.email || memberOne.user.username;
+              valueTwo = memberTwo.user.email || memberOne.user.username;
+              break;
+            case MembersOrderBy.Name:
+            default:
+              valueOne = memberOne.user.firstName ?? memberOne.user.lastName;
+              valueTwo = memberTwo.user.firstName ?? memberTwo.user.lastName;
+          }
+
+          if (!valueOne) return 1;
+          if (!valueTwo) return -1;
+
+          return valueOne.toLowerCase().localeCompare(valueTwo.toLowerCase());
+        }),
+    [members, search, orderBy, orderDirection]
+  );
+
+  const handleSort = (column: MembersOrderBy) => {
+    if (column === orderBy) {
+      toggleOrderDirection();
+      return;
+    }
+
+    setOrderBy(column);
+    setOrderDirection(OrderByDirection.ASC);
+  };
+
+  useResetPageHelper({
+    totalCount: filteredMembers.length,
+    offset,
+    setPage
+  });
+
   return (
-    <div className="space-y-2">
-      {organization?.members?.map((member) => (
-        <div className="flex items-center justify-between gap-2 rounded-md bg-mineshaft-700 px-4 py-2">
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="text-xs text-mineshaft-100">
-                <div>
-                  {member.user.firstName ? (
-                    <div>
-                      {member.user.firstName} {member.user.lastName}
-                    </div>
-                  ) : (
-                    <p className="text-mineshaft-400">Not set</p>
-                  )}
+    <>
+      <Input
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        leftIcon={<FontAwesomeIcon icon={faMagnifyingGlass} />}
+        placeholder="Search members..."
+      />
+      <TableContainer className="mt-4 flex flex-1 flex-col rounded-b-none bg-mineshaft-700">
+        <Table className="overflow-y-auto rounded-b-none bg-mineshaft-700">
+          <THead className="sticky top-0 z-50">
+            <Tr>
+              <Th className="w-1/3 bg-mineshaft-700">
+                <div className="flex items-center">
+                  Name
+                  <IconButton
+                    variant="plain"
+                    className={`ml-2 ${orderBy === MembersOrderBy.Name ? "" : "opacity-30"}`}
+                    ariaLabel="sort"
+                    onClick={() => handleSort(MembersOrderBy.Name)}
+                  >
+                    <FontAwesomeIcon
+                      icon={
+                        orderDirection === OrderByDirection.DESC && orderBy === MembersOrderBy.Name
+                          ? faArrowUp
+                          : faArrowDown
+                      }
+                    />
+                  </IconButton>
                 </div>
-                <div className="flex gap-2 opacity-80">
-                  <div>{member.user.username || member.user.email}</div>
-                  <Badge variant="primary">
-                    <div className="flex items-center gap-1">
+              </Th>
+              <Th className="w-1/3 bg-mineshaft-700">
+                <div className="flex items-center">
+                  Email
+                  <IconButton
+                    variant="plain"
+                    className={`ml-2 ${orderBy === MembersOrderBy.Email ? "" : "opacity-30"}`}
+                    ariaLabel="sort"
+                    onClick={() => handleSort(MembersOrderBy.Email)}
+                  >
+                    <FontAwesomeIcon
+                      icon={
+                        orderDirection === OrderByDirection.DESC && orderBy === MembersOrderBy.Email
+                          ? faArrowUp
+                          : faArrowDown
+                      }
+                    />
+                  </IconButton>
+                </div>
+              </Th>
+              <Th className="w-1/4 bg-mineshaft-700">
+                <div className="flex items-center">Role</div>
+              </Th>
+              <Th className="w-5 bg-mineshaft-700" />
+            </Tr>
+          </THead>
+          <TBody>
+            {filteredMembers.slice(offset, perPage * page).map((member) => {
+              const { username, email, firstName, lastName, id } = member.user;
+              const name = firstName || lastName ? `${firstName} ${lastName}` : null;
+
+              return (
+                <Tr key={`user-${id}`} className="w-full">
+                  <Td className="max-w-0">
+                    <div className="flex items-center">
+                      <p className="truncate">
+                        {name ?? <span className="text-mineshaft-400">Not Set</span>}
+                      </p>
+                    </div>
+                  </Td>
+                  <Td className="max-w-0">
+                    <p className="truncate">{username || email}</p>
+                  </Td>
+                  <Td>
+                    <Badge className="flex w-min items-center gap-x-1 whitespace-nowrap bg-mineshaft-400/50 text-bunker-200">
                       <span className="capitalize">{member.role.replace("-", " ")}</span>
                       {Boolean(member.roleId) && (
                         <Tooltip content="This member has a custom role assigned.">
-                          <FontAwesomeIcon icon={faCircleQuestion} className="text-xs" />
+                          <FontAwesomeIcon icon={faCircleQuestion} className="w-3" />
                         </Tooltip>
                       )}
+                    </Badge>
+                  </Td>
+                  <Td>
+                    <div className="flex justify-end">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <IconButton
+                            ariaLabel="Options"
+                            colorSchema="secondary"
+                            className="w-6"
+                            variant="plain"
+                          >
+                            <FontAwesomeIcon icon={faEllipsisV} />
+                          </IconButton>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent sideOffset={2} align="end">
+                          <DropdownMenuItem
+                            icon={<FontAwesomeIcon icon={faUserMinus} />}
+                            onClick={() =>
+                              handlePopUpOpen("deleteOrganizationMembership", {
+                                membershipId: member.membershipId,
+                                orgId: organization.id,
+                                username: member.user.username,
+                                orgName: organization.name
+                              })
+                            }
+                          >
+                            Remove From Organization
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            icon={<FontAwesomeIcon icon={faUserXmark} />}
+                            onClick={() =>
+                              handlePopUpOpen("deleteUser", { userId: member.user.id })
+                            }
+                          >
+                            Delete User
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                  </Badge>
-                </div>
-              </p>
-            </div>
-          </div>
-          <div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <FontAwesomeIcon
-                  icon={faEllipsis}
-                  className="cursor-pointer text-sm text-mineshaft-400 transition-all hover:text-primary-500"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="p-1">
-                <DropdownMenuItem
-                  onClick={() =>
-                    handlePopUpOpen("deleteOrganizationMembership", {
-                      membershipId: member.membershipId,
-                      orgId: organization.id,
-                      username: member.user.username,
-                      orgName: organization.name
-                    })
-                  }
-                >
-                  Remove From Organization
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => handlePopUpOpen("deleteUser", { userId: member.user.id })}
-                >
-                  Delete User
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-      ))}
-    </div>
+                  </Td>
+                </Tr>
+              );
+            })}
+          </TBody>
+        </Table>
+        {!filteredMembers.length && (
+          <EmptyState
+            className="my-auto bg-mineshaft-700"
+            title={
+              members.length
+                ? "No organization members match search..."
+                : "No organization members found"
+            }
+            icon={faUsers}
+          />
+        )}
+      </TableContainer>
+      {Boolean(filteredMembers.length) && (
+        <Pagination
+          className="rounded-b-md bg-mineshaft-700"
+          count={filteredMembers.length}
+          page={page}
+          perPage={perPage}
+          onChangePage={setPage}
+          onChangePerPage={setPerPage}
+          perPageList={[ORG_MEMBERS_TABLE_LIMIT]}
+        />
+      )}
+    </>
   );
 };
 
@@ -147,6 +320,8 @@ const ViewMembersModal = ({
         }}
         title="Organization Members"
         subTitle="View the members of the organization."
+        className="h-full max-w-4xl"
+        bodyClassName="flex flex-col h-full"
       >
         <ViewMembersModalContent popUp={popUp} handlePopUpOpen={handlePopUpOpen} />
       </ModalContent>
@@ -222,11 +397,11 @@ const OrganizationsPanelTable = ({
                           {org.name ? (
                             org.name
                           ) : (
-                            <span className="text-mineshaft-400">Not set</span>
+                            <span className="text-mineshaft-400">Not Set</span>
                           )}
                         </Td>
                         <Td className="w-5/12">
-                          {org.members.length} {org.members.length === 1 ? "member" : "members"}
+                          {org.members.length} {org.members.length === 1 ? "Member" : "Members"}
                           <Button
                             variant="outline_bg"
                             size="xs"
@@ -237,17 +412,22 @@ const OrganizationsPanelTable = ({
                           </Button>
                         </Td>
                         <Td className="w-5/12">
-                          {org.projects.length} {org.projects.length === 1 ? "project" : "projects"}
+                          {org.projects.length} {org.projects.length === 1 ? "Project" : "Projects"}
                         </Td>
                         <Td>
                           <div className="flex justify-end">
                             <DropdownMenu>
-                              <DropdownMenuTrigger asChild className="rounded-lg">
-                                <div className="hover:text-primary-400 data-[state=open]:text-primary-400">
-                                  <FontAwesomeIcon size="sm" icon={faEllipsis} />
-                                </div>
+                              <DropdownMenuTrigger asChild>
+                                <IconButton
+                                  ariaLabel="Options"
+                                  colorSchema="secondary"
+                                  className="w-6"
+                                  variant="plain"
+                                >
+                                  <FontAwesomeIcon icon={faEllipsisV} />
+                                </IconButton>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start" className="p-1">
+                              <DropdownMenuContent sideOffset={2} align="end">
                                 <DropdownMenuItem
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -256,6 +436,7 @@ const OrganizationsPanelTable = ({
                                       orgName: org.name
                                     });
                                   }}
+                                  icon={<FontAwesomeIcon icon={faTrash} />}
                                 >
                                   Delete Organization
                                 </DropdownMenuItem>

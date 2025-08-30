@@ -2,8 +2,8 @@ import { useState } from "react";
 import {
   faEllipsisV,
   faMagnifyingGlass,
-  faServer,
   faShieldHalved,
+  faWrench,
   faXmark
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -136,7 +136,7 @@ const IdentityPanelTable = ({
                 )}
             </TBody>
           </Table>
-          {!isPending && isEmpty && <EmptyState title="No identities found" icon={faServer} />}
+          {!isPending && isEmpty && <EmptyState title="No identities found" icon={faWrench} />}
         </TableContainer>
         {!isEmpty && (
           <Button

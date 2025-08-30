@@ -218,7 +218,7 @@ const UserPanelTable = ({
                         </div>
                       </Td>
                       <Td className="w-5/12 max-w-0">
-                        <p className="truncate">{email}</p>
+                        <p className="truncate">{username || email}</p>
                       </Td>
                       <Td>
                         <div className="flex justify-end">

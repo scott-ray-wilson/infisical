@@ -9,6 +9,7 @@ import {
   faEnvelope,
   faExclamationTriangle,
   faGlobe,
+  faInfinity,
   faInfo,
   faInfoCircle,
   faServer,
@@ -43,7 +44,7 @@ import { envConfig } from "@app/config/env";
 import { useOrganization, useSubscription, useUser } from "@app/context";
 import { isInfisicalCloud } from "@app/helpers/platform";
 import { useToggle } from "@app/hooks";
-import { projectKeys, useGetOrganizations, useLogoutUser } from "@app/hooks/api";
+import { projectKeys, useGetOrganizations, useGetOrgTrialUrl, useLogoutUser } from "@app/hooks/api";
 import { authKeys, selectOrganization } from "@app/hooks/api/auth/queries";
 import { MfaMethod } from "@app/hooks/api/auth/types";
 import { getAuthToken } from "@app/hooks/api/reactQuery";
@@ -162,6 +163,8 @@ export const Navbar = () => {
     await navigateUserToOrg(navigate, orgId);
   };
 
+  const { mutateAsync } = useGetOrgTrialUrl();
+
   const logout = useLogoutUser();
   const logOutUser = async () => {
     try {
@@ -201,10 +204,10 @@ export const Navbar = () => {
 
   const isServerAdminPanel = location.pathname.startsWith("/admin");
 
-  const isOrgScope = breadcrumbs?.length === 1; // TODO: scott/akhil is this adequate?
+  const isOrgScope = location.pathname.startsWith("/organization"); // TODO: scott/akhil is this adequate?
 
   return (
-    <div className="z-10 flex min-h-12 items-center border-b border-mineshaft-600 bg-mineshaft-800 px-4">
+    <div className="z-10 flex min-h-12 items-center border-b border-mineshaft-600 bg-mineshaft-800 px-4 pt-1 pb-0.5">
       <div>
         <Link to="/organization/projects">
           <img alt="infisical logo" src="/images/logotransparent.png" className="h-4" />
@@ -332,13 +335,48 @@ export const Navbar = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <p className="pr-3 pl-1 text-lg text-mineshaft-400/70">/</p>
-          {breadcrumbs ? (
-            <BreadcrumbContainer breadcrumbs={breadcrumbs as TBreadcrumbFormat[]} />
-          ) : null}
+          {!isOrgScope && (
+            <>
+              <p className="pr-3 pl-1 text-lg text-mineshaft-400/70">/</p>
+              {breadcrumbs ? (
+                <BreadcrumbContainer breadcrumbs={[breadcrumbs[0]] as TBreadcrumbFormat[]} />
+              ) : null}
+            </>
+          )}
         </>
       )}
-      <div className="grow" />
+      <div className="flex-1" />
+      {subscription && subscription.slug === "starter" && !subscription.has_used_trial && (
+        <Tooltip content="Start Free Pro Trial">
+          <Button
+            variant="plain"
+            className="mr-2 border-mineshaft-500 px-2.5 py-1.5 text-mineshaft-200 hover:bg-mineshaft-600"
+            leftIcon={<FontAwesomeIcon icon={faInfinity} />}
+            onClick={async () => {
+              if (!subscription || !currentOrg) return;
+
+              // direct user to start pro trial
+              const url = await mutateAsync({
+                orgId: currentOrg.id,
+                success_url: window.location.href
+              });
+
+              window.location.href = url;
+            }}
+          >
+            Free Pro Trial
+          </Button>
+        </Tooltip>
+      )}
+      {user.superAdmin && !location.pathname.startsWith("/admin") && (
+        <Link
+          className="mr-2 rounded-md border border-mineshaft-500 px-2.5 py-1.5 text-sm text-mineshaft-200 hover:bg-mineshaft-600"
+          to="/admin"
+        >
+          <FontAwesomeIcon icon={faServer} className="mr-2" />
+          Server Console
+        </Link>
+      )}
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger>
           <div className="rounded-l-md border border-r-0 border-mineshaft-500 px-2.5 py-1 hover:bg-mineshaft-600">

@@ -24,7 +24,7 @@ import {
   ModalContent,
   Tooltip
 } from "@app/components/v2";
-import { Badge } from "@app/components/v2/Badge";
+import { Badge } from "@app/components/v3";
 import { ProjectPermissionActions, useProject, useUser } from "@app/context";
 import { usePopUp } from "@app/hooks";
 import { useListWorkspaceGroups, useReviewAccessRequest } from "@app/hooks/api";
@@ -42,13 +42,13 @@ import { EditAccessRequestModal } from "@app/pages/secret-manager/SecretApproval
 const getReviewedStatusSymbol = (status?: ApprovalStatus, isOrgMembershipActive?: boolean) => {
   if (status === ApprovalStatus.APPROVED)
     return (
-      <Badge variant="success" className="flex h-4 items-center justify-center">
+      <Badge variant="success">
         <FontAwesomeIcon icon={faCheck} size="xs" />
       </Badge>
     );
   if (status === ApprovalStatus.REJECTED)
     return (
-      <Badge variant="danger" className="flex h-4 items-center justify-center">
+      <Badge variant="danger">
         <FontAwesomeIcon icon={faBan} size="xs" />
       </Badge>
     );
@@ -58,13 +58,13 @@ const getReviewedStatusSymbol = (status?: ApprovalStatus, isOrgMembershipActive?
       // Can't do a tooltip here because nested tooltips doesn't work properly as of yet.
       // TODO(daniel): Fix nested tooltips in the future.
 
-      <Badge className="flex h-4 items-center justify-center bg-mineshaft-400/50 text-bunker-300">
+      <Badge variant="neutral">
         <FontAwesomeIcon size="xs" icon={faUserSlash} />
       </Badge>
     );
   }
   return (
-    <Badge variant="primary" className="flex h-4 items-center justify-center">
+    <Badge variant="warning">
       <FontAwesomeIcon icon={faHourglass} size="xs" />
     </Badge>
   );
@@ -346,9 +346,7 @@ export const ReviewAccessRequestModal = ({
             <span>Approvers</span>
             {approverSequence.isMyReviewInThisSequence &&
               request.status === ApprovalStatus.PENDING && (
-                <Badge variant="primary" className="h-min">
-                  Awaiting Your Review
-                </Badge>
+                <Badge variant="warning">Awaiting Your Review</Badge>
               )}
           </div>
           <div className="max-h-[40vh] thin-scrollbar overflow-y-auto rounded-sm py-2">
@@ -374,24 +372,18 @@ export const ReviewAccessRequestModal = ({
                   BadgeComponent = <Badge variant="danger">Rejected</Badge>;
                 } else if (approver.hasApproved) {
                   StepComponent = (
-                    <Badge
-                      variant="success"
-                      className="flex h-6 min-w-6 items-center justify-center"
-                    >
+                    <Badge variant="success">
                       <FontAwesomeIcon icon={faCheck} />
                     </Badge>
                   );
                   BadgeComponent = <Badge variant="success">Approved</Badge>;
                 } else if (isPending) {
                   StepComponent = (
-                    <Badge
-                      variant="primary"
-                      className="flex h-6 min-w-6 items-center justify-center"
-                    >
+                    <Badge variant="warning">
                       <FontAwesomeIcon icon={faHourglass} />
                     </Badge>
                   );
-                  BadgeComponent = <Badge variant="primary">Pending</Badge>;
+                  BadgeComponent = <Badge variant="warning">Pending</Badge>;
                 } else {
                   StepComponent = (
                     <Badge

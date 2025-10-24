@@ -6,7 +6,6 @@ import { twMerge } from "tailwind-merge";
 
 import { OrgPermissionCan } from "@app/components/permissions";
 import {
-  Badge,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -15,6 +14,7 @@ import {
   Td,
   Tr
 } from "@app/components/v2";
+import { Badge } from "@app/components/v3";
 import { OrgPermissionActions, OrgPermissionSubjects } from "@app/context";
 import { useGetSlackIntegrationChannels } from "@app/hooks/api";
 import {
@@ -61,7 +61,7 @@ export const SlackConfigRow = ({ handlePopUpOpen, isSlackConfigLoading, slackCon
         {slackConfig.isAccessRequestNotificationEnabled &&
         !isLoadingConfig &&
         slackConfig.accessRequestChannels.length > 0 ? (
-          <Badge>
+          <Badge variant="warning">
             {slackConfig.accessRequestChannels
               .split(", ")
               .map((channel) => slackChannelIdToName[channel])
@@ -77,7 +77,7 @@ export const SlackConfigRow = ({ handlePopUpOpen, isSlackConfigLoading, slackCon
         {slackConfig.isSecretRequestNotificationEnabled &&
         !isLoadingConfig &&
         slackConfig.secretRequestChannels.length > 0 ? (
-          <Badge>
+          <Badge variant="warning">
             {slackConfig.secretRequestChannels
               .split(", ")
               .map((channel) => slackChannelIdToName[channel])

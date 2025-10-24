@@ -397,7 +397,7 @@ export const CompareEnvironments = ({ secretPath }: Props) => {
                               }
                             >
                               <Badge
-                                variant="primary"
+                                variant="warning"
                                 className="-mt-[0.05rem] flex h-4 items-center gap-x-1 pt-[0.1rem] leading-3 font-normal"
                               >
                                 <FontAwesomeIcon icon={faWarning} className="-mt-[0.1rem] w-2.5" />

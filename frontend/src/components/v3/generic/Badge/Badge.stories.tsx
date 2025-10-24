@@ -2,8 +2,6 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Link } from "@tanstack/react-router";
 import {
   BanIcon,
-  BoxesIcon,
-  BoxIcon,
   CheckIcon,
   ChevronsUpDownIcon,
   CircleXIcon,
@@ -14,6 +12,7 @@ import {
   TriangleAlertIcon
 } from "lucide-react";
 
+import { OrgIcon, ProjectIcon, SubOrgIcon } from "../../platform";
 import { Badge } from "./Badge";
 
 /**
@@ -162,7 +161,7 @@ export const Organization: Story = {
     variant: "org",
     children: (
       <>
-        <GlobeIcon />
+        <OrgIcon />
         Organization
       </>
     )
@@ -182,7 +181,7 @@ export const SubOrganization: Story = {
     variant: "sub-org",
     children: (
       <>
-        <BoxesIcon />
+        <SubOrgIcon />
         Sub-Organization
       </>
     )
@@ -202,7 +201,7 @@ export const Project: Story = {
     variant: "project",
     children: (
       <>
-        <BoxIcon />
+        <ProjectIcon />
         Project
       </>
     )
@@ -283,10 +282,11 @@ export const AsButton: Story = {
 export const IsTruncatable: Story = {
   name: "Example: isTruncatable",
   args: {
+    variant: "org",
     isTruncatable: true,
     children: (
       <>
-        <GlobeIcon />
+        <OrgIcon />
         <span>Infisical Infrastructure</span>
       </>
     )
@@ -295,7 +295,7 @@ export const IsTruncatable: Story = {
     docs: {
       description: {
         story:
-          "Use the `isTruncatable` prop with a `span` tag wrapping the text content to support truncation."
+          "Use the `isTruncatable` prop with a `span` tag wrapping the text content to support truncation. Parent `div` should have a fixed width and `flex` class."
       }
     }
   },

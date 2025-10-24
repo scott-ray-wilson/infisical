@@ -6,6 +6,7 @@ interface IProps {
   children: React.ReactNode;
   className?: string;
   onClick?: (e: React.MouseEvent<HTMLDivElement>) => void;
+  test: boolean;
 }
 
 const badgeVariants = cva(

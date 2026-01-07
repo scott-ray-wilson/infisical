@@ -1,6 +1,17 @@
+import { Fragment } from "react/jsx-runtime";
 import { faFolderOpen } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useNavigate } from "@tanstack/react-router";
+import { FolderIcon, FolderOpenIcon, SlashIcon } from "lucide-react";
+
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator
+} from "@app/components/v3";
 
 type Props = {
   secretPath: string;
@@ -19,6 +30,38 @@ export const FolderBreadCrumbs = ({ secretPath = "/", onResetSearch }: Props) =>
       search: (prev) => ({ ...prev, secretPath: newSecPath })
     }).then(() => onResetSearch(newSecPath));
   };
+
+  return (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem onClick={() => onFolderCrumbClick(0)}>
+          <BreadcrumbLink>
+            <FolderIcon />
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        {(secretPath || "")
+          .split("/")
+          .filter(Boolean)
+          .map((path, index, arr) => (
+            <Fragment key={`secret-path-${index + 1}`}>
+              <BreadcrumbSeparator>
+                <SlashIcon className="size-3 -rotate-12" />
+              </BreadcrumbSeparator>
+              {index < arr.length - 1 ? (
+                <BreadcrumbItem
+                  onClick={() => onFolderCrumbClick(index + 1)}
+                  onKeyDown={() => null}
+                >
+                  <BreadcrumbLink>{path}</BreadcrumbLink>
+                </BreadcrumbItem>
+              ) : (
+                <BreadcrumbPage>{path}</BreadcrumbPage>
+              )}
+            </Fragment>
+          ))}
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
 
   return (
     <div className="flex items-center space-x-2">

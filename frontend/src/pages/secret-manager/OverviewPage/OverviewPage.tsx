@@ -23,6 +23,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Link, useNavigate, useParams, useRouter, useSearch } from "@tanstack/react-router";
+import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
@@ -60,6 +61,19 @@ import {
   Tr
 } from "@app/components/v2";
 import { HeaderResizer } from "@app/components/v2/HeaderResizer/HeaderResizer";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  UnstableButton
+} from "@app/components/v3";
+import { cn } from "@app/components/v3/utils";
 import { ROUTE_PATHS } from "@app/const/routes";
 import {
   ProjectPermissionActions,
@@ -900,6 +914,9 @@ export const OverviewPage = () => {
     localStorage.setItem("overview-header-height", debouncedHeaderHeight.toString());
   }, [debouncedHeaderHeight]);
 
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState("");
+
   if (isProjectV3 && visibleEnvs.length > 0 && isOverviewLoading) {
     return (
       <div className="container mx-auto flex h-screen w-full items-center justify-center px-8 text-mineshaft-50 dark:scheme-dark">
@@ -915,6 +932,29 @@ export const OverviewPage = () => {
   const isTableEmpty = totalCount === 0;
 
   const isTableFiltered = isFilteredByResources || filteredEnvs.length > 0;
+
+  const frameworks = [
+    {
+      value: "next.js",
+      label: "Next.js"
+    },
+    {
+      value: "sveltekit",
+      label: "SvelteKit"
+    },
+    {
+      value: "nuxt.js",
+      label: "Nuxt.js"
+    },
+    {
+      value: "remix",
+      label: "Remix"
+    },
+    {
+      value: "astro",
+      label: "Astro"
+    }
+  ];
 
   if (!isProjectV3)
     return (
@@ -977,9 +1017,52 @@ export const OverviewPage = () => {
             }
           />
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-4">
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <UnstableButton
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className="w-[200px] justify-between"
+              >
+                {value
+                  ? frameworks.find((framework) => framework.value === value)?.label
+                  : "All environments"}
+                <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </UnstableButton>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0">
+              <Command>
+                <CommandInput placeholder="Filter environments..." />
+                <CommandList>
+                  <CommandEmpty>No environment found.</CommandEmpty>
+                  <CommandGroup>
+                    {frameworks.map((framework) => (
+                      <CommandItem
+                        key={framework.value}
+                        value={framework.value}
+                        onSelect={(currentValue) => {
+                          setValue(currentValue === value ? "" : currentValue);
+                          setOpen(false);
+                        }}
+                      >
+                        <CheckIcon
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            value === framework.value ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {framework.label}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
           <FolderBreadCrumbs secretPath={secretPath} onResetSearch={handleResetSearch} />
-          <div className="flex flex-row flex-wrap items-center gap-2">
+          <div className="ml-auto flex flex-row flex-wrap items-center gap-2">
             {isTableFiltered && (
               <Button
                 variant="plain"

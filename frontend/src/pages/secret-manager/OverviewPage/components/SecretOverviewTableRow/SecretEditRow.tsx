@@ -37,6 +37,8 @@ import { ProjectEnv, SecretType, SecretV3RawSanitized } from "@app/hooks/api/typ
 import { hasSecretReadValueOrDescribePermission } from "@app/lib/fn/permission";
 import { CollapsibleSecretImports } from "@app/pages/secret-manager/SecretDashboardPage/components/SecretListView/CollapsibleSecretImports";
 import { HIDDEN_SECRET_VALUE } from "@app/pages/secret-manager/SecretDashboardPage/components/SecretListView/SecretItem";
+import { UnstableIconButton } from "@app/components/v3";
+import { TrashIcon } from "lucide-react";
 
 type Props = {
   defaultValue?: string | null;
@@ -422,15 +424,14 @@ export const SecretEditRow = ({
               {(isAllowed) => (
                 <div className="opacity-0 group-hover:opacity-100">
                   <Tooltip content={isRotatedSecret ? "Cannot Delete Rotated Secret" : "Delete"}>
-                    <IconButton
-                      variant="plain"
-                      ariaLabel="delete-value"
-                      className="h-full"
+                    <UnstableIconButton
+                      variant="danger"
+                      size={"xs"}
                       onClick={toggleModal}
                       isDisabled={isDeleting || !isAllowed || isRotatedSecret}
                     >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </IconButton>
+                      <TrashIcon />
+                    </UnstableIconButton>
                   </Tooltip>
                 </div>
               )}

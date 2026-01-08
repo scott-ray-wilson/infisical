@@ -5,6 +5,7 @@ import { cva, type VariantProps } from "cva";
 
 import { Lottie } from "@app/components/v2";
 import { cn } from "@app/components/v3/utils";
+import { Slot } from "@radix-ui/react-slot";
 
 const buttonVariants = cva(
   cn(
@@ -23,17 +24,17 @@ const buttonVariants = cva(
         outline: "text-foreground hover:bg-foreground/10 border-border hover:border-foreground/20",
         ghost: "text-foreground hover:bg-foreground/10 border-transparent",
         project:
-          "border-project/25 bg-project/15 text-foreground hover:bg-project/30 hover:border-project/30",
-        org: "border-org/25 bg-org/15 text-foreground hover:bg-org/30 hover:border-org/30",
+          "border-project/25 bg-project/10 text-foreground hover:bg-project/15 hover:border-project/30",
+        org: "border-org/25 bg-org/10 text-foreground hover:bg-org/15 hover:border-org/30",
         "sub-org":
-          "border-sub-org/25 bg-sub-org/15 text-foreground hover:bg-sub-org/30 hover:border-sub-org/30",
+          "border-sub-org/25 bg-sub-org/10 text-foreground hover:bg-sub-org/15 hover:border-sub-org/30",
         success:
-          "border-success/25 bg-success/15 text-foreground hover:bg-success/30 hover:border-success/30",
-        info: "border-info/25 bg-info/15 text-foreground hover:bg-info/30 hover:border-info/30",
+          "border-success/25 bg-success/10 text-foreground hover:bg-success/15 hover:border-success/30",
+        info: "border-info/25 bg-info/10 text-foreground hover:bg-info/15 hover:border-info/30",
         warning:
-          "border-warning/25 bg-warning/15 text-foreground hover:bg-warning/30 hover:border-warning/30",
+          "border-warning/25 bg-warning/10 text-foreground hover:bg-warning/15 hover:border-warning/30",
         danger:
-          "border-danger/25 bg-danger/15 text-foreground hover:bg-danger/30 hover:border-danger/30"
+          "border-danger/25 bg-danger/10 text-foreground hover:bg-danger/15 hover:border-danger/30"
       },
       size: {
         xs: "h-7 px-2 text-xs rounded-sm [&>svg]:size-3 gap-1.5",
@@ -56,18 +57,23 @@ const buttonVariants = cva(
   }
 );
 
-type UnstableButtonProps = (VariantProps<typeof buttonVariants> & {
-  isPending?: boolean;
-  isFullWidth?: boolean;
-  isDisabled?: boolean;
-}) &
-  (
-    | ({ as?: "button" | undefined } & React.ComponentProps<"button">)
-    | ({ as: "link"; className?: string } & LinkProps)
-    | ({ as: "a" } & React.ComponentProps<"a">)
-  );
+type UnstableButtonProps = React.ComponentProps<"button"> &
+  VariantProps<typeof buttonVariants> & {
+    asChild?: boolean;
+    isDisabled?: boolean;
+  };
+// type UnstableButtonProps = (VariantProps<typeof buttonVariants> & {
+//   isPending?: boolean;
+//   isFullWidth?: boolean;
+//   isDisabled?: boolean;
+// }) &
+//   (
+//     | ({ as?: "button" | undefined } & React.ComponentProps<"button">)
+//     | ({ as: "link"; className?: string } & LinkProps)
+//     | ({ as: "a" } & React.ComponentProps<"a">)
+//   );
 
-const UnstableButton = forwardRef<HTMLButtonElement | HTMLAnchorElement, UnstableButtonProps>(
+const UnstableButton = forwardRef<HTMLButtonElement, UnstableButtonProps>(
   (
     {
       className,
@@ -76,61 +82,71 @@ const UnstableButton = forwardRef<HTMLButtonElement | HTMLAnchorElement, Unstabl
       isPending = false,
       isFullWidth = false,
       isDisabled = false,
-      children,
+      asChild,
       ...props
     },
     ref
   ): JSX.Element => {
-    const sharedProps = {
-      "data-slot": "button",
-      className: cn(buttonVariants({ variant, size, isPending, isFullWidth }), className)
-    };
-
-    const child = (
-      <>
-        {children}
-        {isPending && (
-          <Lottie
-            icon={variant === "default" ? "infisical_loading_bw" : "infisical_loading_white"}
-            isAutoPlay
-            className="absolute w-8 rounded-xl"
-          />
-        )}
-      </>
+    const Comp = asChild ? Slot : "button";
+    return (
+      <Comp
+        ref={ref}
+        data-slot="button"
+        data-variant={variant}
+        data-size={size}
+        disabled={isPending || isDisabled}
+        className={cn(buttonVariants({ variant, size, isPending, isFullWidth }), className)}
+        {...props}
+      />
     );
-
-    switch (props.as) {
-      case "a":
-        return (
-          <a
-            ref={ref as React.Ref<HTMLAnchorElement>}
-            target="_blank"
-            rel="noopener noreferrer"
-            {...props}
-            {...sharedProps}
-          >
-            {child}
-          </a>
-        );
-      case "link":
-        return (
-          <Link ref={ref as React.Ref<HTMLAnchorElement>} {...props} {...sharedProps}>
-            {child}
-          </Link>
-        );
-      default:
-        return (
-          <button
-            ref={ref as React.Ref<HTMLButtonElement>}
-            type="button"
-            disabled={isPending || isDisabled}
-            {...props}
-            {...sharedProps}
-          >
-            {child}
-          </button>
-        );
-    }
+    // const sharedProps = {
+    //   "data-slot": "button",
+    //   className: cn(buttonVariants({ variant, size, isPending, isFullWidth }), className)
+    // };
+    // const child = (
+    //   <>
+    //     {children}
+    //     {isPending && (
+    //       <Lottie
+    //         icon={variant === "default" ? "infisical_loading_bw" : "infisical_loading_white"}
+    //         isAutoPlay
+    //         className="absolute w-8 rounded-xl"
+    //       />
+    //     )}
+    //   </>
+    // );
+    // switch (props.as) {
+    //   case "a":
+    //     return (
+    //       <a
+    //         ref={ref as React.Ref<HTMLAnchorElement>}
+    //         target="_blank"
+    //         rel="noopener noreferrer"
+    //         {...props}
+    //         {...sharedProps}
+    //       >
+    //         {child}
+    //       </a>
+    //     );
+    //   case "link":
+    //     return (
+    //       <Link ref={ref as React.Ref<HTMLAnchorElement>} {...props} {...sharedProps}>
+    //         {child}
+    //       </Link>
+    //     );
+    //   default:
+    //     return (
+    //       <button
+    //         ref={ref as React.Ref<HTMLButtonElement>}
+    //         type="button"
+    //         disabled={isPending || isDisabled}
+    //         {...props}
+    //         {...sharedProps}
+    //       >
+    //         {child}
+    //       </button>
+    //     );
+    // }
   }
 );
 

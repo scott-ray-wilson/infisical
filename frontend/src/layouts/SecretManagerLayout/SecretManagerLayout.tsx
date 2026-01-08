@@ -70,7 +70,7 @@ export const SecretManagerLayout = () => {
                           : ""
                       }
                     >
-                      Overview
+                      Secrets
                     </Tab>
                   )}
                 </Link>

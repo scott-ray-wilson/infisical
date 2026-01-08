@@ -4,11 +4,18 @@ import * as React from "react";
 
 import { cn } from "@app/components/v3/utils";
 
-function UnstableTable({ className, ...props }: React.ComponentProps<"table">) {
+function UnstableTable({
+  className,
+  containerClassName,
+  ...props
+}: React.ComponentProps<"table"> & { containerClassName?: string }) {
   return (
     <div
       data-slot="table-container"
-      className="relative w-full overflow-x-auto rounded-md border border-border bg-container"
+      className={cn(
+        "relative w-full overflow-x-auto rounded-md border border-border bg-container",
+        containerClassName
+      )}
     >
       <table
         data-slot="table"
@@ -82,7 +89,7 @@ function UnstableTableCell({
     <td
       data-slot="table-cell"
       className={cn(
-        "h-[40px] px-3 align-middle whitespace-nowrap text-mineshaft-200 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "h-[40px] border-border px-3 align-middle whitespace-nowrap text-mineshaft-200 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         isTruncatable && "max-w-0 truncate",
         className
       )}

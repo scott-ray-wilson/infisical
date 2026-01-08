@@ -17,3 +17,4 @@ export * from "./Pagination";
 export * from "./Popover";
 export * from "./Separator";
 export * from "./Table";
+export * from "./InputGroup";

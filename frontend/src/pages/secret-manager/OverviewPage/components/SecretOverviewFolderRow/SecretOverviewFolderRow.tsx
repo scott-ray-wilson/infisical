@@ -4,6 +4,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { twMerge } from "tailwind-merge";
 
 import { Checkbox, IconButton, Td, Tr } from "@app/components/v2";
+import { UnstableTable, UnstableTableCell, UnstableTableRow } from "@app/components/v3";
+import { CheckIcon, FolderIcon, XIcon } from "lucide-react";
 
 type Props = {
   folderName: string;
@@ -33,61 +35,43 @@ export const SecretOverviewFolderRow = ({
     setTimeout(() => setIsClicking(false), 1000);
   };
   return (
-    <Tr isHoverable isSelectable className="group" onClick={handleClick}>
-      <Td className="sticky left-0 z-10 border-0 bg-mineshaft-800 bg-clip-padding p-0 group-hover:bg-mineshaft-700">
-        <div className="flex items-center space-x-5 border-r border-mineshaft-600 px-5 py-2.5">
-          <div className="text-yellow-700">
-            <Checkbox
-              id={`checkbox-${folderName}`}
-              isChecked={isSelected}
-              onCheckedChange={() => {
-                onToggleFolderSelect(folderName);
-              }}
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-              className={twMerge("hidden group-hover:flex", isSelected && "flex")}
-            />
-            <FontAwesomeIcon
-              className={twMerge("block group-hover:!hidden", isSelected && "!hidden")}
-              icon={faFolder}
-            />
-          </div>
-          <div>{folderName}</div>
-          <IconButton
-            ariaLabel="edit-folder"
-            variant="plain"
-            size="sm"
-            className="p-0 opacity-0 group-hover:opacity-100"
-            onClick={(e) => {
-              onToggleFolderEdit(folderName);
-              e.stopPropagation();
-            }}
-          >
-            <FontAwesomeIcon icon={faPencil} size="sm" />
-          </IconButton>
-        </div>
-      </Td>
+    <UnstableTableRow className="group" onClick={handleClick}>
+      <UnstableTableCell>
+        <Checkbox
+          id={`checkbox-${folderName}`}
+          isChecked={isSelected}
+          onCheckedChange={() => {
+            onToggleFolderSelect(folderName);
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          className={twMerge("hidden group-hover:flex", isSelected && "flex")}
+        />
+        <FolderIcon
+          className={twMerge(
+            "block size-4 text-warning group-hover:!hidden",
+            isSelected && "!hidden"
+          )}
+        />
+      </UnstableTableCell>
+      <UnstableTableCell>{folderName}</UnstableTableCell>
       {environments.map(({ slug }, i) => {
         const isPresent = isFolderPresentInEnv(folderName, slug);
 
         return (
-          <Td
+          <UnstableTableCell
+            className="border-l border-border text-center"
             key={`sec-overview-${slug}-${i + 1}-folder`}
-            className={twMerge(
-              "border-r border-mineshaft-600 py-3 group-hover:bg-mineshaft-700",
-              isPresent ? "text-green-600" : "text-red-600"
-            )}
           >
-            <div className="mx-auto flex w-[0.03rem] justify-center">
-              <FontAwesomeIcon
-                // eslint-disable-next-line no-nested-ternary
-                icon={isPresent ? faCheck : faXmark}
-              />
-            </div>
-          </Td>
+            {isPresent ? (
+              <CheckIcon className="inline-block size-4 text-success" />
+            ) : (
+              <XIcon className="size-4 text-danger" />
+            )}
+          </UnstableTableCell>
         );
       })}
-    </Tr>
+    </UnstableTableRow>
   );
 };

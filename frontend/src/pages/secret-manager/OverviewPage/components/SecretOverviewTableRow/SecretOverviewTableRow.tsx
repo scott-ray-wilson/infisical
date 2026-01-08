@@ -28,6 +28,16 @@ import { HIDDEN_SECRET_VALUE } from "@app/pages/secret-manager/SecretDashboardPa
 
 import { SecretEditRow } from "./SecretEditRow";
 import SecretRenameRow from "./SecretRenameRow";
+import {
+  UnstableTable,
+  UnstableTableBody,
+  UnstableTableCell,
+  UnstableTableHead,
+  UnstableTableHeader,
+  UnstableTableRow
+} from "@app/components/v3";
+import { CheckIcon, ChevronDown, CircleIcon, ImportIcon, KeyIcon, XIcon } from "lucide-react";
+import { ReactElement } from "react";
 
 type Props = {
   secretKey: string;
@@ -112,35 +122,36 @@ export const SecretOverviewTableRow = ({
 
   return (
     <>
-      <Tr isHoverable isSelectable onClick={() => setIsFormExpanded.toggle()} className="group">
-        <Td
-          className={`sticky left-0 z-10 bg-mineshaft-800 bg-clip-padding px-0 py-0 group-hover:bg-mineshaft-700 ${
-            isFormExpanded && "border-t-2 border-mineshaft-500"
-          }`}
-        >
-          <div className="h-full w-full border-r border-mineshaft-600 px-5 py-2.5">
-            <div className="flex items-center space-x-5">
-              <div className="text-bunker-300">
-                <Checkbox
-                  id={`checkbox-${secretKey}`}
-                  isChecked={isSelected}
-                  onCheckedChange={() => {
-                    onToggleSecretSelect(secretKey);
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                  className={twMerge("hidden group-hover:flex", isSelected && "flex")}
-                />
-                <FontAwesomeIcon
-                  className={twMerge("block group-hover:!hidden", isSelected && "!hidden")}
-                  icon={isFormExpanded ? faAngleDown : faKey}
-                />
-              </div>
-              <div title={secretKey}>{secretKey}</div>
-            </div>
-          </div>
-        </Td>
+      <UnstableTableRow onClick={() => setIsFormExpanded.toggle()} className="group">
+        <UnstableTableCell>
+          <Checkbox
+            id={`checkbox-${secretKey}`}
+            isChecked={isSelected}
+            onCheckedChange={() => {
+              onToggleSecretSelect(secretKey);
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+            className={twMerge("hidden group-hover:flex", isSelected && "flex")}
+          />
+          {isFormExpanded ? (
+            <ChevronDown
+              className={twMerge(
+                "block size-4 text-accent group-hover:!hidden",
+                isSelected && "!hidden"
+              )}
+            />
+          ) : (
+            <KeyIcon
+              className={twMerge(
+                "block size-4 text-accent group-hover:!hidden",
+                isSelected && "!hidden"
+              )}
+            />
+          )}
+        </UnstableTableCell>
+        <UnstableTableCell>{secretKey}</UnstableTableCell>
         {environments.map(({ slug }, i) => {
           const secret = getSecretByKey(slug, secretKey);
 
@@ -148,154 +159,108 @@ export const SecretOverviewTableRow = ({
 
           const isSecretPresent = Boolean(secret);
           const isSecretEmpty = secret?.isEmpty;
+
+          let Icon: ReactElement;
+
+          if (isSecretPresent && !isSecretEmpty) {
+            Icon = <CheckIcon className="inline-block size-4 text-success" />;
+          } else if (isSecretImported) {
+            Icon = <ImportIcon className="inline-block size-4 text-success" />;
+          } else if (isSecretPresent && isSecretEmpty) {
+            Icon = <CircleIcon className="inline-block size-4 text-warning" />;
+          } else {
+            Icon = <XIcon className="inline-block size-4 text-danger" />;
+          }
+
           return (
-            <Td
+            <UnstableTableCell
+              className="border-l border-border text-center"
               key={`sec-overview-${slug}-${i + 1}-value`}
-              className={twMerge(
-                "border-r border-mineshaft-600 px-0 py-3 group-hover:bg-mineshaft-700",
-                isFormExpanded && "border-t-2 border-mineshaft-500",
-                (isSecretPresent && !isSecretEmpty) || isSecretImported ? "text-green-600" : "",
-                isSecretPresent && isSecretEmpty && !isSecretImported ? "text-mineshaft-400" : "",
-                !isSecretPresent && !isSecretEmpty && !isSecretImported ? "text-red-600" : ""
-              )}
             >
-              <div className="mx-auto flex w-[0.03rem] justify-center">
-                <div className="flex justify-center">
-                  {!isSecretEmpty && (
-                    <Tooltip
-                      center
-                      content={
-                        // eslint-disable-next-line no-nested-ternary
-                        isSecretPresent
-                          ? "Present secret"
-                          : isSecretImported
-                            ? "Imported secret"
-                            : "Missing secret"
-                      }
-                    >
-                      <FontAwesomeIcon
-                        // eslint-disable-next-line no-nested-ternary
-                        icon={isSecretPresent ? faCheck : isSecretImported ? faFileImport : faXmark}
-                      />
-                    </Tooltip>
-                  )}
-                  {isSecretEmpty && (
-                    <Tooltip content="Empty value">
-                      <FontAwesomeIcon size="sm" icon={faCircle} className="text-yellow" />
-                    </Tooltip>
-                  )}
-                </div>
-              </div>
-            </Td>
+              {Icon}
+            </UnstableTableCell>
           );
         })}
-      </Tr>
+      </UnstableTableRow>
       {isFormExpanded && (
-        <Tr>
-          <Td
-            colSpan={totalCols}
-            className={`bg-bunker-600 px-0 py-0 ${
-              isFormExpanded && "border-b-2 border-mineshaft-500"
-            }`}
-          >
-            <div className="ml-2 p-2" style={getExpandedRowStyle(scrollOffset)}>
+        <UnstableTableRow className="hover:bg-transparent">
+          <UnstableTableCell className="p-0" colSpan={totalCols + 1}>
+            {/*<div className="ml-2 p-2" style={getExpandedRowStyle(scrollOffset)}>
               <SecretRenameRow
                 secretKey={secretKey}
                 environments={environments}
                 secretPath={secretPath}
                 getSecretByKey={getSecretByKey}
-              />
-              <TableContainer>
-                <table className="secret-table">
-                  <thead>
-                    <tr className="h-10 border-b-2 border-mineshaft-600">
-                      <th style={{ padding: "0.5rem 1rem" }} className="min-table-row min-w-44">
-                        Environment
-                      </th>
-                      <th style={{ padding: "0.5rem 1rem" }} className="border-none">
-                        Value
-                      </th>
-                      <div className="absolute top-0 right-0 mt-1 mr-1 ml-auto w-min">
-                        <Button
-                          variant="outline_bg"
-                          className="p-1"
-                          leftIcon={<FontAwesomeIcon icon={isSecretVisible ? faEyeSlash : faEye} />}
-                          onClick={() => setIsSecretVisible.toggle()}
-                        >
-                          {isSecretVisible ? "Hide Values" : "Reveal Values"}
-                        </Button>
-                      </div>
-                    </tr>
-                  </thead>
-                  <tbody className="border-t-2 border-mineshaft-600">
-                    {environments.map(({ name, slug }) => {
-                      const secret = getSecretByKey(slug, secretKey);
-                      const isCreatable = !secret;
+              />*/}
+            <UnstableTable containerClassName="rounded-none bg-accent/5 border-none">
+              <UnstableTableHeader>
+                <UnstableTableRow>
+                  <UnstableTableHead />
+                  <UnstableTableHead>Environment</UnstableTableHead>
+                  <UnstableTableHead className="border-l">Value</UnstableTableHead>
+                </UnstableTableRow>
+              </UnstableTableHeader>
+              <UnstableTableBody>
+                {environments.map(({ name, slug }) => {
+                  const secret = getSecretByKey(slug, secretKey);
+                  const isCreatable = !secret;
 
-                      const isImportedSecret = isImportedSecretPresentInEnv(slug, secretKey);
-                      const importedSecret = getImportedSecretByKey(slug, secretKey);
+                  const isImportedSecret = isImportedSecretPresentInEnv(slug, secretKey);
+                  const importedSecret = getImportedSecretByKey(slug, secretKey);
 
-                      return (
-                        <tr
-                          key={`secret-expanded-${slug}-${secretKey}`}
-                          className="hover:bg-mineshaft-700"
-                        >
-                          <td
-                            className="flex h-full items-center"
-                            style={{ padding: "0.25rem 1rem" }}
+                  return (
+                    <UnstableTableRow key={`secret-expanded-${slug}-${secretKey}`}>
+                      <UnstableTableCell className="w-7" />
+                      <UnstableTableCell className="border-r">
+                        <span className="truncate">{name}</span>
+                        {isImportedSecret && (
+                          <Tooltip
+                            content={`Imported secret from the '${importedSecret?.environmentInfo?.name}' environment`}
                           >
-                            <div title={name} className="flex h-8 w-32 items-center space-x-2">
-                              <span className="truncate">{name}</span>
-                              {isImportedSecret && (
-                                <Tooltip
-                                  content={`Imported secret from the '${importedSecret?.environmentInfo?.name}' environment`}
-                                >
-                                  <FontAwesomeIcon icon={faFileImport} />
-                                </Tooltip>
-                              )}
-                              {secret?.isRotatedSecret && (
-                                <Tooltip content="Rotated Secret">
-                                  <FontAwesomeIcon icon={faRotate} />
-                                </Tooltip>
-                              )}
-                              {secret?.idOverride && (
-                                <Tooltip content="Personal Override">
-                                  <FontAwesomeIcon icon={faCodeBranch} />
-                                </Tooltip>
-                              )}
-                            </div>
-                          </td>
-                          <td className="col-span-2 h-8 w-full">
-                            <SecretEditRow
-                              secretPath={secretPath}
-                              isVisible={isSecretVisible}
-                              secretName={secretKey}
-                              isEmpty={secret?.isEmpty}
-                              secretValueHidden={secret?.secretValueHidden || false}
-                              defaultValue={getDefaultValue(secret, importedSecret)}
-                              secretId={secret?.id}
-                              isOverride={Boolean(secret?.idOverride)}
-                              isImportedSecret={isImportedSecret}
-                              importedSecret={importedSecret}
-                              isCreatable={isCreatable}
-                              onSecretDelete={onSecretDelete}
-                              onSecretCreate={onSecretCreate}
-                              onSecretUpdate={onSecretUpdate}
-                              environment={slug}
-                              isRotatedSecret={secret?.isRotatedSecret}
-                              importedBy={importedBy}
-                              isSecretPresent={Boolean(secret)}
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </TableContainer>
-            </div>
-          </Td>
-        </Tr>
+                            <FontAwesomeIcon icon={faFileImport} />
+                          </Tooltip>
+                        )}
+                        {secret?.isRotatedSecret && (
+                          <Tooltip content="Rotated Secret">
+                            <FontAwesomeIcon icon={faRotate} />
+                          </Tooltip>
+                        )}
+                        {secret?.idOverride && (
+                          <Tooltip content="Personal Override">
+                            <FontAwesomeIcon icon={faCodeBranch} />
+                          </Tooltip>
+                        )}
+                      </UnstableTableCell>
+                      <UnstableTableCell>
+                        <SecretEditRow
+                          secretPath={secretPath}
+                          isVisible={isSecretVisible}
+                          secretName={secretKey}
+                          isEmpty={secret?.isEmpty}
+                          secretValueHidden={secret?.secretValueHidden || false}
+                          defaultValue={getDefaultValue(secret, importedSecret)}
+                          secretId={secret?.id}
+                          isOverride={Boolean(secret?.idOverride)}
+                          isImportedSecret={isImportedSecret}
+                          importedSecret={importedSecret}
+                          isCreatable={isCreatable}
+                          onSecretDelete={onSecretDelete}
+                          onSecretCreate={onSecretCreate}
+                          onSecretUpdate={onSecretUpdate}
+                          environment={slug}
+                          isRotatedSecret={secret?.isRotatedSecret}
+                          importedBy={importedBy}
+                          isSecretPresent={Boolean(secret)}
+                        />
+                      </UnstableTableCell>
+                    </UnstableTableRow>
+                  );
+                })}
+              </UnstableTableBody>
+            </UnstableTable>
+            {/*</div>*/}
+          </UnstableTableCell>
+        </UnstableTableRow>
       )}
     </>
   );

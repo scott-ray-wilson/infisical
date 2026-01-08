@@ -23,7 +23,20 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Link, useNavigate, useParams, useRouter, useSearch } from "@tanstack/react-router";
-import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronDown,
+  ChevronsUpDownIcon,
+  ClipboardPasteIcon,
+  FilterIcon,
+  FingerprintIcon,
+  FolderIcon,
+  KeyIcon,
+  PlusIcon,
+  RotateCwIcon,
+  SearchIcon,
+  UploadIcon
+} from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
@@ -68,10 +81,39 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  EmptyMedia,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
   Popover,
   PopoverContent,
   PopoverTrigger,
-  UnstableButton
+  UnstableButton,
+  UnstableButtonGroup,
+  UnstableCard,
+  UnstableCardContent,
+  UnstableCardHeader,
+  UnstableDropdownMenu,
+  UnstableDropdownMenuCheckboxItem,
+  UnstableDropdownMenuContent,
+  UnstableDropdownMenuItem,
+  UnstableDropdownMenuLabel,
+  UnstableDropdownMenuTrigger,
+  UnstableEmpty,
+  UnstableEmptyContent,
+  UnstableEmptyDescription,
+  UnstableEmptyHeader,
+  UnstableEmptyTitle,
+  UnstableIconButton,
+  UnstableInput,
+  UnstablePagination,
+  UnstableTable,
+  UnstableTableBody,
+  UnstableTableCell,
+  UnstableTableHead,
+  UnstableTableHeader,
+  UnstableTableRow
 } from "@app/components/v3";
 import { cn } from "@app/components/v3/utils";
 import { ROUTE_PATHS } from "@app/const/routes";
@@ -933,29 +975,6 @@ export const OverviewPage = () => {
 
   const isTableFiltered = isFilteredByResources || filteredEnvs.length > 0;
 
-  const frameworks = [
-    {
-      value: "next.js",
-      label: "Next.js"
-    },
-    {
-      value: "sveltekit",
-      label: "SvelteKit"
-    },
-    {
-      value: "nuxt.js",
-      label: "Nuxt.js"
-    },
-    {
-      value: "remix",
-      label: "Remix"
-    },
-    {
-      value: "astro",
-      label: "Astro"
-    }
-  ];
-
   if (!isProjectV3)
     return (
       <div className="flex h-full w-full flex-col items-center justify-center px-6 text-mineshaft-50 dark:scheme-dark">
@@ -973,7 +992,7 @@ export const OverviewPage = () => {
         <div className="flex w-full items-baseline justify-between">
           <PageHeader
             scope={ProjectType.SecretManager}
-            title="Project Overview"
+            title="Secrets"
             description={
               <p className="text-md text-bunker-300">
                 Inject your secrets using
@@ -1017,90 +1036,81 @@ export const OverviewPage = () => {
             }
           />
         </div>
-        <div className="flex flex-wrap items-center gap-4">
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <UnstableButton
-                variant="outline"
-                role="combobox"
-                aria-expanded={open}
-                className="w-[200px] justify-between"
-              >
-                {value
-                  ? frameworks.find((framework) => framework.value === value)?.label
-                  : "All environments"}
-                <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </UnstableButton>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
-              <Command>
-                <CommandInput placeholder="Filter environments..." />
-                <CommandList>
-                  <CommandEmpty>No environment found.</CommandEmpty>
-                  <CommandGroup>
-                    {frameworks.map((framework) => (
-                      <CommandItem
-                        key={framework.value}
-                        value={framework.value}
-                        onSelect={(currentValue) => {
-                          setValue(currentValue === value ? "" : currentValue);
-                          setOpen(false);
-                        }}
-                      >
-                        <CheckIcon
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            value === framework.value ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        {framework.label}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-          <FolderBreadCrumbs secretPath={secretPath} onResetSearch={handleResetSearch} />
-          <div className="ml-auto flex flex-row flex-wrap items-center gap-2">
-            {isTableFiltered && (
-              <Button
-                variant="plain"
-                colorSchema="secondary"
-                onClick={() => {
-                  setFilteredEnvs([]);
-                  setFilter(DEFAULT_FILTER_STATE);
-                }}
-              >
-                Clear Filters
-              </Button>
-            )}
-            {userAvailableEnvs.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline_bg"
-                    className={twMerge(
-                      "flex h-10",
-                      isTableFiltered && "border-primary/40 bg-primary/10"
-                    )}
-                    leftIcon={
-                      <FontAwesomeIcon
-                        icon={faFilter}
-                        className={isTableFiltered ? "text-primary/80" : undefined}
-                      />
-                    }
+        <UnstableCard>
+          <UnstableCardHeader>
+            <div className="flex flex-wrap items-center gap-4">
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <UnstableButton
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-[200px] justify-between"
                   >
-                    Filters
+                    <span className="truncate">
+                      {filteredEnvs.length === 1
+                        ? filteredEnvs[0].name
+                        : filteredEnvs.length > 0
+                          ? `${filteredEnvs.length} Environments`
+                          : "All Environments"}
+                    </span>
+                    <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </UnstableButton>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Filter environments..." />
+                    <CommandList>
+                      <CommandEmpty>No environment found.</CommandEmpty>
+                      <CommandGroup>
+                        {userAvailableEnvs.map((env) => (
+                          <CommandItem
+                            key={env.id}
+                            value={env.id}
+                            onSelect={(currentValue) => {
+                              handleEnvSelect(currentValue);
+                            }}
+                          >
+                            <CheckIcon
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                filteredEnvs.map((env) => env.id).includes(env.id)
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
+                            {env.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <FolderBreadCrumbs secretPath={secretPath} onResetSearch={handleResetSearch} />
+              <div className="ml-auto flex flex-row items-center gap-2">
+                {/*{isTableFiltered && (
+                  <Button
+                    variant="plain"
+                    colorSchema="secondary"
+                    onClick={() => {
+                      setFilteredEnvs([]);
+                      setFilter(DEFAULT_FILTER_STATE);
+                    }}
+                  >
+                    Clear Filters
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  className="max-h-[70vh] thin-scrollbar overflow-y-auto"
-                  align="end"
-                  sideOffset={2}
-                >
-                  {/* <DropdownMenuItem className="px-1.5" asChild>
+                )}*/}
+                {userAvailableEnvs.length > 0 && (
+                  <UnstableDropdownMenu>
+                    <UnstableDropdownMenuTrigger asChild>
+                      <UnstableButton size="md" variant="outline">
+                        <FilterIcon />
+                        Filters
+                      </UnstableButton>
+                    </UnstableDropdownMenuTrigger>
+                    <UnstableDropdownMenuContent align="end">
+                      {/* <DropdownMenuItem className="px-1.5" asChild>
                     <Button
                       size="xs"
                       className="w-full"
@@ -1112,63 +1122,49 @@ export const OverviewPage = () => {
                       Create an environment
                     </Button>
                   </DropdownMenuItem> */}
-                  <DropdownMenuLabel>Filter by Resource</DropdownMenuLabel>
+                      <UnstableDropdownMenuLabel>Filter by Resource</UnstableDropdownMenuLabel>
 
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleToggleRowType(RowType.Folder);
-                    }}
-                    icon={filter[RowType.Folder] && <FontAwesomeIcon icon={faCheckCircle} />}
-                    iconPos="right"
-                  >
-                    <div className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faFolder} className="text-yellow-700" />
-                      <span>Folders</span>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleToggleRowType(RowType.DynamicSecret);
-                    }}
-                    icon={filter[RowType.DynamicSecret] && <FontAwesomeIcon icon={faCheckCircle} />}
-                    iconPos="right"
-                  >
-                    <div className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faFingerprint} className="text-yellow-700" />
-                      <span>Dynamic Secrets</span>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleToggleRowType(RowType.SecretRotation);
-                    }}
-                    icon={
-                      filter[RowType.SecretRotation] && <FontAwesomeIcon icon={faCheckCircle} />
-                    }
-                    iconPos="right"
-                  >
-                    <div className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faRotate} className="text-mineshaft-400" />
-                      <span>Secret Rotations</span>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleToggleRowType(RowType.Secret);
-                    }}
-                    icon={filter[RowType.Secret] && <FontAwesomeIcon icon={faCheckCircle} />}
-                    iconPos="right"
-                  >
-                    <div className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faKey} className="text-bunker-300" />
-                      <span>Secrets</span>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuLabel>Filter by Environment</DropdownMenuLabel>
+                      <UnstableDropdownMenuCheckboxItem
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleToggleRowType(RowType.Folder);
+                        }}
+                        checked={Boolean(filter[RowType.Folder])}
+                      >
+                        <FolderIcon />
+                        Folders
+                      </UnstableDropdownMenuCheckboxItem>
+                      <UnstableDropdownMenuCheckboxItem
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleToggleRowType(RowType.DynamicSecret);
+                        }}
+                        checked={Boolean(filter[RowType.DynamicSecret])}
+                      >
+                        <FingerprintIcon />
+                        Dynamic Secrets
+                      </UnstableDropdownMenuCheckboxItem>
+                      <UnstableDropdownMenuCheckboxItem
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleToggleRowType(RowType.SecretRotation);
+                        }}
+                        checked={filter[RowType.SecretRotation]}
+                      >
+                        <RotateCwIcon />
+                        Secret Rotations
+                      </UnstableDropdownMenuCheckboxItem>
+                      <UnstableDropdownMenuCheckboxItem
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleToggleRowType(RowType.Secret);
+                        }}
+                        checked={Boolean(filter[RowType.Secret])}
+                      >
+                        <KeyIcon />
+                        Secrets
+                      </UnstableDropdownMenuCheckboxItem>
+                      {/*<DropdownMenuLabel>Filter by Environment</DropdownMenuLabel>
                   {userAvailableEnvs.map((availableEnv) => {
                     const { id: envId, name } = availableEnv;
 
@@ -1186,549 +1182,577 @@ export const OverviewPage = () => {
                         <div className="flex items-center">{name}</div>
                       </DropdownMenuItem>
                     );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-            <SecretSearchInput
+                  })}*/}
+                    </UnstableDropdownMenuContent>
+                  </UnstableDropdownMenu>
+                )}
+
+                <UnstableButtonGroup>
+                  <UnstableIconButton variant="outline">
+                    <SearchIcon />
+                  </UnstableIconButton>
+                  <UnstableInput
+                    className="w-[300px]"
+                    placeholder="Search by secret, folder or tag name..."
+                  />
+                </UnstableButtonGroup>
+
+                {/*<SecretSearchInput
               value={searchFilter}
               tags={tags}
               onChange={setSearchFilter}
               environments={userAvailableEnvs}
               projectId={currentProject?.id}
-            />
-            {userAvailableEnvs.length > 0 && (
-              <div>
-                <Button
-                  variant="outline_bg"
-                  leftIcon={<FontAwesomeIcon icon={faPlus} />}
-                  onClick={() => handlePopUpOpen("addSecretsInAllEnvs")}
-                  className="h-10 rounded-r-none"
-                >
-                  Add Secret
-                </Button>
-                <DropdownMenu
-                  open={popUp.misc.isOpen}
-                  onOpenChange={(isOpen) => handlePopUpToggle("misc", isOpen)}
-                >
-                  <DropdownMenuTrigger asChild>
-                    <IconButton
-                      ariaLabel="add-folder-or-import"
-                      variant="outline_bg"
-                      className="rounded-l-none bg-mineshaft-600 p-3"
+            />*/}
+                {userAvailableEnvs.length > 0 && (
+                  <UnstableButtonGroup>
+                    <UnstableButton
+                      variant="project"
+                      onClick={() => handlePopUpOpen("addSecretsInAllEnvs")}
                     >
-                      <FontAwesomeIcon icon={faAngleDown} />
-                    </IconButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <div className="flex flex-col space-y-1 p-1.5">
-                      <ProjectPermissionCan
-                        I={ProjectPermissionActions.Create}
-                        a={ProjectPermissionSub.SecretFolders}
-                      >
-                        {(isAllowed) => (
-                          <Button
-                            leftIcon={<FontAwesomeIcon icon={faFolderPlus} className="pr-2" />}
-                            onClick={() => {
-                              handlePopUpOpen("addFolder");
-                              handlePopUpClose("misc");
-                            }}
-                            isDisabled={!isAllowed}
-                            variant="outline_bg"
-                            className="h-10 text-left"
-                            isFullWidth
+                      <PlusIcon />
+                      Add Secret
+                    </UnstableButton>
+                    <UnstableDropdownMenu
+                      open={popUp.misc.isOpen}
+                      onOpenChange={(isOpen) => handlePopUpToggle("misc", isOpen)}
+                    >
+                      <UnstableDropdownMenuTrigger asChild>
+                        <UnstableIconButton variant="project">
+                          <ChevronDown />
+                        </UnstableIconButton>
+                      </UnstableDropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <div className="flex flex-col space-y-1 p-1.5">
+                          <ProjectPermissionCan
+                            I={ProjectPermissionActions.Create}
+                            a={ProjectPermissionSub.SecretFolders}
                           >
-                            Add Folder
-                          </Button>
-                        )}
-                      </ProjectPermissionCan>
-                      <Tooltip
-                        content={
-                          userAvailableDynamicSecretEnvs.length === 0 ? "Access restricted" : ""
-                        }
-                      >
-                        <Button
-                          leftIcon={<FontAwesomeIcon icon={faFingerprint} className="pr-2" />}
-                          onClick={() => {
-                            if (subscription?.dynamicSecret) {
-                              handlePopUpOpen("addDynamicSecret");
-                              handlePopUpClose("misc");
-                              return;
-                            }
-                            handlePopUpOpen("upgradePlan", {
-                              isEnterpriseFeature: true,
-                              text: "Adding dynamic secrets can be unlocked if you upgrade to Infisical Enterprise plan."
-                            });
-                          }}
-                          isDisabled={userAvailableDynamicSecretEnvs.length === 0}
-                          variant="outline_bg"
-                          className="h-10 text-left"
-                          isFullWidth
-                        >
-                          Add Dynamic Secret
-                        </Button>
-                      </Tooltip>
-                      <Tooltip
-                        content={
-                          userAvailableSecretRotationEnvs.length === 0 ? "Access restricted" : ""
-                        }
-                      >
-                        <Button
-                          leftIcon={<FontAwesomeIcon icon={faRotate} className="pr-2" />}
-                          onClick={() => {
-                            if (subscription?.secretRotation) {
-                              handlePopUpOpen("addSecretRotation");
-                              handlePopUpClose("misc");
-                              return;
-                            }
-                            handlePopUpOpen("upgradePlan", {
-                              text: "Adding secret rotations can be unlocked if you upgrade to Infisical Pro plan."
-                            });
-                          }}
-                          isDisabled={userAvailableSecretRotationEnvs.length === 0}
-                          variant="outline_bg"
-                          className="h-10 text-left"
-                          isFullWidth
-                        >
-                          Add Secret Rotation
-                        </Button>
-                      </Tooltip>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            )}
-          </div>
-        </div>
-        <SelectionPanel
-          secretPath={secretPath}
-          selectedEntries={selectedEntries}
-          resetSelectedEntries={resetSelectedEntries}
-          importedBy={importedBy}
-          secretsToDeleteKeys={secretsToDeleteKeys}
-          usedBySecretSyncs={usedBySecretSyncs}
-        />
-        <div ref={tableRef} className="mt-4">
-          <TableContainer
-            onScroll={(e) => setScrollOffset(e.currentTarget.scrollLeft)}
-            className="max-h-[66vh] thin-scrollbar overflow-y-auto rounded-b-none"
-          >
-            <Table>
-              <THead
-                className="sticky top-0 z-20"
-                style={{ height: collapseEnvironments ? headerHeight : undefined }}
-              >
-                <Tr
-                  className="sticky top-0 z-20 border-0"
-                  style={{ height: collapseEnvironments ? headerHeight : undefined }}
-                >
-                  <Th
-                    className="sticky left-0 z-20 min-w-[20rem] border-b-0 p-0"
-                    style={{ height: collapseEnvironments ? headerHeight : undefined }}
-                  >
-                    <div
-                      className={twMerge(
-                        "flex h-full border-b border-mineshaft-600 pr-5 pb-3 pl-3",
-                        !collapseEnvironments && "border-r pt-3.5"
-                      )}
-                    >
-                      <div
-                        className={twMerge("flex items-center", collapseEnvironments && "mt-auto")}
-                      >
-                        <Tooltip
-                          className="max-w-[20rem] whitespace-nowrap capitalize"
-                          content={
-                            totalCount > 0
-                              ? `${
-                                  !allRowsSelectedOnPage.isChecked ? "Select" : "Unselect"
-                                } all folders and secrets on page`
-                              : ""
-                          }
-                        >
-                          <div className="mr-4 ml-2">
-                            <Checkbox
-                              isDisabled={totalCount === 0}
-                              id="checkbox-select-all-rows"
-                              isChecked={allRowsSelectedOnPage.isChecked}
-                              isIndeterminate={allRowsSelectedOnPage.isIndeterminate}
-                              onCheckedChange={toggleSelectAllRows}
-                            />
-                          </div>
-                        </Tooltip>
-                        Name
-                        <IconButton
-                          variant="plain"
-                          className="ml-2"
-                          ariaLabel="sort"
-                          onClick={() =>
-                            setOrderDirection((prev) =>
-                              prev === OrderByDirection.ASC
-                                ? OrderByDirection.DESC
-                                : OrderByDirection.ASC
-                            )
-                          }
-                        >
-                          <FontAwesomeIcon
-                            icon={orderDirection === "asc" ? faArrowDown : faArrowUp}
-                          />
-                        </IconButton>
-                      </div>
-                      <Tooltip
-                        content={
-                          collapseEnvironments ? "Expand Environments" : "Collapse Environments"
-                        }
-                        className="capitalize"
-                      >
-                        <IconButton
-                          ariaLabel="Toggle Environment View"
-                          variant="plain"
-                          colorSchema="secondary"
-                          className="mt-auto ml-auto h-min p-1"
-                          onClick={handleToggleNarrowHeader}
-                        >
-                          <FontAwesomeIcon
-                            icon={collapseEnvironments ? faArrowLeft : faArrowRight}
-                          />
-                        </IconButton>
-                      </Tooltip>
-                    </div>
-                  </Th>
-                  {visibleEnvs?.map(({ name, slug }, index) => {
-                    const envSecKeyCount = getEnvSecretKeyCount(slug);
-                    const importedSecKeyCount = getEnvImportedSecretKeyCount(slug);
-                    const missingKeyCount = secKeys.length - envSecKeyCount - importedSecKeyCount;
-
-                    const isLast = index === visibleEnvs.length - 1;
-
-                    return (
-                      <Th
-                        className={twMerge(
-                          "min-table-row border-b-0 p-0 text-xs",
-                          collapseEnvironments && index === visibleEnvs.length - 1 && "mr-8!",
-                          !collapseEnvironments && "min-w-44 text-center"
-                        )}
-                        style={
-                          collapseEnvironments
-                            ? {
-                                height: headerHeight,
-                                width: "w-4"
-                              }
-                            : undefined
-                        }
-                        key={`secret-overview-${name}-${index + 1}`}
-                      >
-                        <Tooltip
-                          content={
-                            <div className="flex flex-col gap-2">
-                              {collapseEnvironments ? (
-                                <p className="whitespace-break-spaces text-mineshaft-300">{name}</p>
-                              ) : (
-                                ""
-                              )}
-                              <div className="flex items-center gap-2">
-                                <p className="text-xs text-mineshaft-300">{slug}</p>
-                                <IconButton
-                                  variant="plain"
-                                  colorSchema="secondary"
-                                  ariaLabel="Copy environment slug"
-                                  onClick={() => copyToClipboard(slug, slug)}
-                                >
-                                  <FontAwesomeIcon icon={copiedSlug === slug ? faCheck : faCopy} />
-                                </IconButton>
-                              </div>
-                            </div>
-                          }
-                          side="bottom"
-                          sideOffset={5}
-                          align="center"
-                          className="max-w-xl text-xs normal-case"
-                          rootProps={{
-                            disableHoverableContent: false
-                          }}
-                          key={`tooltip-${name}-${index + 1}`}
-                        >
-                          <div
-                            className={twMerge(
-                              "border-b border-mineshaft-600",
-                              collapseEnvironments
-                                ? "relative"
-                                : "flex items-center justify-center px-5 pt-3.5 pb-[0.82rem]",
-                              collapseEnvironments && isLast && "overflow-clip"
+                            {(isAllowed) => (
+                              <Button
+                                leftIcon={<FontAwesomeIcon icon={faFolderPlus} className="pr-2" />}
+                                onClick={() => {
+                                  handlePopUpOpen("addFolder");
+                                  handlePopUpClose("misc");
+                                }}
+                                isDisabled={!isAllowed}
+                                variant="outline_bg"
+                                className="h-10 text-left"
+                                isFullWidth
+                              >
+                                Add Folder
+                              </Button>
                             )}
-                            style={{
-                              height: collapseEnvironments ? headerHeight : undefined,
-                              minWidth: collapseEnvironments ? "2.9rem" : undefined,
-                              width: collapseEnvironments && isLast ? headerHeight * 0.3 : undefined
+                          </ProjectPermissionCan>
+                          <Tooltip
+                            content={
+                              userAvailableDynamicSecretEnvs.length === 0 ? "Access restricted" : ""
+                            }
+                          >
+                            <Button
+                              leftIcon={<FontAwesomeIcon icon={faFingerprint} className="pr-2" />}
+                              onClick={() => {
+                                if (subscription?.dynamicSecret) {
+                                  handlePopUpOpen("addDynamicSecret");
+                                  handlePopUpClose("misc");
+                                  return;
+                                }
+                                handlePopUpOpen("upgradePlan", {
+                                  isEnterpriseFeature: true,
+                                  text: "Adding dynamic secrets can be unlocked if you upgrade to Infisical Enterprise plan."
+                                });
+                              }}
+                              isDisabled={userAvailableDynamicSecretEnvs.length === 0}
+                              variant="outline_bg"
+                              className="h-10 text-left"
+                              isFullWidth
+                            >
+                              Add Dynamic Secret
+                            </Button>
+                          </Tooltip>
+                          <Tooltip
+                            content={
+                              userAvailableSecretRotationEnvs.length === 0
+                                ? "Access restricted"
+                                : ""
+                            }
+                          >
+                            <Button
+                              leftIcon={<FontAwesomeIcon icon={faRotate} className="pr-2" />}
+                              onClick={() => {
+                                if (subscription?.secretRotation) {
+                                  handlePopUpOpen("addSecretRotation");
+                                  handlePopUpClose("misc");
+                                  return;
+                                }
+                                handlePopUpOpen("upgradePlan", {
+                                  text: "Adding secret rotations can be unlocked if you upgrade to Infisical Pro plan."
+                                });
+                              }}
+                              isDisabled={userAvailableSecretRotationEnvs.length === 0}
+                              variant="outline_bg"
+                              className="h-10 text-left"
+                              isFullWidth
+                            >
+                              Add Secret Rotation
+                            </Button>
+                          </Tooltip>
+                        </div>
+                      </DropdownMenuContent>
+                    </UnstableDropdownMenu>
+                  </UnstableButtonGroup>
+                )}
+              </div>
+            </div>
+          </UnstableCardHeader>
+
+          {/*<SelectionPanel
+            secretPath={secretPath}
+            selectedEntries={selectedEntries}
+            resetSelectedEntries={resetSelectedEntries}
+            importedBy={importedBy}
+            secretsToDeleteKeys={secretsToDeleteKeys}
+            usedBySecretSyncs={usedBySecretSyncs}
+          />*/}
+          {isTableEmpty ? (
+            <UnstableCardContent>
+              <UnstableEmpty className="border">
+                <UnstableEmptyHeader>
+                  <EmptyMedia variant="icon">
+                    <UploadIcon />
+                  </EmptyMedia>
+                  <UnstableEmptyTitle>This project doesn't have any secrets</UnstableEmptyTitle>
+                  <UnstableEmptyDescription>
+                    Drag and drop a .env, .json, .yaml or .csv file to get started or...
+                  </UnstableEmptyDescription>
+                </UnstableEmptyHeader>
+                <UnstableEmptyContent className="flex-row justify-center">
+                  <UnstableButton variant="outline">
+                    <ClipboardPasteIcon />
+                    Paste Secrets
+                  </UnstableButton>
+                  <UnstableButton variant="outline">
+                    <PlusIcon />
+                    Add Secret
+                  </UnstableButton>
+                </UnstableEmptyContent>
+              </UnstableEmpty>
+            </UnstableCardContent>
+          ) : (
+            <>
+              {/*// <div ref={tableRef} className="mt-4">
+            //   <TableContainer
+            //     onScroll={(e) => setScrollOffset(e.currentTarget.scrollLeft)}
+            //     className="max-h-[66vh] thin-scrollbar overflow-y-auto rounded-b-none"
+            //   >*/}
+              <UnstableTable>
+                <UnstableTableHeader>
+                  <UnstableTableRow>
+                    <UnstableTableHead className="w-5">
+                      <Checkbox
+                        isDisabled={totalCount === 0}
+                        id="checkbox-select-all-rows"
+                        isChecked={allRowsSelectedOnPage.isChecked}
+                        isIndeterminate={allRowsSelectedOnPage.isIndeterminate}
+                        onCheckedChange={toggleSelectAllRows}
+                      />
+                    </UnstableTableHead>
+                    <UnstableTableHead
+                      className="w-full"
+                      onClick={() =>
+                        setOrderDirection((prev) =>
+                          prev === OrderByDirection.ASC
+                            ? OrderByDirection.DESC
+                            : OrderByDirection.ASC
+                        )
+                      }
+                    >
+                      Name
+                    </UnstableTableHead>
+                    {visibleEnvs?.map(({ name, slug }, index) => {
+                      const envSecKeyCount = getEnvSecretKeyCount(slug);
+                      const importedSecKeyCount = getEnvImportedSecretKeyCount(slug);
+                      const missingKeyCount = secKeys.length - envSecKeyCount - importedSecKeyCount;
+
+                      const isLast = index === visibleEnvs.length - 1;
+
+                      return (
+                        <UnstableTableHead
+                          className="w-1/2 border-l"
+                          // className={twMerge(
+                          //   "min-table-row border-b-0 p-0 text-xs",
+                          //   collapseEnvironments && index === visibleEnvs.length - 1 && "mr-8!",
+                          //   !collapseEnvironments && "min-w-44 text-center"
+                          // )}
+                          // style={
+                          //   collapseEnvironments
+                          //     ? {
+                          //         height: headerHeight,
+                          //         width: "w-4"
+                          //       }
+                          //     : undefined
+                          // }
+                          key={`secret-overview-${name}-${index + 1}`}
+                        >
+                          {/*<Tooltip
+                            content={
+                              <div className="flex flex-col gap-2">
+                                {collapseEnvironments ? (*/}
+                          {/*<p className="whitespace-break-spaces text-mineshaft-300">*/}
+                          {name}
+                          {/*</p>
+                                ) : (
+                                  ""
+                                )}
+                                <div className="flex items-center gap-2">
+                                  <p className="text-xs text-mineshaft-300">{slug}</p>
+                                  <IconButton
+                                    variant="plain"
+                                    colorSchema="secondary"
+                                    ariaLabel="Copy environment slug"
+                                    onClick={() => copyToClipboard(slug, slug)}
+                                  >
+                                    <FontAwesomeIcon
+                                      icon={copiedSlug === slug ? faCheck : faCopy}
+                                    />
+                                  </IconButton>
+                                </div>
+                              </div>
+                            }
+                            side="bottom"
+                            sideOffset={5}
+                            align="center"
+                            className="max-w-xl text-xs normal-case"
+                            rootProps={{
+                              disableHoverableContent: false
                             }}
+                            key={`tooltip-${name}-${index + 1}`}
                           >
                             <div
                               className={twMerge(
-                                "border-mineshaft-600",
+                                "border-b border-mineshaft-600",
                                 collapseEnvironments
-                                  ? "-skew-x-[16rad] transform border-l text-xs"
-                                  : "flex items-center justify-center"
+                                  ? "relative"
+                                  : "flex items-center justify-center px-5 pt-3.5 pb-[0.82rem]",
+                                collapseEnvironments && isLast && "overflow-clip"
                               )}
                               style={{
                                 height: collapseEnvironments ? headerHeight : undefined,
-                                marginLeft: collapseEnvironments ? headerHeight * 0.145 : undefined
+                                minWidth: collapseEnvironments ? "2.9rem" : undefined,
+                                width:
+                                  collapseEnvironments && isLast ? headerHeight * 0.3 : undefined
                               }}
-                            />
-                            <button
-                              type="button"
-                              className={twMerge(
-                                "duration-100 hover:text-mineshaft-100",
-                                collapseEnvironments
-                                  ? "absolute -rotate-[72.75deg] text-left text-sm font-normal"
-                                  : "flex items-center text-center text-sm font-medium"
-                              )}
-                              style={getHeaderStyle({
-                                collapseEnvironments,
-                                isLast,
-                                headerHeight
-                              })}
-                              onClick={() => handleExploreEnvClick(slug)}
                             >
-                              <p className="truncate font-medium underline">{name}</p>
-                            </button>
-                            {!collapseEnvironments && missingKeyCount > 0 && (
-                              <Tooltip
-                                className="max-w-none lowercase"
-                                content={`${missingKeyCount} secrets missing\n compared to other environments`}
+                              <div
+                                className={twMerge(
+                                  "border-mineshaft-600",
+                                  collapseEnvironments
+                                    ? "-skew-x-[16rad] transform border-l text-xs"
+                                    : "flex items-center justify-center"
+                                )}
+                                style={{
+                                  height: collapseEnvironments ? headerHeight : undefined,
+                                  marginLeft: collapseEnvironments
+                                    ? headerHeight * 0.145
+                                    : undefined
+                                }}
+                              />
+                              <button
+                                type="button"
+                                className={twMerge(
+                                  "duration-100 hover:text-mineshaft-100",
+                                  collapseEnvironments
+                                    ? "absolute -rotate-[72.75deg] text-left text-sm font-normal"
+                                    : "flex items-center text-center text-sm font-medium"
+                                )}
+                                style={getHeaderStyle({
+                                  collapseEnvironments,
+                                  isLast,
+                                  headerHeight
+                                })}
+                                onClick={() => handleExploreEnvClick(slug)}
                               >
-                                <div className="ml-2 flex h-[1.1rem] cursor-default items-center justify-center rounded-xs border border-red-400 bg-red-600 p-1 text-xs font-medium text-bunker-100">
-                                  <span className="text-bunker-100">{missingKeyCount}</span>
-                                </div>
-                              </Tooltip>
-                            )}
-                          </div>
-                        </Tooltip>
-                      </Th>
-                    );
-                  })}
-                </Tr>
-                {collapseEnvironments && (
-                  <HeaderResizer
-                    onMouseDown={handleMouseDown}
-                    isActive={isResizing}
-                    scrollOffset={scrollOffset}
-                    heightOffset={(tableRef.current?.clientTop ?? 0) + headerHeight - 2.5}
-                  />
-                )}
-              </THead>
-              <TBody>
-                {canViewOverviewPage && isOverviewLoading && (
-                  <TableSkeleton
-                    columns={visibleEnvs.length + 1}
-                    innerKey="secret-overview-loading"
-                    rows={5}
-                    className="bg-mineshaft-700"
-                  />
-                )}
-                {userAvailableEnvs.length === 0 && (
-                  <Tr>
-                    <Td colSpan={visibleEnvs.length + 1}>
-                      <EmptyState
-                        title="You have no environments, start by adding some"
-                        iconSize="3x"
-                      >
-                        <Link
-                          to="/organizations/$orgId/projects/secret-management/$projectId/settings"
-                          params={{
-                            orgId,
-                            projectId
-                          }}
-                          hash="environments"
+                                <p className="truncate font-medium underline">{name}</p>
+                              </button>
+                              {!collapseEnvironments && missingKeyCount > 0 && (
+                                <Tooltip
+                                  className="max-w-none lowercase"
+                                  content={`${missingKeyCount} secrets missing\n compared to other environments`}
+                                >
+                                  <div className="ml-2 flex h-[1.1rem] cursor-default items-center justify-center rounded-xs border border-red-400 bg-red-600 p-1 text-xs font-medium text-bunker-100">
+                                    <span className="text-bunker-100">{missingKeyCount}</span>
+                                  </div>
+                                </Tooltip>
+                              )}
+                            </div>
+                          </Tooltip>*/}
+                        </UnstableTableHead>
+                      );
+                    })}
+                  </UnstableTableRow>
+                  {collapseEnvironments && (
+                    <HeaderResizer
+                      onMouseDown={handleMouseDown}
+                      isActive={isResizing}
+                      scrollOffset={scrollOffset}
+                      heightOffset={(tableRef.current?.clientTop ?? 0) + headerHeight - 2.5}
+                    />
+                  )}
+                </UnstableTableHeader>
+                <UnstableTableBody>
+                  {folderNamesAndDescriptions.map(({ name: folderName, description }, index) => (
+                    <SecretOverviewFolderRow
+                      folderName={folderName}
+                      isFolderPresentInEnv={isFolderPresentInEnv}
+                      isSelected={Boolean(selectedEntries.folder[folderName])}
+                      onToggleFolderSelect={() => toggleSelectedEntry(EntryType.FOLDER, folderName)}
+                      environments={visibleEnvs}
+                      key={`overview-${folderName}-${index + 1}`}
+                      onClick={handleFolderClick}
+                      onToggleFolderEdit={(name: string) =>
+                        handlePopUpOpen("updateFolder", { name, description })
+                      }
+                    />
+                  ))}
+                  {secKeys.map((key, index) => (
+                    <SecretOverviewTableRow
+                      isSelected={Boolean(selectedEntries.secret[key])}
+                      onToggleSecretSelect={() => toggleSelectedEntry(EntryType.SECRET, key)}
+                      secretPath={secretPath}
+                      getImportedSecretByKey={getImportedSecretByKey}
+                      isImportedSecretPresentInEnv={handleIsImportedSecretPresentInEnv}
+                      onSecretCreate={handleSecretCreate}
+                      onSecretDelete={handleSecretDelete}
+                      onSecretUpdate={handleSecretUpdate}
+                      key={`overview-${key}-${index + 1}`}
+                      environments={visibleEnvs}
+                      secretKey={key}
+                      getSecretByKey={getSecretByKey}
+                      scrollOffset={debouncedScrollOffset}
+                      importedBy={importedBy}
+                    />
+                  ))}
+                  {/*{canViewOverviewPage && isOverviewLoading && (
+                    <TableSkeleton
+                      columns={visibleEnvs.length + 1}
+                      innerKey="secret-overview-loading"
+                      rows={5}
+                      className="bg-mineshaft-700"
+                    />
+                  )}
+                  {userAvailableEnvs.length === 0 && (
+                    <UnstableTableRow>
+                      <UnstableTableCell colSpan={visibleEnvs.length + 1}>
+                        <EmptyState
+                          title="You have no environments, start by adding some"
+                          iconSize="3x"
+                        >
+                          <Link
+                            to="/organizations/$orgId/projects/secret-management/$projectId/settings"
+                            params={{
+                              orgId,
+                              projectId
+                            }}
+                            hash="environments"
+                          >
+                            <Button
+                              className="mt-4"
+                              variant="outline_bg"
+                              colorSchema="primary"
+                              size="md"
+                            >
+                              Add environments
+                            </Button>
+                          </Link>
+                        </EmptyState>
+                      </UnstableTableCell>
+                    </UnstableTableRow>
+                  )}
+                  {isTableEmpty && !isOverviewLoading && visibleEnvs.length > 0 && (
+                    <UnstableTableRow>
+                      <UnstableTableCell colSpan={visibleEnvs.length + 1}>
+                        <EmptyState
+                          title={
+                            isTableFiltered || debouncedSearchFilter
+                              ? "No secrets found for your search, add one now"
+                              : "Let's add some secrets"
+                          }
+                          icon={faFolderBlank}
+                          iconSize="3x"
                         >
                           <Button
                             className="mt-4"
                             variant="outline_bg"
                             colorSchema="primary"
                             size="md"
+                            onClick={() => handlePopUpOpen("addSecretsInAllEnvs")}
                           >
-                            Add environments
+                            Add Secrets
                           </Button>
-                        </Link>
-                      </EmptyState>
-                    </Td>
-                  </Tr>
-                )}
-                {isTableEmpty && !isOverviewLoading && visibleEnvs.length > 0 && (
-                  <Tr>
-                    <Td colSpan={visibleEnvs.length + 1}>
-                      <EmptyState
-                        title={
-                          isTableFiltered || debouncedSearchFilter
-                            ? "No secrets found for your search, add one now"
-                            : "Let's add some secrets"
-                        }
-                        icon={faFolderBlank}
-                        iconSize="3x"
-                      >
-                        <Button
-                          className="mt-4"
-                          variant="outline_bg"
-                          colorSchema="primary"
-                          size="md"
-                          onClick={() => handlePopUpOpen("addSecretsInAllEnvs")}
-                        >
-                          Add Secrets
-                        </Button>
-                      </EmptyState>
-                    </Td>
-                  </Tr>
-                )}
-                {!isOverviewLoading && visibleEnvs.length > 0 && (
-                  <>
-                    {folderNamesAndDescriptions.map(({ name: folderName, description }, index) => (
-                      <SecretOverviewFolderRow
-                        folderName={folderName}
-                        isFolderPresentInEnv={isFolderPresentInEnv}
-                        isSelected={Boolean(selectedEntries.folder[folderName])}
-                        onToggleFolderSelect={() =>
-                          toggleSelectedEntry(EntryType.FOLDER, folderName)
-                        }
-                        environments={visibleEnvs}
-                        key={`overview-${folderName}-${index + 1}`}
-                        onClick={handleFolderClick}
-                        onToggleFolderEdit={(name: string) =>
-                          handlePopUpOpen("updateFolder", { name, description })
-                        }
-                      />
-                    ))}
-                    {dynamicSecretNames.map((dynamicSecretName, index) => (
-                      <SecretOverviewDynamicSecretRow
-                        dynamicSecretName={dynamicSecretName}
-                        isDynamicSecretInEnv={isDynamicSecretPresentInEnv}
-                        environments={visibleEnvs}
-                        key={`overview-${dynamicSecretName}-${index + 1}`}
-                      />
-                    ))}
-                    {secretRotationNames.map((secretRotationName, index) => (
-                      <SecretOverviewSecretRotationRow
-                        secretRotationName={secretRotationName}
-                        isSecretRotationInEnv={isSecretRotationPresentInEnv}
-                        environments={visibleEnvs}
-                        getSecretRotationByName={getSecretRotationByName}
-                        getSecretRotationStatusesByName={getSecretRotationStatusesByName}
-                        key={`overview-${secretRotationName}-${index + 1}`}
-                        scrollOffset={scrollOffset}
-                        onEdit={(secretRotation) =>
-                          handlePopUpOpen("editSecretRotation", secretRotation)
-                        }
-                        onRotate={(secretRotation) =>
-                          handlePopUpOpen("rotateSecretRotation", secretRotation)
-                        }
-                        onViewGeneratedCredentials={(secretRotation) =>
-                          handlePopUpOpen("viewSecretRotationGeneratedCredentials", secretRotation)
-                        }
-                        onDelete={(secretRotation) =>
-                          handlePopUpOpen("deleteSecretRotation", secretRotation)
-                        }
-                      />
-                    ))}
-                    {secKeys.map((key, index) => (
-                      <SecretOverviewTableRow
-                        isSelected={Boolean(selectedEntries.secret[key])}
-                        onToggleSecretSelect={() => toggleSelectedEntry(EntryType.SECRET, key)}
-                        secretPath={secretPath}
-                        getImportedSecretByKey={getImportedSecretByKey}
-                        isImportedSecretPresentInEnv={handleIsImportedSecretPresentInEnv}
-                        onSecretCreate={handleSecretCreate}
-                        onSecretDelete={handleSecretDelete}
-                        onSecretUpdate={handleSecretUpdate}
-                        key={`overview-${key}-${index + 1}`}
-                        environments={visibleEnvs}
-                        secretKey={key}
-                        getSecretByKey={getSecretByKey}
-                        scrollOffset={debouncedScrollOffset}
-                        importedBy={importedBy}
-                      />
-                    ))}
-                    <SecretNoAccessOverviewTableRow
-                      environments={visibleEnvs}
-                      count={Math.max(
-                        (page * perPage > totalCount ? totalCount % perPage : perPage) -
-                          (totalUniqueFoldersInPage || 0) -
-                          (totalUniqueDynamicSecretsInPage || 0) -
-                          (totalUniqueSecretsInPage || 0) -
-                          (totalUniqueSecretImportsInPage || 0) -
-                          (totalUniqueSecretRotationsInPage || 0),
-                        0
+                        </EmptyState>
+                      </UnstableTableCell>
+                    </UnstableTableRow>
+                  )}
+                  {!isOverviewLoading && visibleEnvs.length > 0 && (
+                    <>
+                      {folderNamesAndDescriptions.map(
+                        ({ name: folderName, description }, index) => (
+                          <SecretOverviewFolderRow
+                            folderName={folderName}
+                            isFolderPresentInEnv={isFolderPresentInEnv}
+                            isSelected={Boolean(selectedEntries.folder[folderName])}
+                            onToggleFolderSelect={() =>
+                              toggleSelectedEntry(EntryType.FOLDER, folderName)
+                            }
+                            environments={visibleEnvs}
+                            key={`overview-${folderName}-${index + 1}`}
+                            onClick={handleFolderClick}
+                            onToggleFolderEdit={(name: string) =>
+                              handlePopUpOpen("updateFolder", { name, description })
+                            }
+                          />
+                        )
                       )}
-                    />
-                  </>
-                )}
-              </TBody>
-              <TFoot>
-                <Tr className="sticky bottom-0 z-10 border-0 bg-mineshaft-800">
-                  <Td className="sticky left-0 z-10 border-0 bg-mineshaft-800 p-0">
-                    <div
-                      className="w-full border-t border-r border-mineshaft-600"
-                      style={{ height: "45px" }}
-                    />
-                  </Td>
-                  {visibleEnvs?.map(({ name, slug }, i) => (
-                    <Td
-                      key={`explore-${name}-btn-${i + 1}`}
-                      className="border-0 border-r border-mineshaft-600 p-0"
-                    >
-                      <div
-                        className={twMerge(
-                          "flex w-full items-center justify-center border-t border-mineshaft-600 py-2"
+                      {dynamicSecretNames.map((dynamicSecretName, index) => (
+                        <SecretOverviewDynamicSecretRow
+                          dynamicSecretName={dynamicSecretName}
+                          isDynamicSecretInEnv={isDynamicSecretPresentInEnv}
+                          environments={visibleEnvs}
+                          key={`overview-${dynamicSecretName}-${index + 1}`}
+                        />
+                      ))}
+                      {secretRotationNames.map((secretRotationName, index) => (
+                        <SecretOverviewSecretRotationRow
+                          secretRotationName={secretRotationName}
+                          isSecretRotationInEnv={isSecretRotationPresentInEnv}
+                          environments={visibleEnvs}
+                          getSecretRotationByName={getSecretRotationByName}
+                          getSecretRotationStatusesByName={getSecretRotationStatusesByName}
+                          key={`overview-${secretRotationName}-${index + 1}`}
+                          scrollOffset={scrollOffset}
+                          onEdit={(secretRotation) =>
+                            handlePopUpOpen("editSecretRotation", secretRotation)
+                          }
+                          onRotate={(secretRotation) =>
+                            handlePopUpOpen("rotateSecretRotation", secretRotation)
+                          }
+                          onViewGeneratedCredentials={(secretRotation) =>
+                            handlePopUpOpen(
+                              "viewSecretRotationGeneratedCredentials",
+                              secretRotation
+                            )
+                          }
+                          onDelete={(secretRotation) =>
+                            handlePopUpOpen("deleteSecretRotation", secretRotation)
+                          }
+                        />
+                      ))}
+                      {secKeys.map((key, index) => (
+                        <SecretOverviewTableRow
+                          isSelected={Boolean(selectedEntries.secret[key])}
+                          onToggleSecretSelect={() => toggleSelectedEntry(EntryType.SECRET, key)}
+                          secretPath={secretPath}
+                          getImportedSecretByKey={getImportedSecretByKey}
+                          isImportedSecretPresentInEnv={handleIsImportedSecretPresentInEnv}
+                          onSecretCreate={handleSecretCreate}
+                          onSecretDelete={handleSecretDelete}
+                          onSecretUpdate={handleSecretUpdate}
+                          key={`overview-${key}-${index + 1}`}
+                          environments={visibleEnvs}
+                          secretKey={key}
+                          getSecretByKey={getSecretByKey}
+                          scrollOffset={debouncedScrollOffset}
+                          importedBy={importedBy}
+                        />
+                      ))}
+                      <SecretNoAccessOverviewTableRow
+                        environments={visibleEnvs}
+                        count={Math.max(
+                          (page * perPage > totalCount ? totalCount % perPage : perPage) -
+                            (totalUniqueFoldersInPage || 0) -
+                            (totalUniqueDynamicSecretsInPage || 0) -
+                            (totalUniqueSecretsInPage || 0) -
+                            (totalUniqueSecretImportsInPage || 0) -
+                            (totalUniqueSecretRotationsInPage || 0),
+                          0
                         )}
+                      />
+                    </>
+                  )}*/}
+                </UnstableTableBody>
+                {/*<TFoot>
+                  <Tr className="sticky bottom-0 z-10 border-0 bg-mineshaft-800">
+                    <Td className="sticky left-0 z-10 border-0 bg-mineshaft-800 p-0">
+                      <div
+                        className="w-full border-t border-r border-mineshaft-600"
+                        style={{ height: "45px" }}
+                      />
+                    </Td>
+                    {visibleEnvs?.map(({ name, slug }, i) => (
+                      <Td
+                        key={`explore-${name}-btn-${i + 1}`}
+                        className="border-0 border-r border-mineshaft-600 p-0"
                       >
-                        {collapseEnvironments ? (
-                          <Tooltip className="normal-case" content="Explore Environment">
-                            <IconButton
-                              ariaLabel="Explore Environment"
-                              size="xs"
+                        <div
+                          className={twMerge(
+                            "flex w-full items-center justify-center border-t border-mineshaft-600 py-2"
+                          )}
+                        >
+                          {collapseEnvironments ? (
+                            <Tooltip className="normal-case" content="Explore Environment">
+                              <IconButton
+                                ariaLabel="Explore Environment"
+                                size="xs"
+                                variant="outline_bg"
+                                className="mx-auto h-[1.76rem] rounded-sm"
+                                onClick={() => handleExploreEnvClick(slug)}
+                              >
+                                <FontAwesomeIcon icon={faArrowRightToBracket} />
+                              </IconButton>
+                            </Tooltip>
+                          ) : (
+                            <Button
+                              leftIcon={
+                                <FontAwesomeIcon className="mr-1" icon={faArrowRightToBracket} />
+                              }
                               variant="outline_bg"
-                              className="mx-auto h-[1.76rem] rounded-sm"
+                              size="xs"
+                              className="mx-2 w-full"
                               onClick={() => handleExploreEnvClick(slug)}
                             >
-                              <FontAwesomeIcon icon={faArrowRightToBracket} />
-                            </IconButton>
-                          </Tooltip>
-                        ) : (
-                          <Button
-                            leftIcon={
-                              <FontAwesomeIcon className="mr-1" icon={faArrowRightToBracket} />
-                            }
-                            variant="outline_bg"
-                            size="xs"
-                            className="mx-2 w-full"
-                            onClick={() => handleExploreEnvClick(slug)}
-                          >
-                            Explore
-                          </Button>
-                        )}
-                      </div>
-                    </Td>
-                  ))}
-                </Tr>
-              </TFoot>
-            </Table>
-          </TableContainer>
-          {!isOverviewLoading && totalCount > 0 && (
-            <Pagination
-              startAdornment={
-                <SecretTableResourceCount
-                  dynamicSecretCount={totalDynamicSecretCount}
-                  secretCount={totalSecretCount}
-                  folderCount={totalFolderCount}
-                  importCount={totalImportCount}
-                  secretRotationCount={totalSecretRotationCount}
+                              Explore
+                            </Button>
+                          )}
+                        </div>
+                      </Td>
+                    ))}
+                  </Tr>
+                </TFoot>*/}
+              </UnstableTable>
+              {/*</TableContainer>*/}
+              {!isOverviewLoading && totalCount > 0 && (
+                <UnstablePagination
+                  startAdornment={
+                    <SecretTableResourceCount
+                      dynamicSecretCount={totalDynamicSecretCount}
+                      secretCount={totalSecretCount}
+                      folderCount={totalFolderCount}
+                      importCount={totalImportCount}
+                      secretRotationCount={totalSecretRotationCount}
+                    />
+                  }
+                  // className="rounded-b-md border-t border-solid border-t-mineshaft-600"
+                  count={totalCount}
+                  page={page}
+                  perPage={perPage}
+                  onChangePage={(newPage) => setPage(newPage)}
+                  onChangePerPage={handlePerPageChange}
                 />
-              }
-              className="rounded-b-md border-t border-solid border-t-mineshaft-600"
-              count={totalCount}
-              page={page}
-              perPage={perPage}
-              onChangePage={(newPage) => setPage(newPage)}
-              onChangePerPage={handlePerPageChange}
-            />
+              )}
+              {/*</div>*/}
+            </>
           )}
-        </div>
+        </UnstableCard>
       </div>
       <Modal
         isOpen={popUp.addSecretsInAllEnvs.isOpen}

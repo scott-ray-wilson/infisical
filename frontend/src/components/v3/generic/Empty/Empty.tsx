@@ -1,3 +1,4 @@
+import { cva, VariantProps } from "cva";
 import { cn } from "../../utils";
 
 function UnstableEmpty({ className, ...props }: React.ComponentProps<"div">) {
@@ -23,37 +24,35 @@ function UnstableEmptyHeader({ className, ...props }: React.ComponentProps<"div"
   );
 }
 
-// scott: TODO
+const emptyMediaVariants = cva(
+  "flex shrink-0 items-center justify-center mb-2 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+  {
+    variants: {
+      variant: {
+        default: "bg-transparent",
+        icon: "bg-foreground/5 rounded-md text-muted flex size-10 shrink-0 items-center justify-center [&_svg:not([class*='size-'])]:size-6"
+      }
+    },
+    defaultVariants: {
+      variant: "default"
+    }
+  }
+);
 
-// const emptyMediaVariants = cva(
-//   "flex shrink-0 items-center justify-center mb-2 [&_svg]:pointer-events-none [&_svg]:shrink-0",
-//   {
-//     variants: {
-//       variant: {
-//         default: "bg-transparent",
-//         icon: "bg-bunker-900 rounded text-foreground flex size-10 shrink-0 items-center justify-center [&_svg:not([class*='size-'])]:size-6"
-//       }
-//     },
-//     defaultVariants: {
-//       variant: "default"
-//     }
-//   }
-// );
-
-// function EmptyMedia({
-//   className,
-//   variant = "default",
-//   ...props
-// }: React.ComponentProps<"div"> & VariantProps<typeof emptyMediaVariants>) {
-//   return (
-//     <div
-//       data-slot="empty-icon"
-//       data-variant={variant}
-//       className={cn(emptyMediaVariants({ variant, className }))}
-//       {...props}
-//     />
-//   );
-// }
+function EmptyMedia({
+  className,
+  variant = "default",
+  ...props
+}: React.ComponentProps<"div"> & VariantProps<typeof emptyMediaVariants>) {
+  return (
+    <div
+      data-slot="empty-icon"
+      data-variant={variant}
+      className={cn(emptyMediaVariants({ variant, className }))}
+      {...props}
+    />
+  );
+}
 
 function UnstableEmptyTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
@@ -96,5 +95,6 @@ export {
   UnstableEmptyContent,
   UnstableEmptyDescription,
   UnstableEmptyHeader,
-  UnstableEmptyTitle
+  UnstableEmptyTitle,
+  EmptyMedia
 };

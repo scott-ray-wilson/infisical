@@ -22,17 +22,17 @@ const iconButtonVariants = cva(
         outline: "text-foreground hover:bg-foreground/20 border-border hover:border-foreground/50",
         ghost: "text-foreground hover:bg-foreground/40 border-transparent",
         project:
-          "border-project/65 bg-project/20 text-foreground hover:bg-project/30 hover:border-kms",
-        org: "border-org/65 bg-org/20 text-foreground hover:bg-org/30 hover:border-org",
+          "border-project/25 bg-project/10 text-foreground hover:bg-project/15 hover:border-project/30",
+        org: "border-org/25 bg-org/10 text-foreground hover:bg-org/15 hover:border-org/30",
         "sub-org":
-          "border-sub-org/65 bg-sub-org/20 text-foreground hover:bg-sub-org/30 hover:border-namespace",
+          "border-sub-org/25 bg-sub-org/10 text-foreground hover:bg-sub-org/15 hover:border-sub-org/30",
         success:
-          "border-success/65 bg-success/20 text-foreground hover:bg-success/30 hover:border-success",
-        info: "border-info/65 bg-info/20 text-foreground hover:bg-info/30 hover:border-info",
+          "border-success/25 bg-success/10 text-foreground hover:bg-success/15 hover:border-success/30",
+        info: "border-info/25 bg-info/10 text-foreground hover:bg-info/15 hover:border-info/30",
         warning:
-          "border-warning/65 bg-warning/20 text-foreground hover:bg-warning/30 hover:border-warning",
+          "border-warning/25 bg-warning/10 text-foreground hover:bg-warning/15 hover:border-warning/30",
         danger:
-          "border-danger/65 bg-danger/20 text-foreground hover:bg-danger/30 hover:border-danger"
+          "border-danger/25 bg-danger/10 text-foreground hover:bg-danger/15 hover:border-danger/30"
       },
       size: {
         xs: "h-7 w-7 [&>svg]:size-4 rounded-sm [&>svg]:stroke-[1.75]",

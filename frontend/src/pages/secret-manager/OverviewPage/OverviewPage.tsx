@@ -992,7 +992,7 @@ export const OverviewPage = () => {
         <div className="flex w-full items-baseline justify-between">
           <PageHeader
             scope={ProjectType.SecretManager}
-            title="Secrets"
+            title="Secret Vault"
             description={
               <p className="text-md text-bunker-300">
                 Inject your secrets using

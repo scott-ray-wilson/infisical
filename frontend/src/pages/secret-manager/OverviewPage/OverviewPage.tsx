@@ -1314,8 +1314,8 @@ export const OverviewPage = () => {
             secretsToDeleteKeys={secretsToDeleteKeys}
             usedBySecretSyncs={usedBySecretSyncs}
           />*/}
-          {isTableEmpty ? (
-            <UnstableCardContent>
+          <UnstableCardContent>
+            {isTableEmpty ? (
               <UnstableEmpty className="border">
                 <UnstableEmptyHeader>
                   <EmptyMedia variant="icon">
@@ -1337,70 +1337,71 @@ export const OverviewPage = () => {
                   </UnstableButton>
                 </UnstableEmptyContent>
               </UnstableEmpty>
-            </UnstableCardContent>
-          ) : (
-            <>
-              {/*// <div ref={tableRef} className="mt-4">
+            ) : (
+              <>
+                {/*// <div ref={tableRef} className="mt-4">
             //   <TableContainer
             //     onScroll={(e) => setScrollOffset(e.currentTarget.scrollLeft)}
             //     className="max-h-[66vh] thin-scrollbar overflow-y-auto rounded-b-none"
             //   >*/}
-              <UnstableTable>
-                <UnstableTableHeader>
-                  <UnstableTableRow>
-                    <UnstableTableHead className="w-5">
-                      <Checkbox
-                        isDisabled={totalCount === 0}
-                        id="checkbox-select-all-rows"
-                        isChecked={allRowsSelectedOnPage.isChecked}
-                        isIndeterminate={allRowsSelectedOnPage.isIndeterminate}
-                        onCheckedChange={toggleSelectAllRows}
-                      />
-                    </UnstableTableHead>
-                    <UnstableTableHead
-                      className="w-full"
-                      onClick={() =>
-                        setOrderDirection((prev) =>
-                          prev === OrderByDirection.ASC
-                            ? OrderByDirection.DESC
-                            : OrderByDirection.ASC
-                        )
-                      }
-                    >
-                      Name
-                    </UnstableTableHead>
-                    {visibleEnvs?.map(({ name, slug }, index) => {
-                      const envSecKeyCount = getEnvSecretKeyCount(slug);
-                      const importedSecKeyCount = getEnvImportedSecretKeyCount(slug);
-                      const missingKeyCount = secKeys.length - envSecKeyCount - importedSecKeyCount;
+                <UnstableTable>
+                  <UnstableTableHeader>
+                    <UnstableTableRow>
+                      <UnstableTableHead className="w-5">
+                        <Checkbox
+                          isDisabled={totalCount === 0}
+                          id="checkbox-select-all-rows"
+                          isChecked={allRowsSelectedOnPage.isChecked}
+                          isIndeterminate={allRowsSelectedOnPage.isIndeterminate}
+                          onCheckedChange={toggleSelectAllRows}
+                        />
+                      </UnstableTableHead>
+                      <UnstableTableHead
+                        className={visibleEnvs.length > 1 ? "w-full" : "w-1/2"}
+                        onClick={() =>
+                          setOrderDirection((prev) =>
+                            prev === OrderByDirection.ASC
+                              ? OrderByDirection.DESC
+                              : OrderByDirection.ASC
+                          )
+                        }
+                      >
+                        Name
+                      </UnstableTableHead>
+                      {visibleEnvs.length > 1 ? (
+                        visibleEnvs?.map(({ name, slug }, index) => {
+                          const envSecKeyCount = getEnvSecretKeyCount(slug);
+                          const importedSecKeyCount = getEnvImportedSecretKeyCount(slug);
+                          const missingKeyCount =
+                            secKeys.length - envSecKeyCount - importedSecKeyCount;
 
-                      const isLast = index === visibleEnvs.length - 1;
+                          const isLast = index === visibleEnvs.length - 1;
 
-                      return (
-                        <UnstableTableHead
-                          className="w-1/2 border-l"
-                          // className={twMerge(
-                          //   "min-table-row border-b-0 p-0 text-xs",
-                          //   collapseEnvironments && index === visibleEnvs.length - 1 && "mr-8!",
-                          //   !collapseEnvironments && "min-w-44 text-center"
-                          // )}
-                          // style={
-                          //   collapseEnvironments
-                          //     ? {
-                          //         height: headerHeight,
-                          //         width: "w-4"
-                          //       }
-                          //     : undefined
-                          // }
-                          key={`secret-overview-${name}-${index + 1}`}
-                        >
-                          {/*<Tooltip
+                          return (
+                            <UnstableTableHead
+                              className="w-1/2 border-l"
+                              // className={twMerge(
+                              //   "min-table-row border-b-0 p-0 text-xs",
+                              //   collapseEnvironments && index === visibleEnvs.length - 1 && "mr-8!",
+                              //   !collapseEnvironments && "min-w-44 text-center"
+                              // )}
+                              // style={
+                              //   collapseEnvironments
+                              //     ? {
+                              //         height: headerHeight,
+                              //         width: "w-4"
+                              //       }
+                              //     : undefined
+                              // }
+                              key={`secret-overview-${name}-${index + 1}`}
+                            >
+                              {/*<Tooltip
                             content={
                               <div className="flex flex-col gap-2">
                                 {collapseEnvironments ? (*/}
-                          {/*<p className="whitespace-break-spaces text-mineshaft-300">*/}
-                          {name}
-                          {/*</p>
+                              {/*<p className="whitespace-break-spaces text-mineshaft-300">*/}
+                              {name}
+                              {/*</p>
                                 ) : (
                                   ""
                                 )}
@@ -1486,53 +1487,58 @@ export const OverviewPage = () => {
                               )}
                             </div>
                           </Tooltip>*/}
-                        </UnstableTableHead>
-                      );
-                    })}
-                  </UnstableTableRow>
-                  {collapseEnvironments && (
-                    <HeaderResizer
-                      onMouseDown={handleMouseDown}
-                      isActive={isResizing}
-                      scrollOffset={scrollOffset}
-                      heightOffset={(tableRef.current?.clientTop ?? 0) + headerHeight - 2.5}
-                    />
-                  )}
-                </UnstableTableHeader>
-                <UnstableTableBody>
-                  {folderNamesAndDescriptions.map(({ name: folderName, description }, index) => (
-                    <SecretOverviewFolderRow
-                      folderName={folderName}
-                      isFolderPresentInEnv={isFolderPresentInEnv}
-                      isSelected={Boolean(selectedEntries.folder[folderName])}
-                      onToggleFolderSelect={() => toggleSelectedEntry(EntryType.FOLDER, folderName)}
-                      environments={visibleEnvs}
-                      key={`overview-${folderName}-${index + 1}`}
-                      onClick={handleFolderClick}
-                      onToggleFolderEdit={(name: string) =>
-                        handlePopUpOpen("updateFolder", { name, description })
-                      }
-                    />
-                  ))}
-                  {secKeys.map((key, index) => (
-                    <SecretOverviewTableRow
-                      isSelected={Boolean(selectedEntries.secret[key])}
-                      onToggleSecretSelect={() => toggleSelectedEntry(EntryType.SECRET, key)}
-                      secretPath={secretPath}
-                      getImportedSecretByKey={getImportedSecretByKey}
-                      isImportedSecretPresentInEnv={handleIsImportedSecretPresentInEnv}
-                      onSecretCreate={handleSecretCreate}
-                      onSecretDelete={handleSecretDelete}
-                      onSecretUpdate={handleSecretUpdate}
-                      key={`overview-${key}-${index + 1}`}
-                      environments={visibleEnvs}
-                      secretKey={key}
-                      getSecretByKey={getSecretByKey}
-                      scrollOffset={debouncedScrollOffset}
-                      importedBy={importedBy}
-                    />
-                  ))}
-                  {/*{canViewOverviewPage && isOverviewLoading && (
+                            </UnstableTableHead>
+                          );
+                        })
+                      ) : (
+                        <UnstableTableHead className="w-1/2 border-l">Value</UnstableTableHead>
+                      )}
+                    </UnstableTableRow>
+                    {collapseEnvironments && (
+                      <HeaderResizer
+                        onMouseDown={handleMouseDown}
+                        isActive={isResizing}
+                        scrollOffset={scrollOffset}
+                        heightOffset={(tableRef.current?.clientTop ?? 0) + headerHeight - 2.5}
+                      />
+                    )}
+                  </UnstableTableHeader>
+                  <UnstableTableBody>
+                    {folderNamesAndDescriptions.map(({ name: folderName, description }, index) => (
+                      <SecretOverviewFolderRow
+                        folderName={folderName}
+                        isFolderPresentInEnv={isFolderPresentInEnv}
+                        isSelected={Boolean(selectedEntries.folder[folderName])}
+                        onToggleFolderSelect={() =>
+                          toggleSelectedEntry(EntryType.FOLDER, folderName)
+                        }
+                        environments={visibleEnvs}
+                        key={`overview-${folderName}-${index + 1}`}
+                        onClick={handleFolderClick}
+                        onToggleFolderEdit={(name: string) =>
+                          handlePopUpOpen("updateFolder", { name, description })
+                        }
+                      />
+                    ))}
+                    {secKeys.map((key, index) => (
+                      <SecretOverviewTableRow
+                        isSelected={Boolean(selectedEntries.secret[key])}
+                        onToggleSecretSelect={() => toggleSelectedEntry(EntryType.SECRET, key)}
+                        secretPath={secretPath}
+                        getImportedSecretByKey={getImportedSecretByKey}
+                        isImportedSecretPresentInEnv={handleIsImportedSecretPresentInEnv}
+                        onSecretCreate={handleSecretCreate}
+                        onSecretDelete={handleSecretDelete}
+                        onSecretUpdate={handleSecretUpdate}
+                        key={`overview-${key}-${index + 1}`}
+                        environments={visibleEnvs}
+                        secretKey={key}
+                        getSecretByKey={getSecretByKey}
+                        scrollOffset={debouncedScrollOffset}
+                        importedBy={importedBy}
+                      />
+                    ))}
+                    {/*{canViewOverviewPage && isOverviewLoading && (
                     <TableSkeleton
                       columns={visibleEnvs.length + 1}
                       innerKey="secret-overview-loading"
@@ -1679,8 +1685,8 @@ export const OverviewPage = () => {
                       />
                     </>
                   )}*/}
-                </UnstableTableBody>
-                {/*<TFoot>
+                  </UnstableTableBody>
+                  {/*<TFoot>
                   <Tr className="sticky bottom-0 z-10 border-0 bg-mineshaft-800">
                     <Td className="sticky left-0 z-10 border-0 bg-mineshaft-800 p-0">
                       <div
@@ -1728,30 +1734,31 @@ export const OverviewPage = () => {
                     ))}
                   </Tr>
                 </TFoot>*/}
-              </UnstableTable>
-              {/*</TableContainer>*/}
-              {!isOverviewLoading && totalCount > 0 && (
-                <UnstablePagination
-                  startAdornment={
-                    <SecretTableResourceCount
-                      dynamicSecretCount={totalDynamicSecretCount}
-                      secretCount={totalSecretCount}
-                      folderCount={totalFolderCount}
-                      importCount={totalImportCount}
-                      secretRotationCount={totalSecretRotationCount}
-                    />
-                  }
-                  // className="rounded-b-md border-t border-solid border-t-mineshaft-600"
-                  count={totalCount}
-                  page={page}
-                  perPage={perPage}
-                  onChangePage={(newPage) => setPage(newPage)}
-                  onChangePerPage={handlePerPageChange}
-                />
-              )}
-              {/*</div>*/}
-            </>
-          )}
+                </UnstableTable>
+                {/*</TableContainer>*/}
+                {!isOverviewLoading && totalCount > 0 && (
+                  <UnstablePagination
+                    startAdornment={
+                      <SecretTableResourceCount
+                        dynamicSecretCount={totalDynamicSecretCount}
+                        secretCount={totalSecretCount}
+                        folderCount={totalFolderCount}
+                        importCount={totalImportCount}
+                        secretRotationCount={totalSecretRotationCount}
+                      />
+                    }
+                    // className="rounded-b-md border-t border-solid border-t-mineshaft-600"
+                    count={totalCount}
+                    page={page}
+                    perPage={perPage}
+                    onChangePage={(newPage) => setPage(newPage)}
+                    onChangePerPage={handlePerPageChange}
+                  />
+                )}
+                {/*</div>*/}
+              </>
+            )}
+          </UnstableCardContent>
         </UnstableCard>
       </div>
       <Modal

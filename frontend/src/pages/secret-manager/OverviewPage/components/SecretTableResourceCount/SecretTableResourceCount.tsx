@@ -8,6 +8,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { Tooltip } from "@app/components/v2";
+import { FolderIcon, ImportIcon, KeyIcon } from "lucide-react";
 
 type Props = {
   folderCount?: number;
@@ -37,7 +38,8 @@ export const SecretTableResourceCount = ({
           }
         >
           <div className="flex items-center gap-2">
-            <FontAwesomeIcon icon={faFileImport} className="text-green-700" />
+            <ImportIcon className="size-3.5 text-success" />
+            {/*<FontAwesomeIcon icon={faFileImport} className="text-green-700" />*/}
             <span>{importCount}</span>
           </div>
         </Tooltip>
@@ -53,7 +55,7 @@ export const SecretTableResourceCount = ({
           }
         >
           <div className="flex items-center gap-2 pl-2">
-            <FontAwesomeIcon icon={faFolder} className="text-yellow-700" />
+            <FolderIcon className="size-3.5 text-warning" />
             <span>{folderCount}</span>
           </div>
         </Tooltip>
@@ -101,7 +103,7 @@ export const SecretTableResourceCount = ({
           }
         >
           <div className="flex items-center gap-2 pl-2">
-            <FontAwesomeIcon icon={faKey} className="text-bunker-300" />
+            <KeyIcon className="size-3.5 text-accent" />
             <span>{secretCount}</span>
           </div>
         </Tooltip>

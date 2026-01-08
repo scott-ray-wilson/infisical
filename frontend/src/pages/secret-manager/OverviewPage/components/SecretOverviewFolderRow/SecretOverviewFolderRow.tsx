@@ -55,23 +55,24 @@ export const SecretOverviewFolderRow = ({
           )}
         />
       </UnstableTableCell>
-      <UnstableTableCell>{folderName}</UnstableTableCell>
-      {environments.map(({ slug }, i) => {
-        const isPresent = isFolderPresentInEnv(folderName, slug);
+      <UnstableTableCell colSpan={environments.length <= 1 ? 2 : 1}>{folderName}</UnstableTableCell>
+      {environments.length > 1 &&
+        environments.map(({ slug }, i) => {
+          const isPresent = isFolderPresentInEnv(folderName, slug);
 
-        return (
-          <UnstableTableCell
-            className="border-l border-border text-center"
-            key={`sec-overview-${slug}-${i + 1}-folder`}
-          >
-            {isPresent ? (
-              <CheckIcon className="inline-block size-4 text-success" />
-            ) : (
-              <XIcon className="size-4 text-danger" />
-            )}
-          </UnstableTableCell>
-        );
-      })}
+          return (
+            <UnstableTableCell
+              className="border-l border-border text-center"
+              key={`sec-overview-${slug}-${i + 1}-folder`}
+            >
+              {isPresent ? (
+                <CheckIcon className="inline-block size-4 text-success" />
+              ) : (
+                <XIcon className="size-4 text-danger" />
+              )}
+            </UnstableTableCell>
+          );
+        })}
     </UnstableTableRow>
   );
 };

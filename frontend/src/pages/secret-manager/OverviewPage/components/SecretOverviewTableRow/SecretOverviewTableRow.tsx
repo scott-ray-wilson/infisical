@@ -152,35 +152,39 @@ export const SecretOverviewTableRow = ({
           )}
         </UnstableTableCell>
         <UnstableTableCell>{secretKey}</UnstableTableCell>
-        {environments.map(({ slug }, i) => {
-          const secret = getSecretByKey(slug, secretKey);
+        {environments.length <= 1 ? (
+          <UnstableTableCell className="border-l">**********************</UnstableTableCell>
+        ) : (
+          environments.map(({ slug }, i) => {
+            const secret = getSecretByKey(slug, secretKey);
 
-          const isSecretImported = isImportedSecretPresentInEnv(slug, secretKey);
+            const isSecretImported = isImportedSecretPresentInEnv(slug, secretKey);
 
-          const isSecretPresent = Boolean(secret);
-          const isSecretEmpty = secret?.isEmpty;
+            const isSecretPresent = Boolean(secret);
+            const isSecretEmpty = secret?.isEmpty;
 
-          let Icon: ReactElement;
+            let Icon: ReactElement;
 
-          if (isSecretPresent && !isSecretEmpty) {
-            Icon = <CheckIcon className="inline-block size-4 text-success" />;
-          } else if (isSecretImported) {
-            Icon = <ImportIcon className="inline-block size-4 text-success" />;
-          } else if (isSecretPresent && isSecretEmpty) {
-            Icon = <CircleIcon className="inline-block size-4 text-warning" />;
-          } else {
-            Icon = <XIcon className="inline-block size-4 text-danger" />;
-          }
+            if (isSecretPresent && !isSecretEmpty) {
+              Icon = <CheckIcon className="inline-block size-4 text-success" />;
+            } else if (isSecretImported) {
+              Icon = <ImportIcon className="inline-block size-4 text-success" />;
+            } else if (isSecretPresent && isSecretEmpty) {
+              Icon = <CircleIcon className="inline-block size-4 text-warning" />;
+            } else {
+              Icon = <XIcon className="inline-block size-4 text-danger" />;
+            }
 
-          return (
-            <UnstableTableCell
-              className="border-l border-border text-center"
-              key={`sec-overview-${slug}-${i + 1}-value`}
-            >
-              {Icon}
-            </UnstableTableCell>
-          );
-        })}
+            return (
+              <UnstableTableCell
+                className="border-l border-border text-center"
+                key={`sec-overview-${slug}-${i + 1}-value`}
+              >
+                {Icon}
+              </UnstableTableCell>
+            );
+          })
+        )}
       </UnstableTableRow>
       {isFormExpanded && (
         <UnstableTableRow className="hover:bg-transparent">

@@ -214,9 +214,16 @@ export const SecretEditTableRow = ({
     }
   });
 
+  // Track the true original value for batch mode revert detection.
+  // Unlike form defaultValues, this doesn't shift when reset() is called.
+  const originalValueRef = useRef<string | null>(
+    isEmpty ? defaultValue || null : (sharedValueData?.value ?? (defaultValue || null))
+  );
+
   useEffect(() => {
     if (sharedValueData && !getFieldState("value").isDirty && !isEmpty) {
       setValue("value", sharedValueData.value ?? null);
+      originalValueRef.current = sharedValueData.value ?? null;
     }
   }, [sharedValueData]);
 
@@ -270,11 +277,15 @@ export const SecretEditTableRow = ({
         return;
       }
 
-      const isValueDirty = getFieldState("value").isDirty;
+      // Compare against true originals, not form defaults (which shift after reset)
+      const isValueChanged =
+        watchedValue !== originalValueRef.current &&
+        watchedValue !== null &&
+        watchedValue !== undefined;
       const isKeyDirty = isSingleEnvView && watchedKey && watchedKey !== secretName;
 
-      // If nothing is dirty (user reverted to original), remove pending change directly
-      if (!isValueDirty && !isKeyDirty) {
+      // If nothing changed from original, remove pending change directly
+      if (!isValueChanged && !isKeyDirty) {
         if (lastAppliedRef.current.value !== undefined) {
           onBatchRevert?.(environment, secretName);
           lastAppliedRef.current = { value: undefined, key: undefined };
@@ -285,14 +296,14 @@ export const SecretEditTableRow = ({
       lastAppliedRef.current = { value: watchedValue, key: watchedKey };
 
       if (isCreatable) {
-        if (isValueDirty && (watchedValue || watchedValue === "")) {
+        if (isValueChanged && (watchedValue || watchedValue === "")) {
           onSecretCreate(environment, secretName, watchedValue as string);
         }
       } else {
         onSecretUpdate(
           environment,
           secretName,
-          isValueDirty ? ((watchedValue as string) ?? undefined) : undefined,
+          isValueChanged ? ((watchedValue as string) ?? undefined) : undefined,
           secretValueHidden,
           SecretType.Shared,
           secretId,

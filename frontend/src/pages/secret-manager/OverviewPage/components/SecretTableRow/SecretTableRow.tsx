@@ -245,6 +245,7 @@ export const SecretTableRow = ({
             isBatchMode={isBatchMode}
             onBatchRevert={onBatchRevert}
             hasPendingChange={Boolean(singleEnvSecret?.isPending)}
+            hasPendingValueChange={Boolean(singleEnvSecret?.hasPendingValueChange)}
             pendingKeyName={
               singleEnvSecret?.isPending && singleEnvSecret.key !== secretKey
                 ? singleEnvSecret.key

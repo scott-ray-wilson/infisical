@@ -128,6 +128,7 @@ type Props = {
   isBatchMode?: boolean;
   onBatchRevert?: (env: string, key: string) => void;
   hasPendingChange?: boolean;
+  hasPendingValueChange?: boolean;
   pendingKeyName?: string;
 };
 
@@ -161,6 +162,7 @@ export const SecretEditTableRow = ({
   isBatchMode,
   onBatchRevert,
   hasPendingChange,
+  hasPendingValueChange,
   pendingKeyName
 }: Props) => {
   const { handlePopUpOpen, handlePopUpToggle, handlePopUpClose, popUp } = usePopUp([
@@ -213,11 +215,11 @@ export const SecretEditTableRow = ({
     formState: { isDirty, isSubmitting }
   } = useForm({
     defaultValues: {
-      // In batch mode with a pending change, use defaultValue (from merged data which
+      // In batch mode with a pending value change, use defaultValue (from merged data which
       // includes the pending value) instead of sharedValueData (cached original API value).
       value: isEmpty
         ? defaultValue || null
-        : isBatchMode && hasPendingChange
+        : isBatchMode && hasPendingValueChange
           ? defaultValue || null
           : (sharedValueData?.value ?? (defaultValue || null)),
       ...(isSingleEnvView
@@ -228,21 +230,22 @@ export const SecretEditTableRow = ({
 
   // Track the true original value for batch mode revert detection.
   // Unlike form defaultValues, this doesn't shift when reset() is called.
-  // When there's a pending change, use the cached API value as the original (not the pending value).
+  // When there's a pending value change, use the cached API value as the original (not the pending value).
   const originalValueRef = useRef<string | null>(
     isEmpty
       ? defaultValue || null
-      : isBatchMode && hasPendingChange
+      : isBatchMode && hasPendingValueChange
         ? (sharedValueData?.value ?? null)
         : (sharedValueData?.value ?? (defaultValue || null))
   );
 
   useEffect(() => {
     if (sharedValueData && !getFieldState("value").isDirty && !isEmpty) {
-      // In batch mode with a pending change, don't overwrite the form value
+      // In batch mode with a pending value change, don't overwrite the form value
       // (which was initialized from merged data) with the original API value.
       // Only update originalValueRef so revert detection works correctly.
-      if (isBatchMode && hasPendingChange) {
+      // Key-only pending changes should still allow the lazy-loaded value to be set.
+      if (isBatchMode && hasPendingValueChange) {
         originalValueRef.current = sharedValueData.value ?? null;
         return;
       }

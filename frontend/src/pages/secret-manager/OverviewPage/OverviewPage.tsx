@@ -1591,6 +1591,7 @@ const OverviewPageContent = () => {
           value:
             pendingUpdate.secretValue !== undefined ? pendingUpdate.secretValue : existing.value,
           isPending: true,
+          hasPendingValueChange: pendingUpdate.secretValue !== undefined,
           pendingAction: PendingAction.Update
         } as SecretV3RawSanitized;
       }

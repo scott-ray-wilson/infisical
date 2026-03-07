@@ -159,6 +159,7 @@ import {
   TApiErrors,
   TSecretFolder
 } from "@app/hooks/api/types";
+import { useNavigationBlocker } from "@app/hooks/useNavigationBlocker";
 import { usePathAccessPolicies } from "@app/hooks/usePathAccessPolicies";
 import {
   useDynamicSecretOverview,
@@ -633,6 +634,18 @@ const OverviewPageContent = () => {
   const { mutateAsync: createCommit, isPending: isCommitPending } = useCreateCommit();
 
   const isBatchModeActive = isOverviewBatchMode && isSingleEnvView;
+
+  useNavigationBlocker({
+    shouldBlock:
+      isBatchModeActive && (pendingChanges.secrets.length > 0 || pendingChanges.folders.length > 0),
+    message:
+      "You have unsaved changes. If you leave now, your work will be lost. Do you want to continue?",
+    context: {
+      projectId,
+      environment: singleVisibleEnv?.slug ?? "",
+      secretPath
+    }
+  });
 
   useEffect(() => {
     if (isBatchModeActive && singleVisibleEnv) {

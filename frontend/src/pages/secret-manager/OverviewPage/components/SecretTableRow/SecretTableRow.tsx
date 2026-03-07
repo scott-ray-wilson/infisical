@@ -244,6 +244,7 @@ export const SecretTableRow = ({
             isSingleEnvView
             isBatchMode={isBatchMode}
             onBatchRevert={onBatchRevert}
+            hasPendingChange={Boolean(singleEnvSecret?.isPending)}
             onSecretRename={handleSecretRename}
             secretPath={secretPath}
             isVisible={isSecretVisible || isSingleEnvSecretsVisible}

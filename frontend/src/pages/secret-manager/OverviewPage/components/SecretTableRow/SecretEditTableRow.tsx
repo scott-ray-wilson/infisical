@@ -127,6 +127,7 @@ type Props = {
   onSecretRename?: (newName: string) => Promise<void>;
   isBatchMode?: boolean;
   onBatchRevert?: (env: string, key: string) => void;
+  hasPendingChange?: boolean;
 };
 
 export const SecretEditTableRow = ({
@@ -157,7 +158,8 @@ export const SecretEditTableRow = ({
   reminder,
   isSingleEnvView,
   isBatchMode,
-  onBatchRevert
+  onBatchRevert,
+  hasPendingChange
 }: Props) => {
   const { handlePopUpOpen, handlePopUpToggle, handlePopUpClose, popUp } = usePopUp([
     "editSecret",
@@ -325,6 +327,19 @@ export const SecretEditTableRow = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isBatchMode, watchedValue, watchedKey]);
+
+  // Reset form when a pending change is externally discarded (e.g. CommitForm discard button)
+  const prevHasPendingRef = useRef(hasPendingChange);
+  useEffect(() => {
+    if (isBatchMode && prevHasPendingRef.current && !hasPendingChange) {
+      reset({
+        value: originalValueRef.current,
+        ...(isSingleEnvView ? { key: secretName } : {})
+      });
+      lastAppliedRef.current = { value: undefined, key: undefined };
+    }
+    prevHasPendingRef.current = hasPendingChange;
+  }, [hasPendingChange, isBatchMode, reset, isSingleEnvView, secretName]);
 
   const handleCopySharedToClipboard = async () => {
     try {

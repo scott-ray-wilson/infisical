@@ -2109,7 +2109,14 @@ const OverviewPageContent = () => {
           <UnstableCardHeader>
             <div className="flex flex-col gap-3 overflow-hidden dashboard:flex-row dashboard:items-center">
               <div className="flex flex-1 items-center gap-x-3 overflow-hidden whitespace-nowrap dashboard:mr-auto">
-                <EnvironmentSelect selectedEnvs={filteredEnvs} setSelectedEnvs={setFilteredEnvs} />
+                <EnvironmentSelect
+                  selectedEnvs={filteredEnvs}
+                  setSelectedEnvs={setFilteredEnvs}
+                  isDisabled={
+                    isBatchModeActive &&
+                    (pendingChanges.secrets.length > 0 || pendingChanges.folders.length > 0)
+                  }
+                />
                 <FolderBreadcrumb secretPath={secretPath} onResetSearch={handleResetSearch} />
               </div>
               <div className="flex flex-wrap items-center gap-3">

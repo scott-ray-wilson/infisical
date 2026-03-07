@@ -1,5 +1,5 @@
 /* eslint-disable no-nested-ternary */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { subject } from "@casl/ability";
 import {
@@ -125,6 +125,7 @@ type Props = {
   isSecretPresent?: boolean;
   isSingleEnvView?: boolean;
   onSecretRename?: (newName: string) => Promise<void>;
+  isBatchMode?: boolean;
 };
 
 export const SecretEditTableRow = ({
@@ -153,7 +154,8 @@ export const SecretEditTableRow = ({
   environmentName,
   skipMultilineEncoding,
   reminder,
-  isSingleEnvView
+  isSingleEnvView,
+  isBatchMode
 }: Props) => {
   const { handlePopUpOpen, handlePopUpToggle, handlePopUpClose, popUp } = usePopUp([
     "editSecret",
@@ -201,6 +203,7 @@ export const SecretEditTableRow = ({
     setValue,
     setFocus,
     getFieldState,
+    watch,
     formState: { isDirty, isSubmitting }
   } = useForm({
     defaultValues: {
@@ -239,6 +242,54 @@ export const SecretEditTableRow = ({
       ...(isSingleEnvView ? { key: secretName } : {})
     });
   };
+
+  // Debounced auto-apply for batch mode: watch form values and apply after 500ms
+  const watchedValue = watch("value");
+  const watchedKey = watch("key");
+  const batchAutoApplyTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (batchAutoApplyTimer.current) {
+      clearTimeout(batchAutoApplyTimer.current);
+    }
+
+    if (!isBatchMode) return () => {};
+
+    batchAutoApplyTimer.current = setTimeout(() => {
+      const isValueDirty = getFieldState("value").isDirty;
+      const isKeyDirty = isSingleEnvView && watchedKey && watchedKey !== secretName;
+
+      if (!isValueDirty && !isKeyDirty) return;
+
+      if (isCreatable) {
+        if (isValueDirty && (watchedValue || watchedValue === "")) {
+          onSecretCreate(environment, secretName, watchedValue as string);
+        }
+      } else {
+        onSecretUpdate(
+          environment,
+          secretName,
+          isValueDirty ? ((watchedValue as string) ?? undefined) : undefined,
+          secretValueHidden,
+          SecretType.Shared,
+          secretId,
+          isKeyDirty ? (watchedKey as string) : undefined
+        );
+      }
+
+      reset({
+        value: watchedValue,
+        ...(isSingleEnvView ? { key: watchedKey || secretName } : {})
+      });
+    }, 500);
+
+    return () => {
+      if (batchAutoApplyTimer.current) {
+        clearTimeout(batchAutoApplyTimer.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBatchMode, watchedValue, watchedKey]);
 
   const handleCopySharedToClipboard = async () => {
     try {
@@ -444,6 +495,10 @@ export const SecretEditTableRow = ({
           {...field}
           value={field.value ?? ""}
           className="w-full px-0 text-foreground placeholder:text-red-500 focus:ring-transparent"
+          onBlur={(e) => {
+            field.onBlur();
+            if (!isBatchMode && field.onChange) field.onChange(e);
+          }}
         />
       )}
     />
@@ -503,7 +558,7 @@ export const SecretEditTableRow = ({
           />
         </div>
         <div className="flex w-fit items-start justify-end space-x-2 self-start pl-2 transition-all">
-          {isDirty && !isImportedSecret ? (
+          {isDirty && !isImportedSecret && !isBatchMode ? (
             <>
               <ProjectPermissionCan
                 I={isCreatable ? ProjectPermissionActions.Create : ProjectPermissionActions.Edit}

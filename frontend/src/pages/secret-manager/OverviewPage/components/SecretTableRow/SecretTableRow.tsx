@@ -86,6 +86,7 @@ type Props = {
     }[];
   }[];
   isSingleEnvSecretsVisible?: boolean;
+  isBatchMode?: boolean;
 };
 
 export const SecretTableRow = ({
@@ -102,7 +103,8 @@ export const SecretTableRow = ({
   onToggleSecretSelect,
   isSelected,
   importedBy,
-  isSingleEnvSecretsVisible
+  isSingleEnvSecretsVisible,
+  isBatchMode
 }: Props) => {
   const [isFormExpanded, setIsFormExpanded] = useToggle();
   const totalCols = environments.length + 2; // secret key row + icon
@@ -238,6 +240,7 @@ export const SecretTableRow = ({
         {isSingleEnvView ? (
           <SecretEditTableRow
             isSingleEnvView
+            isBatchMode={isBatchMode}
             onSecretRename={handleSecretRename}
             secretPath={secretPath}
             isVisible={isSecretVisible || isSingleEnvSecretsVisible}

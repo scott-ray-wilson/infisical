@@ -126,6 +126,7 @@ type Props = {
   isSingleEnvView?: boolean;
   onSecretRename?: (newName: string) => Promise<void>;
   isBatchMode?: boolean;
+  onBatchRevert?: (env: string, key: string) => void;
 };
 
 export const SecretEditTableRow = ({
@@ -155,7 +156,8 @@ export const SecretEditTableRow = ({
   skipMultilineEncoding,
   reminder,
   isSingleEnvView,
-  isBatchMode
+  isBatchMode,
+  onBatchRevert
 }: Props) => {
   const { handlePopUpOpen, handlePopUpToggle, handlePopUpClose, popUp } = usePopUp([
     "editSecret",
@@ -247,6 +249,10 @@ export const SecretEditTableRow = ({
   const watchedValue = watch("value");
   const watchedKey = watch("key");
   const batchAutoApplyTimer = useRef<ReturnType<typeof setTimeout>>();
+  const lastAppliedRef = useRef<{ value: unknown; key: unknown }>({
+    value: undefined,
+    key: undefined
+  });
 
   useEffect(() => {
     if (batchAutoApplyTimer.current) {
@@ -256,10 +262,27 @@ export const SecretEditTableRow = ({
     if (!isBatchMode) return () => {};
 
     batchAutoApplyTimer.current = setTimeout(() => {
+      // Skip if values haven't changed since last apply
+      if (
+        lastAppliedRef.current.value === watchedValue &&
+        lastAppliedRef.current.key === watchedKey
+      ) {
+        return;
+      }
+
       const isValueDirty = getFieldState("value").isDirty;
       const isKeyDirty = isSingleEnvView && watchedKey && watchedKey !== secretName;
 
-      if (!isValueDirty && !isKeyDirty) return;
+      // If nothing is dirty (user reverted to original), remove pending change directly
+      if (!isValueDirty && !isKeyDirty) {
+        if (lastAppliedRef.current.value !== undefined) {
+          onBatchRevert?.(environment, secretName);
+          lastAppliedRef.current = { value: undefined, key: undefined };
+        }
+        return;
+      }
+
+      lastAppliedRef.current = { value: watchedValue, key: watchedKey };
 
       if (isCreatable) {
         if (isValueDirty && (watchedValue || watchedValue === "")) {
@@ -277,6 +300,7 @@ export const SecretEditTableRow = ({
         );
       }
 
+      // Reset form to mark as clean (like SecretDashboardPage's auto-save)
       reset({
         value: watchedValue,
         ...(isSingleEnvView ? { key: watchedKey || secretName } : {})

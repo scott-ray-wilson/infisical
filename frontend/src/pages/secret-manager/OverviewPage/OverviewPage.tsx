@@ -623,8 +623,13 @@ const OverviewPageContent = () => {
     () => localStorage.getItem(OVERVIEW_BATCH_MODE_KEY) === "true"
   );
   const { pendingChanges } = useBatchMode();
-  const { addPendingChange, loadPendingChanges, clearAllPendingChanges, setExistingKeys } =
-    useBatchModeActions();
+  const {
+    addPendingChange,
+    loadPendingChanges,
+    clearAllPendingChanges,
+    setExistingKeys,
+    removePendingChange
+  } = useBatchModeActions();
   const { mutateAsync: createCommit, isPending: isCommitPending } = useCreateCommit();
 
   const isBatchModeActive = isOverviewBatchMode && isSingleEnvView;
@@ -1621,6 +1626,22 @@ const OverviewPageContent = () => {
 
     return result;
   }, [folderNamesAndDescriptions, isBatchModeActive, pendingChanges.folders]);
+
+  // Batch mode: revert a pending change (e.g. when user reverts value to original)
+  const handleBatchRevert = useCallback(
+    (env: string, key: string) => {
+      if (!isBatchModeActive) return;
+      const pendingSecret = pendingChanges.secrets.find((c) => c.secretKey === key);
+      if (pendingSecret) {
+        removePendingChange(pendingSecret.id, "secret", {
+          projectId,
+          environment: env,
+          secretPath
+        });
+      }
+    },
+    [isBatchModeActive, pendingChanges.secrets, removePendingChange, projectId, secretPath]
+  );
 
   // Batch mode: commit handler
   const handleCreateCommit = useCallback(
@@ -2627,6 +2648,7 @@ const OverviewPageContent = () => {
                                 importedBy={importedBy}
                                 isSingleEnvSecretsVisible={isSingleEnvSecretsVisible}
                                 isBatchMode={isBatchModeActive}
+                                onBatchRevert={handleBatchRevert}
                               />
                             ))}
                             <SecretNoAccessTableRow

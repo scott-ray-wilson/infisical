@@ -985,186 +985,205 @@ export const SecretEditTableRow = ({
                 </TooltipTrigger>
                 <TooltipContent>{getTooltipContentForSecretSharing()}</TooltipContent>
               </Tooltip>
-              <UnstableDropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-                <UnstableDropdownMenuTrigger asChild>
-                  <UnstableIconButton
-                    variant="ghost"
-                    size="xs"
-                    className={twMerge(
-                      "w-0 overflow-hidden border-0 opacity-0 group-hover:w-7 group-hover:opacity-100",
-                      shouldStayExpanded && "w-7 opacity-100"
-                    )}
-                  >
-                    <EllipsisIcon />
-                  </UnstableIconButton>
-                </UnstableDropdownMenuTrigger>
-                <UnstableDropdownMenuContent align="end">
-                  <ProjectPermissionCan
-                    I={ProjectPermissionActions.Create}
-                    a={subject(ProjectPermissionSub.Secrets, {
-                      environment,
-                      secretPath,
-                      secretName,
-                      secretTags: ["*"]
-                    })}
-                  >
-                    {(isAllowed) => (
-                      <Tooltip
-                        open={
-                          isCreatable || isImportedSecret || isOverride || !isAllowed
-                            ? undefined
-                            : false
-                        }
-                        delayDuration={300}
-                        disableHoverableContent
-                      >
-                        <TooltipTrigger className="block w-full">
-                          <UnstableDropdownMenuItem
-                            onClick={() => onAddOverride?.()}
-                            isDisabled={isCreatable || isImportedSecret || isOverride || !isAllowed}
-                          >
-                            <GitBranchIcon />
-                            Add Override
-                          </UnstableDropdownMenuItem>
-                        </TooltipTrigger>
-                        <TooltipContent side="left">
-                          {!isAllowed
-                            ? "Access Denied"
-                            : isOverride
-                              ? "Override Already Exists"
-                              : isImportedSecret
-                                ? "Cannot Override Imported Secret"
-                                : isCreatable
-                                  ? "Create Secret First"
-                                  : "Add Personal Override"}
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </ProjectPermissionCan>
-                  <Tooltip
-                    open={!canReadSecretValue || !secretId || isEmpty ? undefined : false}
-                    delayDuration={300}
-                    disableHoverableContent
-                  >
-                    <TooltipTrigger className="block w-full">
-                      <UnstableDropdownMenuItem
-                        onClick={() => setIsSecretReferenceOpen(true)}
-                        isDisabled={!canReadSecretValue || !secretId || isEmpty}
-                      >
-                        <WorkflowIcon />
-                        Secret References
-                      </UnstableDropdownMenuItem>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      {!canReadSecretValue
-                        ? "Access Denied"
-                        : !secretId || isEmpty
-                          ? "Create Secret to View References"
-                          : "View Secret References"}
-                    </TooltipContent>
-                  </Tooltip>
-                  <ProjectPermissionCan
-                    I={ProjectPermissionActions.Read}
-                    a={ProjectPermissionSub.Commits}
-                  >
-                    {(isAllowed) => (
-                      <Tooltip
-                        open={isImportedSecret || isCreatable || !isAllowed ? undefined : false}
-                        delayDuration={300}
-                        disableHoverableContent
-                      >
-                        <TooltipTrigger className="block w-full">
-                          <UnstableDropdownMenuItem
-                            onClick={() => setIsVersionHistoryOpen(true)}
-                            isDisabled={!secretId || isCreatable || isImportedSecret || !isAllowed}
-                          >
-                            <HistoryIcon />
-                            Version History
-                          </UnstableDropdownMenuItem>
-                        </TooltipTrigger>
-                        <TooltipContent side="left">
-                          {!isAllowed
-                            ? "Access Denied"
-                            : isImportedSecret
-                              ? "Cannot View Version History for Imported Secret"
-                              : "Create Secret to View History"}
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </ProjectPermissionCan>
-                  <Tooltip
-                    open={isImportedSecret || isCreatable ? undefined : false}
-                    delayDuration={300}
-                    disableHoverableContent
-                  >
-                    <TooltipTrigger className="block w-full">
-                      <UnstableDropdownMenuItem
-                        onClick={() => {
-                          if (!subscription?.secretAccessInsights) {
-                            handlePopUpOpen("accessInsightsUpgrade");
-                          } else {
-                            setIsAccessInsightsOpen(true);
+              {isBatchMode && hasPendingChange ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <UnstableIconButton
+                      variant="danger"
+                      size="xs"
+                      onClick={() => onBatchRevert?.(environment, secretName)}
+                    >
+                      <Undo2Icon />
+                    </UnstableIconButton>
+                  </TooltipTrigger>
+                  <TooltipContent>Discard pending changes</TooltipContent>
+                </Tooltip>
+              ) : (
+                <UnstableDropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+                  <UnstableDropdownMenuTrigger asChild>
+                    <UnstableIconButton
+                      variant="ghost"
+                      size="xs"
+                      className={twMerge(
+                        "w-0 overflow-hidden border-0 opacity-0 group-hover:w-7 group-hover:opacity-100",
+                        shouldStayExpanded && "w-7 opacity-100"
+                      )}
+                    >
+                      <EllipsisIcon />
+                    </UnstableIconButton>
+                  </UnstableDropdownMenuTrigger>
+                  <UnstableDropdownMenuContent align="end">
+                    <ProjectPermissionCan
+                      I={ProjectPermissionActions.Create}
+                      a={subject(ProjectPermissionSub.Secrets, {
+                        environment,
+                        secretPath,
+                        secretName,
+                        secretTags: ["*"]
+                      })}
+                    >
+                      {(isAllowed) => (
+                        <Tooltip
+                          open={
+                            isCreatable || isImportedSecret || isOverride || !isAllowed
+                              ? undefined
+                              : false
                           }
-                        }}
-                        isDisabled={!secretId || isCreatable || isImportedSecret}
-                      >
-                        <UsersIcon />
-                        Access Insights
-                      </UnstableDropdownMenuItem>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      {isImportedSecret
-                        ? "Cannot View Access for Imported Secret"
-                        : "Create Secret to View Access"}
-                    </TooltipContent>
-                  </Tooltip>
-                  <ProjectPermissionCan
-                    I={ProjectPermissionActions.Delete}
-                    a={subject(ProjectPermissionSub.Secrets, {
-                      environment,
-                      secretPath,
-                      secretName,
-                      secretTags: ["*"]
-                    })}
-                  >
-                    {(isAllowed) => (
-                      <Tooltip
-                        open={
-                          isRotatedSecret || isImportedSecret || isCreatable ? undefined : false
-                        }
-                        delayDuration={300}
-                        disableHoverableContent
-                      >
-                        <TooltipTrigger className="block w-full">
-                          <UnstableDropdownMenuItem
-                            onClick={toggleModal}
-                            isDisabled={
-                              isCreatable ||
-                              isDeleting ||
-                              !isAllowed ||
-                              isRotatedSecret ||
-                              isImportedSecret
+                          delayDuration={300}
+                          disableHoverableContent
+                        >
+                          <TooltipTrigger className="block w-full">
+                            <UnstableDropdownMenuItem
+                              onClick={() => onAddOverride?.()}
+                              isDisabled={
+                                isCreatable || isImportedSecret || isOverride || !isAllowed
+                              }
+                            >
+                              <GitBranchIcon />
+                              Add Override
+                            </UnstableDropdownMenuItem>
+                          </TooltipTrigger>
+                          <TooltipContent side="left">
+                            {!isAllowed
+                              ? "Access Denied"
+                              : isOverride
+                                ? "Override Already Exists"
+                                : isImportedSecret
+                                  ? "Cannot Override Imported Secret"
+                                  : isCreatable
+                                    ? "Create Secret First"
+                                    : "Add Personal Override"}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </ProjectPermissionCan>
+                    <Tooltip
+                      open={!canReadSecretValue || !secretId || isEmpty ? undefined : false}
+                      delayDuration={300}
+                      disableHoverableContent
+                    >
+                      <TooltipTrigger className="block w-full">
+                        <UnstableDropdownMenuItem
+                          onClick={() => setIsSecretReferenceOpen(true)}
+                          isDisabled={!canReadSecretValue || !secretId || isEmpty}
+                        >
+                          <WorkflowIcon />
+                          Secret References
+                        </UnstableDropdownMenuItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">
+                        {!canReadSecretValue
+                          ? "Access Denied"
+                          : !secretId || isEmpty
+                            ? "Create Secret to View References"
+                            : "View Secret References"}
+                      </TooltipContent>
+                    </Tooltip>
+                    <ProjectPermissionCan
+                      I={ProjectPermissionActions.Read}
+                      a={ProjectPermissionSub.Commits}
+                    >
+                      {(isAllowed) => (
+                        <Tooltip
+                          open={isImportedSecret || isCreatable || !isAllowed ? undefined : false}
+                          delayDuration={300}
+                          disableHoverableContent
+                        >
+                          <TooltipTrigger className="block w-full">
+                            <UnstableDropdownMenuItem
+                              onClick={() => setIsVersionHistoryOpen(true)}
+                              isDisabled={
+                                !secretId || isCreatable || isImportedSecret || !isAllowed
+                              }
+                            >
+                              <HistoryIcon />
+                              Version History
+                            </UnstableDropdownMenuItem>
+                          </TooltipTrigger>
+                          <TooltipContent side="left">
+                            {!isAllowed
+                              ? "Access Denied"
+                              : isImportedSecret
+                                ? "Cannot View Version History for Imported Secret"
+                                : "Create Secret to View History"}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </ProjectPermissionCan>
+                    <Tooltip
+                      open={isImportedSecret || isCreatable ? undefined : false}
+                      delayDuration={300}
+                      disableHoverableContent
+                    >
+                      <TooltipTrigger className="block w-full">
+                        <UnstableDropdownMenuItem
+                          onClick={() => {
+                            if (!subscription?.secretAccessInsights) {
+                              handlePopUpOpen("accessInsightsUpgrade");
+                            } else {
+                              setIsAccessInsightsOpen(true);
                             }
-                            variant="danger"
-                          >
-                            <TrashIcon />
-                            Delete Secret
-                          </UnstableDropdownMenuItem>
-                        </TooltipTrigger>
-                        <TooltipContent side="left">
-                          {isRotatedSecret
-                            ? "Cannot Delete Rotated Secret"
-                            : isImportedSecret
-                              ? "Cannot Delete Imported Secret"
-                              : isCreatable
-                                ? "No Secret to Delete"
-                                : "Delete"}
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </ProjectPermissionCan>
-                </UnstableDropdownMenuContent>
-              </UnstableDropdownMenu>
+                          }}
+                          isDisabled={!secretId || isCreatable || isImportedSecret}
+                        >
+                          <UsersIcon />
+                          Access Insights
+                        </UnstableDropdownMenuItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">
+                        {isImportedSecret
+                          ? "Cannot View Access for Imported Secret"
+                          : "Create Secret to View Access"}
+                      </TooltipContent>
+                    </Tooltip>
+                    <ProjectPermissionCan
+                      I={ProjectPermissionActions.Delete}
+                      a={subject(ProjectPermissionSub.Secrets, {
+                        environment,
+                        secretPath,
+                        secretName,
+                        secretTags: ["*"]
+                      })}
+                    >
+                      {(isAllowed) => (
+                        <Tooltip
+                          open={
+                            isRotatedSecret || isImportedSecret || isCreatable ? undefined : false
+                          }
+                          delayDuration={300}
+                          disableHoverableContent
+                        >
+                          <TooltipTrigger className="block w-full">
+                            <UnstableDropdownMenuItem
+                              onClick={toggleModal}
+                              isDisabled={
+                                isCreatable ||
+                                isDeleting ||
+                                !isAllowed ||
+                                isRotatedSecret ||
+                                isImportedSecret
+                              }
+                              variant="danger"
+                            >
+                              <TrashIcon />
+                              Delete Secret
+                            </UnstableDropdownMenuItem>
+                          </TooltipTrigger>
+                          <TooltipContent side="left">
+                            {isRotatedSecret
+                              ? "Cannot Delete Rotated Secret"
+                              : isImportedSecret
+                                ? "Cannot Delete Imported Secret"
+                                : isCreatable
+                                  ? "No Secret to Delete"
+                                  : "Delete"}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </ProjectPermissionCan>
+                  </UnstableDropdownMenuContent>
+                </UnstableDropdownMenu>
+              )}
               <Modal isOpen={isSecretReferenceOpen} onOpenChange={setIsSecretReferenceOpen}>
                 <ModalContent
                   className="max-w-3xl"

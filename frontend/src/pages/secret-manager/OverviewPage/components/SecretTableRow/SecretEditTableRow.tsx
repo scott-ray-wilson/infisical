@@ -353,10 +353,12 @@ export const SecretEditTableRow = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isBatchMode, watchedValue, watchedKey]);
 
-  // Reset form when a pending change is externally discarded (e.g. CommitForm discard button)
+  // Reset form when a pending change is externally discarded (e.g. CommitForm discard button
+  // or toggling batch mode off). We don't gate on isBatchMode because React batches the
+  // state updates, so isBatchMode can already be false by the time hasPendingChange flips.
   const prevHasPendingRef = useRef(hasPendingChange);
   useEffect(() => {
-    if (isBatchMode && prevHasPendingRef.current && !hasPendingChange) {
+    if (prevHasPendingRef.current && !hasPendingChange) {
       reset({
         value: originalValueRef.current,
         ...(isSingleEnvView ? { key: secretName } : {})
@@ -364,7 +366,7 @@ export const SecretEditTableRow = ({
       lastAppliedRef.current = { value: undefined, key: undefined };
     }
     prevHasPendingRef.current = hasPendingChange;
-  }, [hasPendingChange, isBatchMode, reset, isSingleEnvView, secretName]);
+  }, [hasPendingChange, reset, isSingleEnvView, secretName]);
 
   const handleCopySharedToClipboard = async () => {
     try {

@@ -37,6 +37,7 @@ import {
 } from "@app/context/ProjectPermissionContext/types";
 import { useToggle } from "@app/hooks";
 import { useUpdateSecretV3 } from "@app/hooks/api";
+import { PendingAction } from "@app/hooks/api/secretFolders/types";
 import { SecretType, SecretV3RawSanitized } from "@app/hooks/api/secrets/types";
 import { ProjectEnv } from "@app/hooks/api/types";
 import { HIDDEN_SECRET_VALUE } from "@app/pages/secret-manager/SecretDashboardPage/components/SecretListView/SecretItem";
@@ -45,6 +46,19 @@ import { EnvironmentStatus, ResourceEnvironmentStatusCell } from "../ResourceEnv
 import { SecretEditTableRow } from "./SecretEditTableRow";
 import { SecretOverrideRow } from "./SecretOverrideRow";
 import SecretRenameForm from "./SecretRenameForm";
+
+const pendingActionBorderClass = (action?: PendingAction) => {
+  switch (action) {
+    case PendingAction.Create:
+      return "shadow-[inset_2px_0_0_0_var(--color-success)]";
+    case PendingAction.Update:
+      return "shadow-[inset_2px_0_0_0_var(--color-warning)]";
+    case PendingAction.Delete:
+      return "shadow-[inset_2px_0_0_0_var(--color-danger)]";
+    default:
+      return "";
+  }
+};
 
 type Props = {
   secretKey: string;
@@ -134,6 +148,9 @@ export const SecretTableRow = ({
   const singleEnvImportedSecret = isSingleEnvView
     ? getImportedSecretByKey(singleEnvSlug, secretKey)
     : undefined;
+  const singleEnvPendingAction = isSingleEnvView
+    ? (singleEnvSecret as SecretV3RawSanitized & { pendingAction?: PendingAction })?.pendingAction
+    : undefined;
   const singleEnvHasOverride = isSingleEnvView ? Boolean(singleEnvSecret?.idOverride) : false;
   const singleEnvIsCreatingOverride = isSingleEnvView
     ? creatingOverrideEnvs.has(singleEnvSlug)
@@ -218,7 +235,8 @@ export const SecretTableRow = ({
             "bg-container transition-colors duration-75 group-hover:bg-container-hover",
             !isSingleEnvView && isFormExpanded && "border-b-0 bg-container-hover",
             isSingleEnvView && singleEnvShowOverride && "border-b-border/50",
-            isSingleEnvView && "pt-3 align-top"
+            isSingleEnvView && "pt-3 align-top",
+            pendingActionBorderClass(singleEnvPendingAction)
           )}
         >
           <Checkbox

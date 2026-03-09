@@ -11,6 +11,7 @@ import {
   UnstableTableCell,
   UnstableTableRow
 } from "@app/components/v3";
+import { PendingAction } from "@app/hooks/api/secretFolders/types";
 
 import { ResourceEnvironmentStatusCell } from "../ResourceEnvironmentStatusCell";
 
@@ -24,6 +25,20 @@ type Props = {
   onToggleFolderSelect: (folderName: string) => void;
   onToggleFolderEdit: (name: string) => void;
   onToggleFolderDelete: (name: string) => void;
+  pendingAction?: PendingAction;
+};
+
+const pendingActionBorderClass = (action?: PendingAction) => {
+  switch (action) {
+    case PendingAction.Create:
+      return "shadow-[inset_2px_0_0_0_var(--color-success)]";
+    case PendingAction.Update:
+      return "shadow-[inset_2px_0_0_0_var(--color-warning)]";
+    case PendingAction.Delete:
+      return "shadow-[inset_2px_0_0_0_var(--color-danger)]";
+    default:
+      return "";
+  }
 };
 
 export const FolderTableRow = ({
@@ -35,7 +50,8 @@ export const FolderTableRow = ({
   onToggleFolderSelect,
   onToggleFolderEdit,
   onToggleFolderDelete,
-  onClick
+  onClick,
+  pendingAction
 }: Props) => {
   const [isClicking, setIsClicking] = useState(false);
   const handleClick = () => {
@@ -51,11 +67,12 @@ export const FolderTableRow = ({
   return (
     <UnstableTableRow className="group" onClick={handleClick}>
       <UnstableTableCell
-        className={
+        className={twMerge(
           isSingleEnvView
             ? ""
-            : "sticky left-0 z-10 bg-container transition-colors duration-75 group-hover:bg-container-hover"
-        }
+            : "sticky left-0 z-10 bg-container transition-colors duration-75 group-hover:bg-container-hover",
+          pendingActionBorderClass(pendingAction)
+        )}
       >
         <Checkbox
           variant="project"

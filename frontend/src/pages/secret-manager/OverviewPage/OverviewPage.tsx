@@ -1689,15 +1689,20 @@ const OverviewPageContent = () => {
   );
 
   const mergedFolderNamesAndDescriptions = useMemo(() => {
-    if (!isBatchModeActive) return folderNamesAndDescriptions;
+    if (!isBatchModeActive)
+      return folderNamesAndDescriptions.map((f) => ({ ...f, pendingAction: undefined }));
 
-    const result = [...folderNamesAndDescriptions];
+    const result = folderNamesAndDescriptions.map((f) => ({
+      ...f,
+      pendingAction: undefined as PendingAction | undefined
+    }));
 
     pendingChanges.folders.forEach((change) => {
       if (change.type === PendingAction.Create) {
         result.unshift({
           name: change.folderName,
-          description: change.description
+          description: change.description,
+          pendingAction: PendingAction.Create
         });
       } else if (change.type === PendingAction.Update) {
         const idx = result.findIndex((f) => f.name === change.originalFolderName);
@@ -1706,11 +1711,19 @@ const OverviewPageContent = () => {
             ...result[idx],
             name: change.folderName,
             description:
-              change.description !== undefined ? change.description : result[idx].description
+              change.description !== undefined ? change.description : result[idx].description,
+            pendingAction: PendingAction.Update
+          };
+        }
+      } else if (change.type === PendingAction.Delete) {
+        const idx = result.findIndex((f) => f.name === change.folderName);
+        if (idx >= 0) {
+          result[idx] = {
+            ...result[idx],
+            pendingAction: PendingAction.Delete
           };
         }
       }
-      // For deletes, we keep them in the list but they'll be visually distinguished
     });
 
     return result;
@@ -2644,7 +2657,14 @@ const OverviewPageContent = () => {
                                 )
                               )}
                             {mergedFolderNamesAndDescriptions.map(
-                              ({ name: folderName, description }, index) => (
+                              (
+                                {
+                                  name: folderName,
+                                  description,
+                                  pendingAction: folderPendingAction
+                                },
+                                index
+                              ) => (
                                 <FolderTableRow
                                   folderName={folderName}
                                   description={description}
@@ -2662,6 +2682,7 @@ const OverviewPageContent = () => {
                                   onToggleFolderDelete={(name: string) =>
                                     handlePopUpOpen("deleteFolder", { name })
                                   }
+                                  pendingAction={folderPendingAction}
                                 />
                               )
                             )}

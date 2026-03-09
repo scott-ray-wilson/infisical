@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { subject } from "@casl/ability";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -53,19 +54,36 @@ export const SecretCommentForm = ({
     handleSubmit,
     control,
     reset,
+    watch,
     formState: { isDirty }
   } = useForm<TFormSchema>({
     defaultValues: { comment: comment ?? "" },
     resolver: zodResolver(formSchema)
   });
 
-  const onSubmit = async (data: TFormSchema) => {
-    if (isBatchMode) {
-      onCommentChange?.(data.comment);
-      onClose?.();
-      return;
+  // In batch mode, debounce comment changes to parent form
+  const watchedComment = watch("comment");
+  const debounceTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    if (!isBatchMode) return () => {};
+
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
     }
 
+    debounceTimer.current = setTimeout(() => {
+      onCommentChange?.(watchedComment);
+    }, 500);
+
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
+  }, [isBatchMode, watchedComment, onCommentChange]);
+
+  const onSubmit = async (data: TFormSchema) => {
     const result = await updateSecretV3({
       environment,
       projectId,
@@ -110,6 +128,31 @@ export const SecretCommentForm = ({
     );
   }
 
+  if (isBatchMode) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm font-medium">Comment</p>
+        <Controller
+          name="comment"
+          control={control}
+          render={({ field }) => (
+            <TextArea
+              {...field}
+              autoFocus
+              placeholder="Add a comment..."
+              className="max-h-48 min-h-24 resize-none"
+            />
+          )}
+        />
+        <div className="flex justify-end">
+          <Button variant="ghost" size="xs" type="button" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
       <p className="text-sm font-medium">Comment</p>
@@ -136,7 +179,7 @@ export const SecretCommentForm = ({
           isDisabled={!isDirty || isPending}
           isPending={isPending}
         >
-          {isBatchMode ? "Apply" : "Save Comment"}
+          Save Comment
         </Button>
       </div>
     </form>

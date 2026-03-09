@@ -1412,16 +1412,24 @@ const OverviewPageContent = () => {
     }
   };
 
-  const handleSecretUpdate = async (
-    env: string,
-    key: string,
-    value: string | undefined,
-    secretValueHidden: boolean,
+  const handleSecretUpdate = async ({
+    env,
+    key,
+    value,
+    secretValueHidden,
     type = SecretType.Shared,
-    _secretId?: string,
-    newSecretName?: string,
-    secretComment?: string
-  ) => {
+    newSecretName,
+    secretComment
+  }: {
+    env: string;
+    key: string;
+    value: string | undefined;
+    secretValueHidden: boolean;
+    type?: SecretType;
+    secretId?: string;
+    newSecretName?: string;
+    secretComment?: string;
+  }) => {
     if (isBatchModeActive) {
       const existingSecret = getSecretByKey(env, key);
       if (!existingSecret) return;

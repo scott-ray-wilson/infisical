@@ -93,16 +93,16 @@ type Props = {
   secretValueHidden: boolean;
   secretPath: string;
   onSecretCreate: (env: string, key: string, value: string, type?: SecretType) => Promise<void>;
-  onSecretUpdate: (
-    env: string,
-    key: string,
-    value: string | undefined,
-    secretValueHidden: boolean,
-    type?: SecretType,
-    secretId?: string,
-    newSecretName?: string,
-    secretComment?: string
-  ) => Promise<void>;
+  onSecretUpdate: (params: {
+    env: string;
+    key: string;
+    value: string | undefined;
+    secretValueHidden: boolean;
+    type?: SecretType;
+    secretId?: string;
+    newSecretName?: string;
+    secretComment?: string;
+  }) => Promise<void>;
   onSecretDelete: (env: string, key: string, secretId?: string, type?: SecretType) => Promise<void>;
   onAddOverride?: () => void;
   isRotatedSecret?: boolean;
@@ -340,16 +340,16 @@ export const SecretEditTableRow = ({
           onSecretCreate(environment, secretName, watchedValue as string);
         }
       } else {
-        onSecretUpdate(
-          environment,
-          secretName,
-          isValueChanged ? ((watchedValue as string) ?? undefined) : undefined,
+        onSecretUpdate({
+          env: environment,
+          key: secretName,
+          value: isValueChanged ? ((watchedValue as string) ?? undefined) : undefined,
           secretValueHidden,
-          SecretType.Shared,
+          type: SecretType.Shared,
           secretId,
-          isKeyDirty ? (watchedKey as string) : undefined,
-          isCommentDirty ? (watchedComment as string) : undefined
-        );
+          newSecretName: isKeyDirty ? (watchedKey as string) : undefined,
+          secretComment: isCommentDirty ? (watchedComment as string) : undefined
+        });
       }
 
       // Reset form to mark as clean (like SecretDashboardPage's auto-save)
@@ -458,15 +458,15 @@ export const SecretEditTableRow = ({
           await onSecretCreate(environment, secretName, value);
         }
       } else {
-        await onSecretUpdate(
-          environment,
-          secretName,
-          value ?? undefined, // ignore if not fetched
+        await onSecretUpdate({
+          env: environment,
+          key: secretName,
+          value: value ?? undefined,
           secretValueHidden,
-          SecretType.Shared,
+          type: SecretType.Shared,
           secretId,
-          isKeyDirty ? key : undefined
-        );
+          newSecretName: isKeyDirty ? key : undefined
+        });
       }
     }
     if (secretValueHidden) {
@@ -491,15 +491,15 @@ export const SecretEditTableRow = ({
     secretValue: string;
     newKey?: string;
   }) => {
-    await onSecretUpdate(
-      environment,
-      secretName,
-      secretValue,
+    await onSecretUpdate({
+      env: environment,
+      key: secretName,
+      value: secretValue,
       secretValueHidden,
-      SecretType.Shared,
+      type: SecretType.Shared,
       secretId,
-      newKey
-    );
+      newSecretName: newKey
+    });
     reset({
       value: secretValue,
       ...(isSingleEnvView ? { key: newKey || secretName } : {})

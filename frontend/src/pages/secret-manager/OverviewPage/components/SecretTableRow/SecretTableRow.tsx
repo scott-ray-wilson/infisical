@@ -54,15 +54,16 @@ type Props = {
   onToggleSecretSelect: (key: string) => void;
   getSecretByKey: (slug: string, key: string) => SecretV3RawSanitized | undefined;
   onSecretCreate: (env: string, key: string, value: string, type?: SecretType) => Promise<void>;
-  onSecretUpdate: (
-    env: string,
-    key: string,
-    value: string | undefined,
-    secretValueHidden: boolean,
-    type?: SecretType,
-    secretId?: string,
-    newSecretName?: string
-  ) => Promise<void>;
+  onSecretUpdate: (params: {
+    env: string;
+    key: string;
+    value: string | undefined;
+    secretValueHidden: boolean;
+    type?: SecretType;
+    secretId?: string;
+    newSecretName?: string;
+    secretComment?: string;
+  }) => Promise<void>;
   onSecretDelete: (env: string, key: string, secretId?: string, type?: SecretType) => Promise<void>;
   isImportedSecretPresentInEnv: (env: string, secretName: string) => boolean;
   getImportedSecretByKey: (

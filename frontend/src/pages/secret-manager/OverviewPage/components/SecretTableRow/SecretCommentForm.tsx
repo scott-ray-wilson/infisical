@@ -5,12 +5,8 @@ import { z } from "zod";
 
 import { createNotification } from "@app/components/notifications";
 import { Button, TextArea } from "@app/components/v3";
-import {
-  ProjectPermissionActions,
-  ProjectPermissionSub,
-  useProject,
-  useProjectPermission
-} from "@app/context";
+import { ProjectPermissionSub, useProject, useProjectPermission } from "@app/context";
+import { ProjectPermissionSecretActions } from "@app/context/ProjectPermissionContext/types";
 import { useUpdateSecretV3 } from "@app/hooks/api";
 import { SecretType } from "@app/hooks/api/types";
 
@@ -44,7 +40,7 @@ export const SecretCommentForm = ({
   const { mutateAsync: updateSecretV3, isPending } = useUpdateSecretV3();
 
   const canEdit = permission.can(
-    ProjectPermissionActions.Edit,
+    ProjectPermissionSecretActions.Edit,
     subject(ProjectPermissionSub.Secrets, {
       environment,
       secretPath,

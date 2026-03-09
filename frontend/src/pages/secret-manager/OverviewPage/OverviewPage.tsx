@@ -2853,6 +2853,24 @@ const OverviewPageContent = () => {
             secretPath={secretPath}
             defaultSelectedEnvs={filteredEnvs}
             onClose={() => handlePopUpClose("addSecretsInAllEnvs")}
+            isBatchMode={isBatchModeActive}
+            onBatchSecretCreate={(params) => {
+              addPendingChange(
+                {
+                  id: crypto.randomUUID(),
+                  resourceType: "secret",
+                  type: PendingAction.Create,
+                  secretKey: params.key,
+                  secretValue: params.value,
+                  secretComment: params.comment,
+                  skipMultilineEncoding: params.skipMultilineEncoding ?? undefined,
+                  tags: params.tags,
+                  secretMetadata: params.metadata,
+                  timestamp: Date.now()
+                },
+                { projectId, environment: params.env, secretPath }
+              );
+            }}
           />
         </SheetContent>
       </Sheet>

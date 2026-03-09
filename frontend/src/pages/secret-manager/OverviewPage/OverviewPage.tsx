@@ -1419,7 +1419,8 @@ const OverviewPageContent = () => {
     secretValueHidden: boolean,
     type = SecretType.Shared,
     _secretId?: string,
-    newSecretName?: string
+    newSecretName?: string,
+    secretComment?: string
   ) => {
     if (isBatchModeActive) {
       const existingSecret = getSecretByKey(env, key);
@@ -1443,6 +1444,7 @@ const OverviewPageContent = () => {
           originalValue: existingSecret.value,
           secretValue: batchSecretValue,
           originalComment: existingSecret.comment,
+          secretComment,
           originalSkipMultilineEncoding: existingSecret.skipMultilineEncoding,
           originalTags: existingSecret.tags?.map((tag) => ({ id: tag.id, slug: tag.slug })),
           existingSecret,
@@ -1590,6 +1592,10 @@ const OverviewPageContent = () => {
           key: pendingUpdate.newSecretName || existing.key,
           value:
             pendingUpdate.secretValue !== undefined ? pendingUpdate.secretValue : existing.value,
+          comment:
+            pendingUpdate.secretComment !== undefined
+              ? pendingUpdate.secretComment
+              : existing.comment,
           isPending: true,
           hasPendingValueChange: pendingUpdate.secretValue !== undefined,
           pendingAction: PendingAction.Update

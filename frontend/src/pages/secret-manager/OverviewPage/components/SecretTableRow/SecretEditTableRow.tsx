@@ -100,7 +100,8 @@ type Props = {
     secretValueHidden: boolean,
     type?: SecretType,
     secretId?: string,
-    newSecretName?: string
+    newSecretName?: string,
+    secretComment?: string
   ) => Promise<void>;
   onSecretDelete: (env: string, key: string, secretId?: string, type?: SecretType) => Promise<void>;
   onAddOverride?: () => void;
@@ -223,7 +224,10 @@ export const SecretEditTableRow = ({
           ? defaultValue || null
           : (sharedValueData?.value ?? (defaultValue || null)),
       ...(isSingleEnvView
-        ? { key: isBatchMode && hasPendingChange && pendingKeyName ? pendingKeyName : secretName }
+        ? {
+            key: isBatchMode && hasPendingChange && pendingKeyName ? pendingKeyName : secretName,
+            comment: comment ?? ""
+          }
         : {})
     }
   });
@@ -272,20 +276,24 @@ export const SecretEditTableRow = ({
     setIsModalOpen((prev) => !prev);
   }, []);
 
+  const originalCommentRef = useRef(comment ?? "");
+
   const handleFormReset = () => {
     reset({
       value: sharedValueData?.value ?? (defaultValue || null),
-      ...(isSingleEnvView ? { key: secretName } : {})
+      ...(isSingleEnvView ? { key: secretName, comment: originalCommentRef.current } : {})
     });
   };
 
   // Debounced auto-apply for batch mode: watch form values and apply after 500ms
   const watchedValue = watch("value");
   const watchedKey = watch("key");
+  const watchedComment = watch("comment");
   const batchAutoApplyTimer = useRef<ReturnType<typeof setTimeout>>();
-  const lastAppliedRef = useRef<{ value: unknown; key: unknown }>({
+  const lastAppliedRef = useRef<{ value: unknown; key: unknown; comment: unknown }>({
     value: undefined,
-    key: undefined
+    key: undefined,
+    comment: undefined
   });
 
   useEffect(() => {
@@ -299,7 +307,8 @@ export const SecretEditTableRow = ({
       // Skip if values haven't changed since last apply
       if (
         lastAppliedRef.current.value === watchedValue &&
-        lastAppliedRef.current.key === watchedKey
+        lastAppliedRef.current.key === watchedKey &&
+        lastAppliedRef.current.comment === watchedComment
       ) {
         return;
       }
@@ -310,17 +319,21 @@ export const SecretEditTableRow = ({
         watchedValue !== null &&
         watchedValue !== undefined;
       const isKeyDirty = isSingleEnvView && watchedKey && watchedKey !== secretName;
+      const isCommentDirty =
+        isSingleEnvView &&
+        watchedComment !== undefined &&
+        watchedComment !== originalCommentRef.current;
 
       // If nothing changed from original, remove pending change directly
-      if (!isValueChanged && !isKeyDirty) {
+      if (!isValueChanged && !isKeyDirty && !isCommentDirty) {
         if (lastAppliedRef.current.value !== undefined) {
           onBatchRevert?.(environment, secretName);
-          lastAppliedRef.current = { value: undefined, key: undefined };
+          lastAppliedRef.current = { value: undefined, key: undefined, comment: undefined };
         }
         return;
       }
 
-      lastAppliedRef.current = { value: watchedValue, key: watchedKey };
+      lastAppliedRef.current = { value: watchedValue, key: watchedKey, comment: watchedComment };
 
       if (isCreatable) {
         if (isValueChanged && (watchedValue || watchedValue === "")) {
@@ -334,14 +347,15 @@ export const SecretEditTableRow = ({
           secretValueHidden,
           SecretType.Shared,
           secretId,
-          isKeyDirty ? (watchedKey as string) : undefined
+          isKeyDirty ? (watchedKey as string) : undefined,
+          isCommentDirty ? (watchedComment as string) : undefined
         );
       }
 
       // Reset form to mark as clean (like SecretDashboardPage's auto-save)
       reset({
         value: watchedValue,
-        ...(isSingleEnvView ? { key: watchedKey || secretName } : {})
+        ...(isSingleEnvView ? { key: watchedKey || secretName, comment: watchedComment ?? "" } : {})
       });
     }, 500);
 
@@ -351,7 +365,7 @@ export const SecretEditTableRow = ({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isBatchMode, watchedValue, watchedKey]);
+  }, [isBatchMode, watchedValue, watchedKey, watchedComment]);
 
   // Reset form when a pending change is externally discarded (e.g. CommitForm discard button
   // or toggling batch mode off). We don't gate on isBatchMode because React batches the
@@ -361,9 +375,9 @@ export const SecretEditTableRow = ({
     if (prevHasPendingRef.current && !hasPendingChange) {
       reset({
         value: originalValueRef.current,
-        ...(isSingleEnvView ? { key: secretName } : {})
+        ...(isSingleEnvView ? { key: secretName, comment: originalCommentRef.current } : {})
       });
-      lastAppliedRef.current = { value: undefined, key: undefined };
+      lastAppliedRef.current = { value: undefined, key: undefined, comment: undefined };
     }
     prevHasPendingRef.current = hasPendingChange;
   }, [hasPendingChange, reset, isSingleEnvView, secretName]);
@@ -775,11 +789,13 @@ export const SecretEditTableRow = ({
                   align="end"
                 >
                   <SecretCommentForm
-                    comment={comment}
+                    comment={isBatchMode ? ((watchedComment as string) ?? comment) : comment}
                     secretKey={secretName}
                     secretPath={secretPath}
                     environment={environment}
                     onClose={() => setIsCommentOpen(false)}
+                    isBatchMode={isBatchMode}
+                    onCommentChange={(newComment) => setValue("comment", newComment)}
                   />
                 </PopoverContent>
               </Popover>

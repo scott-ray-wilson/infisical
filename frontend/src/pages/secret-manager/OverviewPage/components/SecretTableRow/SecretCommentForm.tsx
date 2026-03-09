@@ -26,6 +26,8 @@ type Props = {
   environment: string;
   secretPath: string;
   onClose?: () => void;
+  isBatchMode?: boolean;
+  onCommentChange?: (comment: string) => void;
 };
 
 export const SecretCommentForm = ({
@@ -33,7 +35,9 @@ export const SecretCommentForm = ({
   secretKey,
   environment,
   secretPath,
-  onClose
+  onClose,
+  isBatchMode,
+  onCommentChange
 }: Props) => {
   const { projectId } = useProject();
   const { permission } = useProjectPermission();
@@ -60,6 +64,12 @@ export const SecretCommentForm = ({
   });
 
   const onSubmit = async (data: TFormSchema) => {
+    if (isBatchMode) {
+      onCommentChange?.(data.comment);
+      onClose?.();
+      return;
+    }
+
     const result = await updateSecretV3({
       environment,
       projectId,
@@ -130,7 +140,7 @@ export const SecretCommentForm = ({
           isDisabled={!isDirty || isPending}
           isPending={isPending}
         >
-          Save Comment
+          {isBatchMode ? "Apply" : "Save Comment"}
         </Button>
       </div>
     </form>

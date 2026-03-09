@@ -54,6 +54,7 @@ type Props = {
     secretComment?: string;
     tags?: { id: string; slug: string }[];
     secretMetadata?: { key: string; value: string; isEncrypted?: boolean }[];
+    skipMultilineEncoding?: boolean | null;
   }) => Promise<void>;
   onSecretDelete: (env: string, key: string, secretId?: string) => Promise<void>;
   isRotatedSecret?: boolean;

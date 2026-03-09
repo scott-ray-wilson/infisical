@@ -104,6 +104,7 @@ type Props = {
     secretComment?: string;
     tags?: { id: string; slug: string }[];
     secretMetadata?: { key: string; value: string; isEncrypted?: boolean }[];
+    skipMultilineEncoding?: boolean | null;
   }) => Promise<void>;
   onSecretDelete: (env: string, key: string, secretId?: string, type?: SecretType) => Promise<void>;
   onAddOverride?: () => void;
@@ -542,6 +543,19 @@ export const SecretEditTableRow = ({
   };
 
   const handleToggleMultilineEncoding = async () => {
+    if (isBatchMode) {
+      onSecretUpdate({
+        env: environment,
+        key: secretName,
+        value: undefined,
+        secretValueHidden,
+        type: SecretType.Shared,
+        secretId,
+        skipMultilineEncoding: !skipMultilineEncoding
+      });
+      return;
+    }
+
     try {
       const result = await updateSecretV3({
         environment,

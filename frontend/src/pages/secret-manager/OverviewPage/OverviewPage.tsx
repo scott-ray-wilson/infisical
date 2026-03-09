@@ -1421,7 +1421,8 @@ const OverviewPageContent = () => {
     newSecretName,
     secretComment,
     tags: updatedTags,
-    secretMetadata: updatedMetadata
+    secretMetadata: updatedMetadata,
+    skipMultilineEncoding: updatedSkipMultilineEncoding
   }: {
     env: string;
     key: string;
@@ -1433,6 +1434,7 @@ const OverviewPageContent = () => {
     secretComment?: string;
     tags?: { id: string; slug: string }[];
     secretMetadata?: { key: string; value: string; isEncrypted?: boolean }[];
+    skipMultilineEncoding?: boolean | null;
   }) => {
     if (isBatchModeActive) {
       const existingSecret = getSecretByKey(env, key);
@@ -1457,7 +1459,11 @@ const OverviewPageContent = () => {
           secretValue: batchSecretValue,
           originalComment: existingSecret.comment,
           secretComment,
-          originalSkipMultilineEncoding: existingSecret.skipMultilineEncoding,
+          originalSkipMultilineEncoding: existingSecret.skipMultilineEncoding ?? false,
+          skipMultilineEncoding:
+            updatedSkipMultilineEncoding !== undefined
+              ? (updatedSkipMultilineEncoding ?? false)
+              : undefined,
           originalTags: existingSecret.tags?.map((tag) => ({ id: tag.id, slug: tag.slug })),
           tags: updatedTags,
           originalSecretMetadata: existingSecret.secretMetadata?.map((m) => ({
@@ -1619,6 +1625,10 @@ const OverviewPageContent = () => {
             pendingUpdate.secretMetadata !== undefined
               ? pendingUpdate.secretMetadata
               : existing.secretMetadata,
+          skipMultilineEncoding:
+            pendingUpdate.skipMultilineEncoding !== undefined
+              ? pendingUpdate.skipMultilineEncoding
+              : existing.skipMultilineEncoding,
           isPending: true,
           hasPendingValueChange: pendingUpdate.secretValue !== undefined,
           pendingAction: PendingAction.Update

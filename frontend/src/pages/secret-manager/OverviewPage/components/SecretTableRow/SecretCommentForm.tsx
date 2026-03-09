@@ -1,13 +1,16 @@
-import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { subject } from "@casl/ability";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { createNotification } from "@app/components/notifications";
-import { ProjectPermissionCan } from "@app/components/permissions";
-import { Button, TextArea, Tooltip, TooltipContent, TooltipTrigger } from "@app/components/v3";
-import { ProjectPermissionActions, ProjectPermissionSub, useProject } from "@app/context";
+import { Button, TextArea } from "@app/components/v3";
+import {
+  ProjectPermissionActions,
+  ProjectPermissionSub,
+  useProject,
+  useProjectPermission
+} from "@app/context";
 import { useUpdateSecretV3 } from "@app/hooks/api";
 import { SecretType } from "@app/hooks/api/types";
 
@@ -32,9 +35,19 @@ export const SecretCommentForm = ({
   secretPath,
   onClose
 }: Props) => {
-  const [isEditing, setIsEditing] = useState(Boolean(!comment));
   const { projectId } = useProject();
+  const { permission } = useProjectPermission();
   const { mutateAsync: updateSecretV3, isPending } = useUpdateSecretV3();
+
+  const canEdit = permission.can(
+    ProjectPermissionActions.Edit,
+    subject(ProjectPermissionSub.Secrets, {
+      environment,
+      secretPath,
+      secretName: secretKey,
+      secretTags: ["*"]
+    })
+  );
 
   const {
     handleSubmit,
@@ -72,47 +85,20 @@ export const SecretCommentForm = ({
 
   const handleCancel = () => {
     reset();
-    setIsEditing(false);
+    onClose?.();
   };
 
-  if (!isEditing) {
+  if (!canEdit) {
     return (
       <div className="space-y-3">
         <p className="text-sm font-medium">Comment</p>
-
         <p className="max-h-48 min-h-24 thin-scrollbar overflow-y-auto rounded-md border border-border px-3 py-2 text-sm break-words whitespace-pre-wrap opacity-100">
           {comment}
         </p>
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end">
           <Button variant="ghost" size="xs" type="button" onClick={onClose}>
             Close
           </Button>
-          <ProjectPermissionCan
-            I={ProjectPermissionActions.Edit}
-            a={subject(ProjectPermissionSub.Secrets, {
-              environment,
-              secretPath,
-              secretName: secretKey,
-              secretTags: ["*"]
-            })}
-          >
-            {(isAllowed) => (
-              <Tooltip open={isAllowed ? false : undefined}>
-                <TooltipTrigger>
-                  <Button
-                    variant="project"
-                    isDisabled={!isAllowed}
-                    size="xs"
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                  >
-                    Edit Comment
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Access Denied</TooltipContent>
-              </Tooltip>
-            )}
-          </ProjectPermissionCan>
         </div>
       </div>
     );

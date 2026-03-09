@@ -268,38 +268,40 @@ export const CreateSecretForm = ({ secretPath = "/", defaultSelectedEnvs, onClos
       className="flex flex-1 flex-col gap-4 overflow-hidden"
     >
       <div className="flex thin-scrollbar flex-1 flex-col gap-4 overflow-y-auto p-4">
-        <Controller
-          control={control}
-          name="environments"
-          render={({ field: { value, onChange }, fieldState: { error } }) => (
-            <Field>
-              <FieldLabel>Environments</FieldLabel>
-              <FieldContent>
-                <FilterableSelect
-                  isMulti
-                  isError={Boolean(error)}
-                  options={environments.filter((environment) =>
-                    permission.can(
-                      ProjectPermissionSecretActions.Create,
-                      subject(ProjectPermissionSub.Secrets, {
-                        environment: environment.slug,
-                        secretPath,
-                        secretName: "*",
-                        secretTags: ["*"]
-                      })
-                    )
-                  )}
-                  value={value}
-                  onChange={onChange}
-                  placeholder="Select environments to create secret in..."
-                  getOptionLabel={(option) => option.name}
-                  getOptionValue={(option) => option.slug}
-                />
-                <FieldError errors={[error]} />
-              </FieldContent>
-            </Field>
-          )}
-        />
+        {defaultSelectedEnvs?.length === 1 ? null : (
+          <Controller
+            control={control}
+            name="environments"
+            render={({ field: { value, onChange }, fieldState: { error } }) => (
+              <Field>
+                <FieldLabel>Environments</FieldLabel>
+                <FieldContent>
+                  <FilterableSelect
+                    isMulti
+                    isError={Boolean(error)}
+                    options={environments.filter((environment) =>
+                      permission.can(
+                        ProjectPermissionSecretActions.Create,
+                        subject(ProjectPermissionSub.Secrets, {
+                          environment: environment.slug,
+                          secretPath,
+                          secretName: "*",
+                          secretTags: ["*"]
+                        })
+                      )
+                    )}
+                    value={value}
+                    onChange={onChange}
+                    placeholder="Select environments to create secret in..."
+                    getOptionLabel={(option) => option.name}
+                    getOptionValue={(option) => option.slug}
+                  />
+                  <FieldError errors={[error]} />
+                </FieldContent>
+              </Field>
+            )}
+          />
+        )}
 
         <Controller
           control={control}

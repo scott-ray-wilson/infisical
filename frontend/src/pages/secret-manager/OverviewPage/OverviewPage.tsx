@@ -2747,7 +2747,11 @@ const OverviewPageContent = () => {
         <SheetContent className="flex h-full flex-col gap-y-0 overflow-y-auto sm:max-w-lg">
           <SheetHeader className="border-b">
             <SheetTitle>Create Secret</SheetTitle>
-            <SheetDescription>Create a secret across multiple environments</SheetDescription>
+            <SheetDescription>
+              {filteredEnvs.length === 1
+                ? `Create a secret in ${filteredEnvs[0].name}`
+                : "Create a secret across multiple environments"}
+            </SheetDescription>
           </SheetHeader>
           <CreateSecretForm
             secretPath={secretPath}

@@ -53,6 +53,7 @@ type Props = {
     newSecretName?: string;
     secretComment?: string;
     tags?: { id: string; slug: string }[];
+    secretMetadata?: { key: string; value: string; isEncrypted?: boolean }[];
   }) => Promise<void>;
   onSecretDelete: (env: string, key: string, secretId?: string) => Promise<void>;
   isRotatedSecret?: boolean;

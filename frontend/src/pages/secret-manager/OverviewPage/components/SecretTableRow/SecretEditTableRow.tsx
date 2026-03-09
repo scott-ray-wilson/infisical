@@ -103,6 +103,7 @@ type Props = {
     newSecretName?: string;
     secretComment?: string;
     tags?: { id: string; slug: string }[];
+    secretMetadata?: { key: string; value: string; isEncrypted?: boolean }[];
   }) => Promise<void>;
   onSecretDelete: (env: string, key: string, secretId?: string, type?: SecretType) => Promise<void>;
   onAddOverride?: () => void;
@@ -228,7 +229,13 @@ export const SecretEditTableRow = ({
         ? {
             key: isBatchMode && hasPendingChange && pendingKeyName ? pendingKeyName : secretName,
             comment: comment ?? "",
-            tags: tags?.map((t) => ({ id: t.id, slug: t.slug })) ?? []
+            tags: tags?.map((t) => ({ id: t.id, slug: t.slug })) ?? [],
+            metadata:
+              secretMetadata?.map((m) => ({
+                key: m.key,
+                value: m.value,
+                isEncrypted: m.isEncrypted ?? false
+              })) ?? []
           }
         : {})
     }
@@ -280,6 +287,13 @@ export const SecretEditTableRow = ({
 
   const originalCommentRef = useRef(comment ?? "");
   const originalTagsRef = useRef(tags?.map((t) => ({ id: t.id, slug: t.slug })) ?? []);
+  const originalMetadataRef = useRef(
+    secretMetadata?.map((m) => ({
+      key: m.key,
+      value: m.value,
+      isEncrypted: m.isEncrypted ?? false
+    })) ?? []
+  );
 
   // Stable callbacks for child components to avoid resetting their debounce timers on re-render
   const handleCommentChange = useCallback(
@@ -294,12 +308,29 @@ export const SecretEditTableRow = ({
       ),
     [setValue]
   );
+  const handleMetadataChange = useCallback(
+    (newMetadata: { key: string; value: string; isEncrypted?: boolean }[]) =>
+      setValue(
+        "metadata",
+        newMetadata.map((m) => ({
+          key: m.key,
+          value: m.value,
+          isEncrypted: m.isEncrypted ?? false
+        }))
+      ),
+    [setValue]
+  );
 
   const handleFormReset = () => {
     reset({
       value: sharedValueData?.value ?? (defaultValue || null),
       ...(isSingleEnvView
-        ? { key: secretName, comment: originalCommentRef.current, tags: originalTagsRef.current }
+        ? {
+            key: secretName,
+            comment: originalCommentRef.current,
+            tags: originalTagsRef.current,
+            metadata: originalMetadataRef.current
+          }
         : {})
     });
   };
@@ -309,17 +340,24 @@ export const SecretEditTableRow = ({
   const watchedKey = watch("key");
   const watchedComment = watch("comment");
   const watchedTags = watch("tags") as { id: string; slug: string }[] | undefined;
+  const watchedMetadata = watch("metadata") as
+    | { key: string; value: string; isEncrypted: boolean }[]
+    | undefined;
+  // Serialize metadata for effect dependency since watch() returns same array ref for nested changes
+  const serializedMetadata = JSON.stringify(watchedMetadata);
   const batchAutoApplyTimer = useRef<ReturnType<typeof setTimeout>>();
   const lastAppliedRef = useRef<{
     value: unknown;
     key: unknown;
     comment: unknown;
     tags: unknown;
+    metadata: unknown;
   }>({
     value: undefined,
     key: undefined,
     comment: undefined,
-    tags: undefined
+    tags: undefined,
+    metadata: undefined
   });
 
   const areTagsEqual = (a: { id: string; slug: string }[], b: { id: string; slug: string }[]) => {
@@ -327,6 +365,19 @@ export const SecretEditTableRow = ({
     const aIds = a.map((t) => t.id).sort();
     const bIds = b.map((t) => t.id).sort();
     return aIds.every((id, i) => id === bIds[i]);
+  };
+
+  const areMetadataEqual = (
+    a: { key: string; value: string; isEncrypted?: boolean }[],
+    b: { key: string; value: string; isEncrypted?: boolean }[]
+  ) => {
+    if (a.length !== b.length) return false;
+    return a.every(
+      (m, i) =>
+        m.key === b[i].key &&
+        m.value === b[i].value &&
+        (m.isEncrypted ?? false) === (b[i].isEncrypted ?? false)
+    );
   };
 
   useEffect(() => {
@@ -349,6 +400,17 @@ export const SecretEditTableRow = ({
             areTagsEqual(
               lastAppliedRef.current.tags as { id: string; slug: string }[],
               watchedTags
+            ))) &&
+        (lastAppliedRef.current.metadata === watchedMetadata ||
+          (Array.isArray(lastAppliedRef.current.metadata) &&
+            Array.isArray(watchedMetadata) &&
+            areMetadataEqual(
+              lastAppliedRef.current.metadata as {
+                key: string;
+                value: string;
+                isEncrypted?: boolean;
+              }[],
+              watchedMetadata
             )))
       ) {
         return;
@@ -368,16 +430,21 @@ export const SecretEditTableRow = ({
         isSingleEnvView &&
         watchedTags !== undefined &&
         !areTagsEqual(watchedTags, originalTagsRef.current);
+      const isMetadataDirty =
+        isSingleEnvView &&
+        watchedMetadata !== undefined &&
+        !areMetadataEqual(watchedMetadata, originalMetadataRef.current);
 
       // If nothing changed from original, remove pending change directly
-      if (!isValueChanged && !isKeyDirty && !isCommentDirty && !isTagsDirty) {
+      if (!isValueChanged && !isKeyDirty && !isCommentDirty && !isTagsDirty && !isMetadataDirty) {
         if (lastAppliedRef.current.value !== undefined) {
           onBatchRevert?.(environment, secretName);
           lastAppliedRef.current = {
             value: undefined,
             key: undefined,
             comment: undefined,
-            tags: undefined
+            tags: undefined,
+            metadata: undefined
           };
         }
         return;
@@ -387,7 +454,8 @@ export const SecretEditTableRow = ({
         value: watchedValue,
         key: watchedKey,
         comment: watchedComment,
-        tags: watchedTags
+        tags: watchedTags,
+        metadata: watchedMetadata
       };
 
       if (isCreatable) {
@@ -404,7 +472,8 @@ export const SecretEditTableRow = ({
           secretId,
           newSecretName: isKeyDirty ? (watchedKey as string) : undefined,
           secretComment: isCommentDirty ? (watchedComment as string) : undefined,
-          tags: isTagsDirty ? watchedTags : undefined
+          tags: isTagsDirty ? watchedTags : undefined,
+          secretMetadata: isMetadataDirty ? watchedMetadata : undefined
         });
       }
 
@@ -415,7 +484,8 @@ export const SecretEditTableRow = ({
           ? {
               key: watchedKey || secretName,
               comment: watchedComment ?? "",
-              tags: watchedTags ?? []
+              tags: watchedTags ?? [],
+              metadata: watchedMetadata ?? []
             }
           : {})
       });
@@ -427,7 +497,7 @@ export const SecretEditTableRow = ({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isBatchMode, watchedValue, watchedKey, watchedComment, watchedTags]);
+  }, [isBatchMode, watchedValue, watchedKey, watchedComment, watchedTags, serializedMetadata]);
 
   // Reset form when a pending change is externally discarded (e.g. CommitForm discard button
   // or toggling batch mode off). We don't gate on isBatchMode because React batches the
@@ -441,7 +511,8 @@ export const SecretEditTableRow = ({
           ? {
               key: secretName,
               comment: originalCommentRef.current,
-              tags: originalTagsRef.current
+              tags: originalTagsRef.current,
+              metadata: originalMetadataRef.current
             }
           : {})
       });
@@ -449,7 +520,8 @@ export const SecretEditTableRow = ({
         value: undefined,
         key: undefined,
         comment: undefined,
-        tags: undefined
+        tags: undefined,
+        metadata: undefined
       };
     }
     prevHasPendingRef.current = hasPendingChange;
@@ -997,11 +1069,21 @@ export const SecretEditTableRow = ({
                   align="end"
                 >
                   <SecretMetadataForm
-                    secretMetadata={secretMetadata}
+                    secretMetadata={
+                      isBatchMode
+                        ? ((watchedMetadata as {
+                            key: string;
+                            value: string;
+                            isEncrypted?: boolean;
+                          }[]) ?? secretMetadata)
+                        : secretMetadata
+                    }
                     secretKey={secretName}
                     secretPath={secretPath}
                     environment={environment}
                     onClose={() => setIsMetadataOpen(false)}
+                    isBatchMode={isBatchMode}
+                    onMetadataChange={handleMetadataChange}
                   />
                 </PopoverContent>
               </Popover>

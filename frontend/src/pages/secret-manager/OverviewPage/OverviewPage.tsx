@@ -1420,7 +1420,8 @@ const OverviewPageContent = () => {
     type = SecretType.Shared,
     newSecretName,
     secretComment,
-    tags: updatedTags
+    tags: updatedTags,
+    secretMetadata: updatedMetadata
   }: {
     env: string;
     key: string;
@@ -1431,6 +1432,7 @@ const OverviewPageContent = () => {
     newSecretName?: string;
     secretComment?: string;
     tags?: { id: string; slug: string }[];
+    secretMetadata?: { key: string; value: string; isEncrypted?: boolean }[];
   }) => {
     if (isBatchModeActive) {
       const existingSecret = getSecretByKey(env, key);
@@ -1458,6 +1460,11 @@ const OverviewPageContent = () => {
           originalSkipMultilineEncoding: existingSecret.skipMultilineEncoding,
           originalTags: existingSecret.tags?.map((tag) => ({ id: tag.id, slug: tag.slug })),
           tags: updatedTags,
+          originalSecretMetadata: existingSecret.secretMetadata?.map((m) => ({
+            key: m.key,
+            value: m.value
+          })),
+          secretMetadata: updatedMetadata,
           existingSecret,
           timestamp: Date.now()
         },
@@ -1608,6 +1615,10 @@ const OverviewPageContent = () => {
               ? pendingUpdate.secretComment
               : existing.comment,
           tags: pendingUpdate.tags !== undefined ? pendingUpdate.tags : existing.tags,
+          secretMetadata:
+            pendingUpdate.secretMetadata !== undefined
+              ? pendingUpdate.secretMetadata
+              : existing.secretMetadata,
           isPending: true,
           hasPendingValueChange: pendingUpdate.secretValue !== undefined,
           pendingAction: PendingAction.Update

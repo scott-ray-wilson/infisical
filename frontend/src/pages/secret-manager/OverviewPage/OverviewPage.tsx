@@ -1113,10 +1113,33 @@ const OverviewPageContent = () => {
     if (isBatchModeActive && singleVisibleEnv) {
       const { name: oldFolderName } = popUp.updateFolder.data as TSecretFolder;
       const folder = getFolderByNameAndEnv(oldFolderName, singleVisibleEnv.slug);
+
       if (!folder) {
+        // Folder might be a pending create — find it in pending changes
+        const pendingCreate = pendingChanges.folders.find(
+          (c) => c.type === PendingAction.Create && c.folderName === oldFolderName
+        );
+        if (!pendingCreate) {
+          handlePopUpClose("updateFolder");
+          return;
+        }
+        // Send as an Update so the store merges it into the existing Create
+        addPendingChange(
+          {
+            id: pendingCreate.id,
+            resourceType: "folder",
+            type: PendingAction.Update,
+            originalFolderName: oldFolderName,
+            folderName: newFolderName,
+            description: description ?? undefined,
+            timestamp: Date.now()
+          },
+          { projectId, environment: singleVisibleEnv.slug, secretPath }
+        );
         handlePopUpClose("updateFolder");
         return;
       }
+
       addPendingChange(
         {
           id: folder.id,
@@ -1192,10 +1215,23 @@ const OverviewPageContent = () => {
 
     if (isBatchModeActive && singleVisibleEnv) {
       const folder = getFolderByNameAndEnv(folderName, singleVisibleEnv.slug);
+
       if (!folder) {
+        // Folder might be a pending create — just remove it
+        const pendingCreate = pendingChanges.folders.find(
+          (c) => c.type === PendingAction.Create && c.folderName === folderName
+        );
+        if (pendingCreate) {
+          removePendingChange(pendingCreate.id, "folder", {
+            projectId,
+            environment: singleVisibleEnv.slug,
+            secretPath
+          });
+        }
         handlePopUpClose("deleteFolder");
         return;
       }
+
       addPendingChange(
         {
           id: folder.id,

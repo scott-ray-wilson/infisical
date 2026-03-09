@@ -52,6 +52,7 @@ type Props = {
     secretId?: string;
     newSecretName?: string;
     secretComment?: string;
+    tags?: { id: string; slug: string }[];
   }) => Promise<void>;
   onSecretDelete: (env: string, key: string, secretId?: string) => Promise<void>;
   isRotatedSecret?: boolean;

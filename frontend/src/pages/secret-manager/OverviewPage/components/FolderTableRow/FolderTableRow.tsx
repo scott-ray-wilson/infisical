@@ -111,7 +111,7 @@ export const FolderTableRow = ({
           </Tooltip>
         )}
         <div className="absolute top-1/2 right-2 flex -translate-y-1/2 items-center transition-all duration-500 group-hover:space-x-1.5">
-          {(!pendingAction || pendingAction === PendingAction.Update) && (
+          {pendingAction !== PendingAction.Delete && (
             <Tooltip delayDuration={300} disableHoverableContent>
               <TooltipTrigger>
                 <UnstableIconButton

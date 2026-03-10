@@ -1026,7 +1026,9 @@ export const SecretEditTableRow = ({
                       <UnstableIconButton
                         variant="ghost"
                         size="xs"
-                        isDisabled={isPendingDelete || isCreatable || isImportedSecret || !secretId}
+                        isDisabled={
+                          isPendingCreate || isPendingDelete || isCreatable || isImportedSecret || !secretId
+                        }
                         className={twMerge(
                           reminder && !isImportedSecret
                             ? "w-7 text-project opacity-100"

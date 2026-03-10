@@ -1,5 +1,5 @@
 /* eslint-disable no-nested-ternary */
-import { TrashIcon } from "lucide-react";
+import { FolderIcon, KeyRoundIcon, TrashIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 import {
@@ -195,13 +195,16 @@ export const SecretVersionDiffView = ({
         collapsible: true as const
       };
 
+  const TypeIcon = isSecret ? KeyRoundIcon : FolderIcon;
+
   return (
-    <UnstableAccordion {...accordionProps} className="rounded-none border-x-0 border-t-0 last:border-b-0">
-      <UnstableAccordionItem value={item.id}>
+    <UnstableAccordion {...accordionProps} className="overflow-clip rounded-md border border-border">
+      <UnstableAccordionItem value={item.id} className="border-b-0">
         {showHeader && (
-          <UnstableAccordionTrigger className="bg-transparent hover:bg-container-hover">
+          <UnstableAccordionTrigger>
             {customHeader ?? (
               <>
+                <TypeIcon className="size-4 shrink-0 text-accent" />
                 <span className={twMerge("flex-1 truncate text-left", item.isDeleted && "line-through text-danger/70")}>
                   {key}
                 </span>

@@ -42,6 +42,19 @@ const pendingActionBorderClass = (action?: PendingAction) => {
   }
 };
 
+const pendingActionRowClass = (action?: PendingAction) => {
+  switch (action) {
+    case PendingAction.Create:
+      return "bg-success/[0.025]";
+    case PendingAction.Update:
+      return "bg-warning/[0.025]";
+    case PendingAction.Delete:
+      return "bg-danger/[0.025]";
+    default:
+      return "";
+  }
+};
+
 export const FolderTableRow = ({
   folderName,
   description,
@@ -67,7 +80,7 @@ export const FolderTableRow = ({
   const isSingleEnvView = environments.length === 1;
 
   return (
-    <UnstableTableRow className="group" onClick={handleClick}>
+    <UnstableTableRow className={twMerge("group", pendingActionRowClass(pendingAction))} onClick={handleClick}>
       <UnstableTableCell
         className={twMerge(
           isSingleEnvView

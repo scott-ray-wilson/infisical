@@ -60,6 +60,19 @@ const pendingActionBorderClass = (action?: PendingAction) => {
   }
 };
 
+const pendingActionRowClass = (action?: PendingAction) => {
+  switch (action) {
+    case PendingAction.Create:
+      return "bg-success/[0.025]";
+    case PendingAction.Update:
+      return "bg-warning/[0.025]";
+    case PendingAction.Delete:
+      return "bg-danger/[0.025]";
+    default:
+      return "";
+  }
+};
+
 type Props = {
   secretKey: string;
   secretPath: string;
@@ -227,12 +240,13 @@ export const SecretTableRow = ({
     <>
       <UnstableTableRow
         onClick={isSingleEnvView ? undefined : () => setIsFormExpanded.toggle()}
-        className="group"
+        className={twMerge("group", pendingActionRowClass(singleEnvPendingAction))}
       >
         <UnstableTableCell
           className={twMerge(
             !isSingleEnvView && "sticky left-0 z-10",
-            "bg-container transition-colors duration-75 group-hover:bg-container-hover",
+            !singleEnvPendingAction &&
+              "bg-container transition-colors duration-75 group-hover:bg-container-hover",
             !isSingleEnvView && isFormExpanded && "border-b-0 bg-container-hover",
             isSingleEnvView && singleEnvShowOverride && "border-b-border/50",
             isSingleEnvView && "pt-3 align-top",

@@ -542,10 +542,10 @@ export const CommitForm: React.FC<CommitFormProps> = ({
               animate={{ opacity: 1, translateY: 0 }}
               exit={{ opacity: 0, translateY: -30 }}
             >
-              <div className="rounded-md border border-info/35 bg-bunker-800/55 shadow-2xl backdrop-blur-md">
-                <div className="flex items-center justify-between bg-info/10 px-4 py-3">
+              <div className="rounded-md border border-warning/35 bg-bunker-800/55 shadow-2xl backdrop-blur-md">
+                <div className="flex items-center justify-between bg-warning/10 px-4 py-3">
                   <div className="flex items-center gap-3 text-sm text-foreground">
-                    <CircleAlertIcon className="size-4 shrink-0 text-info" />
+                    <CircleAlertIcon className="size-4 shrink-0 text-warning" />
                     <span>
                       <span className="font-semibold">
                         {totalChangesCount} pending change
@@ -568,7 +568,7 @@ export const CommitForm: React.FC<CommitFormProps> = ({
                       Review
                     </Button>
                     <Button
-                      variant="info"
+                      variant="warning"
                       size="xs"
                       onClick={handleSaveChanges}
                       isDisabled={isCommitting}

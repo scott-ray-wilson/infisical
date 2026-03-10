@@ -9,15 +9,11 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { ClipboardCheckIcon, EyeIcon, SaveIcon } from "lucide-react";
+import { CircleAlertIcon, ClipboardCheckIcon, EyeIcon, SaveIcon } from "lucide-react";
 
 import { createNotification } from "@app/components/notifications";
 import { Button as V2Button, Input, Modal, ModalContent, Tooltip } from "@app/components/v2";
-import {
-  Badge,
-  Button,
-  UnstableSeparator
-} from "@app/components/v3";
+import { Badge, Button } from "@app/components/v3";
 import { dashboardKeys, fetchSecretValue } from "@app/hooks/api/dashboard/queries";
 import { PendingAction } from "@app/hooks/api/secretFolders/types";
 import { fetchSecretReferences, secretKeys } from "@app/hooks/api/secrets/queries";
@@ -535,9 +531,9 @@ export const CommitForm: React.FC<CommitFormProps> = ({
 
   return (
     <>
-      {/* Floating Bottom Pill */}
+      {/* Floating Bottom Banner */}
       {!isModalOpen && (
-        <div className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 lg:left-auto lg:translate-x-0">
+        <div className="fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-5xl -translate-x-1/2">
           <AnimatePresence mode="wait">
             <motion.div
               key="commit-panel"
@@ -546,36 +542,42 @@ export const CommitForm: React.FC<CommitFormProps> = ({
               animate={{ opacity: 1, translateY: 0 }}
               exit={{ opacity: 0, translateY: -30 }}
             >
-              <div className="flex items-center gap-3 rounded-full border border-warning/30 bg-container px-4 py-2 shadow-2xl">
-                <div className="flex items-center gap-2">
-                  <div className="size-2.5 rounded-full bg-warning" />
-                  <span className="text-sm font-medium">
-                    {totalChangesCount} Pending Change{totalChangesCount !== 1 ? "s" : ""}
-                  </span>
+              <div className="rounded-md border border-info/35 bg-bunker-800/55 shadow-2xl backdrop-blur-md">
+                <div className="flex items-center justify-between bg-info/10 px-4 py-3">
+                  <div className="flex items-center gap-3 text-sm text-foreground">
+                    <CircleAlertIcon className="size-4 shrink-0 text-info" />
+                    <span>
+                      <span className="font-semibold">
+                        {totalChangesCount} pending change
+                        {totalChangesCount !== 1 ? "s" : ""}
+                      </span>
+                      {" — "}
+                      Review your changes before applying them to the environment.
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => clearAllPendingChanges({ projectId, environment, secretPath })}
+                    >
+                      Discard
+                    </Button>
+                    <Button variant="outline" size="xs" onClick={handleSaveChanges}>
+                      <EyeIcon />
+                      Review
+                    </Button>
+                    <Button
+                      variant="info"
+                      size="xs"
+                      onClick={handleSaveChanges}
+                      isDisabled={isCommitting}
+                    >
+                      <SaveIcon />
+                      Save Changes
+                    </Button>
+                  </div>
                 </div>
-                <UnstableSeparator orientation="vertical" className="h-5" />
-                <Button
-                  variant="ghost"
-                  size="xs"
-                  onClick={() =>
-                    clearAllPendingChanges({ projectId, environment, secretPath })
-                  }
-                >
-                  Discard
-                </Button>
-                <Button variant="outline" size="xs" onClick={handleSaveChanges}>
-                  <EyeIcon />
-                  Review
-                </Button>
-                <Button
-                  variant="warning"
-                  size="xs"
-                  onClick={handleSaveChanges}
-                  isDisabled={isCommitting}
-                >
-                  <SaveIcon />
-                  Save
-                </Button>
               </div>
             </motion.div>
           </AnimatePresence>

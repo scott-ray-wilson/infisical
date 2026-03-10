@@ -267,6 +267,7 @@ export const SecretTableRow = ({
             isBatchMode={isBatchMode}
             onBatchRevert={onBatchRevert}
             isPendingCreate={singleEnvPendingAction === PendingAction.Create}
+            isPendingDelete={singleEnvPendingAction === PendingAction.Delete}
             hasPendingChange={Boolean(singleEnvSecret?.isPending)}
             hasPendingValueChange={Boolean(singleEnvSecret?.hasPendingValueChange)}
             pendingKeyName={

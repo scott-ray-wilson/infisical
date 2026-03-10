@@ -131,6 +131,7 @@ type Props = {
   onSecretRename?: (newName: string) => Promise<void>;
   isBatchMode?: boolean;
   isPendingCreate?: boolean;
+  isPendingDelete?: boolean;
   onBatchRevert?: (env: string, key: string) => void;
   hasPendingChange?: boolean;
   hasPendingValueChange?: boolean;
@@ -166,6 +167,7 @@ export const SecretEditTableRow = ({
   isSingleEnvView,
   isBatchMode,
   isPendingCreate,
+  isPendingDelete,
   onBatchRevert,
   hasPendingChange,
   hasPendingValueChange,
@@ -708,6 +710,7 @@ export const SecretEditTableRow = ({
   );
 
   const isReadOnly =
+    isPendingDelete ||
     isImportedSecret ||
     isRotatedSecret ||
     isFetchingSharedValue ||
@@ -740,7 +743,7 @@ export const SecretEditTableRow = ({
       render={({ field, fieldState: { error } }) => (
         <Input
           autoComplete="off"
-          isReadOnly={isImportedSecret || isRotatedSecret || !canEditSecretValue}
+          isReadOnly={isPendingDelete || isImportedSecret || isRotatedSecret || !canEditSecretValue}
           autoCapitalization={currentProject?.autoCapitalization}
           variant="plain"
           placeholder={error?.message || "Secret name"}
@@ -867,6 +870,7 @@ export const SecretEditTableRow = ({
                 <TooltipTrigger>
                   <UnstableIconButton
                     isDisabled={
+                      isPendingDelete ||
                       isImportedSecret ||
                       isRotatedSecret ||
                       (isCreatable ? !canCreate : !canEditSecretValue)
@@ -924,7 +928,7 @@ export const SecretEditTableRow = ({
                       <UnstableIconButton
                         variant="ghost"
                         size="xs"
-                        isDisabled={isCreatable || isImportedSecret}
+                        isDisabled={isPendingDelete || isCreatable || isImportedSecret}
                         className={twMerge(
                           comment && !isImportedSecret
                             ? "w-7 text-project opacity-100"
@@ -968,7 +972,9 @@ export const SecretEditTableRow = ({
                       <UnstableIconButton
                         variant="ghost"
                         size="xs"
-                        isDisabled={isCreatable || isImportedSecret || !canReadTags}
+                        isDisabled={
+                          isPendingDelete || isCreatable || isImportedSecret || !canReadTags
+                        }
                         className={twMerge(
                           canReadTags && tags?.length && !isImportedSecret
                             ? "w-7 text-project opacity-100"
@@ -1014,7 +1020,7 @@ export const SecretEditTableRow = ({
                       <UnstableIconButton
                         variant="ghost"
                         size="xs"
-                        isDisabled={isCreatable || isImportedSecret || !secretId}
+                        isDisabled={isPendingDelete || isCreatable || isImportedSecret || !secretId}
                         className={twMerge(
                           reminder && !isImportedSecret
                             ? "w-7 text-project opacity-100"
@@ -1059,7 +1065,7 @@ export const SecretEditTableRow = ({
                       <UnstableIconButton
                         variant="ghost"
                         size="xs"
-                        isDisabled={isCreatable || isImportedSecret}
+                        isDisabled={isPendingDelete || isCreatable || isImportedSecret}
                         className={twMerge(
                           secretMetadata?.length && !isImportedSecret
                             ? "w-7 text-project opacity-100"
@@ -1110,7 +1116,11 @@ export const SecretEditTableRow = ({
                     variant="ghost"
                     size="xs"
                     isDisabled={
-                      isCreatable || isImportedSecret || !canEditSecretValue || isUpdatingMultiline
+                      isPendingDelete ||
+                      isCreatable ||
+                      isImportedSecret ||
+                      !canEditSecretValue ||
+                      isUpdatingMultiline
                     }
                     onClick={handleToggleMultilineEncoding}
                     className={twMerge(
@@ -1179,7 +1189,8 @@ export const SecretEditTableRow = ({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <UnstableIconButton
-                      variant="danger"
+                      variant="ghost"
+                      className="hover:text-error"
                       size="xs"
                       onClick={() => onBatchRevert?.(environment, secretName)}
                     >

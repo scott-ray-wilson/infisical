@@ -130,6 +130,7 @@ type Props = {
   isSingleEnvView?: boolean;
   onSecretRename?: (newName: string) => Promise<void>;
   isBatchMode?: boolean;
+  isPendingCreate?: boolean;
   onBatchRevert?: (env: string, key: string) => void;
   hasPendingChange?: boolean;
   hasPendingValueChange?: boolean;
@@ -164,6 +165,7 @@ export const SecretEditTableRow = ({
   reminder,
   isSingleEnvView,
   isBatchMode,
+  isPendingCreate,
   onBatchRevert,
   hasPendingChange,
   hasPendingValueChange,
@@ -195,7 +197,8 @@ export const SecretEditTableRow = ({
           projectId: currentProject.id
         };
 
-  const canFetchSharedValue = Boolean(importedSecret ?? secretId) && !isEmpty && !secretValueHidden;
+  const canFetchSharedValue =
+    Boolean(importedSecret ?? secretId) && !isEmpty && !secretValueHidden && !isPendingCreate;
 
   const {
     data: sharedValueData,

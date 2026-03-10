@@ -535,8 +535,12 @@ export const SecretEditTableRow = ({
 
   const handleCopySharedToClipboard = async () => {
     try {
-      const { data } = await refetchSharedValue();
-      await window.navigator.clipboard.writeText(data?.value ?? "");
+      if (isPendingCreate) {
+        await window.navigator.clipboard.writeText((watchedValue as string) ?? "");
+      } else {
+        const { data } = await refetchSharedValue();
+        await window.navigator.clipboard.writeText(data?.value ?? "");
+      }
       createNotification({ type: "success", text: "Copied secret to clipboard" });
     } catch (e) {
       console.error(e);
@@ -546,6 +550,8 @@ export const SecretEditTableRow = ({
       });
     }
   };
+
+  const canCopySecret = isPendingCreate || canFetchSharedValue;
 
   const handleToggleMultilineEncoding = async () => {
     if (isBatchMode) {
@@ -901,7 +907,7 @@ export const SecretEditTableRow = ({
               <Tooltip delayDuration={300} disableHoverableContent>
                 <TooltipTrigger>
                   <UnstableIconButton
-                    isDisabled={!canFetchSharedValue}
+                    isDisabled={isPendingDelete || !canCopySecret}
                     onClick={handleCopySharedToClipboard}
                     variant="ghost"
                     size="xs"
@@ -914,7 +920,7 @@ export const SecretEditTableRow = ({
                   </UnstableIconButton>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {canFetchSharedValue
+                  {canCopySecret
                     ? "Copy Secret"
                     : canReadSecretValue
                       ? "No Secret Value"

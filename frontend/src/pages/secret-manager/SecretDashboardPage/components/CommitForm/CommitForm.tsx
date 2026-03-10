@@ -612,52 +612,56 @@ export const CommitForm: React.FC<CommitFormProps> = ({
             </SheetDescription>
           </SheetHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-4">
-            <div className="space-y-4">
-              {/* Folder Changes */}
-              {pendingChanges.folders.length > 0 && (
-                <div>
-                  <h4 className="mb-4 flex items-center gap-2 border-b border-border pb-2 text-sm font-medium text-accent">
-                    <FolderIcon className="size-4 text-accent" />
-                    Folders ({pendingChanges.folders.length})
-                  </h4>
-                  <div>
-                    {pendingChanges.folders.map((change) => (
-                      <ResourceChange
-                        key={change.id}
-                        change={change}
-                        environment={environment}
-                        projectId={projectId}
-                        secretPath={secretPath}
-                        referenceCountMap={referenceCountMap}
-                      />
-                    ))}
-                  </div>
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4">
+            {/* Folder Changes */}
+            {pendingChanges.folders.length > 0 && (
+              <div>
+                <div className="mb-3 flex items-center gap-2 border-b border-border pb-2">
+                  <FolderIcon className="size-4 text-accent" />
+                  <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-accent">
+                    Folders
+                  </span>
+                  <Badge variant="neutral">{pendingChanges.folders.length}</Badge>
                 </div>
-              )}
+                <div className="space-y-2">
+                  {pendingChanges.folders.map((change) => (
+                    <ResourceChange
+                      key={change.id}
+                      change={change}
+                      environment={environment}
+                      projectId={projectId}
+                      secretPath={secretPath}
+                      referenceCountMap={referenceCountMap}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
-              {/* Secret Changes */}
-              {pendingChanges.secrets.length > 0 && (
-                <div>
-                  <h4 className="mb-4 flex items-center gap-2 border-b border-border pb-2 text-sm font-medium text-accent">
-                    <KeyRoundIcon className="size-4 text-accent" />
-                    Secrets ({pendingChanges.secrets.length})
-                  </h4>
-                  <div>
-                    {pendingChanges.secrets.map((change) => (
-                      <ResourceChange
-                        key={change.id}
-                        change={change}
-                        environment={environment}
-                        projectId={projectId}
-                        secretPath={secretPath}
-                        referenceCountMap={referenceCountMap}
-                      />
-                    ))}
-                  </div>
+            {/* Secret Changes */}
+            {pendingChanges.secrets.length > 0 && (
+              <div>
+                <div className="mb-3 flex items-center gap-2 border-b border-border pb-2">
+                  <KeyRoundIcon className="size-4 text-accent" />
+                  <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-accent">
+                    Secrets
+                  </span>
+                  <Badge variant="neutral">{pendingChanges.secrets.length}</Badge>
                 </div>
-              )}
-            </div>
+                <div className="space-y-2">
+                  {pendingChanges.secrets.map((change) => (
+                    <ResourceChange
+                      key={change.id}
+                      change={change}
+                      environment={environment}
+                      projectId={projectId}
+                      secretPath={secretPath}
+                      referenceCountMap={referenceCountMap}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <SheetFooter className="border-t border-border">

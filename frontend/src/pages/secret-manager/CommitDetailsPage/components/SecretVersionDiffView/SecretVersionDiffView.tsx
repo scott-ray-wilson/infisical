@@ -1,7 +1,5 @@
 /* eslint-disable no-nested-ternary */
-import { useCallback, useState } from "react";
-import { faChevronDown, faChevronUp, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { TrashIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 import {
@@ -10,7 +8,17 @@ import {
   SecretDiffView,
   SecretVersionData
 } from "@app/components/secrets/diff";
-import { IconButton, Tooltip } from "@app/components/v2";
+import {
+  Badge,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  UnstableAccordion,
+  UnstableAccordionContent,
+  UnstableAccordionItem,
+  UnstableAccordionTrigger,
+  UnstableIconButton
+} from "@app/components/v3";
 
 export interface Version {
   id?: string;
@@ -60,20 +68,10 @@ export const SecretVersionDiffView = ({
   isLoadingOldValue,
   isLoadingNewValue
 }: SecretVersionDiffViewProps) => {
-  const [internalCollapsed, setInternalCollapsed] = useState(isCollapsed);
-
-  const handleToggle = useCallback(() => {
-    if (onToggleCollapse && item.id) {
-      onToggleCollapse(item.id);
-    } else {
-      setInternalCollapsed((prev) => !prev);
-    }
-  }, [onToggleCollapse, item.id]);
-
-  const collapsed = onToggleCollapse ? isCollapsed : internalCollapsed;
+  const collapsed = onToggleCollapse ? isCollapsed : undefined;
 
   if (!item.versions || item.versions.length === 0) {
-    return <div className="px-6 py-3 text-gray-400">No details available</div>;
+    return <div className="px-6 py-3 text-accent">No details available</div>;
   }
 
   const sortedVersions = [...item.versions].sort((a, b) => b.version - a.version);
@@ -145,102 +143,98 @@ export const SecretVersionDiffView = ({
   const oldFolderData = convertToFolderVersionData(oldVersion);
   const newFolderData = convertToFolderVersionData(newVersion);
 
-  const renderHeader = () => {
-    if (customHeader) {
-      return customHeader;
-    }
+  const isSecret = item.type === "secret";
+  const key = isSecret ? item.secretKey || "Unnamed Secret" : item.folderName || "Unnamed Folder";
 
-    const isSecret = item.type === "secret";
-    const key = isSecret ? item.secretKey || "Unnamed Secret" : item.folderName || "Unnamed Folder";
-    let textStyle = "text-white";
-    let changeBadge = null;
+  let changeBadgeVariant: "success" | "warning" | "danger" | undefined;
+  let changeBadgeLabel: string | undefined;
 
-    if (item.isDeleted) {
-      textStyle = "line-through text-red-300";
-      changeBadge = (
-        <span className="ml-2 rounded-md bg-mineshaft-600 px-2 py-0.5 text-xs font-medium whitespace-nowrap">
-          {isSecret ? "Secret" : "Folder"} Deleted
-        </span>
-      );
-    } else if (item.isAdded) {
-      changeBadge = (
-        <span className="ml-2 rounded-md bg-mineshaft-600 px-2 py-0.5 text-xs font-medium whitespace-nowrap">
-          {isSecret ? "Secret" : "Folder"} Added
-        </span>
-      );
-    } else if (item.isUpdated) {
-      changeBadge = (
-        <span className="ml-2 rounded-md bg-mineshaft-600 px-2 py-0.5 text-xs font-medium whitespace-nowrap">
-          {isSecret ? "Secret" : "Folder"} Updated
-        </span>
-      );
-    }
+  if (item.isDeleted) {
+    changeBadgeVariant = "danger";
+    changeBadgeLabel = "Deleted";
+  } else if (item.isAdded) {
+    changeBadgeVariant = "success";
+    changeBadgeLabel = "Added";
+  } else if (item.isUpdated) {
+    changeBadgeVariant = "warning";
+    changeBadgeLabel = "Updated";
+  }
 
-    return (
-      <div
-        className="flex cursor-pointer items-center justify-between p-4 hover:bg-mineshaft-700"
-        onClick={handleToggle}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            handleToggle();
-            e.preventDefault();
-          }
-        }}
-        role="button"
-        tabIndex={0}
-        aria-expanded={!collapsed}
-      >
-        <div className="flex min-w-0 flex-1 items-center">
-          <p className={twMerge(textStyle, "truncate")}>{key}</p>
-          {changeBadge}
-          {headerExtra}
-        </div>
-        {onDiscard && (
-          <Tooltip side="left" content="Discard change">
-            <IconButton
-              ariaLabel="discard-change"
-              variant="plain"
-              colorSchema="danger"
-              size="sm"
-              className="ml-2"
-              onClick={onDiscard}
-            >
-              <FontAwesomeIcon icon={faTrash} />
-            </IconButton>
-          </Tooltip>
-        )}
-        <FontAwesomeIcon
-          icon={collapsed ? faChevronDown : faChevronUp}
-          className="ml-2 text-gray-400"
+  const diffContent = (
+    <div className="p-3">
+      {item.type === "secret" ? (
+        <SecretDiffView
+          operationType={operationType}
+          oldVersion={oldSecretData}
+          newVersion={newSecretData}
+          onRevealOldValue={onRevealOldValue}
+          onRevealNewValue={onRevealNewValue}
+          isLoadingOldValue={isLoadingOldValue}
+          isLoadingNewValue={isLoadingNewValue}
         />
-      </div>
-    );
-  };
-
-  return (
-    <div className="overflow-hidden border border-b-0 border-mineshaft-600 bg-mineshaft-800 first:rounded-t last:rounded-b last:border-b">
-      {showHeader && renderHeader()}
-      {!collapsed && (
-        <div className="border-t border-mineshaft-700 bg-mineshaft-900 p-3 text-mineshaft-100">
-          {item.type === "secret" ? (
-            <SecretDiffView
-              operationType={operationType}
-              oldVersion={oldSecretData}
-              newVersion={newSecretData}
-              onRevealOldValue={onRevealOldValue}
-              onRevealNewValue={onRevealNewValue}
-              isLoadingOldValue={isLoadingOldValue}
-              isLoadingNewValue={isLoadingNewValue}
-            />
-          ) : (
-            <FolderDiffView
-              operationType={operationType}
-              oldVersion={oldFolderData}
-              newVersion={newFolderData}
-            />
-          )}
-        </div>
+      ) : (
+        <FolderDiffView
+          operationType={operationType}
+          oldVersion={oldFolderData}
+          newVersion={newFolderData}
+        />
       )}
     </div>
+  );
+
+  // External controlled collapse (used by CommitDetailsTab)
+  const accordionProps = onToggleCollapse
+    ? {
+        type: "single" as const,
+        value: collapsed ? "" : item.id,
+        onValueChange: () => onToggleCollapse(item.id)
+      }
+    : {
+        type: "single" as const,
+        defaultValue: isCollapsed ? undefined : item.id,
+        collapsible: true as const
+      };
+
+  return (
+    <UnstableAccordion {...accordionProps} className="rounded-none border-x-0 border-t-0 last:border-b-0">
+      <UnstableAccordionItem value={item.id}>
+        {showHeader && (
+          <UnstableAccordionTrigger className="bg-transparent hover:bg-container-hover">
+            {customHeader ?? (
+              <>
+                <span className={twMerge("flex-1 truncate text-left", item.isDeleted && "line-through text-danger/70")}>
+                  {key}
+                </span>
+                {changeBadgeLabel && (
+                  <Badge variant={changeBadgeVariant}>{changeBadgeLabel}</Badge>
+                )}
+                {headerExtra}
+                {onDiscard && (
+                  <Tooltip delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <UnstableIconButton
+                        variant="ghost"
+                        size="xs"
+                        className="hover:text-danger"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDiscard();
+                        }}
+                      >
+                        <TrashIcon />
+                      </UnstableIconButton>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">Discard change</TooltipContent>
+                  </Tooltip>
+                )}
+              </>
+            )}
+          </UnstableAccordionTrigger>
+        )}
+        <UnstableAccordionContent className="p-0">
+          {diffContent}
+        </UnstableAccordionContent>
+      </UnstableAccordionItem>
+    </UnstableAccordion>
   );
 };

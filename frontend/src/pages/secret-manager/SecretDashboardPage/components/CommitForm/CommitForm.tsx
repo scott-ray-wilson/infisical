@@ -598,7 +598,7 @@ export const CommitForm: React.FC<CommitFormProps> = ({
 
       {/* Review Sheet */}
       <Sheet open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <SheetContent className="sm:max-w-xl">
+        <SheetContent className="w-full sm:max-w-8xl">
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               Review Changes

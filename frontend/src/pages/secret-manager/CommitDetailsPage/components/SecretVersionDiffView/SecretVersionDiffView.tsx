@@ -12,6 +12,7 @@ import {
 import {
   Badge,
   Checkbox,
+  Label,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -241,8 +242,8 @@ export const SecretVersionDiffView = ({
                 {changeBadgeLabel && <Badge variant={changeBadgeVariant}>{changeBadgeLabel}</Badge>}
                 {headerExtra}
                 {showViewed && (
-                  <label
-                    className="flex cursor-pointer items-center gap-1.5 border-l border-border pl-3 text-xs text-accent"
+                  <Label
+                    className="cursor-pointer gap-1.5 border-l border-border pl-3 text-xs text-accent"
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") e.stopPropagation();
@@ -250,7 +251,7 @@ export const SecretVersionDiffView = ({
                   >
                     <Checkbox isChecked={viewed} onCheckedChange={handleViewedToggle} />
                     Viewed
-                  </label>
+                  </Label>
                 )}
                 {onDiscard && (
                   <Tooltip delayDuration={300}>

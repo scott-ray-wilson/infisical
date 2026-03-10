@@ -570,8 +570,9 @@ export const CommitForm: React.FC<CommitFormProps> = ({
                     <Button
                       variant="warning"
                       size="xs"
-                      onClick={handleSaveChanges}
+                      onClick={handleCommit}
                       isDisabled={isCommitting}
+                      isPending={isCommitting}
                     >
                       <SaveIcon />
                       Save Changes

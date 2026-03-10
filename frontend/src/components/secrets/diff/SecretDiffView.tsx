@@ -1,16 +1,10 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import { useRef, useState } from "react";
-import {
-  faCircleCheck,
-  faCircleXmark,
-  faEye,
-  faEyeSlash,
-  faTriangleExclamation
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CircleCheckIcon, CircleXIcon, EyeIcon, EyeOffIcon, TriangleAlertIcon } from "lucide-react";
 
 import { isSingleLine, scrollToFirstChange } from "@app/components/utilities/diff";
+import { Badge } from "@app/components/v3";
 import { Tooltip } from "@app/components/v2";
 import {
   HIDDEN_SECRET_VALUE,
@@ -85,7 +79,7 @@ const SecretValueRenderer = ({
             position="right"
             content={`You do not have access to view the ${isOldVersion ? "old" : "new"} secret value.`}
           >
-            <FontAwesomeIcon className="text-mineshaft-300" size="sm" icon={faEyeSlash} />
+            <EyeOffIcon className="size-3.5 text-mineshaft-300" />
           </Tooltip>
         </div>
       );
@@ -114,11 +108,13 @@ const SecretValueRenderer = ({
     return (
       <div className="absolute top-1 right-1.5 z-10">
         <Tooltip content={isVisible ? "Hide value" : "Reveal value"}>
-          <FontAwesomeIcon
-            icon={isVisible ? faEyeSlash : faEye}
+          <button
+            type="button"
             className={`cursor-pointer rounded-md border border-mineshaft-500 bg-mineshaft-800 p-1.5 text-mineshaft-300 hover:bg-mineshaft-700 ${isLoading ? "animate-pulse" : ""}`}
             onClick={handleToggleVisibility}
-          />
+          >
+            {isVisible ? <EyeOffIcon className="size-3.5" /> : <EyeIcon className="size-3.5" />}
+          </button>
         </Tooltip>
       </div>
     );
@@ -203,10 +199,7 @@ export const SecretDiffView = ({
         <div className="flex w-full min-w-0 cursor-default flex-col rounded-lg border border-danger/60 bg-danger/10 p-4 xl:w-1/2">
           <div className="mb-4 flex flex-row justify-between">
             <span className="text-md font-medium">Previous Secret</span>
-            <div className="rounded-full bg-danger px-2 pt-[0.2rem] pb-[0.14rem] text-xs font-medium">
-              <FontAwesomeIcon icon={faCircleXmark} className="pr-1 text-white" />
-              Previous
-            </div>
+            <Badge variant="danger"><CircleXIcon /> Previous</Badge>
           </div>
           <div className="mb-2">
             <div className="text-sm font-medium text-mineshaft-300">Key</div>
@@ -286,23 +279,15 @@ export const SecretDiffView = ({
 
             <div className="flex items-center gap-2">
               {isRollingToRedactedVersion && (
-                <div className="rounded-full bg-danger px-2 pt-[0.2rem] pb-[0.14rem] text-xs font-medium">
-                  <Tooltip
-                    side="top"
-                    content="This secret version has been redacted. Rolling back to this version will result in an empty secret value."
-                  >
-                    <div className="flex items-center gap-2">
-                      <FontAwesomeIcon icon={faTriangleExclamation} className="mb-0.5 text-white" />
-                      <span className="text-white">Redacted Version</span>
-                    </div>
-                  </Tooltip>
-                </div>
+                <Tooltip
+                  side="top"
+                  content="This secret version has been redacted. Rolling back to this version will result in an empty secret value."
+                >
+                  <Badge variant="danger"><TriangleAlertIcon /> Redacted Version</Badge>
+                </Tooltip>
               )}
 
-              <div className="rounded-full bg-success px-2 pt-[0.2rem] pb-[0.14rem] text-xs font-medium">
-                <FontAwesomeIcon icon={faCircleCheck} className="pr-1 text-white" />
-                New
-              </div>
+              <Badge variant="success"><CircleCheckIcon /> New</Badge>
             </div>
           </div>
           <div className="mb-2">

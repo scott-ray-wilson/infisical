@@ -200,10 +200,10 @@ export const SecretDiffView = ({
   return (
     <div className="flex flex-col space-y-4 space-x-0 xl:flex-row xl:space-y-0 xl:space-x-4">
       {showOldVersion ? (
-        <div className="flex w-full min-w-0 cursor-default flex-col rounded-lg border border-red-600/60 bg-red-600/10 p-4 xl:w-1/2">
+        <div className="flex w-full min-w-0 cursor-default flex-col rounded-lg border border-danger/60 bg-danger/10 p-4 xl:w-1/2">
           <div className="mb-4 flex flex-row justify-between">
             <span className="text-md font-medium">Previous Secret</span>
-            <div className="rounded-full bg-red px-2 pt-[0.2rem] pb-[0.14rem] text-xs font-medium">
+            <div className="rounded-full bg-danger px-2 pt-[0.2rem] pb-[0.14rem] text-xs font-medium">
               <FontAwesomeIcon icon={faCircleXmark} className="pr-1 text-white" />
               Previous
             </div>
@@ -280,13 +280,13 @@ export const SecretDiffView = ({
       )}
 
       {showNewVersion ? (
-        <div className="flex w-full min-w-0 cursor-default flex-col rounded-lg border border-green-600/60 bg-green-600/10 p-4 xl:w-1/2">
+        <div className="flex w-full min-w-0 cursor-default flex-col rounded-lg border border-success/60 bg-success/10 p-4 xl:w-1/2">
           <div className="mb-4 flex flex-row justify-between">
             <span className="text-md font-medium">New Secret</span>
 
             <div className="flex items-center gap-2">
               {isRollingToRedactedVersion && (
-                <div className="rounded-full bg-red-600 px-2 pt-[0.2rem] pb-[0.14rem] text-xs font-medium">
+                <div className="rounded-full bg-danger px-2 pt-[0.2rem] pb-[0.14rem] text-xs font-medium">
                   <Tooltip
                     side="top"
                     content="This secret version has been redacted. Rolling back to this version will result in an empty secret value."
@@ -299,7 +299,7 @@ export const SecretDiffView = ({
                 </div>
               )}
 
-              <div className="rounded-full bg-green-600 px-2 pt-[0.2rem] pb-[0.14rem] text-xs font-medium">
+              <div className="rounded-full bg-success px-2 pt-[0.2rem] pb-[0.14rem] text-xs font-medium">
                 <FontAwesomeIcon icon={faCircleCheck} className="pr-1 text-white" />
                 New
               </div>

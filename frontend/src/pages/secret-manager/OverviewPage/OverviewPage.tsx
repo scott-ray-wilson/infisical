@@ -1474,7 +1474,6 @@ const OverviewPageContent = () => {
   }) => {
     if (isBatchModeActive) {
       const existingSecret = getSecretByKey(env, key);
-      if (!existingSecret) return;
 
       let batchSecretValue: string | undefined = value;
       if (
@@ -1482,6 +1481,42 @@ const OverviewPageContent = () => {
         (value === HIDDEN_SECRET_VALUE_API_MASK || value === HIDDEN_SECRET_VALUE)
       ) {
         batchSecretValue = undefined;
+      }
+
+      if (!existingSecret) {
+        // Secret might be a pending create — find it in pending changes
+        const pendingCreate = pendingChanges.secrets.find(
+          (c) => c.type === PendingAction.Create && c.secretKey === key
+        );
+        if (!pendingCreate) return;
+
+        // Send as an Update so the store merges it into the existing Create
+        addPendingChange(
+          {
+            id: pendingCreate.id,
+            resourceType: "secret",
+            type: PendingAction.Update,
+            secretKey: key,
+            newSecretName,
+            originalValue: "",
+            secretValue: batchSecretValue,
+            originalComment: "",
+            secretComment,
+            originalSkipMultilineEncoding: false,
+            skipMultilineEncoding:
+              updatedSkipMultilineEncoding !== undefined
+                ? (updatedSkipMultilineEncoding ?? false)
+                : undefined,
+            originalTags: [],
+            tags: updatedTags,
+            originalSecretMetadata: [],
+            secretMetadata: updatedMetadata,
+            existingSecret: undefined,
+            timestamp: Date.now()
+          },
+          { projectId, environment: env, secretPath }
+        );
+        return;
       }
 
       addPendingChange(
@@ -1555,7 +1590,21 @@ const OverviewPageContent = () => {
   ) => {
     if (isBatchModeActive) {
       const existingSecret = getSecretByKey(env, key);
-      if (!existingSecret) return;
+
+      if (!existingSecret) {
+        // Secret might be a pending create — just remove it
+        const pendingCreate = pendingChanges.secrets.find(
+          (c) => c.type === PendingAction.Create && c.secretKey === key
+        );
+        if (pendingCreate) {
+          removePendingChange(pendingCreate.id, "secret", {
+            projectId,
+            environment: env,
+            secretPath
+          });
+        }
+        return;
+      }
 
       addPendingChange(
         {

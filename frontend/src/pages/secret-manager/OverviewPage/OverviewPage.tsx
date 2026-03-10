@@ -15,12 +15,15 @@ import {
   EyeIcon,
   EyeOffIcon,
   GitCommitIcon,
+  GroupIcon,
   InfoIcon,
   LayersIcon,
   LockIcon,
   LogInIcon,
   SettingsIcon,
-  TrashIcon
+  TrashIcon,
+  UngroupIcon,
+  ZapIcon
 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
@@ -2631,14 +2634,14 @@ const OverviewPageContent = () => {
                                         variant={isOverviewBatchMode ? "warning" : "neutral"}
                                       >
                                         <button type="button" onClick={toggleBatchMode}>
-                                          <LayersIcon size={14} />
-                                          {isOverviewBatchMode ? "Batch Mode" : "Immediate Mode"}
+                                          {isOverviewBatchMode ? <GroupIcon /> : <UngroupIcon />}
+                                          {isOverviewBatchMode ? "Batch Mode" : "Atomic Mode"}
                                         </button>
                                       </Badge>
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       {isOverviewBatchMode
-                                        ? "Changes are batched until you commit. Click to switch to immediate saves."
+                                        ? "Changes are batched until you commit. Click to switch to atomic saves."
                                         : "Changes are saved immediately. Click to switch to batch mode."}
                                     </TooltipContent>
                                   </Tooltip>

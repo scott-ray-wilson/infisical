@@ -604,8 +604,8 @@ export const CommitForm: React.FC<CommitFormProps> = ({
 
       {/* Review Sheet */}
       <Sheet open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <SheetContent className="w-full sm:max-w-8xl">
-          <SheetHeader>
+        <SheetContent className="w-full gap-y-0 sm:max-w-8xl">
+          <SheetHeader className="border-b">
             <SheetTitle className="flex items-center gap-2">
               Review Changes
               <Badge variant="warning">
@@ -618,13 +618,13 @@ export const CommitForm: React.FC<CommitFormProps> = ({
             </SheetDescription>
           </SheetHeader>
 
-          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4">
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4">
             {/* Folder Changes */}
             {pendingChanges.folders.length > 0 && (
               <div>
                 <div className="mb-3 flex items-center gap-2 border-b border-border pb-2">
                   <FolderIcon className="size-4 text-accent" />
-                  <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-accent">
+                  <span className="flex-1 text-xs font-semibold tracking-wider text-accent uppercase">
                     Folders
                   </span>
                   <Badge variant="neutral">{pendingChanges.folders.length}</Badge>
@@ -649,7 +649,7 @@ export const CommitForm: React.FC<CommitFormProps> = ({
               <div>
                 <div className="mb-3 flex items-center gap-2 border-b border-border pb-2">
                   <KeyRoundIcon className="size-4 text-accent" />
-                  <span className="flex-1 text-xs font-semibold uppercase tracking-wider text-accent">
+                  <span className="flex-1 text-xs font-semibold tracking-wider text-accent uppercase">
                     Secrets
                   </span>
                   <Badge variant="neutral">{pendingChanges.secrets.length}</Badge>

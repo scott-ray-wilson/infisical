@@ -196,10 +196,16 @@ export const SecretVersionDiffView = ({
     if (newViewed) {
       // Collapse when marking as viewed
       if (onToggleCollapse) {
-        // If externally controlled and currently open, collapse it
         if (!isCollapsed) onToggleCollapse(item.id);
       } else {
         setInternalValue(undefined);
+      }
+    } else {
+      // Expand when unmarking as viewed
+      if (onToggleCollapse) {
+        if (isCollapsed) onToggleCollapse(item.id);
+      } else {
+        setInternalValue(item.id);
       }
     }
   };

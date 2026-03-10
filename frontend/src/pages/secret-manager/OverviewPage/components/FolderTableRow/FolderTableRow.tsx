@@ -27,6 +27,7 @@ type Props = {
   onToggleFolderDelete: (name: string) => void;
   pendingAction?: PendingAction;
   onBatchRevert?: (folderName: string) => void;
+  isSelectionDisabled?: boolean;
 };
 
 const pendingActionBorderClass = (action?: PendingAction) => {
@@ -66,7 +67,8 @@ export const FolderTableRow = ({
   onToggleFolderDelete,
   onClick,
   pendingAction,
-  onBatchRevert
+  onBatchRevert,
+  isSelectionDisabled
 }: Props) => {
   const [isClicking, setIsClicking] = useState(false);
   const handleClick = () => {
@@ -99,10 +101,18 @@ export const FolderTableRow = ({
           onClick={(e) => {
             e.stopPropagation();
           }}
-          className={twMerge("hidden group-hover:flex", isSelected && "flex")}
+          className={twMerge(
+            "hidden",
+            !isSelectionDisabled && "group-hover:flex",
+            isSelected && "flex"
+          )}
         />
         <FolderIcon
-          className={twMerge("block text-folder group-hover:!hidden", isSelected && "!hidden")}
+          className={twMerge(
+            "block text-folder",
+            !isSelectionDisabled && "group-hover:!hidden",
+            isSelected && "!hidden"
+          )}
         />
       </UnstableTableCell>
       <UnstableTableCell

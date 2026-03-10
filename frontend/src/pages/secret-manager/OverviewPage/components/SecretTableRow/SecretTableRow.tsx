@@ -119,6 +119,7 @@ type Props = {
   isSingleEnvSecretsVisible?: boolean;
   isBatchMode?: boolean;
   onBatchRevert?: (env: string, key: string) => void;
+  isSelectionDisabled?: boolean;
 };
 
 export const SecretTableRow = ({
@@ -137,7 +138,8 @@ export const SecretTableRow = ({
   importedBy,
   isSingleEnvSecretsVisible,
   isBatchMode,
-  onBatchRevert
+  onBatchRevert,
+  isSelectionDisabled
 }: Props) => {
   const [isFormExpanded, setIsFormExpanded] = useToggle();
   const totalCols = environments.length + 2; // secret key row + icon
@@ -263,15 +265,27 @@ export const SecretTableRow = ({
             onClick={(e) => {
               e.stopPropagation();
             }}
-            className={twMerge("hidden group-hover:flex", isSelected && "flex")}
+            className={twMerge(
+              "hidden",
+              !isSelectionDisabled && "group-hover:flex",
+              isSelected && "flex"
+            )}
           />
           {!isSingleEnvView && isFormExpanded ? (
             <ChevronDownIcon
-              className={twMerge("block group-hover:!hidden", isSelected && "!hidden")}
+              className={twMerge(
+                "block",
+                !isSelectionDisabled && "group-hover:!hidden",
+                isSelected && "!hidden"
+              )}
             />
           ) : (
             <KeyIcon
-              className={twMerge("block text-secret group-hover:!hidden", isSelected && "!hidden")}
+              className={twMerge(
+                "block text-secret",
+                !isSelectionDisabled && "group-hover:!hidden",
+                isSelected && "!hidden"
+              )}
             />
           )}
         </UnstableTableCell>

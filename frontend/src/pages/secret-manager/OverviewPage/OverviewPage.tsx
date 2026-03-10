@@ -634,6 +634,14 @@ const OverviewPageContent = () => {
   const { mutateAsync: createCommit, isPending: isCommitPending } = useCreateCommit();
 
   const isBatchModeActive = isOverviewBatchMode && isSingleEnvView;
+  const hasPendingBatchChanges =
+    isBatchModeActive && (pendingChanges.secrets.length > 0 || pendingChanges.folders.length > 0);
+
+  useEffect(() => {
+    if (hasPendingBatchChanges) {
+      resetSelectedEntries();
+    }
+  }, [hasPendingBatchChanges, resetSelectedEntries]);
 
   useNavigationBlocker({
     shouldBlock:
@@ -2261,14 +2269,16 @@ const OverviewPageContent = () => {
             }
           />
         </div>
-        <SelectionPanel
-          secretPath={secretPath}
-          selectedEntries={selectedEntries}
-          resetSelectedEntries={resetSelectedEntries}
-          importedBy={importedBy}
-          secretsToDeleteKeys={secretsToDeleteKeys}
-          usedBySecretSyncs={usedBySecretSyncs}
-        />
+        {!hasPendingBatchChanges && (
+          <SelectionPanel
+            secretPath={secretPath}
+            selectedEntries={selectedEntries}
+            resetSelectedEntries={resetSelectedEntries}
+            importedBy={importedBy}
+            secretsToDeleteKeys={secretsToDeleteKeys}
+            usedBySecretSyncs={usedBySecretSyncs}
+          />
+        )}
         <UnstableCard>
           <UnstableCardHeader>
             <div className="flex flex-col gap-3 overflow-hidden dashboard:flex-row dashboard:items-center">
@@ -2427,7 +2437,7 @@ const OverviewPageContent = () => {
                           <UnstableTableHead className="sticky left-0 z-10 w-[40px] max-w-[40px] min-w-[40px] bg-container">
                             <Checkbox
                               variant="project"
-                              isDisabled={totalCount === 0}
+                              isDisabled={totalCount === 0 || hasPendingBatchChanges}
                               id="checkbox-select-all-rows"
                               isChecked={allRowsSelectedOnPage.isChecked}
                               isIndeterminate={allRowsSelectedOnPage.isIndeterminate}
@@ -2744,10 +2754,14 @@ const OverviewPageContent = () => {
                                   folderName={folderName}
                                   description={description}
                                   isFolderPresentInEnv={isFolderPresentInEnv}
-                                  isSelected={Boolean(selectedEntries.folder[folderName])}
-                                  onToggleFolderSelect={() =>
-                                    toggleSelectedEntry(EntryType.FOLDER, folderName)
+                                  isSelected={
+                                    !hasPendingBatchChanges &&
+                                    Boolean(selectedEntries.folder[folderName])
                                   }
+                                  onToggleFolderSelect={() => {
+                                    if (!hasPendingBatchChanges)
+                                      toggleSelectedEntry(EntryType.FOLDER, folderName);
+                                  }}
                                   environments={visibleEnvs}
                                   key={`overview-${folderName}-${index + 1}`}
                                   onClick={handleFolderClick}
@@ -2759,6 +2773,7 @@ const OverviewPageContent = () => {
                                   }
                                   pendingAction={folderPendingAction}
                                   onBatchRevert={handleBatchFolderRevert}
+                                  isSelectionDisabled={hasPendingBatchChanges}
                                 />
                               )
                             )}
@@ -2823,10 +2838,14 @@ const OverviewPageContent = () => {
                             ))}
                             {mergedSecKeys.map((key, index) => (
                               <SecretTableRow
-                                isSelected={Boolean(selectedEntries.secret[key])}
-                                onToggleSecretSelect={() =>
-                                  toggleSelectedEntry(EntryType.SECRET, key)
+                                isSelected={
+                                  !hasPendingBatchChanges &&
+                                  Boolean(selectedEntries.secret[key])
                                 }
+                                onToggleSecretSelect={() => {
+                                  if (!hasPendingBatchChanges)
+                                    toggleSelectedEntry(EntryType.SECRET, key);
+                                }}
                                 secretPath={secretPath}
                                 getImportedSecretByKey={getImportedSecretByKey}
                                 isImportedSecretPresentInEnv={handleIsImportedSecretPresentInEnv}
@@ -2842,6 +2861,7 @@ const OverviewPageContent = () => {
                                 isSingleEnvSecretsVisible={isSingleEnvSecretsVisible}
                                 isBatchMode={isBatchModeActive}
                                 onBatchRevert={handleBatchRevert}
+                                isSelectionDisabled={hasPendingBatchChanges}
                               />
                             ))}
                             <SecretNoAccessTableRow

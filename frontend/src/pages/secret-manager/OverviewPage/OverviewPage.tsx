@@ -2273,16 +2273,16 @@ const OverviewPageContent = () => {
             }
           />
         </div>
-        {!hasPendingBatchChanges && (
-          <SelectionPanel
-            secretPath={secretPath}
-            selectedEntries={selectedEntries}
-            resetSelectedEntries={resetSelectedEntries}
-            importedBy={importedBy}
-            secretsToDeleteKeys={secretsToDeleteKeys}
-            usedBySecretSyncs={usedBySecretSyncs}
-          />
-        )}
+
+        <SelectionPanel
+          secretPath={secretPath}
+          selectedEntries={selectedEntries}
+          resetSelectedEntries={resetSelectedEntries}
+          importedBy={importedBy}
+          secretsToDeleteKeys={secretsToDeleteKeys}
+          usedBySecretSyncs={usedBySecretSyncs}
+        />
+
         <UnstableCard>
           <UnstableCardHeader>
             <div className="flex flex-col gap-3 overflow-hidden dashboard:flex-row dashboard:items-center">

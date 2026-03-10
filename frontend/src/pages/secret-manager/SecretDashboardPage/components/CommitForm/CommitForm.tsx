@@ -76,6 +76,7 @@ const RenderSecretChanges = ({
   if (change.type === PendingAction.Create) {
     return (
       <SecretVersionDiffView
+        showViewed
         onDiscard={onDiscard}
         onRevealNewValue={onRevealNewValue}
         isLoadingNewValue={isLoadingNewValue}
@@ -154,6 +155,7 @@ const RenderSecretChanges = ({
 
     return (
       <SecretVersionDiffView
+        showViewed
         onDiscard={onDiscard}
         headerExtra={referenceWarningElement}
         onRevealOldValue={onRevealOldValue}
@@ -215,6 +217,7 @@ const RenderSecretChanges = ({
 
     return (
       <SecretVersionDiffView
+        showViewed
         onDiscard={onDiscard}
         onRevealOldValue={onRevealOldValue}
         isLoadingOldValue={isLoadingOldValue}
@@ -250,6 +253,7 @@ const RenderFolderChanges = ({ onDiscard, change, referenceCount: _ }: RenderRes
   if (change.type === PendingAction.Create) {
     return (
       <SecretVersionDiffView
+        showViewed
         onDiscard={onDiscard}
         item={{
           folderName: change.folderName,
@@ -278,6 +282,7 @@ const RenderFolderChanges = ({ onDiscard, change, referenceCount: _ }: RenderRes
 
     return (
       <SecretVersionDiffView
+        showViewed
         onDiscard={onDiscard}
         item={{
           folderName: change.folderName,
@@ -304,6 +309,7 @@ const RenderFolderChanges = ({ onDiscard, change, referenceCount: _ }: RenderRes
   if (change.type === PendingAction.Delete) {
     return (
       <SecretVersionDiffView
+        showViewed
         onDiscard={onDiscard}
         item={{
           folderName: change.folderName,

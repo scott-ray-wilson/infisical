@@ -1,4 +1,5 @@
 /* eslint-disable no-nested-ternary */
+import { useState } from "react";
 import { FolderIcon, KeyRoundIcon, TrashIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
@@ -10,6 +11,7 @@ import {
 } from "@app/components/secrets/diff";
 import {
   Badge,
+  Checkbox,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -46,6 +48,7 @@ interface SecretVersionDiffViewProps {
   isCollapsed?: boolean;
   onToggleCollapse?: (id: string) => void;
   showHeader?: boolean;
+  showViewed?: boolean;
   customHeader?: JSX.Element;
   onDiscard?: VoidFunction;
   headerExtra?: JSX.Element;
@@ -60,6 +63,7 @@ export const SecretVersionDiffView = ({
   isCollapsed = false,
   onToggleCollapse,
   showHeader = true,
+  showViewed = false,
   customHeader,
   onDiscard,
   headerExtra,
@@ -68,7 +72,10 @@ export const SecretVersionDiffView = ({
   isLoadingOldValue,
   isLoadingNewValue
 }: SecretVersionDiffViewProps) => {
-  const collapsed = onToggleCollapse ? isCollapsed : undefined;
+  const [viewed, setViewed] = useState(false);
+  const [internalValue, setInternalValue] = useState<string | undefined>(
+    isCollapsed ? undefined : item.id
+  );
 
   if (!item.versions || item.versions.length === 0) {
     return <div className="px-6 py-3 text-accent">No details available</div>;
@@ -182,36 +189,69 @@ export const SecretVersionDiffView = ({
     </div>
   );
 
+  const handleViewedToggle = () => {
+    const newViewed = !viewed;
+    setViewed(newViewed);
+    if (newViewed) {
+      // Collapse when marking as viewed
+      if (onToggleCollapse) {
+        // If externally controlled and currently open, collapse it
+        if (!isCollapsed) onToggleCollapse(item.id);
+      } else {
+        setInternalValue(undefined);
+      }
+    }
+  };
+
   // External controlled collapse (used by CommitDetailsTab)
   const accordionProps = onToggleCollapse
     ? {
         type: "single" as const,
-        value: collapsed ? "" : item.id,
+        value: isCollapsed ? "" : item.id,
         onValueChange: () => onToggleCollapse(item.id)
       }
     : {
         type: "single" as const,
-        defaultValue: isCollapsed ? undefined : item.id,
+        value: internalValue ?? "",
+        onValueChange: (val: string) => setInternalValue(val || undefined),
         collapsible: true as const
       };
 
   const TypeIcon = isSecret ? KeyRoundIcon : FolderIcon;
 
   return (
-    <UnstableAccordion {...accordionProps} className="overflow-clip rounded-md border border-border">
+    <UnstableAccordion
+      {...accordionProps}
+      className={twMerge("overflow-clip rounded-md border border-border", viewed && "opacity-60")}
+    >
       <UnstableAccordionItem value={item.id} className="border-b-0">
         {showHeader && (
           <UnstableAccordionTrigger>
             {customHeader ?? (
               <>
                 <TypeIcon className="size-4 shrink-0 text-accent" />
-                <span className={twMerge("flex-1 truncate text-left", item.isDeleted && "line-through text-danger/70")}>
+                <span
+                  className={twMerge(
+                    "flex-1 truncate text-left",
+                    item.isDeleted && "text-danger/70 line-through"
+                  )}
+                >
                   {key}
                 </span>
-                {changeBadgeLabel && (
-                  <Badge variant={changeBadgeVariant}>{changeBadgeLabel}</Badge>
-                )}
+                {changeBadgeLabel && <Badge variant={changeBadgeVariant}>{changeBadgeLabel}</Badge>}
                 {headerExtra}
+                {showViewed && (
+                  <label
+                    className="flex cursor-pointer items-center gap-1.5 border-l border-border pl-3 text-xs text-accent"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") e.stopPropagation();
+                    }}
+                  >
+                    <Checkbox isChecked={viewed} onCheckedChange={handleViewedToggle} />
+                    Viewed
+                  </label>
+                )}
                 {onDiscard && (
                   <Tooltip delayDuration={300}>
                     <TooltipTrigger asChild>
@@ -234,9 +274,7 @@ export const SecretVersionDiffView = ({
             )}
           </UnstableAccordionTrigger>
         )}
-        <UnstableAccordionContent className="p-0">
-          {diffContent}
-        </UnstableAccordionContent>
+        <UnstableAccordionContent className="p-0">{diffContent}</UnstableAccordionContent>
       </UnstableAccordionItem>
     </UnstableAccordion>
   );

@@ -4,17 +4,20 @@ import {
   faCodeCommit,
   faExclamationTriangle,
   faFolder,
-  faKey,
-  faSave
+  faKey
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { ClipboardCheckIcon } from "lucide-react";
+import { ClipboardCheckIcon, EyeIcon, SaveIcon } from "lucide-react";
 
 import { createNotification } from "@app/components/notifications";
-import { Button, Input, Modal, ModalContent, Tooltip } from "@app/components/v2";
-import { Badge } from "@app/components/v3";
+import { Button as V2Button, Input, Modal, ModalContent, Tooltip } from "@app/components/v2";
+import {
+  Badge,
+  Button,
+  UnstableSeparator
+} from "@app/components/v3";
 import { dashboardKeys, fetchSecretValue } from "@app/hooks/api/dashboard/queries";
 import { PendingAction } from "@app/hooks/api/secretFolders/types";
 import { fetchSecretReferences, secretKeys } from "@app/hooks/api/secrets/queries";
@@ -36,6 +39,8 @@ interface CommitFormProps {
   environment: string;
   projectId: string;
   secretPath: string;
+  isReviewOpen?: boolean;
+  onReviewOpenChange?: (isOpen: boolean) => void;
 }
 
 /* eslint-disable react/no-unused-prop-types */
@@ -448,11 +453,20 @@ export const CommitForm: React.FC<CommitFormProps> = ({
   isCommitting = false,
   environment,
   projectId,
-  secretPath
+  secretPath,
+  isReviewOpen: externalIsReviewOpen,
+  onReviewOpenChange
 }) => {
   const { isBatchMode, pendingChanges, totalChangesCount } = useBatchMode();
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [internalIsModalOpen, setInternalIsModalOpen] = useState(false);
+  const isModalOpen = externalIsReviewOpen ?? internalIsModalOpen;
+  const setIsModalOpen = (open: boolean) => {
+    if (onReviewOpenChange) {
+      onReviewOpenChange(open);
+    }
+    setInternalIsModalOpen(open);
+  };
   const [commitMessage, setCommitMessage] = useState("");
   const { clearAllPendingChanges } = useBatchModeActions();
 
@@ -521,9 +535,9 @@ export const CommitForm: React.FC<CommitFormProps> = ({
 
   return (
     <>
-      {/* Floating Panel */}
+      {/* Floating Bottom Pill */}
       {!isModalOpen && (
-        <div className="fixed bottom-4 left-1/2 z-40 w-full max-w-3xl -translate-x-1/2 self-center lg:left-auto lg:translate-x-0">
+        <div className="fixed bottom-4 left-1/2 z-40 -translate-x-1/2 lg:left-auto lg:translate-x-0">
           <AnimatePresence mode="wait">
             <motion.div
               key="commit-panel"
@@ -532,47 +546,36 @@ export const CommitForm: React.FC<CommitFormProps> = ({
               animate={{ opacity: 1, translateY: 0 }}
               exit={{ opacity: 0, translateY: -30 }}
             >
-              <div className="rounded-lg border border-yellow/30 bg-mineshaft-800 shadow-2xl">
-                <div className="flex items-center justify-between p-4">
-                  {/* Left Content */}
-                  <div className="flex-1">
-                    {/* Header */}
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-warning" />
-                      <span className="font-medium text-mineshaft-100">Pending Changes</span>
-                      <Badge variant="warning">
-                        {totalChangesCount} Change{totalChangesCount !== 1 ? "s" : ""}
-                      </Badge>
-                    </div>
-
-                    {/* Description */}
-                    <p className="text-sm leading-5 text-mineshaft-400">
-                      Review pending changes and commit them to apply the updates.
-                    </p>
-                  </div>
-
-                  {/* Right Buttons */}
-                  <div className="mt-0.5 ml-6 flex items-center gap-3">
-                    <Button
-                      size="sm"
-                      onClick={() => clearAllPendingChanges({ projectId, environment, secretPath })}
-                      isDisabled={totalChangesCount === 0}
-                      variant="outline_bg"
-                      className="px-4 hover:border-red/40 hover:bg-red/10"
-                    >
-                      Discard
-                    </Button>
-                    <Button
-                      variant="solid"
-                      leftIcon={<FontAwesomeIcon icon={faSave} />}
-                      onClick={handleSaveChanges}
-                      isDisabled={totalChangesCount === 0 || isCommitting}
-                      className="px-6"
-                    >
-                      Save Changes
-                    </Button>
-                  </div>
+              <div className="flex items-center gap-3 rounded-full border border-warning/30 bg-container px-4 py-2 shadow-2xl">
+                <div className="flex items-center gap-2">
+                  <div className="size-2.5 rounded-full bg-warning" />
+                  <span className="text-sm font-medium">
+                    {totalChangesCount} Pending Change{totalChangesCount !== 1 ? "s" : ""}
+                  </span>
                 </div>
+                <UnstableSeparator orientation="vertical" className="h-5" />
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  onClick={() =>
+                    clearAllPendingChanges({ projectId, environment, secretPath })
+                  }
+                >
+                  Discard
+                </Button>
+                <Button variant="outline" size="xs" onClick={handleSaveChanges}>
+                  <EyeIcon />
+                  Review
+                </Button>
+                <Button
+                  variant="warning"
+                  size="xs"
+                  onClick={handleSaveChanges}
+                  isDisabled={isCommitting}
+                >
+                  <SaveIcon />
+                  Save
+                </Button>
               </div>
             </motion.div>
           </AnimatePresence>
@@ -660,15 +663,15 @@ export const CommitForm: React.FC<CommitFormProps> = ({
               </div>
 
               <div className="flex justify-end gap-3">
-                <Button
+                <V2Button
                   variant="plain"
                   colorSchema="secondary"
                   onClick={() => setIsModalOpen(false)}
                   isDisabled={isCommitting}
                 >
                   Cancel
-                </Button>
-                <Button
+                </V2Button>
+                <V2Button
                   onClick={handleCommit}
                   isLoading={isCommitting}
                   isDisabled={isCommitting}
@@ -677,7 +680,7 @@ export const CommitForm: React.FC<CommitFormProps> = ({
                   variant="outline_bg"
                 >
                   {isCommitting ? "Saving..." : "Save Changes"}
-                </Button>
+                </V2Button>
               </div>
             </div>
           </div>

@@ -17,6 +17,7 @@ import {
   TagsIcon,
   TrashIcon,
   Undo2Icon,
+  UndoIcon,
   UsersIcon,
   WorkflowIcon,
   WrapTextIcon
@@ -1027,7 +1028,11 @@ export const SecretEditTableRow = ({
                         variant="ghost"
                         size="xs"
                         isDisabled={
-                          isPendingCreate || isPendingDelete || isCreatable || isImportedSecret || !secretId
+                          isPendingCreate ||
+                          isPendingDelete ||
+                          isCreatable ||
+                          isImportedSecret ||
+                          !secretId
                         }
                         className={twMerge(
                           reminder && !isImportedSecret

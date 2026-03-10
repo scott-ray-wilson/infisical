@@ -10,6 +10,7 @@ import { useNavigate, useParams, useRouter, useSearch } from "@tanstack/react-ro
 import { AxiosError } from "axios";
 import {
   ChevronDownIcon,
+  CircleAlertIcon,
   CopyIcon,
   DownloadIcon,
   EyeIcon,
@@ -19,6 +20,7 @@ import {
   LayersIcon,
   LockIcon,
   LogInIcon,
+  SaveIcon,
   SettingsIcon,
   TrashIcon
 } from "lucide-react";
@@ -63,6 +65,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   UnstableAlert,
+  UnstableAlertDescription,
   UnstableAlertTitle,
   UnstableCard,
   UnstableCardContent,
@@ -623,6 +626,7 @@ const OverviewPageContent = () => {
   const [isOverviewBatchMode, setIsOverviewBatchMode] = useState(
     () => localStorage.getItem(OVERVIEW_BATCH_MODE_KEY) === "true"
   );
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
   const { pendingChanges } = useBatchMode();
   const {
     addPendingChange,
@@ -2221,6 +2225,48 @@ const OverviewPageContent = () => {
         <meta property="og:title" content={String(t("dashboard.og-title"))} />
         <meta name="og:description" content={String(t("dashboard.og-description"))} />
       </Helmet>
+      {hasPendingBatchChanges && singleVisibleEnv && (
+        <div className="sticky -top-10 z-20 -mt-20 mb-4 rounded border border-warning/35 bg-bunker-800/55 backdrop-blur-md">
+          <div className="bg-warning/10 px-12 py-3">
+            <div className="mx-auto flex max-w-8xl items-center justify-between">
+              <div className="flex items-center gap-3 text-sm text-foreground">
+                <CircleAlertIcon className="size-4 shrink-0 text-warning" />
+                <span>
+                  <span className="font-semibold">
+                    {pendingChanges.secrets.length + pendingChanges.folders.length} pending change
+                    {pendingChanges.secrets.length + pendingChanges.folders.length !== 1 ? "s" : ""}
+                  </span>
+                  {" — "}
+                  Review your changes before applying them to the environment.
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  onClick={() =>
+                    clearAllPendingChanges({
+                      projectId,
+                      environment: singleVisibleEnv.slug,
+                      secretPath
+                    })
+                  }
+                >
+                  Discard
+                </Button>
+                <Button variant="outline" size="xs" onClick={() => setIsReviewOpen(true)}>
+                  <EyeIcon />
+                  Review
+                </Button>
+                <Button variant="warning" size="xs" onClick={() => setIsReviewOpen(true)}>
+                  <SaveIcon />
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="relative mx-auto max-w-8xl text-mineshaft-50 dark:scheme-dark">
         <div className="flex w-full items-baseline justify-between">
           <PageHeader
@@ -2839,8 +2885,7 @@ const OverviewPageContent = () => {
                             {mergedSecKeys.map((key, index) => (
                               <SecretTableRow
                                 isSelected={
-                                  !hasPendingBatchChanges &&
-                                  Boolean(selectedEntries.secret[key])
+                                  !hasPendingBatchChanges && Boolean(selectedEntries.secret[key])
                                 }
                                 onToggleSecretSelect={() => {
                                   if (!hasPendingBatchChanges)
@@ -3326,6 +3371,8 @@ const OverviewPageContent = () => {
           projectId={projectId}
           secretPath={secretPath}
           isCommitting={isCommitPending}
+          isReviewOpen={isReviewOpen}
+          onReviewOpenChange={setIsReviewOpen}
         />
       )}
       <AlertDialog

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { EditIcon, FolderIcon, InfoIcon, TrashIcon } from "lucide-react";
+import { EditIcon, FolderIcon, InfoIcon, TrashIcon, Undo2Icon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 import {
@@ -26,6 +26,7 @@ type Props = {
   onToggleFolderEdit: (name: string) => void;
   onToggleFolderDelete: (name: string) => void;
   pendingAction?: PendingAction;
+  onBatchRevert?: (folderName: string) => void;
 };
 
 const pendingActionBorderClass = (action?: PendingAction) => {
@@ -51,7 +52,8 @@ export const FolderTableRow = ({
   onToggleFolderEdit,
   onToggleFolderDelete,
   onClick,
-  pendingAction
+  pendingAction,
+  onBatchRevert
 }: Props) => {
   const [isClicking, setIsClicking] = useState(false);
   const handleClick = () => {
@@ -109,38 +111,59 @@ export const FolderTableRow = ({
           </Tooltip>
         )}
         <div className="absolute top-1/2 right-2 flex -translate-y-1/2 items-center transition-all duration-500 group-hover:space-x-1.5">
-          <Tooltip delayDuration={300} disableHoverableContent>
-            <TooltipTrigger>
-              <UnstableIconButton
-                variant="ghost"
-                size="xs"
-                className="w-0 overflow-hidden border-0 opacity-0 group-hover:w-7 group-hover:opacity-100"
-                onClick={(e) => {
-                  onToggleFolderEdit(folderName);
-                  e.stopPropagation();
-                }}
-              >
-                <EditIcon />
-              </UnstableIconButton>
-            </TooltipTrigger>
-            <TooltipContent>Edit Folder</TooltipContent>
-          </Tooltip>
-          <Tooltip delayDuration={300} disableHoverableContent>
-            <TooltipTrigger>
-              <UnstableIconButton
-                variant="ghost"
-                size="xs"
-                className="w-0 overflow-hidden border-0 opacity-0 group-hover:w-7 group-hover:opacity-100 hover:text-danger"
-                onClick={(e) => {
-                  onToggleFolderDelete(folderName);
-                  e.stopPropagation();
-                }}
-              >
-                <TrashIcon />
-              </UnstableIconButton>
-            </TooltipTrigger>
-            <TooltipContent>Delete Folder</TooltipContent>
-          </Tooltip>
+          {(!pendingAction || pendingAction === PendingAction.Update) && (
+            <Tooltip delayDuration={300} disableHoverableContent>
+              <TooltipTrigger>
+                <UnstableIconButton
+                  variant="ghost"
+                  size="xs"
+                  className="w-0 overflow-hidden border-0 opacity-0 group-hover:w-7 group-hover:opacity-100"
+                  onClick={(e) => {
+                    onToggleFolderEdit(folderName);
+                    e.stopPropagation();
+                  }}
+                >
+                  <EditIcon />
+                </UnstableIconButton>
+              </TooltipTrigger>
+              <TooltipContent>Edit Folder</TooltipContent>
+            </Tooltip>
+          )}
+          {pendingAction ? (
+            <Tooltip delayDuration={300} disableHoverableContent>
+              <TooltipTrigger>
+                <UnstableIconButton
+                  variant="ghost"
+                  className="hover:text-danger"
+                  size="xs"
+                  onClick={(e) => {
+                    onBatchRevert?.(folderName);
+                    e.stopPropagation();
+                  }}
+                >
+                  <Undo2Icon />
+                </UnstableIconButton>
+              </TooltipTrigger>
+              <TooltipContent>Discard pending changes</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Tooltip delayDuration={300} disableHoverableContent>
+              <TooltipTrigger>
+                <UnstableIconButton
+                  variant="ghost"
+                  size="xs"
+                  className="w-0 overflow-hidden border-0 opacity-0 group-hover:w-7 group-hover:opacity-100 hover:text-danger"
+                  onClick={(e) => {
+                    onToggleFolderDelete(folderName);
+                    e.stopPropagation();
+                  }}
+                >
+                  <TrashIcon />
+                </UnstableIconButton>
+              </TooltipTrigger>
+              <TooltipContent>Delete Folder</TooltipContent>
+            </Tooltip>
+          )}
         </div>
       </UnstableTableCell>
       {!isSingleEnvView &&

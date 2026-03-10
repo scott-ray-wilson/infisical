@@ -1794,6 +1794,32 @@ const OverviewPageContent = () => {
     [isBatchModeActive, pendingChanges.secrets, removePendingChange, projectId, secretPath]
   );
 
+  const handleBatchFolderRevert = useCallback(
+    (folderName: string) => {
+      if (!isBatchModeActive || !singleVisibleEnv) return;
+      const pendingFolder = pendingChanges.folders.find(
+        (c) =>
+          c.folderName === folderName ||
+          (c.type === PendingAction.Update && c.originalFolderName === folderName)
+      );
+      if (pendingFolder) {
+        removePendingChange(pendingFolder.id, "folder", {
+          projectId,
+          environment: singleVisibleEnv.slug,
+          secretPath
+        });
+      }
+    },
+    [
+      isBatchModeActive,
+      singleVisibleEnv,
+      pendingChanges.folders,
+      removePendingChange,
+      projectId,
+      secretPath
+    ]
+  );
+
   // Batch mode: commit handler
   const handleCreateCommit = useCallback(
     async (changes: PendingChanges, message: string) => {
@@ -2732,6 +2758,7 @@ const OverviewPageContent = () => {
                                     handlePopUpOpen("deleteFolder", { name })
                                   }
                                   pendingAction={folderPendingAction}
+                                  onBatchRevert={handleBatchFolderRevert}
                                 />
                               )
                             )}

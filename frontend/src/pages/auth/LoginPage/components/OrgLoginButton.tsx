@@ -18,7 +18,7 @@ export const OrgLoginButton = ({ label, onClick, className, showLastUsed }: Prop
       {label}
     </Button>
     {showLastUsed && (
-      <Badge variant="project" className="absolute -top-2 -right-2 rounded-full">
+      <Badge variant="project" className="absolute -top-2 -right-2">
         Last used
       </Badge>
     )}

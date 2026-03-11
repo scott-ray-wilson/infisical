@@ -16,6 +16,7 @@ export * from "./Dropdown";
 export * from "./Editor";
 export * from "./EmailServiceSetupModal";
 export * from "./EmptyState";
+export * from "./FeatureShowcaseModal";
 export * from "./FilterableSelect";
 export * from "./FontAwesomeSymbol";
 export * from "./FormControl";

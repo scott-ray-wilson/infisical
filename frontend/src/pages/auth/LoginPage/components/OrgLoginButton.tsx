@@ -1,9 +1,8 @@
 import { faLock } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { twMerge } from "tailwind-merge";
 
-import { Button } from "@app/components/v2";
-import { Badge } from "@app/components/v3";
+import { Badge, Button } from "@app/components/v3";
+import { cn } from "@app/components/v3/utils";
 
 type Props = {
   label: string;
@@ -13,19 +12,9 @@ type Props = {
 };
 
 export const OrgLoginButton = ({ label, onClick, className, showLastUsed }: Props) => (
-  <div
-    className={twMerge(
-      "relative w-1/4 min-w-[21.2rem] rounded-md text-center md:min-w-[20.1rem] lg:w-1/6",
-      className
-    )}
-  >
-    <Button
-      colorSchema="primary"
-      variant="outline_bg"
-      onClick={onClick}
-      leftIcon={<FontAwesomeIcon icon={faLock} className="mr-2" />}
-      className="mx-0 h-10 w-full"
-    >
+  <div className={cn("relative w-full", className)}>
+    <Button variant="outline" size="lg" isFullWidth onClick={onClick}>
+      <FontAwesomeIcon icon={faLock} className="mr-2" />
       {label}
     </Button>
     {showLastUsed && (

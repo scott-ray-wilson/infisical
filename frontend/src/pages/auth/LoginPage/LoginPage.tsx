@@ -64,11 +64,11 @@ export const LoginPage = ({ isAdmin }: { isAdmin?: boolean }) => {
   };
 
   return (
-    <div className="relative flex max-h-screen min-h-screen flex-col justify-center overflow-y-auto bg-linear-to-tr from-mineshaft-600 via-mineshaft-800 to-bunker-700 px-6">
+    <div className="relative flex max-h-screen min-h-screen flex-col justify-center overflow-y-auto bg-linear-to-tr from-card via-bunker-900 to-card px-6">
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
         <svg
           viewBox="0 0 800 800"
-          className="h-[900px] w-[900px] opacity-[0.04]"
+          className="h-[900px] w-[900px] opacity-[0.06]"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -78,7 +78,7 @@ export const LoginPage = ({ isAdmin }: { isAdmin?: boolean }) => {
             const angle = (i * 15 * Math.PI) / 180;
             const x = 400 + 375 * Math.cos(angle);
             const y = 400 + 375 * Math.sin(angle);
-            return <circle key={`bolt-${i}`} cx={x} cy={y} r="4" fill="white" />;
+            return <circle key={`bolt-${i + 1}`} cx={x} cy={y} r="4" fill="white" />;
           })}
           <circle cx="400" cy="400" r="300" stroke="white" strokeWidth="1.5" />
           <circle cx="400" cy="400" r="290" stroke="white" strokeWidth="0.5" />
@@ -91,7 +91,7 @@ export const LoginPage = ({ isAdmin }: { isAdmin?: boolean }) => {
             const y2 = 400 + 290 * Math.sin(angle);
             return (
               <line
-                key={`tick-${i}`}
+                key={`tick-${i + 1}`}
                 x1={x1}
                 y1={y1}
                 x2={x2}
@@ -111,7 +111,7 @@ export const LoginPage = ({ isAdmin }: { isAdmin?: boolean }) => {
             const y2 = 400 + 300 * Math.sin(angle);
             return (
               <line
-                key={`spoke-${i}`}
+                key={`spoke-${i + 1}`}
                 x1={x1}
                 y1={y1}
                 x2={x2}

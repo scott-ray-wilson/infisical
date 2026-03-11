@@ -62,7 +62,6 @@ export const InitialStep = ({
   const [captchaToken, setCaptchaToken] = useState("");
   const [shouldShowCaptcha, setShouldShowCaptcha] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showOtherOptions, setShowOtherOptions] = useState(false);
   const captchaRef = useRef<HCaptcha>(null);
   const { data: serverDetails } = useFetchServerStatus();
 
@@ -355,7 +354,7 @@ export const InitialStep = ({
               showLastUsed={isLastUsedMethod(LoginMethod.SAML)}
             />
           )}
-          {showOtherOptions && shouldDisplayLoginMethod(LoginMethod.OIDC) && (
+          {shouldDisplayLoginMethod(LoginMethod.OIDC) && (
             <OrgLoginButton
               label="Continue with OIDC"
               onClick={handleOidc}
@@ -363,7 +362,7 @@ export const InitialStep = ({
               showLastUsed={isLastUsedMethod(LoginMethod.OIDC)}
             />
           )}
-          {showOtherOptions && shouldDisplayLoginMethod(LoginMethod.LDAP) && (
+          {shouldDisplayLoginMethod(LoginMethod.LDAP) && (
             <OrgLoginButton
               label="Continue with LDAP"
               onClick={() => navigate({ to: "/login/ldap" })}
@@ -371,20 +370,7 @@ export const InitialStep = ({
               showLastUsed={isLastUsedMethod(LoginMethod.LDAP)}
             />
           )}
-          {(shouldDisplayLoginMethod(LoginMethod.OIDC) ||
-            shouldDisplayLoginMethod(LoginMethod.LDAP)) &&
-            !showOtherOptions && (
-              <div className="mt-2 w-full">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  isFullWidth
-                  onClick={() => setShowOtherOptions(true)}
-                >
-                  Show other options
-                </Button>
-              </div>
-            )}
+
           {!isLoading && loginError && <Error text={t("login.error-login") ?? ""} />}
           {config.allowSignUp &&
           (shouldDisplayLoginMethod(LoginMethod.EMAIL) ||

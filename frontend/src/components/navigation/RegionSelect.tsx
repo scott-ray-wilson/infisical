@@ -112,7 +112,7 @@ export const RegionSelect = ({ compact }: RegionSelectProps) => {
         <SelectContent
           position="popper"
           sideOffset={4}
-          className="min-w-[var(--radix-select-trigger-width)] max-w-md"
+          className="max-w-md min-w-[var(--radix-select-trigger-width)]"
         >
           {regions.map(({ value, label, bullets, flag }) => (
             <SelectItem value={value} key={value} className="overflow-visible whitespace-normal">

@@ -1,10 +1,9 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { faGithub, faGitlab, faGoogle } from "@fortawesome/free-brands-svg-icons";
-import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import HCaptcha from "@hcaptcha/react-hcaptcha";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { Eye, EyeOff } from "lucide-react";
 
 import Error from "@app/components/basic/Error";
 import { RegionSelect } from "@app/components/navigation/RegionSelect";
@@ -22,6 +21,7 @@ import {
   UnstableCardContent,
   UnstableCardHeader,
   UnstableCardTitle,
+  UnstableIconButton,
   UnstableInput
 } from "@app/components/v3";
 import { envConfig } from "@app/config/env";
@@ -224,11 +224,7 @@ export const InitialStep = ({
               <OrgLoginButton label="Continue with SAML" onClick={handleSaml} />
             )}
             {config.defaultAuthOrgAuthMethod === AuthMethod.OIDC && (
-              <OrgLoginButton
-                label="Continue with OIDC"
-                onClick={handleOidc}
-                className="mt-2"
-              />
+              <OrgLoginButton label="Continue with OIDC" onClick={handleOidc} className="mt-2" />
             )}
           </UnstableCardContent>
         </UnstableCard>
@@ -251,169 +247,169 @@ export const InitialStep = ({
           </UnstableCardAction>
         </UnstableCardHeader>
         <UnstableCardContent>
-        {shouldDisplayLoginMethod(LoginMethod.EMAIL) && (
-          <>
-            <div className="w-full">
-              <UnstableInput
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                type="email"
-                placeholder="Enter your email..."
-                required
-                autoComplete="username"
-                className="h-10"
-              />
-            </div>
-            <div className="mt-2 w-full">
-              <InputGroup className="h-10">
-                <InputGroupInput
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password..."
+          {shouldDisplayLoginMethod(LoginMethod.EMAIL) && (
+            <>
+              <div className="w-full">
+                <UnstableInput
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  placeholder="Enter your email..."
                   required
-                  autoComplete="current-password"
-                  id="current-password"
-                />
-                <InputGroupAddon align="inline-end">
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    className="cursor-pointer text-gray-400"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    <FontAwesomeIcon size="sm" icon={showPassword ? faEyeSlash : faEye} />
-                  </button>
-                </InputGroupAddon>
-              </InputGroup>
-            </div>
-            {shouldShowCaptcha && envConfig.CAPTCHA_SITE_KEY && (
-              <div className="mt-4">
-                <HCaptcha
-                  theme="dark"
-                  sitekey={envConfig.CAPTCHA_SITE_KEY}
-                  onVerify={(token) => setCaptchaToken(token)}
-                  ref={captchaRef}
+                  autoComplete="username"
+                  className="h-10"
                 />
               </div>
-            )}
-            <div className="relative mt-4 w-full">
-              <Button
-                type="submit"
-                variant="outline"
-                size="lg"
-                isFullWidth
-                isDisabled={(shouldShowCaptcha && captchaToken === "") || isLoading}
-                isPending={isLoading}
-              >
-                Continue with Email
-              </Button>
-              {isLastUsedMethod(LoginMethod.EMAIL) && (
-                <Badge variant="default" className="absolute -top-2 -right-2 rounded-full">
-                  Last used
-                </Badge>
+              <div className="mt-2 w-full">
+                <InputGroup className="h-10">
+                  <InputGroupInput
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password..."
+                    required
+                    autoComplete="current-password"
+                    id="current-password"
+                  />
+                  <InputGroupAddon align="inline-end">
+                    <UnstableIconButton
+                      variant="ghost"
+                      size="xs"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <EyeOff /> : <Eye />}
+                    </UnstableIconButton>
+                  </InputGroupAddon>
+                </InputGroup>
+              </div>
+              {shouldShowCaptcha && envConfig.CAPTCHA_SITE_KEY && (
+                <div className="mt-4 flex justify-center">
+                  <HCaptcha
+                    theme="dark"
+                    sitekey={envConfig.CAPTCHA_SITE_KEY}
+                    onVerify={(token) => setCaptchaToken(token)}
+                    ref={captchaRef}
+                  />
+                </div>
               )}
-            </div>
-          </>
-        )}
-        {(!config.enabledLoginMethods ||
-          (shouldDisplayLoginMethod(LoginMethod.EMAIL) &&
-            config.enabledLoginMethods.length > 1)) && (
-          <div className="my-4 flex w-full flex-row items-center py-2">
-            <div className="w-full border-t border-mineshaft-400/60" />
-            <span className="mx-2 text-xs text-mineshaft-400">or</span>
-            <div className="w-full border-t border-mineshaft-400/60" />
-          </div>
-        )}
-        <div className="flex w-full gap-2">
-          {shouldDisplayLoginMethod(LoginMethod.GOOGLE) && (
-            <SocialLoginButton
-              icon={faGoogle}
-              label={t("login.continue-with-google")}
-              onClick={() => handleSocialLogin(LoginMethod.GOOGLE)}
-              showLastUsed={isLastUsedMethod(LoginMethod.GOOGLE)}
-            />
+              <div className="relative mt-4 w-full">
+                <Button
+                  type="submit"
+                  variant="outline"
+                  size="lg"
+                  isFullWidth
+                  isDisabled={(shouldShowCaptcha && captchaToken === "") || isLoading}
+                  isPending={isLoading}
+                >
+                  Continue with Email
+                </Button>
+                {isLastUsedMethod(LoginMethod.EMAIL) && (
+                  <Badge variant="default" className="absolute -top-2 -right-2 rounded-full">
+                    Last used
+                  </Badge>
+                )}
+              </div>
+            </>
           )}
-          {shouldDisplayLoginMethod(LoginMethod.GITHUB) && (
-            <SocialLoginButton
-              icon={faGithub}
-              label="Continue with GitHub"
-              onClick={() => handleSocialLogin(LoginMethod.GITHUB)}
-              showLastUsed={isLastUsedMethod(LoginMethod.GITHUB)}
-            />
-          )}
-          {shouldDisplayLoginMethod(LoginMethod.GITLAB) && (
-            <SocialLoginButton
-              icon={faGitlab}
-              label="Continue with GitLab"
-              onClick={() => handleSocialLogin(LoginMethod.GITLAB)}
-              showLastUsed={isLastUsedMethod(LoginMethod.GITLAB)}
-            />
-          )}
-        </div>
-        {shouldDisplayLoginMethod(LoginMethod.SAML) && (
-          <OrgLoginButton
-            label="Continue with SAML"
-            onClick={handleSaml}
-            className="mt-2"
-            showLastUsed={isLastUsedMethod(LoginMethod.SAML)}
-          />
-        )}
-        {showOtherOptions && shouldDisplayLoginMethod(LoginMethod.OIDC) && (
-          <OrgLoginButton
-            label="Continue with OIDC"
-            onClick={handleOidc}
-            className="mt-2"
-            showLastUsed={isLastUsedMethod(LoginMethod.OIDC)}
-          />
-        )}
-        {showOtherOptions && shouldDisplayLoginMethod(LoginMethod.LDAP) && (
-          <OrgLoginButton
-            label="Continue with LDAP"
-            onClick={() => navigate({ to: "/login/ldap" })}
-            className="mt-2"
-            showLastUsed={isLastUsedMethod(LoginMethod.LDAP)}
-          />
-        )}
-        {(shouldDisplayLoginMethod(LoginMethod.OIDC) ||
-          shouldDisplayLoginMethod(LoginMethod.LDAP)) &&
-          !showOtherOptions && (
-            <div className="mt-2 w-full">
-              <Button
-                variant="outline"
-                size="lg"
-                isFullWidth
-                onClick={() => setShowOtherOptions(true)}
-              >
-                Show other options
-              </Button>
+          {(!config.enabledLoginMethods ||
+            (shouldDisplayLoginMethod(LoginMethod.EMAIL) &&
+              config.enabledLoginMethods.length > 1)) && (
+            <div className="my-4 flex w-full flex-row items-center py-2">
+              <div className="w-full border-t border-mineshaft-400/60" />
+              <span className="mx-2 text-xs text-mineshaft-400">or</span>
+              <div className="w-full border-t border-mineshaft-400/60" />
             </div>
           )}
-        {!isLoading && loginError && <Error text={t("login.error-login") ?? ""} />}
-        {config.allowSignUp &&
-        (shouldDisplayLoginMethod(LoginMethod.EMAIL) ||
-          shouldDisplayLoginMethod(LoginMethod.GOOGLE) ||
-          shouldDisplayLoginMethod(LoginMethod.GITHUB) ||
-          shouldDisplayLoginMethod(LoginMethod.GITLAB)) ? (
-          <div className="mt-6 flex flex-row justify-center text-xs text-bunker-400">
-            <Link to="/signup">
-              <span className="cursor-pointer duration-200 hover:text-bunker-200 hover:underline hover:decoration-primary-700 hover:underline-offset-4">
-                Don&apos;t have an account yet? {t("login.create-account")}
-              </span>
-            </Link>
+          <div className="flex w-full gap-2">
+            {shouldDisplayLoginMethod(LoginMethod.GOOGLE) && (
+              <SocialLoginButton
+                icon={faGoogle}
+                label={t("login.continue-with-google")}
+                onClick={() => handleSocialLogin(LoginMethod.GOOGLE)}
+                showLastUsed={isLastUsedMethod(LoginMethod.GOOGLE)}
+              />
+            )}
+            {shouldDisplayLoginMethod(LoginMethod.GITHUB) && (
+              <SocialLoginButton
+                icon={faGithub}
+                label="Continue with GitHub"
+                onClick={() => handleSocialLogin(LoginMethod.GITHUB)}
+                showLastUsed={isLastUsedMethod(LoginMethod.GITHUB)}
+              />
+            )}
+            {shouldDisplayLoginMethod(LoginMethod.GITLAB) && (
+              <SocialLoginButton
+                icon={faGitlab}
+                label="Continue with GitLab"
+                onClick={() => handleSocialLogin(LoginMethod.GITLAB)}
+                showLastUsed={isLastUsedMethod(LoginMethod.GITLAB)}
+              />
+            )}
           </div>
-        ) : (
-          <div className="mt-4" />
-        )}
-        {shouldDisplayLoginMethod(LoginMethod.EMAIL) && (
-          <div className="mt-2 flex flex-row justify-center text-xs text-bunker-400">
-            <Link to="/account-recovery">
-              <span className="cursor-pointer duration-200 hover:text-bunker-200 hover:underline hover:decoration-primary-700 hover:underline-offset-4">
-                Recover your account
-              </span>
-            </Link>
-          </div>
-        )}
+          {shouldDisplayLoginMethod(LoginMethod.SAML) && (
+            <OrgLoginButton
+              label="Continue with SAML"
+              onClick={handleSaml}
+              className="mt-2"
+              showLastUsed={isLastUsedMethod(LoginMethod.SAML)}
+            />
+          )}
+          {showOtherOptions && shouldDisplayLoginMethod(LoginMethod.OIDC) && (
+            <OrgLoginButton
+              label="Continue with OIDC"
+              onClick={handleOidc}
+              className="mt-2"
+              showLastUsed={isLastUsedMethod(LoginMethod.OIDC)}
+            />
+          )}
+          {showOtherOptions && shouldDisplayLoginMethod(LoginMethod.LDAP) && (
+            <OrgLoginButton
+              label="Continue with LDAP"
+              onClick={() => navigate({ to: "/login/ldap" })}
+              className="mt-2"
+              showLastUsed={isLastUsedMethod(LoginMethod.LDAP)}
+            />
+          )}
+          {(shouldDisplayLoginMethod(LoginMethod.OIDC) ||
+            shouldDisplayLoginMethod(LoginMethod.LDAP)) &&
+            !showOtherOptions && (
+              <div className="mt-2 w-full">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  isFullWidth
+                  onClick={() => setShowOtherOptions(true)}
+                >
+                  Show other options
+                </Button>
+              </div>
+            )}
+          {!isLoading && loginError && <Error text={t("login.error-login") ?? ""} />}
+          {config.allowSignUp &&
+          (shouldDisplayLoginMethod(LoginMethod.EMAIL) ||
+            shouldDisplayLoginMethod(LoginMethod.GOOGLE) ||
+            shouldDisplayLoginMethod(LoginMethod.GITHUB) ||
+            shouldDisplayLoginMethod(LoginMethod.GITLAB)) ? (
+            <div className="mt-6 flex flex-row justify-center text-xs text-bunker-400">
+              <Link to="/signup">
+                <span className="cursor-pointer duration-200 hover:text-bunker-200 hover:underline hover:decoration-primary-700 hover:underline-offset-4">
+                  Don&apos;t have an account yet? {t("login.create-account")}
+                </span>
+              </Link>
+            </div>
+          ) : (
+            <div className="mt-4" />
+          )}
+          {shouldDisplayLoginMethod(LoginMethod.EMAIL) && (
+            <div className="mt-2 flex flex-row justify-center text-xs text-bunker-400">
+              <Link to="/account-recovery">
+                <span className="cursor-pointer duration-200 hover:text-bunker-200 hover:underline hover:decoration-primary-700 hover:underline-offset-4">
+                  Recover your account
+                </span>
+              </Link>
+            </div>
+          )}
         </UnstableCardContent>
       </UnstableCard>
     </form>

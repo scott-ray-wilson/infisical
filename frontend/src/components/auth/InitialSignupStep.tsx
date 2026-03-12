@@ -102,7 +102,7 @@ export default function InitialSignupStep({
           )}
           <div className="mt-6 flex flex-row justify-center text-xs text-muted">
             <Link to="/login">
-              <span className="cursor-pointer duration-200 hover:text-label hover:underline hover:decoration-project/45 hover:underline-offset-4">
+              <span className="cursor-pointer duration-200 hover:text-label hover:underline hover:decoration-project/45 hover:underline-offset-2">
                 Already have an account? Log in
               </span>
             </Link>
@@ -113,7 +113,7 @@ export default function InitialSignupStep({
               href="https://infisical.com/terms/cloud"
               target="_blank"
               rel="noopener noreferrer"
-              className="cursor-pointer underline duration-200 hover:text-label hover:decoration-project/45"
+              className="cursor-pointer underline underline-offset-2 duration-200 hover:text-label hover:decoration-project/45"
             >
               Terms of Service
             </a>{" "}
@@ -122,7 +122,7 @@ export default function InitialSignupStep({
               href="https://infisical.com/privacy"
               target="_blank"
               rel="noopener noreferrer"
-              className="cursor-pointer underline duration-200 hover:text-label hover:decoration-project/45"
+              className="cursor-pointer underline underline-offset-2 duration-200 hover:text-label hover:decoration-project/45"
             >
               Privacy Policy
             </a>

@@ -379,7 +379,7 @@ export const InitialStep = ({
             shouldDisplayLoginMethod(LoginMethod.GITLAB)) ? (
             <div className="mt-6 flex flex-row justify-center text-xs text-muted">
               <Link to="/signup">
-                <span className="cursor-pointer duration-200 hover:text-label hover:underline hover:decoration-project/60 hover:underline-offset-4">
+                <span className="cursor-pointer duration-200 hover:text-label hover:underline hover:decoration-project/45 hover:underline-offset-2">
                   Don&apos;t have an account yet? {t("login.create-account")}
                 </span>
               </Link>
@@ -390,7 +390,7 @@ export const InitialStep = ({
           {shouldDisplayLoginMethod(LoginMethod.EMAIL) && (
             <div className="mt-2 flex flex-row justify-center text-xs text-muted">
               <Link to="/account-recovery">
-                <span className="cursor-pointer duration-200 hover:text-label hover:underline hover:decoration-project/60 hover:underline-offset-4">
+                <span className="cursor-pointer duration-200 hover:text-label hover:underline hover:decoration-project/45 hover:underline-offset-2">
                   Recover your account
                 </span>
               </Link>

@@ -222,30 +222,18 @@ export const SignUpPage = () => {
         <meta property="og:title" content={t("signup.og-title") as string} />
         <meta name="og:description" content={t("signup.og-description") as string} />
       </Helmet>
-      <Link to="/">
-        <div className="relative z-10 mt-20 mb-4 flex justify-center">
-          <img
-            src="/images/gradientLogo.svg"
-            style={{ height: "90px", width: "120px" }}
-            alt="Infisical logo"
-          />
-        </div>
-      </Link>
-      <div className="relative z-10 pb-28">
-        <form onSubmit={(e) => e.preventDefault()}>
-          {/* <AnimatePresence mode="wait">
-            <motion.div
-              key={
-                step === 1 ? (isSignupWithEmail ? "step1-email" : "step1-initial") : `step-${step}`
-              }
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            > */}
+      <div className="relative z-10 my-auto flex flex-col items-center py-10">
+        <Link to="/">
+          <div className="mb-4 flex justify-center">
+            <img
+              src="/images/gradientLogo.svg"
+              style={{ height: "90px", width: "120px" }}
+              alt="Infisical logo"
+            />
+          </div>
+        </Link>
+        <form className="w-full" onSubmit={(e) => e.preventDefault()}>
           {renderView(step)}
-          {/* </motion.div>
-          </AnimatePresence> */}
         </form>
       </div>
       <footer className="relative z-10 mt-auto py-6 text-center">

@@ -10,15 +10,21 @@ import { z } from "zod";
 import { TtlFormLabel } from "@app/components/features";
 import { createNotification } from "@app/components/notifications";
 import {
-  FormControl,
-  FormLabel,
-  Input,
+  Badge,
+  Button,
+  Field,
+  FieldError,
+  FieldLabel,
   Popover,
   PopoverContent,
   PopoverTrigger,
-  Tooltip
-} from "@app/components/v2";
-import { Badge, Button, UnstableAccordion, UnstableSeparator } from "@app/components/v3";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  UnstableAccordion,
+  UnstableInput,
+  UnstableSeparator
+} from "@app/components/v3";
 import {
   ProjectPermissionMemberActions,
   ProjectPermissionSub,
@@ -244,9 +250,12 @@ export const MembershipProjectAdditionalPrivilegeModifySection = ({
                 control={form.control}
                 name="slug"
                 render={({ field }) => (
-                  <FormControl label="Privilege Name" isOptional className="mb-0">
-                    <Input {...field} />
-                  </FormControl>
+                  <Field>
+                    <FieldLabel>
+                      Privilege Name <span className="text-muted">(optional)</span>
+                    </FieldLabel>
+                    <UnstableInput {...field} />
+                  </Field>
                 )}
               />
             </div>
@@ -254,34 +263,31 @@ export const MembershipProjectAdditionalPrivilegeModifySection = ({
               <Popover>
                 <PopoverTrigger disabled={isMemberEditDisabled} asChild>
                   <div className="w-full max-w-md grow">
-                    <FormLabel label="Duration" />
-                    <Tooltip content={toolTipText}>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        disabled={isMemberEditDisabled}
-                        className={twMerge(
-                          "w-full border-none bg-mineshaft-600 py-2.5 text-xs capitalize hover:bg-mineshaft-500",
-                          isTemporary && "text-primary",
-                          isExpired && "text-red-600"
-                        )}
-                      >
-                        {isTemporary && <ClockIcon className="size-4" />}
-                        {text}
-                        <ChevronDownIcon className="ml-2 size-4" />
-                      </Button>
+                    <FieldLabel>Duration</FieldLabel>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={isMemberEditDisabled}
+                          className={twMerge(
+                            "w-full border-none bg-mineshaft-600 py-2.5 text-xs capitalize hover:bg-mineshaft-500",
+                            isTemporary && "text-primary",
+                            isExpired && "text-red-600"
+                          )}
+                        >
+                          {isTemporary && <ClockIcon className="size-4" />}
+                          {text}
+                          <ChevronDownIcon className="ml-2 size-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>{toolTipText}</TooltipContent>
                     </Tooltip>
                   </div>
                 </PopoverTrigger>
-                <PopoverContent
-                  arrowClassName="fill-gray-600"
-                  side="right"
-                  sideOffset={12}
-                  hideCloseBtn
-                  className="border border-gray-600 pt-4"
-                >
+                <PopoverContent side="right" sideOffset={12} className="border border-border pt-4">
                   <div className="flex flex-col space-y-4">
-                    <div className="border-b border-b-gray-700 pb-2 text-sm text-mineshaft-300">
+                    <div className="border-b border-b-border pb-2 text-sm text-muted">
                       Configure Timed Access
                     </div>
                     {isExpired && <Badge variant="danger">Expired</Badge>}
@@ -290,13 +296,13 @@ export const MembershipProjectAdditionalPrivilegeModifySection = ({
                       defaultValue="1h"
                       name="temporaryAccess.temporaryRange"
                       render={({ field, fieldState: { error } }) => (
-                        <FormControl
-                          label={<TtlFormLabel label="Validity" />}
-                          isError={Boolean(error?.message)}
-                          errorText={error?.message}
-                        >
-                          <Input {...field} />
-                        </FormControl>
+                        <Field>
+                          <FieldLabel>
+                            <TtlFormLabel label="Validity" />
+                          </FieldLabel>
+                          <UnstableInput {...field} isError={Boolean(error?.message)} />
+                          {error?.message && <FieldError>{error.message}</FieldError>}
+                        </Field>
                       )}
                     />
                     <div className="flex items-center space-x-2">
@@ -404,7 +410,7 @@ export const MembershipProjectAdditionalPrivilegeModifySection = ({
           </div>
           {(isCreate || !isPending) && !hasPermissions && <PermissionEmptyState />}
           {hasPermissions && (
-            <div className="scrollbar-thin max-h-[50vh] overflow-y-auto">
+            <div className="thin-scrollbar overflow-y-auto">
               <UnstableAccordion
                 type="multiple"
                 value={openPolicies}

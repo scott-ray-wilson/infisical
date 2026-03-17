@@ -1,5 +1,7 @@
+import { useRef, useState } from "react";
+import { subject } from "@casl/ability";
 import { Link } from "@tanstack/react-router";
-import { HardDriveIcon, UserIcon, UsersIcon } from "lucide-react";
+import { HardDriveIcon, PencilIcon, UserIcon, UsersIcon } from "lucide-react";
 
 import {
   Badge,
@@ -9,17 +11,35 @@ import {
   ItemFooter,
   ItemGroup,
   ItemTitle,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
   Skeleton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   UnstableEmpty,
   UnstableEmptyDescription,
   UnstableEmptyHeader,
-  UnstableEmptyTitle
+  UnstableEmptyTitle,
+  UnstableIconButton
 } from "@app/components/v3";
-import { useOrganization, useProject } from "@app/context";
+import {
+  ProjectPermissionIdentityActions,
+  ProjectPermissionMemberActions,
+  ProjectPermissionSub,
+  useOrganization,
+  useProject,
+  useProjectPermission
+} from "@app/context";
 import { getProjectBaseURL } from "@app/helpers/project";
 import { useGetSecretAccessList } from "@app/hooks/api/secrets/queries";
 import { SecretAccessListEntry } from "@app/hooks/api/secrets/types";
 import { camelCaseToSpaces } from "@app/lib/fn/string";
+import { IdentityProjectAdditionalPrivilegeModifySection } from "@app/pages/project/IdentityDetailsByIDPage/components/IdentityProjectAdditionalPrivilegeSection/IdentityProjectAdditionalPrivilegeModifySection";
+import { MembershipProjectAdditionalPrivilegeModifySection } from "@app/pages/project/MemberDetailsByIDPage/components/MemberProjectAdditionalPrivilegeSection/MembershipProjectAdditionalPrivilegeModifySection";
 
 type Props = {
   secretKey: string;
@@ -27,15 +47,23 @@ type Props = {
   secretPath: string;
 };
 
+type EditingPrivilege = {
+  type: "user" | "identity";
+  membershipId: string;
+  identityId?: string;
+  name: string;
+};
+
 function AccessCard({
   entry,
-
   linkTo,
-  linkParams
+  linkParams,
+  onEdit
 }: {
   entry: SecretAccessListEntry;
   linkTo?: string;
   linkParams?: Record<string, string>;
+  onEdit?: () => void;
 }) {
   const cardContent = (
     <>
@@ -55,6 +83,33 @@ function AccessCard({
       </ItemFooter>
     </>
   );
+
+  if (onEdit) {
+    return (
+      <Item variant="outline" className="group">
+        <div className="flex w-full items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">{cardContent}</div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <UnstableIconButton
+                size="xs"
+                variant="ghost"
+                className="mt-1 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onEdit();
+                }}
+              >
+                <PencilIcon />
+              </UnstableIconButton>
+            </TooltipTrigger>
+            <TooltipContent>Add additional privilege</TooltipContent>
+          </Tooltip>
+        </div>
+      </Item>
+    );
+  }
 
   if (linkTo && linkParams) {
     return (
@@ -92,6 +147,14 @@ function SectionHeader({
 export function SecretAccessInsights({ secretKey, environment, secretPath }: Props) {
   const { currentOrg } = useOrganization();
   const { currentProject } = useProject();
+  const { permission } = useProjectPermission();
+  const sheetContainerRef = useRef<HTMLDivElement>(null);
+  const [editingPrivilege, setEditingPrivilege] = useState<EditingPrivilege | null>(null);
+
+  const canEditMemberPrivileges = permission.can(
+    ProjectPermissionMemberActions.Edit,
+    ProjectPermissionSub.Member
+  );
 
   const { data: secretAccessList, isLoading } = useGetSecretAccessList({
     projectId: currentProject.id,
@@ -146,78 +209,141 @@ export function SecretAccessInsights({ secretKey, environment, secretPath }: Pro
   }
 
   return (
-    <div className="flex thin-scrollbar flex-col gap-6 overflow-y-auto p-4">
-      {hasUsers && (
-        <div>
-          <SectionHeader
-            icon={<UserIcon className="size-4 text-accent" />}
-            title="Users"
-            count={secretAccessList.users.length}
-          />
-          <ItemGroup>
-            {secretAccessList.users.map((user) => (
-              <AccessCard
-                key={user.id}
-                entry={user}
-                linkTo={`${getProjectBaseURL(currentProject.type)}/members/$membershipId`}
-                linkParams={{
-                  orgId: currentOrg.id,
-                  projectId: currentProject.id,
-                  membershipId: user.membershipId
-                }}
-              />
-            ))}
-          </ItemGroup>
-        </div>
-      )}
+    <>
+      <div className="flex thin-scrollbar flex-col gap-6 overflow-y-auto p-4">
+        {hasUsers && (
+          <div>
+            <SectionHeader
+              icon={<UserIcon className="size-4 text-accent" />}
+              title="Users"
+              count={secretAccessList.users.length}
+            />
+            <ItemGroup>
+              {secretAccessList.users.map((user) => (
+                <AccessCard
+                  key={user.id}
+                  entry={user}
+                  linkTo={`${getProjectBaseURL(currentProject.type)}/members/$membershipId`}
+                  linkParams={{
+                    orgId: currentOrg.id,
+                    projectId: currentProject.id,
+                    membershipId: user.membershipId
+                  }}
+                  onEdit={
+                    canEditMemberPrivileges
+                      ? () =>
+                          setEditingPrivilege({
+                            type: "user",
+                            membershipId: user.membershipId,
+                            name: user.name
+                          })
+                      : undefined
+                  }
+                />
+              ))}
+            </ItemGroup>
+          </div>
+        )}
 
-      {hasIdentities && (
-        <div>
-          <SectionHeader
-            icon={<HardDriveIcon className="size-4 text-accent" />}
-            title="Machine Identities"
-            count={secretAccessList.identities.length}
-          />
-          <ItemGroup>
-            {secretAccessList.identities.map((identity) => (
-              <AccessCard
-                key={identity.id}
-                entry={identity}
-                linkTo={`${getProjectBaseURL(currentProject.type)}/identities/$identityId`}
-                linkParams={{
-                  orgId: currentOrg.id,
-                  projectId: currentProject.id,
-                  identityId: identity.id
-                }}
-              />
-            ))}
-          </ItemGroup>
-        </div>
-      )}
+        {hasIdentities && (
+          <div>
+            <SectionHeader
+              icon={<HardDriveIcon className="size-4 text-accent" />}
+              title="Machine Identities"
+              count={secretAccessList.identities.length}
+            />
+            <ItemGroup>
+              {secretAccessList.identities.map((identity) => {
+                const canEditIdentity = permission.can(
+                  ProjectPermissionIdentityActions.Edit,
+                  subject(ProjectPermissionSub.Identity, { identityId: identity.id })
+                );
 
-      {hasGroups && (
-        <div>
-          <SectionHeader
-            icon={<UsersIcon className="size-4 text-accent" />}
-            title="Groups"
-            count={secretAccessList.groups.length}
-          />
-          <ItemGroup>
-            {secretAccessList.groups.map((group) => (
-              <AccessCard
-                key={group.id}
-                entry={group}
-                linkTo={`${getProjectBaseURL(currentProject.type)}/groups/$groupId`}
-                linkParams={{
-                  orgId: currentOrg.id,
-                  projectId: currentProject.id,
-                  groupId: group.id
-                }}
+                return (
+                  <AccessCard
+                    key={identity.id}
+                    entry={identity}
+                    linkTo={`${getProjectBaseURL(currentProject.type)}/identities/$identityId`}
+                    linkParams={{
+                      orgId: currentOrg.id,
+                      projectId: currentProject.id,
+                      identityId: identity.id
+                    }}
+                    onEdit={
+                      canEditIdentity
+                        ? () =>
+                            setEditingPrivilege({
+                              type: "identity",
+                              membershipId: identity.membershipId,
+                              identityId: identity.id,
+                              name: identity.name
+                            })
+                        : undefined
+                    }
+                  />
+                );
+              })}
+            </ItemGroup>
+          </div>
+        )}
+
+        {hasGroups && (
+          <div>
+            <SectionHeader
+              icon={<UsersIcon className="size-4 text-accent" />}
+              title="Groups"
+              count={secretAccessList.groups.length}
+            />
+            <ItemGroup>
+              {secretAccessList.groups.map((group) => (
+                <AccessCard
+                  key={group.id}
+                  entry={group}
+                  linkTo={`${getProjectBaseURL(currentProject.type)}/groups/$groupId`}
+                  linkParams={{
+                    orgId: currentOrg.id,
+                    projectId: currentProject.id,
+                    groupId: group.id
+                  }}
+                />
+              ))}
+            </ItemGroup>
+          </div>
+        )}
+      </div>
+
+      <Sheet
+        open={editingPrivilege !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setEditingPrivilege(null);
+        }}
+      >
+        <SheetContent
+          ref={sheetContainerRef}
+          className="flex h-full flex-col gap-y-0 overflow-y-auto sm:max-w-6xl"
+        >
+          <SheetHeader className="border-b">
+            <SheetTitle>Add Additional Privilege</SheetTitle>
+            <SheetDescription>Add a new privilege for {editingPrivilege?.name}</SheetDescription>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            {editingPrivilege?.type === "user" && (
+              <MembershipProjectAdditionalPrivilegeModifySection
+                projectMembershipId={editingPrivilege.membershipId}
+                onGoBack={() => setEditingPrivilege(null)}
+                menuPortalContainerRef={sheetContainerRef}
               />
-            ))}
-          </ItemGroup>
-        </div>
-      )}
-    </div>
+            )}
+            {editingPrivilege?.type === "identity" && editingPrivilege.identityId && (
+              <IdentityProjectAdditionalPrivilegeModifySection
+                identityId={editingPrivilege.identityId}
+                onGoBack={() => setEditingPrivilege(null)}
+                menuPortalContainerRef={sheetContainerRef}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }

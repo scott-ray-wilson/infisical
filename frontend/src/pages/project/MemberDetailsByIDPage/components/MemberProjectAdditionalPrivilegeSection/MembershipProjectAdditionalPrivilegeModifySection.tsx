@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { format, formatDistance } from "date-fns";
 import { ChevronDownIcon, ClockIcon, SaveIcon } from "lucide-react";
 import ms from "ms";
-import { twMerge } from "tailwind-merge";
 import { z } from "zod";
 
 import { TtlFormLabel } from "@app/components/features";
@@ -270,11 +269,7 @@ export const MembershipProjectAdditionalPrivilegeModifySection = ({
                           type="button"
                           variant="outline"
                           disabled={isMemberEditDisabled}
-                          className={twMerge(
-                            "w-full border-none bg-mineshaft-600 py-2.5 text-xs capitalize hover:bg-mineshaft-500",
-                            isTemporary && "text-primary",
-                            isExpired && "text-red-600"
-                          )}
+                          className="w-full py-2.5 text-xs capitalize"
                         >
                           {isTemporary && <ClockIcon className="size-4" />}
                           {text}
@@ -285,7 +280,7 @@ export const MembershipProjectAdditionalPrivilegeModifySection = ({
                     </Tooltip>
                   </div>
                 </PopoverTrigger>
-                <PopoverContent side="right" sideOffset={12} className="border border-border pt-4">
+                <PopoverContent side="right">
                   <div className="flex flex-col space-y-4">
                     <div className="border-b border-b-border pb-2 text-sm text-muted">
                       Configure Timed Access
@@ -334,7 +329,7 @@ export const MembershipProjectAdditionalPrivilegeModifySection = ({
                           );
                         }}
                       >
-                        {isTemporary ? "Restart" : "Grant"}
+                        {isTemporary ? "Restart" : "Configure"}
                       </Button>
                       {isTemporary && (
                         <Button
@@ -350,7 +345,7 @@ export const MembershipProjectAdditionalPrivilegeModifySection = ({
                             );
                           }}
                         >
-                          Revoke Access
+                          Remove Duration
                         </Button>
                       )}
                     </div>

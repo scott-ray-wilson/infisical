@@ -133,7 +133,12 @@ export const PolicySelectionPopover = ({
   return (
     <Popover open={isOpen} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent align="end" className="w-72 p-0" container={portalContainer}>
+      <PopoverContent
+        align="end"
+        className="w-72 p-0"
+        container={portalContainer}
+        onWheel={(e) => e.stopPropagation()}
+      >
         <Content type={type} projectId={projectId} allowedSubjects={allowedSubjects} />
       </PopoverContent>
     </Popover>

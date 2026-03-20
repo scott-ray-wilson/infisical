@@ -290,7 +290,7 @@ export const IdentityProjectAdditionalPrivilegeModifySection = ({
                         </Tooltip>
                       </div>
                     </PopoverTrigger>
-                    <PopoverContent side="right">
+                    <PopoverContent side="right" onWheel={(e) => e.stopPropagation()}>
                       <div className="flex flex-col space-y-4">
                         <div className="border-b border-b-border pb-2 text-sm text-muted">
                           Configure Timed Access

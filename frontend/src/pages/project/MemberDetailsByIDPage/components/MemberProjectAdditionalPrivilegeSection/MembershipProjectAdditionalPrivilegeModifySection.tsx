@@ -267,9 +267,9 @@ export const MembershipProjectAdditionalPrivilegeModifySection = ({
                       <TooltipTrigger asChild>
                         <Button
                           type="button"
-                          variant="outline"
+                          variant={isExpired ? "danger" : isTemporary ? "warning" : "outline"}
                           disabled={isMemberEditDisabled}
-                          className="w-full py-2.5 text-xs capitalize"
+                          className="w-full capitalize"
                         >
                           {isTemporary && <ClockIcon className="size-4" />}
                           {text}

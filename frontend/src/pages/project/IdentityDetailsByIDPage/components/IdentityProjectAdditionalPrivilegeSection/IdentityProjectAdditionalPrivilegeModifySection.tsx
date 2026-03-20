@@ -271,9 +271,9 @@ export const IdentityProjectAdditionalPrivilegeModifySection = ({
                       <TooltipTrigger asChild>
                         <Button
                           type="button"
-                          variant="outline"
+                          variant={isExpired ? "danger" : isTemporary ? "warning" : "outline"}
                           disabled={isIdentityEditDisabled}
-                          className="w-full py-2.5 text-xs capitalize"
+                          className="w-full py-2.5 capitalize"
                         >
                           {isTemporary && <ClockIcon className="size-4" />}
                           {text}

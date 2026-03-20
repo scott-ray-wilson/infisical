@@ -284,7 +284,7 @@ export const IdentityProjectAdditionalPrivilegeModifySection = ({
                     </Tooltip>
                   </div>
                 </PopoverTrigger>
-                <PopoverContent side="right" sideOffset={12} className="border border-border pt-4">
+                <PopoverContent side="right">
                   <div className="flex flex-col space-y-4">
                     <div className="border-b border-b-border pb-2 text-sm text-muted">
                       Configure Timed Access
@@ -403,6 +403,7 @@ export const IdentityProjectAdditionalPrivilegeModifySection = ({
                   projectType={currentProject.type}
                   projectId={projectId}
                   allowedSubjects={filteredPermissionSubjects}
+                  portalContainer={menuPortalContainerRef}
                 />
               )}
             </div>

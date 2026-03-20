@@ -399,6 +399,7 @@ export const MembershipProjectAdditionalPrivilegeModifySection = ({
                   projectType={currentProject.type}
                   projectId={projectId}
                   allowedSubjects={filteredPermissionSubjects}
+                  portalContainer={menuPortalContainerRef}
                 />
               )}
             </div>

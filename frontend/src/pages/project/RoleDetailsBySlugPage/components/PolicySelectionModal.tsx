@@ -2,14 +2,12 @@ import { useFormContext } from "react-hook-form";
 import { CheckIcon } from "lucide-react";
 
 import {
-  Button,
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
   Popover,
   PopoverContent,
   PopoverTrigger
@@ -21,7 +19,6 @@ import { ProjectType } from "@app/hooks/api/projects/types";
 
 import {
   EXCLUDED_PERMISSION_SUBS,
-  isConditionalSubjects,
   PROJECT_PERMISSION_OBJECT,
   ProjectTypePermissionSubjects,
   TFormSchema
@@ -38,12 +35,10 @@ type Props = {
 };
 
 const Content = ({
-  onClose,
   projectId,
   type: projectType,
   allowedSubjects
 }: {
-  onClose: () => void;
   projectId?: string;
   type: ProjectType;
   allowedSubjects?: ProjectPermissionSub[];
@@ -78,16 +73,14 @@ const Content = ({
   const handleSelectPolicy = (subject: string) => {
     const type = subject as ProjectPermissionSub;
     const rootPolicyValue = rootForm.getValues("permissions")?.[type];
+    const hasExisting = rootPolicyValue && rootPolicyValue.length > 0;
 
-    if (rootPolicyValue && isConditionalSubjects(subject as ProjectPermissionSub)) {
-      rootForm.setValue(
-        `permissions.${type}`,
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore-error akhilmhdh: this is because of ts collision with both
-        [...rootPolicyValue, {}],
-        { shouldDirty: true, shouldTouch: true }
-      );
-    } else if (!rootPolicyValue?.length) {
+    if (hasExisting) {
+      rootForm.setValue(`permissions.${type}`, undefined as never, {
+        shouldDirty: true,
+        shouldTouch: true
+      });
+    } else {
       rootForm.setValue(
         `permissions.${type}`,
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -96,7 +89,6 @@ const Content = ({
         { shouldDirty: true, shouldTouch: true }
       );
     }
-
   };
 
   const currentPermissions = rootForm.watch("permissions");
@@ -126,14 +118,6 @@ const Content = ({
           })}
         </CommandGroup>
       </CommandList>
-      <CommandSeparator alwaysRender />
-      <CommandGroup forceMount>
-        <CommandItem forceMount keywords={[]} onSelect={onClose} className="justify-center">
-          <Button type="button" variant="ghost" size="xs" asChild>
-            <span>Done</span>
-          </Button>
-        </CommandItem>
-      </CommandGroup>
     </Command>
   );
 };
@@ -152,7 +136,6 @@ export const PolicySelectionPopover = ({
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent align="end" className="w-72 p-0" container={portalContainer}>
         <Content
-          onClose={() => onOpenChange(false)}
           type={type}
           projectId={projectId}
           allowedSubjects={allowedSubjects}

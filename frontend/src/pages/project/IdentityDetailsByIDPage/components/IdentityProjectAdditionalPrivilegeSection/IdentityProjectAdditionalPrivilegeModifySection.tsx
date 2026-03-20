@@ -18,6 +18,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  SheetFooter,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -224,14 +225,17 @@ export const IdentityProjectAdditionalPrivilegeModifySection = ({
   const isExpired =
     privilegeTemporaryAccess?.isTemporary &&
     new Date() > new Date(privilegeTemporaryAccess.temporaryAccessEndTime || "");
+  let durationVariant: "outline" | "warning" | "danger" = "outline";
   let text = "Permanent";
   let toolTipText = "Non-Expiring Access";
 
   if (isTemporary) {
     if (isExpired) {
+      durationVariant = "danger";
       text = "Access Expired";
       toolTipText = "Timed Access Expired";
     } else {
+      durationVariant = "warning";
       text = formatDistance(
         new Date(privilegeTemporaryAccess.temporaryAccessEndTime || ""),
         new Date()
@@ -244,204 +248,210 @@ export const IdentityProjectAdditionalPrivilegeModifySection = ({
   }
 
   return (
-    <form className="flex flex-col gap-y-4" onSubmit={handleFormSubmit}>
+    <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleFormSubmit}>
       <FormProvider {...form}>
-        <div>
-          <div className="flex items-end space-x-6">
-            <div className="w-full max-w-md">
-              <Controller
-                control={form.control}
-                name="slug"
-                render={({ field }) => (
-                  <Field>
-                    <FieldLabel>
-                      Privilege Name <span className="text-muted">(optional)</span>
-                    </FieldLabel>
-                    <UnstableInput {...field} />
-                  </Field>
-                )}
-              />
-            </div>
+        <div className="thin-scrollbar flex-1 overflow-y-auto p-4">
+          <div className="flex flex-col gap-y-4">
             <div>
-              <Popover>
-                <PopoverTrigger disabled={isIdentityEditDisabled} asChild>
-                  <div className="w-full max-w-md grow">
-                    <FieldLabel>Duration</FieldLabel>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant={isExpired ? "danger" : isTemporary ? "warning" : "outline"}
-                          disabled={isIdentityEditDisabled}
-                          className="w-full py-2.5 capitalize"
-                        >
-                          {isTemporary && <ClockIcon className="size-4" />}
-                          {text}
-                          <ChevronDownIcon className="ml-2 size-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>{toolTipText}</TooltipContent>
-                    </Tooltip>
-                  </div>
-                </PopoverTrigger>
-                <PopoverContent side="right">
-                  <div className="flex flex-col space-y-4">
-                    <div className="border-b border-b-border pb-2 text-sm text-muted">
-                      Configure Timed Access
-                    </div>
-                    {isExpired && <Badge variant="danger">Expired</Badge>}
-                    <Controller
-                      control={form.control}
-                      defaultValue="1h"
-                      name="temporaryAccess.temporaryRange"
-                      render={({ field, fieldState: { error } }) => (
-                        <Field>
-                          <FieldLabel>
-                            <TtlFormLabel label="Validity" />
-                          </FieldLabel>
-                          <UnstableInput {...field} isError={Boolean(error?.message)} />
-                          {error?.message && <FieldError>{error.message}</FieldError>}
-                        </Field>
-                      )}
-                    />
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        size="xs"
-                        variant="outline"
-                        onClick={() => {
-                          const temporaryRange = form.getValues("temporaryAccess.temporaryRange");
-                          if (!temporaryRange) {
-                            form.setError(
-                              "temporaryAccess.temporaryRange",
-                              { type: "required", message: "Required" },
-                              { shouldFocus: true }
-                            );
-                            return;
-                          }
-                          form.clearErrors("temporaryAccess.temporaryRange");
-                          form.setValue(
-                            "temporaryAccess",
-                            {
-                              isTemporary: true,
-                              temporaryAccessStartTime: new Date().toISOString(),
-                              temporaryRange,
-                              temporaryAccessEndTime: new Date(
-                                new Date().getTime() + ms(temporaryRange)
-                              ).toISOString()
-                            },
-                            { shouldDirty: true }
-                          );
-                        }}
-                      >
-                        {isTemporary ? "Restart" : "Configure"}
-                      </Button>
-                      {isTemporary && (
-                        <Button
-                          size="xs"
-                          variant="danger"
-                          onClick={() => {
-                            form.setValue(
-                              "temporaryAccess",
-                              {
-                                isTemporary: false
-                              },
-                              { shouldDirty: true }
-                            );
-                          }}
-                        >
-                          Remove Duration
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <div className="flex items-end space-x-6">
+                <div className="w-full max-w-md">
+                  <Controller
+                    control={form.control}
+                    name="slug"
+                    render={({ field }) => (
+                      <Field>
+                        <FieldLabel>
+                          Privilege Name <span className="text-muted">(optional)</span>
+                        </FieldLabel>
+                        <UnstableInput {...field} />
+                      </Field>
+                    )}
+                  />
+                </div>
+                <div>
+                  <Popover>
+                    <PopoverTrigger disabled={isIdentityEditDisabled} asChild>
+                      <div className="w-full max-w-md grow">
+                        <FieldLabel>Duration</FieldLabel>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant={durationVariant}
+                              disabled={isIdentityEditDisabled}
+                              className="w-full py-2.5 capitalize"
+                            >
+                              {isTemporary && <ClockIcon className="size-4" />}
+                              {text}
+                              <ChevronDownIcon className="ml-2 size-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>{toolTipText}</TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent side="right">
+                      <div className="flex flex-col space-y-4">
+                        <div className="border-b border-b-border pb-2 text-sm text-muted">
+                          Configure Timed Access
+                        </div>
+                        {isExpired && <Badge variant="danger">Expired</Badge>}
+                        <Controller
+                          control={form.control}
+                          defaultValue="1h"
+                          name="temporaryAccess.temporaryRange"
+                          render={({ field, fieldState: { error } }) => (
+                            <Field>
+                              <FieldLabel>
+                                <TtlFormLabel label="Validity" />
+                              </FieldLabel>
+                              <UnstableInput {...field} isError={Boolean(error?.message)} />
+                              {error?.message && <FieldError>{error.message}</FieldError>}
+                            </Field>
+                          )}
+                        />
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            onClick={() => {
+                              const temporaryRange = form.getValues(
+                                "temporaryAccess.temporaryRange"
+                              );
+                              if (!temporaryRange) {
+                                form.setError(
+                                  "temporaryAccess.temporaryRange",
+                                  { type: "required", message: "Required" },
+                                  { shouldFocus: true }
+                                );
+                                return;
+                              }
+                              form.clearErrors("temporaryAccess.temporaryRange");
+                              form.setValue(
+                                "temporaryAccess",
+                                {
+                                  isTemporary: true,
+                                  temporaryAccessStartTime: new Date().toISOString(),
+                                  temporaryRange,
+                                  temporaryAccessEndTime: new Date(
+                                    new Date().getTime() + ms(temporaryRange)
+                                  ).toISOString()
+                                },
+                                { shouldDirty: true }
+                              );
+                            }}
+                          >
+                            {isTemporary ? "Restart" : "Configure"}
+                          </Button>
+                          {isTemporary && (
+                            <Button
+                              size="xs"
+                              variant="danger"
+                              onClick={() => {
+                                form.setValue(
+                                  "temporaryAccess",
+                                  {
+                                    isTemporary: false
+                                  },
+                                  { shouldDirty: true }
+                                );
+                              }}
+                            >
+                              Remove Duration
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        <UnstableSeparator />
-        <div>
-          <div className="mb-3 flex w-full items-center justify-between">
-            <div className="text-lg">Policies</div>
-            <div className="flex items-center gap-2">
-              {isDirty && (
-                <Button
-                  type="button"
-                  className="mr-4 text-muted"
-                  variant="ghost"
-                  disabled={isSubmitting}
-                  onClick={() => {
-                    if (privilegeDetails) {
-                      reset({
-                        ...privilegeDetails,
-                        permissions: rolePermission2Form(privilegeDetails.permissions),
-                        temporaryAccess: privilegeDetails.isTemporary
-                          ? {
-                              isTemporary: true,
-                              temporaryRange: privilegeDetails.temporaryRange || "",
-                              temporaryAccessEndTime: privilegeDetails.temporaryAccessEndTime || "",
-                              temporaryAccessStartTime:
-                                privilegeDetails.temporaryAccessStartTime || ""
-                            }
-                          : { isTemporary: false }
-                      });
-                    } else {
-                      reset({
-                        slug: "",
-                        temporaryAccess: { isTemporary: false },
-                        permissions: {}
-                      });
-                    }
-                  }}
-                >
-                  Discard
-                </Button>
-              )}
-              {currentProject && (
-                <AddPoliciesButton
-                  isDisabled={isDisabled}
-                  projectType={currentProject.type}
-                  projectId={projectId}
-                  allowedSubjects={filteredPermissionSubjects}
-                  portalContainer={menuPortalContainerRef}
-                />
-              )}
-            </div>
-          </div>
-          {(isCreate || !isPending) && !hasPermissions && <PermissionEmptyState />}
-          {hasPermissions && (
-            <div className="thin-scrollbar overflow-y-auto">
-              <UnstableAccordion
-                type="multiple"
-                value={openPolicies}
-                onValueChange={setOpenPolicies}
-                className="overflow-clip rounded-md border border-border bg-container"
-              >
-                {filteredPermissionSubjects.map((permissionSubject) => {
-                  const filteredActions = getFilteredActionsForSubject(permissionSubject);
-                  if (filteredActions.length === 0) return null;
-
-                  return (
-                    <GeneralPermissionPolicies
-                      subject={permissionSubject}
-                      actions={filteredActions}
-                      title={PROJECT_PERMISSION_OBJECT[permissionSubject].title}
-                      description={PROJECT_PERMISSION_OBJECT[permissionSubject].description}
-                      key={`project-permission-${permissionSubject}`}
-                      isDisabled={isDisabled}
-                      isOpen={openPolicies.includes(permissionSubject)}
-                      menuPortalContainerRef={menuPortalContainerRef}
+            <UnstableSeparator />
+            <div>
+              <div className="mb-3 flex w-full items-center justify-between">
+                <div className="text-lg">Policies</div>
+                <div className="flex items-center gap-2">
+                  {isDirty && (
+                    <Button
+                      type="button"
+                      className="mr-4 text-muted"
+                      variant="ghost"
+                      disabled={isSubmitting}
+                      onClick={() => {
+                        if (privilegeDetails) {
+                          reset({
+                            ...privilegeDetails,
+                            permissions: rolePermission2Form(privilegeDetails.permissions),
+                            temporaryAccess: privilegeDetails.isTemporary
+                              ? {
+                                  isTemporary: true,
+                                  temporaryRange: privilegeDetails.temporaryRange || "",
+                                  temporaryAccessEndTime:
+                                    privilegeDetails.temporaryAccessEndTime || "",
+                                  temporaryAccessStartTime:
+                                    privilegeDetails.temporaryAccessStartTime || ""
+                                }
+                              : { isTemporary: false }
+                          });
+                        } else {
+                          reset({
+                            slug: "",
+                            temporaryAccess: { isTemporary: false },
+                            permissions: {}
+                          });
+                        }
+                      }}
                     >
-                      {renderConditionalComponents(permissionSubject, isDisabled)}
-                    </GeneralPermissionPolicies>
-                  );
-                })}
-              </UnstableAccordion>
+                      Discard
+                    </Button>
+                  )}
+                  {currentProject && (
+                    <AddPoliciesButton
+                      isDisabled={isDisabled}
+                      projectType={currentProject.type}
+                      projectId={projectId}
+                      allowedSubjects={filteredPermissionSubjects}
+                      portalContainer={menuPortalContainerRef}
+                    />
+                  )}
+                </div>
+              </div>
+              {(isCreate || !isPending) && !hasPermissions && <PermissionEmptyState />}
+              {hasPermissions && (
+                <div className="thin-scrollbar overflow-y-auto">
+                  <UnstableAccordion
+                    type="multiple"
+                    value={openPolicies}
+                    onValueChange={setOpenPolicies}
+                    className="overflow-clip rounded-md border border-border bg-container"
+                  >
+                    {filteredPermissionSubjects.map((permissionSubject) => {
+                      const filteredActions = getFilteredActionsForSubject(permissionSubject);
+                      if (filteredActions.length === 0) return null;
+
+                      return (
+                        <GeneralPermissionPolicies
+                          subject={permissionSubject}
+                          actions={filteredActions}
+                          title={PROJECT_PERMISSION_OBJECT[permissionSubject].title}
+                          description={PROJECT_PERMISSION_OBJECT[permissionSubject].description}
+                          key={`project-permission-${permissionSubject}`}
+                          isDisabled={isDisabled}
+                          isOpen={openPolicies.includes(permissionSubject)}
+                          menuPortalContainerRef={menuPortalContainerRef}
+                        >
+                          {renderConditionalComponents(permissionSubject, isDisabled)}
+                        </GeneralPermissionPolicies>
+                      );
+                    })}
+                  </UnstableAccordion>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
-        <UnstableSeparator />
-        <div className="flex w-full items-center justify-end gap-x-2">
+        <SheetFooter className="justify-end border-t">
           <Button variant="ghost" onClick={onGoBack}>
             Cancel
           </Button>
@@ -449,7 +459,7 @@ export const IdentityProjectAdditionalPrivilegeModifySection = ({
             <SaveIcon />
             Save
           </Button>
-        </div>
+        </SheetFooter>
       </FormProvider>
     </form>
   );

@@ -318,30 +318,25 @@ export function SecretAccessInsights({ secretKey, environment, secretPath }: Pro
           if (!isOpen) setEditingPrivilege(null);
         }}
       >
-        <SheetContent
-          ref={sheetContainerRef}
-          className="flex h-full flex-col gap-y-0 overflow-y-auto sm:max-w-6xl"
-        >
+        <SheetContent ref={sheetContainerRef} className="flex h-full flex-col gap-y-0 sm:max-w-6xl">
           <SheetHeader className="border-b">
             <SheetTitle>Add Additional Privilege</SheetTitle>
             <SheetDescription>Add a new privilege for {editingPrivilege?.name}</SheetDescription>
           </SheetHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">
-            {editingPrivilege?.type === "user" && (
-              <MembershipProjectAdditionalPrivilegeModifySection
-                projectMembershipId={editingPrivilege.membershipId}
-                onGoBack={() => setEditingPrivilege(null)}
-                menuPortalContainerRef={sheetContainerRef}
-              />
-            )}
-            {editingPrivilege?.type === "identity" && editingPrivilege.identityId && (
-              <IdentityProjectAdditionalPrivilegeModifySection
-                identityId={editingPrivilege.identityId}
-                onGoBack={() => setEditingPrivilege(null)}
-                menuPortalContainerRef={sheetContainerRef}
-              />
-            )}
-          </div>
+          {editingPrivilege?.type === "user" && (
+            <MembershipProjectAdditionalPrivilegeModifySection
+              projectMembershipId={editingPrivilege.membershipId}
+              onGoBack={() => setEditingPrivilege(null)}
+              menuPortalContainerRef={sheetContainerRef}
+            />
+          )}
+          {editingPrivilege?.type === "identity" && editingPrivilege.identityId && (
+            <IdentityProjectAdditionalPrivilegeModifySection
+              identityId={editingPrivilege.identityId}
+              onGoBack={() => setEditingPrivilege(null)}
+              menuPortalContainerRef={sheetContainerRef}
+            />
+          )}
         </SheetContent>
       </Sheet>
     </>

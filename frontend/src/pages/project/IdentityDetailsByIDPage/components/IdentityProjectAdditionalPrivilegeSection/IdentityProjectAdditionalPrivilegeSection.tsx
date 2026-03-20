@@ -336,32 +336,27 @@ export const IdentityProjectAdditionalPrivilegeSection = ({ identityMembershipDe
         open={popUp.modifyPrivilege.isOpen}
         onOpenChange={(isOpen) => handlePopUpToggle("modifyPrivilege", isOpen)}
       >
-        <SheetContent
-          ref={sheetContainerRef}
-          className="flex h-full flex-col gap-y-0 overflow-y-auto sm:max-w-6xl"
-        >
+        <SheetContent ref={sheetContainerRef} className="flex h-full flex-col gap-y-0 sm:max-w-6xl">
           <SheetHeader className="border-b">
             <SheetTitle>Additional Privileges</SheetTitle>
             <SheetDescription>
               Additional privileges take precedence over roles when permissions conflict
             </SheetDescription>
           </SheetHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto p-4">
-            <IdentityProjectAdditionalPrivilegeModifySection
-              onGoBack={() => handlePopUpClose("modifyPrivilege")}
-              identityId={identityId}
-              privilegeId={(popUp?.modifyPrivilege?.data as { id: string })?.id}
-              isDisabled={
-                permission.cannot(
-                  ProjectPermissionIdentityActions.Edit,
-                  subject(ProjectPermissionSub.Identity, {
-                    identityId
-                  })
-                ) || !canModifyIdentityPrivileges
-              }
-              menuPortalContainerRef={sheetContainerRef}
-            />
-          </div>
+          <IdentityProjectAdditionalPrivilegeModifySection
+            onGoBack={() => handlePopUpClose("modifyPrivilege")}
+            identityId={identityId}
+            privilegeId={(popUp?.modifyPrivilege?.data as { id: string })?.id}
+            isDisabled={
+              permission.cannot(
+                ProjectPermissionIdentityActions.Edit,
+                subject(ProjectPermissionSub.Identity, {
+                  identityId
+                })
+              ) || !canModifyIdentityPrivileges
+            }
+            menuPortalContainerRef={sheetContainerRef}
+          />
         </SheetContent>
       </Sheet>
       <DeleteActionModal

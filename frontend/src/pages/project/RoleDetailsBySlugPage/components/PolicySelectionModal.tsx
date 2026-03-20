@@ -60,10 +60,7 @@ const Content = ({
         ]
     )
     .filter(([subject]) => !EXCLUDED_PERMISSION_SUBS.includes(subject as ProjectPermissionSub))
-    .filter(
-      ([subject]) =>
-        subject !== ProjectPermissionSub.Integrations || hasNativeIntegrations
-    )
+    .filter(([subject]) => subject !== ProjectPermissionSub.Integrations || hasNativeIntegrations)
     .filter(
       ([subject]) => !allowedSubjects || allowedSubjects.includes(subject as ProjectPermissionSub)
     )
@@ -111,7 +108,9 @@ const Content = ({
                 keywords={[PROJECT_PERMISSION_OBJECT[subject as ProjectPermissionSub].title]}
                 onSelect={handleSelectPolicy}
               >
-                <CheckIcon className={cn("size-4 shrink-0", hasPolicy ? "opacity-100" : "opacity-0")} />
+                <CheckIcon
+                  className={cn("size-4 shrink-0", hasPolicy ? "opacity-100" : "opacity-0")}
+                />
                 <span>{PROJECT_PERMISSION_OBJECT[subject as ProjectPermissionSub].title}</span>
               </CommandItem>
             );
@@ -135,11 +134,7 @@ export const PolicySelectionPopover = ({
     <Popover open={isOpen} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent align="end" className="w-72 p-0" container={portalContainer}>
-        <Content
-          type={type}
-          projectId={projectId}
-          allowedSubjects={allowedSubjects}
-        />
+        <Content type={type} projectId={projectId} allowedSubjects={allowedSubjects} />
       </PopoverContent>
     </Popover>
   );

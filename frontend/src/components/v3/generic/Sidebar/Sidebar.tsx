@@ -444,7 +444,7 @@ function SidebarMenuItem({ className, ...props }: React.ComponentProps<"li">) {
 }
 
 const sidebarMenuButtonVariants = cva(
-  "ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-foreground/5 active:text-foreground data-active:bg-foreground/5 data-active:text-foreground data-open:hover:bg-foreground/5 data-open:hover:text-foreground gap-2 p-2 text-left text-sm transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! focus-visible:ring-2 data-active:font-medium peer/menu-button group/menu-button px-4 border-l-2 data-active:border-l-project border-transparent flex w-full text-label items-center overflow-hidden outline-hidden disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
+  "ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:bg-foreground/5 active:text-foreground data-active:bg-foreground/5 data-active:text-foreground data-open:hover:bg-foreground/5 data-open:hover:text-foreground gap-2 p-2 text-left text-sm transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! focus-visible:ring-2 data-active:font-medium peer/menu-button group/menu-button px-4 border-l-2 border-transparent flex w-full text-label items-center overflow-hidden outline-hidden disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate",
   {
     variants: {
       variant: {
@@ -456,11 +456,17 @@ const sidebarMenuButtonVariants = cva(
         default: "h-8 text-sm",
         sm: "h-7 text-xs",
         lg: "h-10 text-sm group-data-[collapsible=icon]:p-0!"
+      },
+      scope: {
+        org: "data-active:border-l-org",
+        "sub-org": "data-active:border-l-sub-org",
+        project: "data-active:border-l-project"
       }
     },
     defaultVariants: {
       variant: "default",
-      size: "default"
+      size: "default",
+      scope: "org"
     }
   }
 );
@@ -470,6 +476,7 @@ function SidebarMenuButton({
   isActive = false,
   variant = "default",
   size = "default",
+  scope = "org",
   tooltip,
   className,
   ...props
@@ -487,7 +494,7 @@ function SidebarMenuButton({
       data-sidebar="menu-button"
       data-size={size}
       data-active={isActive || undefined}
-      className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+      className={cn(sidebarMenuButtonVariants({ variant, size, scope }), className)}
       {...props}
     />
   );

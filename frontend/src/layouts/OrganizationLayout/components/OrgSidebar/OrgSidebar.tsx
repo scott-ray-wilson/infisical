@@ -34,8 +34,7 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarSeparator
+  SidebarMenuItem
 } from "@app/components/v3";
 import {
   ProjectPermissionActions,
@@ -103,7 +102,7 @@ const ProjectNavLink = ({ item }: { item: NavItem }) => {
 
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton size="lg" asChild isActive={isActive} tooltip={item.label}>
+      <SidebarMenuButton size="lg" scope="project" asChild isActive={isActive} tooltip={item.label}>
         <Link
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           to={`/organizations/$orgId/projects/${typePath}/$projectId/${item.pathSuffix}` as any}

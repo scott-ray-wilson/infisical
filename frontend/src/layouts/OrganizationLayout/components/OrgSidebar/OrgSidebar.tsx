@@ -460,7 +460,7 @@ const ProjectNav = () => {
 
   return (
     <>
-      <SidebarSeparator />
+      {/* <SidebarSeparator /> */}
       <SidebarGroup>
         <SidebarGroupLabel className="flex items-center gap-2">
           <span className="truncate">{currentProject.name}</span>

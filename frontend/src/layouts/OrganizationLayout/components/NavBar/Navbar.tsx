@@ -4,11 +4,16 @@ import { faCircleQuestion, faUserCircle } from "@fortawesome/free-regular-svg-ic
 import {
   faArrowUpRightFromSquare,
   faBook,
+  faCaretDown,
+  faCheck,
+  faChevronRight,
   faEnvelope,
   faExclamationTriangle,
   faInfinity,
   faInfo,
   faInfoCircle,
+  faMagnifyingGlass,
+  faPlus,
   faSignOut,
   faToolbox,
   faUser,
@@ -17,9 +22,10 @@ import {
   faUsers
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useQueryClient } from "@tanstack/react-query";
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { UserPlusIcon } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
+import { ChevronRight, UserPlusIcon } from "lucide-react";
+import { twMerge } from "tailwind-merge";
 
 import { Mfa } from "@app/components/auth/Mfa";
 import { createNotification } from "@app/components/notifications";
@@ -31,11 +37,16 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownSubMenu,
+  DropdownSubMenuContent,
+  DropdownSubMenuTrigger,
+  IconButton,
+  Input,
   Modal,
   ModalContent,
   Tooltip
 } from "@app/components/v2";
-import { InstanceIcon } from "@app/components/v3";
+import { Badge, InstanceIcon, OrgIcon, SubOrgIcon } from "@app/components/v3";
 import { envConfig } from "@app/config/env";
 import {
   OrgPermissionActions,
@@ -44,18 +55,105 @@ import {
   useSubscription,
   useUser
 } from "@app/context";
+import { OrgPermissionSubOrgActions } from "@app/context/OrgPermissionContext/types";
 import { isInfisicalCloud } from "@app/helpers/platform";
 import { useToggle } from "@app/hooks";
-import { projectKeys, useGetOrganizations, useGetOrgTrialUrl, useLogoutUser } from "@app/hooks/api";
+import {
+  projectKeys,
+  subOrganizationsQuery,
+  useGetOrganizations,
+  useGetOrgTrialUrl,
+  useLogoutUser
+} from "@app/hooks/api";
 import { authKeys, selectOrganization } from "@app/hooks/api/auth/queries";
 import { MfaMethod } from "@app/hooks/api/auth/types";
 import { getAuthToken } from "@app/hooks/api/reactQuery";
-import { SubscriptionPlan } from "@app/hooks/api/types";
+import { Organization, SubscriptionPlan } from "@app/hooks/api/types";
+import { AuthMethod } from "@app/hooks/api/users/types";
 import { ProjectSelect } from "@app/layouts/ProjectLayout/components/ProjectSelect";
 import { navigateUserToOrg } from "@app/pages/auth/LoginPage/Login.utils";
 
 import { ServerAdminsPanel } from "../ServerAdminsPanel/ServerAdminsPanel";
+import { NewSubOrganizationForm } from "./NewSubOrganizationForm";
 import { NotificationDropdown } from "./NotificationDropdown";
+
+type SubOrgFilterListProps = {
+  search: string;
+  onSearchChange: (value: string) => void;
+  subOrganizations: { id: string; name: string }[];
+  currentOrgId: string | undefined;
+  onSelect: (orgId: string) => void;
+  onCreateSubOrg: () => void;
+};
+
+const SubOrgFilterList = ({
+  search,
+  onSearchChange,
+  subOrganizations,
+  currentOrgId,
+  onSelect,
+  onCreateSubOrg
+}: SubOrgFilterListProps) => {
+  const filtered = subOrganizations.filter((s) =>
+    s.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <>
+      <div className="mb-1 border-b border-b-mineshaft-600 py-1 pb-1">
+        <Input
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          leftIcon={<FontAwesomeIcon icon={faMagnifyingGlass} />}
+          size="xs"
+          variant="plain"
+          placeholder="Filter sub-orgs..."
+          className="text-bunker-100 placeholder-mineshaft-300"
+          onKeyDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+      <div className="max-h-48 thin-scrollbar overflow-y-auto">
+        {filtered.map((subOrg) => (
+          <DropdownMenuItem
+            onClick={() => onSelect(subOrg.id)}
+            className="cursor-pointer font-normal"
+            key={subOrg.id}
+          >
+            <div className="flex w-full max-w-48 cursor-pointer items-center gap-x-2">
+              {currentOrgId === subOrg.id && (
+                <FontAwesomeIcon icon={faCheck} className="shrink-0 text-primary" />
+              )}
+              <p className="truncate">{subOrg.name}</p>
+            </div>
+          </DropdownMenuItem>
+        ))}
+        {filtered.length === 0 && (
+          <p className="px-2 py-1.5 text-xs text-mineshaft-400">No sub-organizations found.</p>
+        )}
+      </div>
+      <OrgPermissionCan
+        I={OrgPermissionSubOrgActions.Create}
+        a={OrgPermissionSubjects.SubOrganization}
+      >
+        {(isAllowed) =>
+          isAllowed ? (
+            <>
+              <div className="mt-1 h-px border-t border-mineshaft-600" />
+              <DropdownMenuItem
+                className="cursor-pointer"
+                icon={<FontAwesomeIcon icon={faPlus} />}
+                onClick={onCreateSubOrg}
+              >
+                New Sub-Organization
+              </DropdownMenuItem>
+            </>
+          ) : null
+        }
+      </OrgPermissionCan>
+    </>
+  );
+};
 
 const getPlan = (subscription: SubscriptionPlan) => {
   if (subscription.groups) return "Enterprise";
@@ -129,7 +227,17 @@ export const Navbar = () => {
   const { currentOrg, isSubOrganization } = useOrganization();
 
   const [showAdminsModal, setShowAdminsModal] = useState(false);
+  const [showSubOrgForm, setShowSubOrgForm] = useState(false);
   const [showCardDeclinedModal, setShowCardDeclinedModal] = useState(false);
+  const [subOrgMenuSearch, setSubOrgMenuSearch] = useState("");
+  const [subOrgBreadcrumbSearch, setSubOrgBreadcrumbSearch] = useState("");
+
+  const subOrgQuery = subOrganizationsQuery.list({ isAccessible: true });
+  const { data: subOrganizations = [] } = useQuery({
+    ...subOrgQuery,
+    enabled: Boolean(subscription.subOrganization),
+    select: (data) => data.organizations
+  });
 
   const isCardDeclined = Boolean(subscription?.cardDeclined);
   const isCardDeclinedMoreThan30Days = Boolean(
@@ -141,7 +249,9 @@ export const Navbar = () => {
   const [requiredMfaMethod, setRequiredMfaMethod] = useState(MfaMethod.EMAIL);
   const [mfaSuccessCallback, setMfaSuccessCallback] = useState<() => void>(() => {});
   const [shouldShowMfa, toggleShowMfa] = useToggle(false);
+  const router = useRouter();
   const queryClient = useQueryClient();
+  const [isOrgSelectOpen, setIsOrgSelectOpen] = useState(false);
 
   const location = useLocation();
   const isBillingPage = location.pathname === `/organizations/${currentOrg.id}/billing`;
@@ -195,6 +305,7 @@ export const Navbar = () => {
     SecurityClient.setToken(token);
     SecurityClient.setProviderAuthToken("");
     queryClient.removeQueries({ queryKey: authKeys.getAuthToken });
+    queryClient.removeQueries({ queryKey: subOrgQuery.queryKey });
 
     await queryClient.refetchQueries({ queryKey: authKeys.getAuthToken });
 
@@ -284,10 +395,36 @@ export const Navbar = () => {
     location.pathname.startsWith(`/organizations/${currentOrg.id}/projects`) &&
     location.pathname !== `/organizations/${currentOrg.id}/projects`;
 
+  const handleOrgNav = async (org: Organization) => {
+    if (currentOrg?.id === org.id) return;
+
+    if (org.authEnforced) {
+      // org has an org-level auth method enabled (e.g. SAML)
+      // -> logout + redirect to SAML SSO
+
+      await logout.mutateAsync();
+      if (org.orgAuthMethod === AuthMethod.OIDC) {
+        window.open(`/api/v1/sso/oidc/login?orgSlug=${org.slug}`);
+      } else {
+        window.open(`/api/v1/sso/redirect/saml2/organizations/${org.slug}`);
+      }
+      window.close();
+      return;
+    }
+
+    if (org.googleSsoAuthEnforced) {
+      await logout.mutateAsync();
+      window.open(`/api/v1/sso/redirect/google?org_slug=${org.slug}`);
+      window.close();
+      return;
+    }
+
+    handleOrgSelection({ organizationId: org?.id });
+  };
+
   return (
     <div className="z-10 flex min-h-12 items-center border-b border-border bg-card px-4">
-      <div className="mr-auto flex h-full items-center">
-        {/* eslint-disable-next-line no-nested-ternary */}
+      <div className="mr-auto flex h-full min-w-34 items-center">
         {isServerAdminPanel ? (
           <Link
             to="/admin"
@@ -296,9 +433,205 @@ export const Navbar = () => {
             <InstanceIcon className="size-3.5 text-xs text-bunker-300" />
             <div className="whitespace-nowrap">Server Console</div>
           </Link>
-        ) : isProjectScope ? (
-          <ProjectSelect />
-        ) : null}
+        ) : (
+          <>
+            <div className="mr-4 flex h-full w-60 items-center gap-1 border-r border-border pr-2 pl-1">
+              <DropdownMenu modal={false} open={isOrgSelectOpen} onOpenChange={setIsOrgSelectOpen}>
+                <div className="group mr-1 flex min-w-0 cursor-pointer items-center gap-2 overflow-hidden text-sm text-white transition-all duration-100">
+                  <button
+                    className="flex cursor-pointer items-center gap-x-2 truncate whitespace-nowrap"
+                    type="button"
+                    onClick={async () => {
+                      if (isSubOrganization) {
+                        await handleOrgSelection({
+                          organizationId: currentOrg.rootOrgId as string
+                        });
+                      } else {
+                        navigate({
+                          to: "/organizations/$orgId/projects",
+                          params: { orgId: currentOrg.id }
+                        });
+                      }
+                    }}
+                  >
+                    <OrgIcon className={twMerge("size-[14px] shrink-0 text-org")} />
+                    <span className="truncate">{rootOrg?.name}</span>
+                    <Badge variant="org" className="hidden lg:inline-flex">
+                      Organization
+                    </Badge>
+                  </button>
+                  {subscription.cardDeclined && (
+                    <Tooltip
+                      content={`Your payment could not be processed${subscription.cardDeclinedReason ? `: ${subscription.cardDeclinedReason}` : ""}. Please update your payment method to continue enjoying premium features.`}
+                      className="max-w-xs"
+                    >
+                      <div className="flex items-center">
+                        <FontAwesomeIcon
+                          icon={faExclamationTriangle}
+                          className="animate-pulse cursor-help text-xs text-primary-400"
+                        />
+                      </div>
+                    </Tooltip>
+                  )}
+                </div>
+                <DropdownMenuTrigger asChild>
+                  <div>
+                    <IconButton
+                      variant="plain"
+                      colorSchema="secondary"
+                      ariaLabel="switch-org"
+                      className="px-2 py-1"
+                    >
+                      <FontAwesomeIcon icon={faCaretDown} className="text-xs text-bunker-300" />
+                    </IconButton>
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="center"
+                  side="bottom"
+                  className="mt-6 cursor-default p-1 shadow-mineshaft-600 drop-shadow-md"
+                  style={{ minWidth: "220px" }}
+                >
+                  <div className="px-2 py-1 text-xs text-mineshaft-400 capitalize">
+                    Organizations
+                  </div>
+                  {orgs?.map((org) => {
+                    if (
+                      subscription.subOrganization &&
+                      (org.id === currentOrg?.id || org.id === currentOrg?.parentOrgId)
+                    ) {
+                      return (
+                        <DropdownSubMenu key={`${org.id}-sub-orgs`}>
+                          <DropdownSubMenuTrigger
+                            onClick={() => {
+                              setIsOrgSelectOpen(false);
+                              handleOrgNav(org);
+                            }}
+                            className="cursor-pointer font-normal"
+                          >
+                            <div className="flex w-full max-w-48 cursor-pointer items-center gap-x-2">
+                              {currentOrg?.id === org.id && (
+                                <FontAwesomeIcon icon={faCheck} className="shrink-0 text-primary" />
+                              )}
+                              <p className="truncate">{org.name}</p>
+                              <FontAwesomeIcon className="ml-auto shrink-0" icon={faChevronRight} />
+                            </div>
+                          </DropdownSubMenuTrigger>
+                          <DropdownSubMenuContent
+                            sideOffset={8}
+                            alignOffset={-24}
+                            className="mt-6 cursor-default p-1 shadow-mineshaft-600 drop-shadow-md"
+                            style={{ minWidth: "220px" }}
+                          >
+                            <SubOrgFilterList
+                              search={subOrgMenuSearch}
+                              onSearchChange={setSubOrgMenuSearch}
+                              subOrganizations={subOrganizations}
+                              currentOrgId={currentOrg?.id}
+                              onSelect={(orgId) => handleOrgSelection({ organizationId: orgId })}
+                              onCreateSubOrg={() => setShowSubOrgForm(true)}
+                            />
+                          </DropdownSubMenuContent>
+                        </DropdownSubMenu>
+                      );
+                    }
+
+                    return (
+                      <DropdownMenuItem
+                        onClick={() => handleOrgNav(org)}
+                        className="cursor-pointer font-normal"
+                        key={org.id}
+                      >
+                        <div className="flex w-full max-w-48 cursor-pointer items-center gap-x-2">
+                          {currentOrg?.id === org.id && (
+                            <FontAwesomeIcon icon={faCheck} className="shrink-0 text-primary" />
+                          )}
+                          <p className="truncate">{org.name}</p>
+                        </div>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                  <div className="mt-1 h-1 border-t border-mineshaft-600" />
+                  <DropdownMenuItem
+                    icon={<FontAwesomeIcon icon={faSignOut} />}
+                    onClick={logOutUser}
+                  >
+                    Log Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            {isSubOrganization && (
+              <>
+                <ChevronRight size={18} className="mt-[3px] mr-3 text-mineshaft-400/70" />
+                <div className="flex min-w-16 items-center gap-1 pr-2 pl-1">
+                  <DropdownMenu
+                    modal={false}
+                    onOpenChange={(open) => {
+                      if (!open) setSubOrgBreadcrumbSearch("");
+                    }}
+                  >
+                    <div className="group mr-1 flex min-w-0 cursor-pointer items-center gap-2 overflow-hidden text-sm text-white transition-all duration-100">
+                      <button
+                        className="flex cursor-pointer items-center gap-x-2 truncate whitespace-nowrap"
+                        type="button"
+                        onClick={async () => {
+                          navigate({
+                            to: "/organizations/$orgId/projects",
+                            params: { orgId: currentOrg.id }
+                          });
+                          if (isSubOrganization) {
+                            await router.invalidate({ sync: true }).catch(() => null);
+                          }
+                        }}
+                      >
+                        <SubOrgIcon className={twMerge("size-[14px] shrink-0 text-sub-org")} />
+                        <span className="truncate">{currentOrg?.name}</span>
+                        <Badge variant="sub-org" className="hidden lg:inline-flex">
+                          Sub-Organization
+                        </Badge>
+                      </button>
+                    </div>
+                    <DropdownMenuTrigger asChild>
+                      <div>
+                        <IconButton
+                          variant="plain"
+                          colorSchema="secondary"
+                          ariaLabel="switch-org"
+                          className="px-2 py-1"
+                        >
+                          <FontAwesomeIcon icon={faCaretDown} className="text-xs text-bunker-300" />
+                        </IconButton>
+                      </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="center"
+                      side="bottom"
+                      className="mt-6 cursor-default p-1 shadow-mineshaft-600 drop-shadow-md"
+                      style={{ minWidth: "220px" }}
+                      onCloseAutoFocus={(e) => e.preventDefault()}
+                    >
+                      <SubOrgFilterList
+                        search={subOrgBreadcrumbSearch}
+                        onSearchChange={setSubOrgBreadcrumbSearch}
+                        subOrganizations={subOrganizations}
+                        currentOrgId={currentOrg?.id}
+                        onSelect={(orgId) => handleOrgSelection({ organizationId: orgId })}
+                        onCreateSubOrg={() => setShowSubOrgForm(true)}
+                      />
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </>
+            )}
+            {isProjectScope && (
+              <>
+                {/* <ChevronRight size={18} className="mx-3 mt-[3px] text-mineshaft-400/70" /> */}
+                <ProjectSelect />
+              </>
+            )}
+          </>
+        )}
       </div>
 
       {subscription && subscription.slug === "starter" && !subscription.has_used_trial ? (
@@ -551,6 +884,21 @@ export const Navbar = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </ModalContent>
+      </Modal>
+      <Modal isOpen={showSubOrgForm} onOpenChange={setShowSubOrgForm}>
+        <ModalContent
+          title="Create Sub-Organizations"
+          subTitle="Define a new sub-organization under your current organization."
+        >
+          <div className="mb-2">
+            <NewSubOrganizationForm
+              onClose={() => {
+                setShowSubOrgForm(false);
+              }}
+              handleOrgSelection={handleOrgSelection}
+            />
           </div>
         </ModalContent>
       </Modal>

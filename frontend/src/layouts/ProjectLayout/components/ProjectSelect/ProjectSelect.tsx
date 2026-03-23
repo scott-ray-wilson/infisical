@@ -93,11 +93,7 @@ const ProjectSelectInner = () => {
   }, [projects, projectFavorites, currentWorkspace]);
 
   return (
-    <div className="relative mr-2 flex min-w-16 items-center gap-1 self-end rounded-t-md border-x border-t border-project/10 bg-gradient-to-b from-project/10 to-project/[0.075] pt-1.5 pr-1 pb-2.5 pl-3">
-      {/* scott: the below is used to hide the top border from the org nav bar */}
-      <div className="absolute -bottom-px left-0 h-px w-full bg-mineshaft-900">
-        <div className="h-full bg-project/[0.075]" />
-      </div>
+    <div className="mr-2 flex min-w-16 items-center gap-1 pr-1 pl-1">
       <DropdownMenu modal={false}>
         <Link
           to={getProjectHomePage(currentWorkspace.type, currentWorkspace.environments)}

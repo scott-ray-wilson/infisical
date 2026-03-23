@@ -81,6 +81,14 @@
   --color-container: #1a1c1e;
   --color-container-hover: #1f2123;
 
+  /* Sidebar */
+  --color-sidebar: #19191c;
+  --color-sidebar-foreground: #ebebeb;
+  --color-sidebar-border: #2b2c30;
+  --color-sidebar-accent: #1e1f22;
+  --color-sidebar-accent-foreground: #ebebeb;
+  --color-sidebar-ring: #2d2f33;
+
   /* secret management product colors */
   --color-folder: #a4873e;
   --color-secret: #7d7f80;

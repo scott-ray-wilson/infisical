@@ -33,26 +33,28 @@ export const OrganizationLayout = () => {
   return (
     <>
       <Banner />
-      <SidebarProvider
-        className={`dark ${containerHeight} !min-h-0 w-full overflow-hidden bg-bunker-800 transition-all`}
+      <div
+        className={`dark ${containerHeight} flex w-full flex-col overflow-hidden bg-bunker-800 transition-all`}
       >
-        <OrgSidebar />
-        <SidebarInset className="flex flex-col overflow-hidden">
-          <Navbar />
-          {!isLoading && !isInsideProject && !serverDetails?.redisConfigured && <RedisBanner />}
-          {!isLoading && !isInsideProject && !serverDetails?.emailConfigured && <SmtpBanner />}
-          {!isLoading && !isInsideProject && subscription.auditLogs && <AuditLogBanner />}
-          {!window.isSecureContext && !isInsideProject && <InsecureConnectionBanner />}
-          <div
-            className={twMerge(
-              "flex-1 overflow-x-hidden bg-bunker-800 dark:scheme-dark",
-              isInsideProject ? "overflow-y-hidden" : "overflow-y-auto px-12 pt-10 pb-4"
-            )}
-          >
-            <Outlet />
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+        <Navbar />
+        <SidebarProvider className="!min-h-0 flex-1 overflow-hidden">
+          <OrgSidebar />
+          <SidebarInset className="flex flex-col overflow-hidden">
+            {!isLoading && !isInsideProject && !serverDetails?.redisConfigured && <RedisBanner />}
+            {!isLoading && !isInsideProject && !serverDetails?.emailConfigured && <SmtpBanner />}
+            {!isLoading && !isInsideProject && subscription.auditLogs && <AuditLogBanner />}
+            {!window.isSecureContext && !isInsideProject && <InsecureConnectionBanner />}
+            <div
+              className={twMerge(
+                "flex-1 overflow-x-hidden bg-bunker-800 dark:scheme-dark",
+                isInsideProject ? "overflow-y-hidden" : "overflow-y-auto px-12 pt-10 pb-4"
+              )}
+            >
+              <Outlet />
+            </div>
+          </SidebarInset>
+        </SidebarProvider>
+      </div>
       <CreateOrgModal
         isOpen={popUp?.createOrg?.isOpen}
         onClose={() => handlePopUpToggle("createOrg", false)}

@@ -27,15 +27,12 @@ import {
 import { ProjectPermissionCan } from "@app/components/permissions";
 import {
   Badge,
-  OrgIcon,
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
-  SidebarHeader,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator
@@ -482,8 +479,6 @@ const ProjectNav = () => {
 // --- Main sidebar ---
 
 export const OrgSidebar = () => {
-  const { currentOrg } = useOrganization();
-
   const projectId = useParams({
     strict: false,
     select: (el) => el?.projectId
@@ -491,30 +486,14 @@ export const OrgSidebar = () => {
   const isInsideProject = Boolean(projectId);
 
   return (
-    <Sidebar side="left">
-      <SidebarHeader>
-        <Link
-          to="/organizations/$orgId/projects"
-          params={{ orgId: currentOrg.id }}
-          className="mx-auto flex items-center gap-2 rounded-md px-1 py-1.5 text-sm text-white transition-colors hover:bg-sidebar-accent"
-        >
-          <OrgIcon className="size-[14px] shrink-0 text-org" />
-          <span className="truncate">{currentOrg?.name}</span>
-          <Badge variant="org" className="shrink-0">
-            Organization
-          </Badge>
-        </Link>
-      </SidebarHeader>
+    <Sidebar collapsible="none" side="left">
       <SidebarContent>
         {isInsideProject ? (
           <ProjectNav />
         ) : (
-          <>
-            <SidebarSeparator />
-            <SidebarGroup>
-              <OrgNav />
-            </SidebarGroup>
-          </>
+          <SidebarGroup>
+            <OrgNav />
+          </SidebarGroup>
         )}
       </SidebarContent>
       <SidebarFooter />

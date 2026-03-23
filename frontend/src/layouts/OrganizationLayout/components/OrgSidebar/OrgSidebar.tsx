@@ -110,7 +110,8 @@ const ProjectNavLink = ({ item }: { item: NavItem }) => {
         <Link
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           to={`/organizations/$orgId/projects/${typePath}/$projectId/${item.pathSuffix}` as any}
-          params={{ orgId: currentOrg.id, projectId: currentProject.id }}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          params={{ orgId: currentOrg.id, projectId: currentProject.id } as any}
         >
           <item.icon className="size-4" />
           <span>{item.label}</span>
@@ -199,7 +200,7 @@ const OrgNav = () => {
     <SidebarMenu>
       {items.map((item) => (
         <SidebarMenuItem key={item.label}>
-          <SidebarMenuButton asChild isActive={item.isActive} tooltip={item.label}>
+          <SidebarMenuButton asChild isActive={false} tooltip={item.label}>
             <Link to={item.to} params={{ orgId }}>
               <item.icon className="size-4" />
               <span>{item.label}</span>
@@ -486,12 +487,12 @@ export const OrgSidebar = () => {
   const isInsideProject = Boolean(projectId);
 
   return (
-    <Sidebar collapsible="none" side="left">
+    <Sidebar side="left">
       <SidebarHeader>
         <Link
           to="/organizations/$orgId/projects"
           params={{ orgId: currentOrg.id }}
-          className="flex items-center gap-2 rounded-md px-1 py-1.5 text-sm text-white transition-colors hover:bg-sidebar-accent"
+          className="mx-auto flex items-center gap-2 rounded-md px-1 py-1.5 text-sm text-white transition-colors hover:bg-sidebar-accent"
         >
           <OrgIcon className="size-[14px] shrink-0 text-org" />
           <span className="truncate">{currentOrg?.name}</span>
@@ -504,9 +505,12 @@ export const OrgSidebar = () => {
         {isInsideProject ? (
           <ProjectNav />
         ) : (
-          <SidebarGroup>
-            <OrgNav />
-          </SidebarGroup>
+          <>
+            <SidebarSeparator />
+            <SidebarGroup>
+              <OrgNav />
+            </SidebarGroup>
+          </>
         )}
       </SidebarContent>
       <SidebarFooter />

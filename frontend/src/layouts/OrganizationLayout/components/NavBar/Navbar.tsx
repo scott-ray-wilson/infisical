@@ -195,7 +195,6 @@ export const Navbar = () => {
     SecurityClient.setToken(token);
     SecurityClient.setProviderAuthToken("");
     queryClient.removeQueries({ queryKey: authKeys.getAuthToken });
-    queryClient.removeQueries({ queryKey: subOrgQuery.queryKey });
 
     await queryClient.refetchQueries({ queryKey: authKeys.getAuthToken });
 
@@ -286,7 +285,7 @@ export const Navbar = () => {
     location.pathname !== `/organizations/${currentOrg.id}/projects`;
 
   return (
-    <div className="z-10 flex min-h-12 items-center bg-mineshaft-900 px-4">
+    <div className="z-10 flex min-h-12 items-center border-b border-border bg-card px-4">
       <div className="mr-auto flex h-full items-center">
         {/* eslint-disable-next-line no-nested-ternary */}
         {isServerAdminPanel ? (

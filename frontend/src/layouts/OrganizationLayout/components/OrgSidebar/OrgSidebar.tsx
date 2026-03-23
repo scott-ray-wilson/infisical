@@ -106,7 +106,7 @@ const ProjectNavLink = ({ item }: { item: NavItem }) => {
 
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton asChild isActive={isActive} tooltip={item.label}>
+      <SidebarMenuButton size="lg" asChild isActive={isActive} tooltip={item.label}>
         <Link
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           to={`/organizations/$orgId/projects/${typePath}/$projectId/${item.pathSuffix}` as any}
@@ -117,7 +117,11 @@ const ProjectNavLink = ({ item }: { item: NavItem }) => {
           <span>{item.label}</span>
         </Link>
       </SidebarMenuButton>
-      {Boolean(item.badgeCount) && <SidebarMenuBadge>{item.badgeCount}</SidebarMenuBadge>}
+      {Boolean(item.badgeCount) && (
+        <Badge variant="warning" className="absolute top-3.5 right-2">
+          {item.badgeCount}
+        </Badge>
+      )}
     </SidebarMenuItem>
   );
 };
@@ -200,7 +204,7 @@ const OrgNav = () => {
     <SidebarMenu>
       {items.map((item) => (
         <SidebarMenuItem key={item.label}>
-          <SidebarMenuButton asChild isActive={false} tooltip={item.label}>
+          <SidebarMenuButton asChild isActive={item.isActive} size="lg" tooltip={item.label}>
             <Link to={item.to} params={{ orgId }}>
               <item.icon className="size-4" />
               <span>{item.label}</span>

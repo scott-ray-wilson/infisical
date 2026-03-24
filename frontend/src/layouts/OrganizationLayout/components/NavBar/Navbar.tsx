@@ -370,12 +370,12 @@ export const Navbar = () => {
           <>
             <div
               className={twMerge(
-                "flex h-full items-center overflow-hidden border-r border-border pr-2 pl-4 transition-[width] duration-300 ease-in-out",
-                isProjectScope ? "mr-2 w-[72px]" : "mr-4 w-64"
+                "flex h-full min-w-0 items-center overflow-hidden border-border pr-2 pl-4 transition-all duration-300 ease-in-out",
+                isProjectScope ? "mr-2 w-[72px] border-r" : "mr-4 w-64 max-w-96"
               )}
             >
               <Popover open={isOrgSelectOpen} onOpenChange={setIsOrgSelectOpen}>
-                <PopoverAnchor className="absolute left-0" />
+                <PopoverAnchor className="absolute left-2" />
                 <div className="group mr-1 flex min-w-0 cursor-pointer items-center gap-2 overflow-hidden text-sm text-white transition-all duration-100">
                   <button
                     className="flex cursor-pointer items-center gap-x-2 truncate whitespace-nowrap"
@@ -427,7 +427,7 @@ export const Navbar = () => {
                     <ChevronsUpDown />
                   </UnstableIconButton>
                 </PopoverTrigger>
-                <PopoverContent align="start" sideOffset={12} className="w-72 p-0">
+                <PopoverContent align="start" sideOffset={20} className="w-96 p-0">
                   <Command>
                     <CommandInput placeholder="Search organizations..." />
                     <CommandList>

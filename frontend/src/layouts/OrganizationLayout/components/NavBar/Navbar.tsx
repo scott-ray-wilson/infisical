@@ -1,43 +1,39 @@
 import { useEffect, useState } from "react";
-import { faGithub, faSlack } from "@fortawesome/free-brands-svg-icons";
-import { faCircleQuestion, faUserCircle } from "@fortawesome/free-regular-svg-icons";
-import {
-  faArrowUpRightFromSquare,
-  faBook,
-  faEnvelope,
-  faExclamationTriangle,
-  faInfinity,
-  faInfo,
-  faInfoCircle,
-  faSignOut,
-  faToolbox,
-  faUser,
-  faUserCog,
-  faUserPlus,
-  faUsers
-} from "@fortawesome/free-solid-svg-icons";
+import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
-import { Check, ChevronRight, ChevronsUpDown, LogOut, Plus, UserPlusIcon } from "lucide-react";
+import {
+  Book,
+  Check,
+  ChevronRight,
+  ChevronsUpDown,
+  CircleHelp,
+  Clipboard,
+  ExternalLink,
+  Github,
+  Infinity,
+  Info,
+  LogOut,
+  Mail,
+  Plus,
+  Settings,
+  Slack,
+  User,
+  UserPlus,
+  Users,
+  Wrench
+} from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 import { Mfa } from "@app/components/auth/Mfa";
 import { createNotification } from "@app/components/notifications";
 import { OrgPermissionCan } from "@app/components/permissions";
 import SecurityClient from "@app/components/utilities/SecurityClient";
-import {
-  Button,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  Modal,
-  ModalContent,
-  Tooltip
-} from "@app/components/v2";
+import { Button as V2Button, Modal, ModalContent, Tooltip } from "@app/components/v2";
 import {
   Badge,
+  Button,
   Command,
   CommandEmpty,
   CommandGroup,
@@ -52,6 +48,12 @@ import {
   PopoverContent,
   PopoverTrigger,
   SubOrgIcon,
+  UnstableButtonGroup,
+  UnstableDropdownMenu,
+  UnstableDropdownMenuContent,
+  UnstableDropdownMenuItem,
+  UnstableDropdownMenuSeparator,
+  UnstableDropdownMenuTrigger,
   UnstableIconButton
 } from "@app/components/v3";
 import { envConfig } from "@app/config/env";
@@ -118,36 +120,16 @@ Thank you,
 };
 
 export const INFISICAL_SUPPORT_OPTIONS = [
+  [Slack, "Support Forum", () => "https://infisical.com/slack"],
   [
-    <FontAwesomeIcon key={1} className="pr-4 text-sm" icon={faSlack} />,
-    "Support Forum",
-    () => "https://infisical.com/slack"
-  ],
-  [
-    <FontAwesomeIcon key={2} className="pr-4 text-sm" icon={faBook} />,
+    Book,
     "Read Docs",
     () => "https://infisical.com/docs/documentation/getting-started/introduction"
   ],
-  [
-    <FontAwesomeIcon key={3} className="pr-4 text-sm" icon={faGithub} />,
-    "GitHub Issues",
-    () => "https://github.com/Infisical/infisical/issues"
-  ],
-  [
-    <FontAwesomeIcon key={4} className="pr-4 text-sm" icon={faEnvelope} />,
-    "Email Support",
-    getFormattedSupportEmailLink
-  ],
-  [
-    <FontAwesomeIcon key={5} className="pr-4 text-sm" icon={faUsers} />,
-    "Instance Admins",
-    () => "server-admins"
-  ],
-  [
-    <FontAwesomeIcon key={6} className="pr-4 text-sm" icon={faToolbox} />,
-    "Version Upgrade Tool",
-    () => "/upgrade-path"
-  ]
+  [Github, "GitHub Issues", () => "https://github.com/Infisical/infisical/issues"],
+  [Mail, "Email Support", getFormattedSupportEmailLink],
+  [Users, "Instance Admins", () => "server-admins"],
+  [Wrench, "Version Upgrade Tool", () => "/upgrade-path"]
 ] as const;
 
 export const Navbar = () => {
@@ -605,21 +587,19 @@ export const Navbar = () => {
       {subscription && subscription.slug === "starter" && !subscription.has_used_trial ? (
         <Tooltip content="Start Free Pro Trial">
           <Button
-            variant="plain"
-            className="mr-2 border-mineshaft-500 px-2.5 py-1.5 whitespace-nowrap text-mineshaft-200 hover:bg-mineshaft-600"
-            leftIcon={<FontAwesomeIcon icon={faInfinity} />}
+            variant="outline"
+            size="sm"
+            className="mr-2"
             onClick={async () => {
               if (!subscription || !rootOrg) return;
-
-              // direct user to start pro trial
               const url = await mutateAsync({
                 orgId: rootOrg.id,
                 success_url: window.location.href
               });
-
               window.location.href = url;
             }}
           >
+            <Infinity />
             Free Pro Trial
           </Button>
         </Tooltip>
@@ -628,186 +608,171 @@ export const Navbar = () => {
           {getPlan(subscription)}
         </div>
       )}
-      {/* eslint-disable-next-line no-nested-ternary */}
       {!location.pathname.startsWith("/admin") ? (
         user.superAdmin ? (
-          <Link
-            className="mr-2 flex h-[34px] items-center rounded-md border border-mineshaft-500 px-2.5 py-1.5 text-sm whitespace-nowrap text-mineshaft-200 hover:bg-mineshaft-600"
-            to="/admin"
-            onClick={handleNavigateToAdminConsole}
-          >
-            <InstanceIcon className="inline-block size-3.5" />
-            <span className="ml-2 hidden md:inline-block">Server Console</span>
-          </Link>
+          <Button variant="outline" size="sm" className="mr-2" asChild>
+            <Link to="/admin" onClick={handleNavigateToAdminConsole}>
+              <InstanceIcon />
+              <span className="hidden md:inline">Server Console</span>
+            </Link>
+          </Button>
         ) : (
           <OrgPermissionCan I={OrgPermissionActions.Create} a={OrgPermissionSubjects.Member}>
             {(isAllowed) =>
               isAllowed ? (
-                <Link
-                  className="mr-2 flex h-[34px] items-center rounded-md border border-mineshaft-500 px-2.5 py-1.5 text-sm whitespace-nowrap text-mineshaft-200 hover:bg-mineshaft-600"
-                  to="/organizations/$orgId/access-management"
-                  params={{ orgId: currentOrg.id }}
-                  search={{
-                    selectedTab: "members",
-                    action: "invite-members"
-                  }}
-                >
-                  <UserPlusIcon className="inline-block size-3.5" />
-                  <span className="ml-2 hidden md:inline-block">Invite Users</span>
-                </Link>
+                <Button variant="outline" size="sm" className="mr-2" asChild>
+                  <Link
+                    to="/organizations/$orgId/access-management"
+                    params={{ orgId: currentOrg.id }}
+                    search={{
+                      selectedTab: "members",
+                      action: "invite-members"
+                    }}
+                  >
+                    <UserPlus />
+                    <span className="hidden md:inline">Invite Users</span>
+                  </Link>
+                </Button>
               ) : null
             }
           </OrgPermissionCan>
         )
       ) : null}
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger>
-          <div className="rounded-l-md border border-r-0 border-mineshaft-500 px-2.5 py-1 hover:bg-mineshaft-600">
-            <FontAwesomeIcon icon={faCircleQuestion} className="text-mineshaft-200" />
-          </div>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" side="bottom" className="mt-3 p-1">
-          {INFISICAL_SUPPORT_OPTIONS.map(([icon, text, getUrl]) => {
-            const url =
-              text === "Email Support"
-                ? getUrl({
-                    org_id: currentOrg.id,
-                    domain: window.location.origin,
-                    ...(isSubOrganization && { root_org_id: rootOrg.id })
-                  })
-                : getUrl();
+      <UnstableButtonGroup className="mr-2">
+        <UnstableDropdownMenu modal={false}>
+          <UnstableDropdownMenuTrigger asChild>
+            <UnstableIconButton variant="outline" size="sm" aria-label="Help">
+              <CircleHelp />
+            </UnstableIconButton>
+          </UnstableDropdownMenuTrigger>
+          <UnstableDropdownMenuContent align="end" side="bottom" sideOffset={8}>
+            {INFISICAL_SUPPORT_OPTIONS.map(([Icon, text, getUrl]) => {
+              const url =
+                text === "Email Support"
+                  ? getUrl({
+                      org_id: currentOrg.id,
+                      domain: window.location.origin,
+                      ...(isSubOrganization && { root_org_id: rootOrg.id })
+                    })
+                  : getUrl();
 
-            if (url === "server-admins" && isInfisicalCloud()) {
-              return null;
-            }
-            if (url === "upgrade-path" && isInfisicalCloud()) {
-              return null;
-            }
-            return (
-              <DropdownMenuItem key={url as string}>
-                {url === "server-admins" ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowAdminsModal(true)}
-                    className="flex w-full items-center rounded-md font-normal text-mineshaft-300 duration-200"
+              if (url === "server-admins" && isInfisicalCloud()) {
+                return null;
+              }
+              if (url === "upgrade-path" && isInfisicalCloud()) {
+                return null;
+              }
+
+              if (url === "server-admins") {
+                return (
+                  <UnstableDropdownMenuItem
+                    key="server-admins"
+                    onSelect={() => setShowAdminsModal(true)}
                   >
-                    <div className="relative flex w-full cursor-pointer items-center justify-start rounded-md select-none">
-                      {icon}
-                      <div className="text-sm">{text}</div>
-                    </div>
-                  </button>
-                ) : (
-                  <a
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    href={String(url)}
-                    className="flex w-full items-center rounded-md font-normal text-mineshaft-300 duration-200"
-                  >
-                    <div className="relative flex w-full cursor-pointer items-center justify-start rounded-md select-none">
-                      {icon}
-                      <div className="text-sm">{text}</div>
-                    </div>
+                    <Icon className="size-4" />
+                    {text}
+                  </UnstableDropdownMenuItem>
+                );
+              }
+
+              return (
+                <UnstableDropdownMenuItem key={url as string} asChild>
+                  <a target="_blank" rel="noopener noreferrer" href={String(url)}>
+                    <Icon className="size-4" />
+                    {text}
                   </a>
-                )}
-              </DropdownMenuItem>
-            );
-          })}
-          {envConfig.PLATFORM_VERSION && (
-            <div className="mt-2 mb-2 w-full cursor-default pl-5 text-sm duration-200 hover:text-mineshaft-200">
-              <FontAwesomeIcon icon={faInfo} className="mr-4 px-[0.1rem]" />
-              Version: {envConfig.PLATFORM_VERSION}
-            </div>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <NotificationDropdown />
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <div className="rounded-r-md border border-mineshaft-500 px-2.5 py-1 hover:bg-mineshaft-600">
-            <FontAwesomeIcon icon={faUserCircle} className="text-mineshaft-200" />
-          </div>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="bottom" align="end" className="mt-3 p-1">
-          <div className="cursor-default px-1 py-1">
-            <div className="flex w-full items-center justify-center rounded-md border border-mineshaft-600 bg-linear-to-tr from-primary-500/10 to-mineshaft-800 p-1 px-2 transition-all duration-150">
-              <div className="p-1 pr-3">
-                <FontAwesomeIcon icon={faUser} className="text-xl text-mineshaft-400" />
-              </div>
-              <div className="flex grow flex-col text-white">
-                <div className="max-w-36 truncate text-sm font-medium text-ellipsis capitalize">
-                  {user?.firstName} {user?.lastName}
+                </UnstableDropdownMenuItem>
+              );
+            })}
+            {envConfig.PLATFORM_VERSION && (
+              <>
+                <UnstableDropdownMenuSeparator />
+                <div className="text-muted-foreground flex items-center gap-2 px-3 py-1.5 text-xs">
+                  <Info className="size-3.5" />
+                  Version: {envConfig.PLATFORM_VERSION}
                 </div>
-                <div className="text-xs text-mineshaft-300">{user.email}</div>
-              </div>
+              </>
+            )}
+          </UnstableDropdownMenuContent>
+        </UnstableDropdownMenu>
+        <NotificationDropdown />
+        <UnstableDropdownMenu modal={false}>
+          <UnstableDropdownMenuTrigger asChild>
+            <UnstableIconButton variant="outline" size="sm" aria-label="User menu">
+              <User />
+            </UnstableIconButton>
+          </UnstableDropdownMenuTrigger>
+        <UnstableDropdownMenuContent side="bottom" align="end" sideOffset={8}>
+          <div className="cursor-default px-3 py-2">
+            <div className="text-sm font-medium capitalize">
+              {user?.firstName} {user?.lastName}
             </div>
+            <div className="text-muted-foreground text-xs">{user.email}</div>
           </div>
-          <Link to="/personal-settings">
-            <DropdownMenuItem icon={<FontAwesomeIcon icon={faUserCog} />}>
+          <UnstableDropdownMenuSeparator />
+          <UnstableDropdownMenuItem asChild>
+            <Link to="/personal-settings">
+              <Settings className="size-4" />
               Personal Settings
-            </DropdownMenuItem>
-          </Link>
+            </Link>
+          </UnstableDropdownMenuItem>
           <OrgPermissionCan I={OrgPermissionActions.Create} a={OrgPermissionSubjects.Member}>
             {(isAllowed) =>
               isAllowed ? (
-                <Link
-                  to="/organizations/$orgId/access-management"
-                  params={{ orgId: currentOrg.id }}
-                  search={{
-                    selectedTab: "members",
-                    action: "invite-members"
-                  }}
-                >
-                  <DropdownMenuItem icon={<FontAwesomeIcon icon={faUserPlus} />}>
+                <UnstableDropdownMenuItem asChild>
+                  <Link
+                    to="/organizations/$orgId/access-management"
+                    params={{ orgId: currentOrg.id }}
+                    search={{
+                      selectedTab: "members",
+                      action: "invite-members"
+                    }}
+                  >
+                    <UserPlus className="size-4" />
                     Invite Users
-                  </DropdownMenuItem>
-                </Link>
+                  </Link>
+                </UnstableDropdownMenuItem>
               ) : null
             }
           </OrgPermissionCan>
-          <a
-            href="https://infisical.com/docs/documentation/getting-started/introduction"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 w-full text-sm leading-[1.2rem] font-normal text-mineshaft-300 hover:text-mineshaft-100"
-          >
-            <DropdownMenuItem>
+          <UnstableDropdownMenuSeparator />
+          <UnstableDropdownMenuItem asChild>
+            <a
+              href="https://infisical.com/docs/documentation/getting-started/introduction"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Book className="size-4" />
               Documentation
-              <FontAwesomeIcon
-                icon={faArrowUpRightFromSquare}
-                className="text-xxs mb-[0.06rem] pl-1.5"
-              />
-            </DropdownMenuItem>
-          </a>
-          <a
-            href="https://infisical.com/slack"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 w-full text-sm leading-[1.2rem] font-normal text-mineshaft-300 hover:text-mineshaft-100"
-          >
-            <DropdownMenuItem>
+              <ExternalLink className="ml-auto size-3 opacity-50" />
+            </a>
+          </UnstableDropdownMenuItem>
+          <UnstableDropdownMenuItem asChild>
+            <a href="https://infisical.com/slack" target="_blank" rel="noopener noreferrer">
+              <Slack className="size-4" />
               Join Slack Community
-              <FontAwesomeIcon
-                icon={faArrowUpRightFromSquare}
-                className="text-xxs mb-[0.06rem] pl-1.5"
-              />
-            </DropdownMenuItem>
-          </a>
-          <div className="mt-1 h-1 border-t border-mineshaft-600" />
-          <DropdownMenuItem onClick={handleCopyToken}>
+              <ExternalLink className="ml-auto size-3 opacity-50" />
+            </a>
+          </UnstableDropdownMenuItem>
+          <UnstableDropdownMenuSeparator />
+          <UnstableDropdownMenuItem onSelect={handleCopyToken}>
+            <Clipboard className="size-4" />
             Copy Token
             <Tooltip
               content="This token is linked to your current login session and can only access resources within the organization you're currently logged into."
               className="max-w-3xl"
             >
-              <FontAwesomeIcon icon={faInfoCircle} className="pl-1.5 text-xs" />
+              <Info className="size-3 opacity-50" />
             </Tooltip>
-          </DropdownMenuItem>
-          <div className="mt-1 h-1 border-t border-mineshaft-600" />
-          <DropdownMenuItem onClick={logOutUser} icon={<FontAwesomeIcon icon={faSignOut} />}>
+          </UnstableDropdownMenuItem>
+          <UnstableDropdownMenuSeparator />
+          <UnstableDropdownMenuItem variant="danger" onSelect={logOutUser}>
+            <LogOut className="size-4" />
             Log Out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+          </UnstableDropdownMenuItem>
+        </UnstableDropdownMenuContent>
+        </UnstableDropdownMenu>
+      </UnstableButtonGroup>
 
       <Modal
         isOpen={showCardDeclinedModal}
@@ -833,21 +798,21 @@ export const Navbar = () => {
               </div>
               <div className="mt-4">
                 <div className="flex space-x-3">
-                  <Button
+                  <V2Button
                     colorSchema="primary"
                     variant="solid"
                     onClick={handleNavigateToRootOrgBilling}
                   >
                     Update Payment Method
-                  </Button>
+                  </V2Button>
                   {!isModalIntrusive && (
-                    <Button
+                    <V2Button
                       colorSchema="secondary"
                       variant="outline"
                       onClick={() => setShowCardDeclinedModal(false)}
                     >
                       Dismiss
-                    </Button>
+                    </V2Button>
                   )}
                 </div>
               </div>

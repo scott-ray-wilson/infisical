@@ -828,9 +828,7 @@ export const OrgSidebar = () => {
 
   return (
     <Sidebar scope={isInsideProject ? "project" : "org"} collapsible="none" side="left">
-      <SidebarContent>
-        {isInsideProject ? <ProjectNav /> : <OrgNavWrapper />}
-      </SidebarContent>
+      <SidebarContent>{isInsideProject ? <ProjectNav /> : <OrgNavWrapper />}</SidebarContent>
       <SidebarFooter />
     </Sidebar>
   );

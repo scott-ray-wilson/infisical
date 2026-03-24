@@ -48,6 +48,9 @@ import {
   PopoverContent,
   PopoverTrigger,
   SubOrgIcon,
+  Tooltip as V3Tooltip,
+  TooltipContent as V3TooltipContent,
+  TooltipTrigger as V3TooltipTrigger,
   UnstableButtonGroup,
   UnstableDropdownMenu,
   UnstableDropdownMenuContent,
@@ -677,7 +680,7 @@ export const Navbar = () => {
               return (
                 <UnstableDropdownMenuItem key={url as string} asChild>
                   <a target="_blank" rel="noopener noreferrer" href={String(url)}>
-                    <Icon className="size-4" />
+                    <Icon />
                     {text}
                   </a>
                 </UnstableDropdownMenuItem>
@@ -686,7 +689,7 @@ export const Navbar = () => {
             {envConfig.PLATFORM_VERSION && (
               <>
                 <UnstableDropdownMenuSeparator />
-                <div className="text-muted-foreground flex items-center gap-2 px-3 py-1.5 text-xs">
+                <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted">
                   <Info className="size-3.5" />
                   Version: {envConfig.PLATFORM_VERSION}
                 </div>
@@ -727,7 +730,7 @@ export const Navbar = () => {
                         action: "invite-members"
                       }}
                     >
-                      <UserPlus className="size-4" />
+                      <UserPlus />
                       Invite Users
                     </Link>
                   </UnstableDropdownMenuItem>
@@ -741,32 +744,35 @@ export const Navbar = () => {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Book className="size-4" />
+                <Book />
                 Documentation
-                <ExternalLink className="ml-auto size-3 opacity-50" />
+                <ExternalLink className="ml-auto size-3.5 opacity-50" />
               </a>
             </UnstableDropdownMenuItem>
             <UnstableDropdownMenuItem asChild>
               <a href="https://infisical.com/slack" target="_blank" rel="noopener noreferrer">
-                <Slack className="size-4" />
+                <Slack />
                 Join Slack Community
-                <ExternalLink className="ml-auto size-3 opacity-50" />
+                <ExternalLink className="ml-auto size-3.5 opacity-50" />
               </a>
             </UnstableDropdownMenuItem>
             <UnstableDropdownMenuSeparator />
             <UnstableDropdownMenuItem onSelect={handleCopyToken}>
-              <Clipboard className="size-4" />
+              <Clipboard />
               Copy Token
-              <Tooltip
-                content="This token is linked to your current login session and can only access resources within the organization you're currently logged into."
-                className="max-w-3xl"
-              >
-                <Info className="size-3 opacity-50" />
-              </Tooltip>
+              <V3Tooltip>
+                <V3TooltipTrigger>
+                  <Info className="size-3.5 opacity-50" />
+                </V3TooltipTrigger>
+                <V3TooltipContent className="max-w-xs">
+                  This token is linked to your current login session and can only access resources
+                  within the organization you&apos;re currently logged into.
+                </V3TooltipContent>
+              </V3Tooltip>
             </UnstableDropdownMenuItem>
             <UnstableDropdownMenuSeparator />
-            <UnstableDropdownMenuItem variant="danger" onSelect={logOutUser}>
-              <LogOut className="size-4" />
+            <UnstableDropdownMenuItem onSelect={logOutUser}>
+              <LogOut />
               Log Out
             </UnstableDropdownMenuItem>
           </UnstableDropdownMenuContent>

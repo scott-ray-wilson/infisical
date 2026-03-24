@@ -13,7 +13,6 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
   Popover,
   PopoverAnchor,
   PopoverContent,

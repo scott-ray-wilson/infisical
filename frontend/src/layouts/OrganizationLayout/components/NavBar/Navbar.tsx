@@ -40,7 +40,6 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
   InstanceIcon,
   OrgIcon,
   Popover,
@@ -164,6 +163,7 @@ export const Navbar = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isOrgSelectOpen, setIsOrgSelectOpen] = useState(false);
+  const [expandedOrgId, setExpandedOrgId] = useState<string | null>(null);
 
   const location = useLocation();
   const isBillingPage = location.pathname === `/organizations/${currentOrg.id}/billing`;
@@ -359,7 +359,13 @@ export const Navbar = () => {
                 isProjectScope ? "mr-2 w-[72px] border-r" : "mr-4 w-64 max-w-96"
               )}
             >
-              <Popover open={isOrgSelectOpen} onOpenChange={setIsOrgSelectOpen}>
+              <Popover
+                open={isOrgSelectOpen}
+                onOpenChange={(open) => {
+                  setIsOrgSelectOpen(open);
+                  if (!open) setExpandedOrgId(null);
+                }}
+              >
                 <PopoverAnchor className="absolute left-2" />
                 <div className="group mr-1 flex min-w-0 cursor-pointer items-center gap-2 overflow-hidden text-sm text-white transition-all duration-100">
                   <button
@@ -418,68 +424,115 @@ export const Navbar = () => {
                     <CommandList>
                       <CommandEmpty>No organizations found.</CommandEmpty>
                       <CommandGroup heading="Organizations">
-                        {orgs?.map((org) => (
-                          <CommandItem
-                            key={org.id}
-                            value={org.name}
-                            onSelect={() => {
-                              setIsOrgSelectOpen(false);
-                              handleOrgNav(org);
-                            }}
-                          >
-                            <Check
-                              className={currentOrg?.id === org.id ? "opacity-100" : "opacity-0"}
-                            />
-                            <span className="truncate">{org.name}</span>
-                            {subscription.subOrganization &&
-                              (org.id === currentOrg?.id || org.id === currentOrg?.parentOrgId) && (
-                                <ChevronRight className="ml-auto size-4 opacity-50" />
-                              )}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                      {subscription.subOrganization && subOrganizations.length > 0 && (
-                        <>
-                          <CommandSeparator />
-                          <CommandGroup heading="Sub-Organizations">
-                            {subOrganizations.map((subOrg) => (
+                        {orgs?.map((org) => {
+                          const orgSubOrgs = subscription.subOrganization
+                            ? subOrganizations.filter((s) => s.parentOrgId === org.id)
+                            : [];
+                          const hasSubOrgs = orgSubOrgs.length > 0;
+
+                          return (
+                            <Popover
+                              key={org.id}
+                              open={expandedOrgId === org.id}
+                              onOpenChange={(open) =>
+                                setExpandedOrgId(open ? org.id : null)
+                              }
+                            >
                               <CommandItem
-                                key={subOrg.id}
-                                value={subOrg.name}
+                                value={org.name}
                                 onSelect={() => {
                                   setIsOrgSelectOpen(false);
-                                  handleOrgSelection({ organizationId: subOrg.id });
+                                  setExpandedOrgId(null);
+                                  handleOrgNav(org);
                                 }}
                               >
                                 <Check
                                   className={
-                                    currentOrg?.id === subOrg.id ? "opacity-100" : "opacity-0"
+                                    currentOrg?.id === org.id ? "opacity-100" : "opacity-0"
                                   }
                                 />
-                                <span className="truncate">{subOrg.name}</span>
+                                <span className="truncate">{org.name}</span>
+                                {hasSubOrgs && (
+                                  <PopoverTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="ml-auto flex cursor-pointer items-center rounded p-0.5 hover:bg-foreground/10"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                      }}
+                                    >
+                                      <ChevronRight className="size-4 opacity-50" />
+                                    </button>
+                                  </PopoverTrigger>
+                                )}
                               </CommandItem>
-                            ))}
-                            <OrgPermissionCan
-                              I={OrgPermissionSubOrgActions.Create}
-                              a={OrgPermissionSubjects.SubOrganization}
-                            >
-                              {(isAllowed) =>
-                                isAllowed ? (
-                                  <CommandItem
-                                    onSelect={() => {
-                                      setIsOrgSelectOpen(false);
-                                      setShowSubOrgForm(true);
-                                    }}
-                                  >
-                                    <Plus />
-                                    <span>New Sub-Organization</span>
-                                  </CommandItem>
-                                ) : null
-                              }
-                            </OrgPermissionCan>
-                          </CommandGroup>
-                        </>
-                      )}
+                              {hasSubOrgs && (
+                                <PopoverContent
+                                  side="right"
+                                  align="start"
+                                  sideOffset={8}
+                                  className="w-72 p-0"
+                                  onOpenAutoFocus={(e) => e.preventDefault()}
+                                >
+                                  <Command>
+                                    <CommandInput placeholder="Search sub-organizations..." />
+                                    <CommandList>
+                                      <CommandEmpty>No sub-organizations found.</CommandEmpty>
+                                      <CommandGroup heading="Sub-Organizations">
+                                        {orgSubOrgs.map((subOrg) => (
+                                          <CommandItem
+                                            key={subOrg.id}
+                                            value={subOrg.name}
+                                            onSelect={() => {
+                                              setIsOrgSelectOpen(false);
+                                              setExpandedOrgId(null);
+                                              handleOrgSelection({
+                                                organizationId: subOrg.id
+                                              });
+                                            }}
+                                          >
+                                            <Check
+                                              className={
+                                                currentOrg?.id === subOrg.id
+                                                  ? "opacity-100"
+                                                  : "opacity-0"
+                                              }
+                                            />
+                                            <span className="truncate">{subOrg.name}</span>
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    </CommandList>
+                                    <OrgPermissionCan
+                                      I={OrgPermissionSubOrgActions.Create}
+                                      a={OrgPermissionSubjects.SubOrganization}
+                                    >
+                                      {(isAllowed) =>
+                                        isAllowed ? (
+                                          <div className="border-t border-border p-1">
+                                            <button
+                                              type="button"
+                                              className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-foreground/5"
+                                              onClick={() => {
+                                                setIsOrgSelectOpen(false);
+                                                setExpandedOrgId(null);
+                                                setShowSubOrgForm(true);
+                                              }}
+                                            >
+                                              <Plus className="size-4" />
+                                              <span>New Sub-Organization</span>
+                                            </button>
+                                          </div>
+                                        ) : null
+                                      }
+                                    </OrgPermissionCan>
+                                  </Command>
+                                </PopoverContent>
+                              )}
+                            </Popover>
+                          );
+                        })}
+                      </CommandGroup>
                     </CommandList>
                     <div className="border-t border-border p-1">
                       <button

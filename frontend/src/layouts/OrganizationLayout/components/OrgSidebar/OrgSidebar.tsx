@@ -10,6 +10,8 @@ import {
   Database,
   FileKey,
   FileText,
+  HardDrive,
+  IdCardLanyard,
   Key,
   KeyRound,
   LayoutDashboard,
@@ -25,6 +27,7 @@ import {
   Shield,
   ShieldCheck,
   Terminal,
+  User,
   Users,
   Video
 } from "lucide-react";
@@ -240,10 +243,10 @@ const OrgAccessControlNav = ({ onBack }: { onBack: () => void }) => {
   const orgId = currentOrg.id;
 
   const subItems = [
-    { label: "Members", icon: Users, tab: "members" },
+    { label: "Members", icon: User, tab: "members" },
     { label: "Groups", icon: Users, tab: "groups" },
-    { label: "Machine Identities", icon: KeyRound, tab: "identities" },
-    { label: "Roles", icon: Shield, tab: "roles" }
+    { label: "Machine Identities", icon: HardDrive, tab: "identities" },
+    { label: "Roles", icon: IdCardLanyard, tab: "roles" }
   ];
 
   return (

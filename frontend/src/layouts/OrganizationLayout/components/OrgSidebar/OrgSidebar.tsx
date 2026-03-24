@@ -115,7 +115,7 @@ const ProjectNavLink = ({ item }: { item: NavItem }) => {
         </Link>
       </SidebarMenuButton>
       {Boolean(item.badgeCount) && (
-        <Badge variant="warning" className="absolute top-[10.5px] right-2">
+        <Badge variant="warning" className="absolute top-[10.5px] right-4">
           {item.badgeCount}
         </Badge>
       )}
@@ -483,7 +483,7 @@ export const OrgSidebar = () => {
   const isInsideProject = Boolean(projectId);
 
   return (
-    <Sidebar collapsible="none" side="left">
+    <Sidebar scope={isInsideProject ? "project" : "org"} collapsible="none" side="left">
       <SidebarContent>
         {isInsideProject ? (
           <ProjectNav />

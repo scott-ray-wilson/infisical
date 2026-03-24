@@ -142,9 +142,11 @@ function Sidebar({
   className,
   children,
   dir,
+  scope,
   ...props
 }: React.ComponentProps<"div"> & {
   side?: "left" | "right";
+  scope: "project" | "org" | "sub-org";
   variant?: "sidebar" | "floating" | "inset";
   collapsible?: "offcanvas" | "icon" | "none";
 }) {
@@ -155,7 +157,9 @@ function Sidebar({
       <div
         data-slot="sidebar"
         className={cn(
-          "flex h-full w-(--sidebar-width) flex-col border-r border-border bg-card text-foreground",
+          "to flex h-full w-(--sidebar-width) flex-col border-r border-border bg-gradient-to-r from-org/5 to-transparent text-foreground",
+          scope === "project" && "from-project/5",
+          scope === "org" && "from-org/5",
           className
         )}
         {...props}

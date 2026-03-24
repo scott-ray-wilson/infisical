@@ -423,7 +423,13 @@ export const Navbar = () => {
   };
 
   return (
-    <div className="z-10 flex min-h-12 items-center border-b border-border bg-card px-4">
+    <div
+      className={twMerge(
+        "z-10 flex min-h-12 items-center border-b border-border bg-gradient-to-br to-transparent",
+        isProjectScope && "from-project/5",
+        !isProjectScope && !isSubOrganization && "from-org/5"
+      )}
+    >
       <div className="mr-auto flex h-full min-w-34 items-center">
         {isServerAdminPanel ? (
           <Link
@@ -435,7 +441,7 @@ export const Navbar = () => {
           </Link>
         ) : (
           <>
-            <div className="mr-4 flex h-full w-60 items-center gap-1 border-r border-border pr-2 pl-1">
+            <div className="mr-4 flex h-full w-64 items-center gap-1 border-r border-border pr-2 pl-4">
               <DropdownMenu modal={false} open={isOrgSelectOpen} onOpenChange={setIsOrgSelectOpen}>
                 <div className="group mr-1 flex min-w-0 cursor-pointer items-center gap-2 overflow-hidden text-sm text-white transition-all duration-100">
                   <button
@@ -454,9 +460,17 @@ export const Navbar = () => {
                       }
                     }}
                   >
-                    <OrgIcon className={twMerge("size-[14px] shrink-0 text-org")} />
+                    <OrgIcon
+                      className={twMerge(
+                        "size-[14px] shrink-0",
+                        !isSubOrganization && !isProjectScope ? "text-org" : "text-muted"
+                      )}
+                    />
                     <span className="truncate">{rootOrg?.name}</span>
-                    <Badge variant="org" className="hidden lg:inline-flex">
+                    <Badge
+                      variant={!isSubOrganization && !isProjectScope ? "org" : "neutral"}
+                      className="hidden lg:inline-flex"
+                    >
                       Organization
                     </Badge>
                   </button>

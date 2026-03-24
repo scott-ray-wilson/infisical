@@ -590,9 +590,9 @@ export const Navbar = () => {
       {subscription && subscription.slug === "starter" && !subscription.has_used_trial ? (
         <Tooltip content="Start Free Pro Trial">
           <Button
-            variant="outline"
-            size="sm"
-            className="mr-2"
+            variant="info"
+            size="xs"
+            className="mt-px mr-2"
             onClick={async () => {
               if (!subscription || !rootOrg) return;
               const url = await mutateAsync({
@@ -607,12 +607,12 @@ export const Navbar = () => {
           </Button>
         </Tooltip>
       ) : (
-        <div className="mt-0.5 mr-3 hidden rounded-sm border border-mineshaft-400 px-1 text-xs text-mineshaft-100 no-underline! opacity-50 md:inline-block">
+        <Badge variant="info" className="mt-[3px] mr-3 hidden md:inline-flex">
           {getPlan(subscription)}
-        </div>
+        </Badge>
       )}
       {!location.pathname.startsWith("/admin") && user.superAdmin && (
-        <Button variant="outline" size="sm" className="mr-2" asChild>
+        <Button variant="outline" size="xs" className="mt-px mr-2" asChild>
           <Link to="/admin" onClick={handleNavigateToAdminConsole}>
             <InstanceIcon />
             <span className="hidden md:inline">Server Console</span>

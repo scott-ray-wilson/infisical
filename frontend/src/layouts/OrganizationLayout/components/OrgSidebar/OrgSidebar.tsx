@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useParams } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate, useParams } from "@tanstack/react-router";
 import {
   Bell,
   BookCheck,
@@ -249,7 +249,11 @@ const OrgAccessControlNav = ({ onBack }: { onBack: () => void }) => {
   return (
     <SidebarGroup>
       <SidebarGroupLabel asChild>
-        <button className="cursor-pointer hover:bg-foreground/5" type="button" onClick={onBack}>
+        <button
+          className="cursor-pointer hover:bg-foreground/[0.025]"
+          type="button"
+          onClick={onBack}
+        >
           <ChevronLeft />
           <span>Access Control</span>
         </button>
@@ -644,7 +648,9 @@ const PROJECT_NAV_COMPONENT: Record<
 
 const ProjectNav = () => {
   const { currentProject } = useProject();
+  const { currentOrg } = useOrganization();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const NavComponent = PROJECT_NAV_COMPONENT[currentProject.type];
 
   const isOnAccessControl =
@@ -657,10 +663,23 @@ const ProjectNav = () => {
     return <ProjectAccessControlNav onBack={() => setShowAccessControl(false)} />;
   }
 
+  const handleAccessControlOpen = () => {
+    setShowAccessControl(true);
+    const typePath = PROJECT_TYPE_PATH[currentProject.type];
+    navigate({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      to: `/organizations/$orgId/projects/${typePath}/$projectId/access-management` as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      params: { orgId: currentOrg.id, projectId: currentProject.id } as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      search: { selectedTab: "members" } as any
+    });
+  };
+
   return (
     <SidebarGroup>
       <SidebarMenu>
-        <NavComponent onAccessControlOpen={() => setShowAccessControl(true)} />
+        <NavComponent onAccessControlOpen={handleAccessControlOpen} />
       </SidebarMenu>
     </SidebarGroup>
   );
@@ -671,6 +690,7 @@ const ProjectNav = () => {
 const OrgNavWrapper = () => {
   const { currentOrg } = useOrganization();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const orgId = currentOrg.id;
 
   const isOnAccessControl =
@@ -683,9 +703,18 @@ const OrgNavWrapper = () => {
     return <OrgAccessControlNav onBack={() => setShowAccessControl(false)} />;
   }
 
+  const handleAccessControlOpen = () => {
+    setShowAccessControl(true);
+    navigate({
+      to: "/organizations/$orgId/access-management",
+      params: { orgId },
+      search: { selectedTab: "members" }
+    });
+  };
+
   return (
     <SidebarGroup>
-      <OrgNav onAccessControlOpen={() => setShowAccessControl(true)} />
+      <OrgNav onAccessControlOpen={handleAccessControlOpen} />
     </SidebarGroup>
   );
 };

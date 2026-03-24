@@ -35,6 +35,7 @@ import {
 import { ProjectPermissionCan } from "@app/components/permissions";
 import {
   Badge,
+  ProjectIcon,
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -75,6 +76,21 @@ const PROJECT_TYPE_PATH: Record<ProjectType, string> = {
   [ProjectType.AI]: "ai"
 };
 
+// --- Submenu types ---
+
+type SubmenuItem = {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tab: string;
+};
+
+type Submenu = {
+  title: string;
+  items: SubmenuItem[];
+  pathSuffix: string;
+  defaultTab: string;
+};
+
 // --- Nav item types ---
 
 type NavItem = {
@@ -84,12 +100,173 @@ type NavItem = {
   activeMatch?: RegExp;
   badgeCount?: number;
   hidden?: boolean;
-  hasSubmenu?: boolean;
+  submenu?: Submenu;
+  /** For SSH CA permission gating */
+  permissionCheck?: boolean;
 };
 
-// --- Shared nav link component ---
+type OrgNavItem = {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  to: string;
+  isActive: boolean;
+  submenu?: Submenu;
+};
 
-const ProjectNavLink = ({ item, onSubmenuOpen }: { item: NavItem; onSubmenuOpen?: () => void }) => {
+// --- Shared submenu definitions ---
+
+const ORG_ACCESS_CONTROL_SUBMENU: Submenu = {
+  title: "Access Control",
+  pathSuffix: "access-management",
+  defaultTab: "members",
+  items: [
+    { label: "Members", icon: User, tab: "members" },
+    { label: "Groups", icon: Users, tab: "groups" },
+    { label: "Machine Identities", icon: HardDrive, tab: "identities" },
+    { label: "Roles", icon: IdCardLanyard, tab: "roles" }
+  ]
+};
+
+const PROJECT_ACCESS_CONTROL_SUBMENU: Submenu = {
+  title: "Access Control",
+  pathSuffix: "access-management",
+  defaultTab: "members",
+  items: [
+    { label: "Members", icon: Users, tab: "members" },
+    { label: "Groups", icon: Users, tab: "groups" },
+    { label: "Machine Identities", icon: KeyRound, tab: "identities" },
+    { label: "Roles", icon: Shield, tab: "roles" }
+  ]
+};
+
+const SECRET_MANAGER_ACCESS_CONTROL_SUBMENU: Submenu = {
+  ...PROJECT_ACCESS_CONTROL_SUBMENU,
+  items: [
+    ...PROJECT_ACCESS_CONTROL_SUBMENU.items,
+    { label: "Service Tokens", icon: Key, tab: "service-tokens" }
+  ]
+};
+
+// --- Generic submenu view for projects ---
+
+const ProjectSubmenuView = ({ submenu, onBack }: { submenu: Submenu; onBack: () => void }) => {
+  const { currentOrg } = useOrganization();
+  const { currentProject } = useProject();
+  const { pathname } = useLocation();
+  const searchParams = useSearch({ strict: false }) as Record<string, string>;
+
+  const typePath = PROJECT_TYPE_PATH[currentProject.type];
+  const basePath = `/organizations/${currentOrg.id}/projects/${typePath}/${currentProject.id}`;
+  const isOnPage = pathname.startsWith(`${basePath}/${submenu.pathSuffix}`);
+  const currentTab = searchParams?.selectedTab;
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel asChild>
+        <button
+          className="cursor-pointer hover:bg-foreground/[0.025]"
+          type="button"
+          onClick={onBack}
+        >
+          <ChevronLeft />
+          <span>{submenu.title}</span>
+        </button>
+      </SidebarGroupLabel>
+      <SidebarMenu>
+        {submenu.items.map((sub) => {
+          const isActive =
+            isOnPage && (currentTab === sub.tab || (!currentTab && sub.tab === submenu.defaultTab));
+
+          return (
+            <SidebarMenuItem key={sub.label}>
+              <SidebarMenuButton
+                size="lg"
+                scope="project"
+                asChild
+                isActive={isActive}
+                tooltip={sub.label}
+              >
+                <Link
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  to={
+                    `/organizations/$orgId/projects/${typePath}/$projectId/${submenu.pathSuffix}` as any
+                  }
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  params={{ orgId: currentOrg.id, projectId: currentProject.id } as any}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  search={{ selectedTab: sub.tab } as any}
+                >
+                  <sub.icon className="size-4" />
+                  <span>{sub.label}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          );
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+};
+
+// --- Generic submenu view for org ---
+
+const OrgSubmenuView = ({ submenu, onBack }: { submenu: Submenu; onBack: () => void }) => {
+  const { currentOrg } = useOrganization();
+  const { pathname } = useLocation();
+  const searchParams = useSearch({ strict: false }) as Record<string, string>;
+  const orgId = currentOrg.id;
+
+  const isOnPage = pathname.startsWith(`/organizations/${orgId}/${submenu.pathSuffix}`);
+  const currentTab = searchParams?.selectedTab;
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel asChild>
+        <button
+          className="cursor-pointer hover:bg-foreground/[0.025]"
+          type="button"
+          onClick={onBack}
+        >
+          <ChevronLeft />
+          <span>{submenu.title}</span>
+        </button>
+      </SidebarGroupLabel>
+      <SidebarMenu>
+        {submenu.items.map((sub) => {
+          const isActive =
+            isOnPage && (currentTab === sub.tab || (!currentTab && sub.tab === submenu.defaultTab));
+
+          return (
+            <SidebarMenuItem key={sub.label}>
+              <SidebarMenuButton size="lg" asChild isActive={isActive} tooltip={sub.label}>
+                <Link
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  to={`/organizations/$orgId/${submenu.pathSuffix}` as any}
+                  params={{ orgId }}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  search={{ selectedTab: sub.tab } as any}
+                >
+                  <sub.icon className="size-4" />
+                  <span>{sub.label}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          );
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+};
+
+// --- Project nav link (handles submenu chevron or normal link) ---
+
+const ProjectNavLink = ({
+  item,
+  onSubmenuOpen
+}: {
+  item: NavItem;
+  onSubmenuOpen?: (submenu: Submenu) => void;
+}) => {
   const { currentOrg } = useOrganization();
   const { currentProject } = useProject();
   const { pathname } = useLocation();
@@ -99,7 +276,7 @@ const ProjectNavLink = ({ item, onSubmenuOpen }: { item: NavItem; onSubmenuOpen?
   const fullPath = `${basePath}/${item.pathSuffix}`;
   const isActive = pathname.startsWith(fullPath) || Boolean(item.activeMatch?.test(pathname));
 
-  if (item.hasSubmenu && onSubmenuOpen) {
+  if (item.submenu && onSubmenuOpen) {
     return (
       <SidebarMenuItem>
         <SidebarMenuButton
@@ -107,7 +284,7 @@ const ProjectNavLink = ({ item, onSubmenuOpen }: { item: NavItem; onSubmenuOpen?
           scope="project"
           isActive={isActive}
           tooltip={item.label}
-          onClick={onSubmenuOpen}
+          onClick={() => onSubmenuOpen(item.submenu!)}
         >
           <item.icon className="size-4" />
           <span>{item.label}</span>
@@ -141,10 +318,10 @@ const ProjectNavLink = ({ item, onSubmenuOpen }: { item: NavItem; onSubmenuOpen?
 
 const ProjectNavList = ({
   items,
-  onAccessControlOpen
+  onSubmenuOpen
 }: {
   items: NavItem[];
-  onAccessControlOpen?: () => void;
+  onSubmenuOpen: (submenu: Submenu) => void;
 }) => (
   <>
     {items
@@ -153,182 +330,65 @@ const ProjectNavList = ({
         <ProjectNavLink
           key={item.label}
           item={item}
-          onSubmenuOpen={item.hasSubmenu ? onAccessControlOpen : undefined}
+          onSubmenuOpen={item.submenu ? onSubmenuOpen : undefined}
         />
       ))}
   </>
 );
 
-// --- Access Control sub-nav for projects ---
-
-const ProjectAccessControlNav = ({ onBack }: { onBack: () => void }) => {
-  const { currentOrg } = useOrganization();
-  const { currentProject } = useProject();
-  const { pathname } = useLocation();
-  const searchParams = useSearch({ strict: false }) as Record<string, string>;
-
-  const typePath = PROJECT_TYPE_PATH[currentProject.type];
-  const basePath = `/organizations/${currentOrg.id}/projects/${typePath}/${currentProject.id}`;
-  const isSecretManager = currentProject.type === ProjectType.SecretManager;
-  const isOnPage = pathname.startsWith(`${basePath}/access-management`);
-  const currentTab = searchParams?.selectedTab;
-
-  const subItems = [
-    { label: "Members", icon: Users, tab: "members" },
-    { label: "Groups", icon: Users, tab: "groups" },
-    { label: "Machine Identities", icon: KeyRound, tab: "identities" },
-    ...(isSecretManager ? [{ label: "Service Tokens", icon: Key, tab: "service-tokens" }] : []),
-    { label: "Roles", icon: Shield, tab: "roles" }
-  ];
-
-  return (
-    <SidebarGroup>
-      <SidebarGroupLabel asChild>
-        <button
-          className="cursor-pointer hover:bg-foreground/[0.025]"
-          type="button"
-          onClick={onBack}
-        >
-          <ChevronLeft />
-          <span>Access Control</span>
-        </button>
-      </SidebarGroupLabel>
-      <SidebarMenu>
-        {subItems.map((sub) => {
-          const isActive =
-            isOnPage && (currentTab === sub.tab || (!currentTab && sub.tab === "members"));
-
-          return (
-            <SidebarMenuItem key={sub.label}>
-              <SidebarMenuButton
-                size="lg"
-                scope="project"
-                asChild
-                isActive={isActive}
-                tooltip={sub.label}
-              >
-                <Link
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  to={
-                    `/organizations/$orgId/projects/${typePath}/$projectId/access-management` as any
-                  }
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  params={{ orgId: currentOrg.id, projectId: currentProject.id } as any}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  search={{ selectedTab: sub.tab } as any}
-                >
-                  <sub.icon className="size-4" />
-                  <span>{sub.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          );
-        })}
-      </SidebarMenu>
-    </SidebarGroup>
-  );
-};
-
-// --- Access Control sub-nav for org ---
-
-const OrgAccessControlNav = ({ onBack }: { onBack: () => void }) => {
-  const { currentOrg } = useOrganization();
-  const { pathname } = useLocation();
-  const searchParams = useSearch({ strict: false }) as Record<string, string>;
-  const orgId = currentOrg.id;
-
-  const isOnPage = pathname.startsWith(`/organizations/${orgId}/access-management`);
-  const currentTab = searchParams?.selectedTab;
-
-  const subItems = [
-    { label: "Members", icon: User, tab: "members" },
-    { label: "Groups", icon: Users, tab: "groups" },
-    { label: "Machine Identities", icon: HardDrive, tab: "identities" },
-    { label: "Roles", icon: IdCardLanyard, tab: "roles" }
-  ];
-
-  return (
-    <SidebarGroup>
-      <SidebarGroupLabel asChild>
-        <button
-          className="cursor-pointer hover:bg-foreground/[0.025]"
-          type="button"
-          onClick={onBack}
-        >
-          <ChevronLeft />
-          <span>Access Control</span>
-        </button>
-      </SidebarGroupLabel>
-      <SidebarMenu>
-        {subItems.map((sub) => {
-          const isActive =
-            isOnPage && (currentTab === sub.tab || (!currentTab && sub.tab === "members"));
-
-          return (
-            <SidebarMenuItem key={sub.label}>
-              <SidebarMenuButton size="lg" asChild isActive={isActive} tooltip={sub.label}>
-                <Link
-                  to="/organizations/$orgId/access-management"
-                  params={{ orgId }}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  search={{ selectedTab: sub.tab } as any}
-                >
-                  <sub.icon className="size-4" />
-                  <span>{sub.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          );
-        })}
-      </SidebarMenu>
-    </SidebarGroup>
-  );
-};
-
 // --- Org nav ---
 
-const OrgNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
+const OrgNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }) => {
   const { currentOrg, isRootOrganization } = useOrganization();
   const { pathname } = useLocation();
   const orgId = currentOrg.id;
 
-  const items = [
+  const items: OrgNavItem[] = [
     {
       label: "Overview",
       icon: LayoutDashboard,
-      to: "/organizations/$orgId/projects" as const,
+      to: "/organizations/$orgId/projects",
       isActive: pathname === `/organizations/${orgId}/projects`
     },
     {
       label: "App Connections",
       icon: Cable,
-      to: "/organizations/$orgId/app-connections" as const,
+      to: "/organizations/$orgId/app-connections",
       isActive: pathname.startsWith(`/organizations/${orgId}/app-connections`)
     },
     {
       label: "Networking",
       icon: Network,
-      to: "/organizations/$orgId/networking" as const,
+      to: "/organizations/$orgId/networking",
       isActive: pathname.startsWith(`/organizations/${orgId}/networking`)
     },
     {
       label: "Secret Sharing",
       icon: Share2,
-      to: "/organizations/$orgId/secret-sharing" as const,
+      to: "/organizations/$orgId/secret-sharing",
       isActive: pathname.startsWith(`/organizations/${orgId}/secret-sharing`)
     },
     {
       label: "Audit Logs",
       icon: FileText,
-      to: "/organizations/$orgId/audit-logs" as const,
+      to: "/organizations/$orgId/audit-logs",
       isActive: pathname.startsWith(`/organizations/${orgId}/audit-logs`)
+    },
+    {
+      label: "Access Control",
+      icon: Shield,
+      to: "/organizations/$orgId/access-management",
+      isActive:
+        pathname.startsWith(`/organizations/${orgId}/access-management`) ||
+        Boolean(pathname.match(/organizations\/[^/]+\/(members|identities|groups|roles)/)),
+      submenu: ORG_ACCESS_CONTROL_SUBMENU
     },
     ...(isRootOrganization
       ? [
           {
             label: "Usage & Billing",
             icon: CreditCard,
-            to: "/organizations/$orgId/billing" as const,
+            to: "/organizations/$orgId/billing",
             isActive: pathname.startsWith(`/organizations/${orgId}/billing`)
           }
         ]
@@ -336,60 +396,46 @@ const OrgNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) =>
     {
       label: "Settings",
       icon: Settings,
-      to: "/organizations/$orgId/settings" as const,
+      to: "/organizations/$orgId/settings",
       isActive: pathname.startsWith(`/organizations/${orgId}/settings`)
     }
   ];
 
-  const accessControlActive =
-    pathname.startsWith(`/organizations/${orgId}/access-management`) ||
-    Boolean(pathname.match(/organizations\/[^/]+\/(members|identities|groups|roles)/));
-
-  // Insert Access Control after Audit Logs
-  const auditLogsIdx = items.findIndex((i) => i.label === "Audit Logs");
-  const insertIdx = auditLogsIdx >= 0 ? auditLogsIdx + 1 : items.length;
-
   return (
     <SidebarMenu>
-      {items.slice(0, insertIdx).map((item) => (
-        <SidebarMenuItem key={item.label}>
-          <SidebarMenuButton asChild isActive={item.isActive} size="lg" tooltip={item.label}>
-            <Link to={item.to} params={{ orgId }}>
+      {items.map((item) =>
+        item.submenu ? (
+          <SidebarMenuItem key={item.label}>
+            <SidebarMenuButton
+              size="lg"
+              isActive={item.isActive}
+              tooltip={item.label}
+              onClick={() => onSubmenuOpen(item.submenu!)}
+            >
               <item.icon className="size-4" />
               <span>{item.label}</span>
-            </Link>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      ))}
-      <SidebarMenuItem>
-        <SidebarMenuButton
-          size="lg"
-          isActive={accessControlActive}
-          tooltip="Access Control"
-          onClick={onAccessControlOpen}
-        >
-          <Shield className="size-4" />
-          <span>Access Control</span>
-          <ChevronRight className="ml-auto size-4 opacity-50" />
-        </SidebarMenuButton>
-      </SidebarMenuItem>
-      {items.slice(insertIdx).map((item) => (
-        <SidebarMenuItem key={item.label}>
-          <SidebarMenuButton asChild isActive={item.isActive} size="lg" tooltip={item.label}>
-            <Link to={item.to} params={{ orgId }}>
-              <item.icon className="size-4" />
-              <span>{item.label}</span>
-            </Link>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
-      ))}
+              <ChevronRight className="ml-auto size-4 opacity-50" />
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        ) : (
+          <SidebarMenuItem key={item.label}>
+            <SidebarMenuButton asChild isActive={item.isActive} size="lg" tooltip={item.label}>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              <Link to={item.to as any} params={{ orgId }}>
+                <item.icon className="size-4" />
+                <span>{item.label}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        )
+      )}
     </SidebarMenu>
   );
 };
 
 // --- Project nav components per type ---
 
-const SecretManagerNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
+const SecretManagerNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }) => {
   const { currentProject, projectId } = useProject();
 
   const { data: secretApprovalReqCount } = useGetSecretApprovalRequestCount({ projectId });
@@ -407,7 +453,7 @@ const SecretManagerNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => 
   const items: NavItem[] = [
     {
       label: "Overview",
-      icon: LayoutDashboard,
+      icon: ProjectIcon,
       pathSuffix: "overview",
       activeMatch: /\/secrets\/|\/commits\//
     },
@@ -429,16 +475,16 @@ const SecretManagerNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => 
       icon: Shield,
       pathSuffix: "access-management",
       activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
-      hasSubmenu: true
+      submenu: SECRET_MANAGER_ACCESS_CONTROL_SUBMENU
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings" }
   ];
 
-  return <ProjectNavList items={items} onAccessControlOpen={onAccessControlOpen} />;
+  return <ProjectNavList items={items} onSubmenuOpen={onSubmenuOpen} />;
 };
 
-const KmsNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
+const KmsNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }) => {
   const items: NavItem[] = [
     { label: "Overview", icon: LayoutDashboard, pathSuffix: "overview" },
     { label: "KMIP", icon: Key, pathSuffix: "kmip" },
@@ -447,15 +493,15 @@ const KmsNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) =>
       icon: Shield,
       pathSuffix: "access-management",
       activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
-      hasSubmenu: true
+      submenu: PROJECT_ACCESS_CONTROL_SUBMENU
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings" }
   ];
-  return <ProjectNavList items={items} onAccessControlOpen={onAccessControlOpen} />;
+  return <ProjectNavList items={items} onSubmenuOpen={onSubmenuOpen} />;
 };
 
-const CertManagerNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
+const CertManagerNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }) => {
   const { currentProject } = useProject();
   const { subscription } = useSubscription();
   const { data: subscribers = [] } = useListWorkspacePkiSubscribers(currentProject?.id || "");
@@ -500,29 +546,30 @@ const CertManagerNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => vo
       icon: Shield,
       pathSuffix: "access-management",
       activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
-      hasSubmenu: true
+      submenu: PROJECT_ACCESS_CONTROL_SUBMENU
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings" }
   ];
-  return <ProjectNavList items={items} onAccessControlOpen={onAccessControlOpen} />;
+  return <ProjectNavList items={items} onSubmenuOpen={onSubmenuOpen} />;
 };
 
-const SshNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
+const SshNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }) => {
   const items: NavItem[] = [
     { label: "Hosts", icon: Server, pathSuffix: "overview", activeMatch: /\/ssh-host-groups\// },
     {
       label: "Certificate Authorities",
       icon: ShieldCheck,
       pathSuffix: "cas",
-      activeMatch: /\/ca\//
+      activeMatch: /\/ca\//,
+      permissionCheck: true
     },
     {
       label: "Access Control",
       icon: Shield,
       pathSuffix: "access-management",
       activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
-      hasSubmenu: true
+      submenu: PROJECT_ACCESS_CONTROL_SUBMENU
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings" }
@@ -530,31 +577,33 @@ const SshNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) =>
 
   return (
     <>
-      {items.map((item) => {
-        if (item.label === "Certificate Authorities") {
+      {items
+        .filter((i) => !i.hidden)
+        .map((item) => {
+          if (item.permissionCheck) {
+            return (
+              <ProjectPermissionCan
+                key={item.label}
+                I={ProjectPermissionActions.Read}
+                a={ProjectPermissionSub.SshCertificateAuthorities}
+              >
+                {(isAllowed) => (isAllowed ? <ProjectNavLink item={item} /> : null)}
+              </ProjectPermissionCan>
+            );
+          }
           return (
-            <ProjectPermissionCan
+            <ProjectNavLink
               key={item.label}
-              I={ProjectPermissionActions.Read}
-              a={ProjectPermissionSub.SshCertificateAuthorities}
-            >
-              {(isAllowed) => (isAllowed ? <ProjectNavLink item={item} /> : null)}
-            </ProjectPermissionCan>
+              item={item}
+              onSubmenuOpen={item.submenu ? onSubmenuOpen : undefined}
+            />
           );
-        }
-        return (
-          <ProjectNavLink
-            key={item.label}
-            item={item}
-            onSubmenuOpen={item.hasSubmenu ? onAccessControlOpen : undefined}
-          />
-        );
-      })}
+        })}
     </>
   );
 };
 
-const PamNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
+const PamNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }) => {
   const items: NavItem[] = [
     { label: "Resources", icon: Database, pathSuffix: "resources" },
     { label: "Sessions", icon: Video, pathSuffix: "sessions" },
@@ -570,15 +619,15 @@ const PamNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) =>
       icon: Shield,
       pathSuffix: "access-management",
       activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
-      hasSubmenu: true
+      submenu: PROJECT_ACCESS_CONTROL_SUBMENU
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings" }
   ];
-  return <ProjectNavList items={items} onAccessControlOpen={onAccessControlOpen} />;
+  return <ProjectNavList items={items} onSubmenuOpen={onSubmenuOpen} />;
 };
 
-const AINav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
+const AINav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }) => {
   const items: NavItem[] = [
     { label: "MCP", icon: Terminal, pathSuffix: "overview" },
     {
@@ -586,15 +635,15 @@ const AINav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => 
       icon: Shield,
       pathSuffix: "access-management",
       activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
-      hasSubmenu: true
+      submenu: PROJECT_ACCESS_CONTROL_SUBMENU
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings" }
   ];
-  return <ProjectNavList items={items} onAccessControlOpen={onAccessControlOpen} />;
+  return <ProjectNavList items={items} onSubmenuOpen={onSubmenuOpen} />;
 };
 
-const SecretScanningNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
+const SecretScanningNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }) => {
   const { currentProject } = useProject();
   const { permission } = useProjectPermission();
   const { subscription } = useSubscription();
@@ -626,17 +675,17 @@ const SecretScanningNav = ({ onAccessControlOpen }: { onAccessControlOpen: () =>
       icon: Shield,
       pathSuffix: "access-management",
       activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
-      hasSubmenu: true
+      submenu: PROJECT_ACCESS_CONTROL_SUBMENU
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings" }
   ];
-  return <ProjectNavList items={items} onAccessControlOpen={onAccessControlOpen} />;
+  return <ProjectNavList items={items} onSubmenuOpen={onSubmenuOpen} />;
 };
 
 const PROJECT_NAV_COMPONENT: Record<
   ProjectType,
-  React.ComponentType<{ onAccessControlOpen: () => void }>
+  React.ComponentType<{ onSubmenuOpen: (submenu: Submenu) => void }>
 > = {
   [ProjectType.SecretManager]: SecretManagerNav,
   [ProjectType.KMS]: KmsNav,
@@ -660,29 +709,31 @@ const ProjectNav = () => {
     pathname.includes("/access-management") ||
     Boolean(pathname.match(/\/groups\/|\/identities\/|\/members\/|\/roles\//));
 
-  const [showAccessControl, setShowAccessControl] = useState(isOnAccessControl);
+  const [activeSubmenu, setActiveSubmenu] = useState<Submenu | null>(
+    isOnAccessControl ? PROJECT_ACCESS_CONTROL_SUBMENU : null
+  );
 
-  if (showAccessControl) {
-    return <ProjectAccessControlNav onBack={() => setShowAccessControl(false)} />;
+  if (activeSubmenu) {
+    return <ProjectSubmenuView submenu={activeSubmenu} onBack={() => setActiveSubmenu(null)} />;
   }
 
-  const handleAccessControlOpen = () => {
-    setShowAccessControl(true);
+  const handleSubmenuOpen = (submenu: Submenu) => {
+    setActiveSubmenu(submenu);
     const typePath = PROJECT_TYPE_PATH[currentProject.type];
     navigate({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      to: `/organizations/$orgId/projects/${typePath}/$projectId/access-management` as any,
+      to: `/organizations/$orgId/projects/${typePath}/$projectId/${submenu.pathSuffix}` as any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       params: { orgId: currentOrg.id, projectId: currentProject.id } as any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      search: { selectedTab: "members" } as any
+      search: { selectedTab: submenu.defaultTab } as any
     });
   };
 
   return (
     <SidebarGroup>
       <SidebarMenu>
-        <NavComponent onAccessControlOpen={handleAccessControlOpen} />
+        <NavComponent onSubmenuOpen={handleSubmenuOpen} />
       </SidebarMenu>
     </SidebarGroup>
   );
@@ -700,24 +751,28 @@ const OrgNavWrapper = () => {
     pathname.startsWith(`/organizations/${orgId}/access-management`) ||
     Boolean(pathname.match(/organizations\/[^/]+\/(members|identities|groups|roles)/));
 
-  const [showAccessControl, setShowAccessControl] = useState(isOnAccessControl);
+  const [activeSubmenu, setActiveSubmenu] = useState<Submenu | null>(
+    isOnAccessControl ? ORG_ACCESS_CONTROL_SUBMENU : null
+  );
 
-  if (showAccessControl) {
-    return <OrgAccessControlNav onBack={() => setShowAccessControl(false)} />;
+  if (activeSubmenu) {
+    return <OrgSubmenuView submenu={activeSubmenu} onBack={() => setActiveSubmenu(null)} />;
   }
 
-  const handleAccessControlOpen = () => {
-    setShowAccessControl(true);
+  const handleSubmenuOpen = (submenu: Submenu) => {
+    setActiveSubmenu(submenu);
     navigate({
-      to: "/organizations/$orgId/access-management",
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      to: `/organizations/$orgId/${submenu.pathSuffix}` as any,
       params: { orgId },
-      search: { selectedTab: "members" }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      search: { selectedTab: submenu.defaultTab } as any
     });
   };
 
   return (
     <SidebarGroup>
-      <OrgNav onAccessControlOpen={handleAccessControlOpen} />
+      <OrgNav onSubmenuOpen={handleSubmenuOpen} />
     </SidebarGroup>
   );
 };

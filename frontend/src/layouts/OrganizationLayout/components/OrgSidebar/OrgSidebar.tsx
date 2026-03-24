@@ -1,14 +1,17 @@
+import { useState } from "react";
 import { Link, useLocation, useParams } from "@tanstack/react-router";
 import {
   Bell,
   BookCheck,
   Cable,
-  ChevronLeftIcon,
+  ChevronLeft,
+  ChevronRight,
   CreditCard,
   Database,
   FileKey,
   FileText,
   Key,
+  KeyRound,
   LayoutDashboard,
   Lock,
   Monitor,
@@ -22,6 +25,7 @@ import {
   Shield,
   ShieldCheck,
   Terminal,
+  Users,
   Video
 } from "lucide-react";
 
@@ -68,16 +72,6 @@ const PROJECT_TYPE_PATH: Record<ProjectType, string> = {
   [ProjectType.AI]: "ai"
 };
 
-const PROJECT_TYPE_NAME: Record<ProjectType, string> = {
-  [ProjectType.SecretManager]: "Secrets Management",
-  [ProjectType.CertificateManager]: "PKI",
-  [ProjectType.SSH]: "SSH",
-  [ProjectType.KMS]: "KMS",
-  [ProjectType.PAM]: "PAM",
-  [ProjectType.SecretScanning]: "Secret Scanning",
-  [ProjectType.AI]: "Agent Sentinel"
-};
-
 // --- Nav item types ---
 
 type NavItem = {
@@ -87,11 +81,12 @@ type NavItem = {
   activeMatch?: RegExp;
   badgeCount?: number;
   hidden?: boolean;
+  hasSubmenu?: boolean;
 };
 
 // --- Shared nav link component ---
 
-const ProjectNavLink = ({ item }: { item: NavItem }) => {
+const ProjectNavLink = ({ item, onSubmenuOpen }: { item: NavItem; onSubmenuOpen?: () => void }) => {
   const { currentOrg } = useOrganization();
   const { currentProject } = useProject();
   const { pathname } = useLocation();
@@ -100,6 +95,24 @@ const ProjectNavLink = ({ item }: { item: NavItem }) => {
   const basePath = `/organizations/${currentOrg.id}/projects/${typePath}/${currentProject.id}`;
   const fullPath = `${basePath}/${item.pathSuffix}`;
   const isActive = pathname.startsWith(fullPath) || Boolean(item.activeMatch?.test(pathname));
+
+  if (item.hasSubmenu && onSubmenuOpen) {
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          size="lg"
+          scope="project"
+          isActive={isActive}
+          tooltip={item.label}
+          onClick={onSubmenuOpen}
+        >
+          <item.icon className="size-4" />
+          <span>{item.label}</span>
+          <ChevronRight className="ml-auto size-4 opacity-50" />
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  }
 
   return (
     <SidebarMenuItem>
@@ -123,19 +136,164 @@ const ProjectNavLink = ({ item }: { item: NavItem }) => {
   );
 };
 
-const ProjectNavList = ({ items }: { items: NavItem[] }) => (
+const ProjectNavList = ({
+  items,
+  onAccessControlOpen
+}: {
+  items: NavItem[];
+  onAccessControlOpen?: () => void;
+}) => (
   <>
     {items
       .filter((i) => !i.hidden)
       .map((item) => (
-        <ProjectNavLink key={item.label} item={item} />
+        <ProjectNavLink
+          key={item.label}
+          item={item}
+          onSubmenuOpen={item.hasSubmenu ? onAccessControlOpen : undefined}
+        />
       ))}
   </>
 );
 
+// --- Access Control sub-nav for projects ---
+
+const ProjectAccessControlNav = ({ onBack }: { onBack: () => void }) => {
+  const { currentOrg } = useOrganization();
+  const { currentProject } = useProject();
+  const { pathname } = useLocation();
+
+  const typePath = PROJECT_TYPE_PATH[currentProject.type];
+  const basePath = `/organizations/${currentOrg.id}/projects/${typePath}/${currentProject.id}`;
+  const isSecretManager = currentProject.type === ProjectType.SecretManager;
+
+  const subItems = [
+    { label: "Members", icon: Users, tab: "members" },
+    { label: "Groups", icon: Users, tab: "groups" },
+    { label: "Machine Identities", icon: KeyRound, tab: "identities" },
+    ...(isSecretManager ? [{ label: "Service Tokens", icon: Key, tab: "service-tokens" }] : []),
+    { label: "Roles", icon: Shield, tab: "roles" }
+  ];
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel className="mb-1">
+        <button
+          type="button"
+          onClick={onBack}
+          className="flex cursor-pointer items-center gap-1.5 text-xs text-sidebar-foreground/70 transition-colors hover:text-sidebar-foreground"
+        >
+          <ChevronLeft className="size-3.5" />
+          <span>Access Control</span>
+        </button>
+      </SidebarGroupLabel>
+      <SidebarMenu>
+        {subItems.map((sub) => {
+          const isActive =
+            pathname.startsWith(`${basePath}/access-management`) &&
+            pathname.includes(`selectedTab=${sub.tab}`);
+          // Also check search params for active state
+          const searchActive =
+            pathname === `${basePath}/access-management` &&
+            typeof window !== "undefined" &&
+            window.location.search.includes(`selectedTab=${sub.tab}`);
+          const defaultActive =
+            sub.tab === "members" &&
+            pathname.startsWith(`${basePath}/access-management`) &&
+            !window.location.search.includes("selectedTab=");
+
+          return (
+            <SidebarMenuItem key={sub.label}>
+              <SidebarMenuButton
+                size="lg"
+                scope="project"
+                asChild
+                isActive={searchActive || defaultActive || isActive}
+                tooltip={sub.label}
+              >
+                <Link
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  to={
+                    `/organizations/$orgId/projects/${typePath}/$projectId/access-management` as any
+                  }
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  params={{ orgId: currentOrg.id, projectId: currentProject.id } as any}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  search={{ selectedTab: sub.tab } as any}
+                >
+                  <sub.icon className="size-4" />
+                  <span>{sub.label}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          );
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+};
+
+// --- Access Control sub-nav for org ---
+
+const OrgAccessControlNav = ({ onBack }: { onBack: () => void }) => {
+  const { currentOrg } = useOrganization();
+  const orgId = currentOrg.id;
+
+  const subItems = [
+    { label: "Members", icon: Users, tab: "members" },
+    { label: "Groups", icon: Users, tab: "groups" },
+    { label: "Machine Identities", icon: KeyRound, tab: "identities" },
+    { label: "Roles", icon: Shield, tab: "roles" }
+  ];
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel asChild>
+        <button className="cursor-pointer hover:bg-foreground/5" type="button" onClick={onBack}>
+          <ChevronLeft />
+          <span>Access Control</span>
+        </button>
+      </SidebarGroupLabel>
+      <SidebarMenu>
+        {subItems.map((sub) => {
+          const searchActive =
+            typeof window !== "undefined" &&
+            window.location.pathname.startsWith(`/organizations/${orgId}/access-management`) &&
+            window.location.search.includes(`selectedTab=${sub.tab}`);
+          const defaultActive =
+            sub.tab === "members" &&
+            window.location.pathname.startsWith(`/organizations/${orgId}/access-management`) &&
+            !window.location.search.includes("selectedTab=");
+
+          return (
+            <SidebarMenuItem key={sub.label}>
+              <SidebarMenuButton
+                size="lg"
+                asChild
+                isActive={searchActive || defaultActive}
+                tooltip={sub.label}
+              >
+                <Link
+                  to="/organizations/$orgId/access-management"
+                  params={{ orgId }}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  search={{ selectedTab: sub.tab } as any}
+                >
+                  <sub.icon className="size-4" />
+                  <span>{sub.label}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          );
+        })}
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+};
+
 // --- Org nav ---
 
-const OrgNav = () => {
+const OrgNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
   const { currentOrg, isRootOrganization } = useOrganization();
   const { pathname } = useLocation();
   const orgId = currentOrg.id;
@@ -166,14 +324,6 @@ const OrgNav = () => {
       isActive: pathname.startsWith(`/organizations/${orgId}/secret-sharing`)
     },
     {
-      label: "Access Control",
-      icon: Shield,
-      to: "/organizations/$orgId/access-management" as const,
-      isActive:
-        pathname.startsWith(`/organizations/${orgId}/access-management`) ||
-        Boolean(pathname.match(/organizations\/[^/]+\/(members|identities|groups|roles)/))
-    },
-    {
       label: "Audit Logs",
       icon: FileText,
       to: "/organizations/$orgId/audit-logs" as const,
@@ -197,6 +347,10 @@ const OrgNav = () => {
     }
   ];
 
+  const accessControlActive =
+    pathname.startsWith(`/organizations/${orgId}/access-management`) ||
+    Boolean(pathname.match(/organizations\/[^/]+\/(members|identities|groups|roles)/));
+
   return (
     <SidebarMenu>
       {items.map((item) => (
@@ -209,13 +363,26 @@ const OrgNav = () => {
           </SidebarMenuButton>
         </SidebarMenuItem>
       ))}
+      {/* Access Control with chevron */}
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          size="lg"
+          isActive={accessControlActive}
+          tooltip="Access Control"
+          onClick={onAccessControlOpen}
+        >
+          <Shield className="size-4" />
+          <span>Access Control</span>
+          <ChevronRight className="ml-auto size-4 opacity-50" />
+        </SidebarMenuButton>
+      </SidebarMenuItem>
     </SidebarMenu>
   );
 };
 
 // --- Project nav components per type ---
 
-const SecretManagerNav = () => {
+const SecretManagerNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
   const { currentProject, projectId } = useProject();
 
   const { data: secretApprovalReqCount } = useGetSecretApprovalRequestCount({ projectId });
@@ -254,16 +421,17 @@ const SecretManagerNav = () => {
       label: "Access Control",
       icon: Shield,
       pathSuffix: "access-management",
-      activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//
+      activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
+      hasSubmenu: true
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings" }
   ];
 
-  return <ProjectNavList items={items} />;
+  return <ProjectNavList items={items} onAccessControlOpen={onAccessControlOpen} />;
 };
 
-const KmsNav = () => {
+const KmsNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
   const items: NavItem[] = [
     { label: "Overview", icon: LayoutDashboard, pathSuffix: "overview" },
     { label: "KMIP", icon: Key, pathSuffix: "kmip" },
@@ -271,15 +439,16 @@ const KmsNav = () => {
       label: "Access Control",
       icon: Shield,
       pathSuffix: "access-management",
-      activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//
+      activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
+      hasSubmenu: true
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings" }
   ];
-  return <ProjectNavList items={items} />;
+  return <ProjectNavList items={items} onAccessControlOpen={onAccessControlOpen} />;
 };
 
-const CertManagerNav = () => {
+const CertManagerNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
   const { currentProject } = useProject();
   const { subscription } = useSubscription();
   const { data: subscribers = [] } = useListWorkspacePkiSubscribers(currentProject?.id || "");
@@ -323,15 +492,16 @@ const CertManagerNav = () => {
       label: "Access Control",
       icon: Shield,
       pathSuffix: "access-management",
-      activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//
+      activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
+      hasSubmenu: true
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings" }
   ];
-  return <ProjectNavList items={items} />;
+  return <ProjectNavList items={items} onAccessControlOpen={onAccessControlOpen} />;
 };
 
-const SshNav = () => {
+const SshNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
   const items: NavItem[] = [
     { label: "Hosts", icon: Server, pathSuffix: "overview", activeMatch: /\/ssh-host-groups\// },
     {
@@ -344,7 +514,8 @@ const SshNav = () => {
       label: "Access Control",
       icon: Shield,
       pathSuffix: "access-management",
-      activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//
+      activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
+      hasSubmenu: true
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings" }
@@ -364,46 +535,59 @@ const SshNav = () => {
             </ProjectPermissionCan>
           );
         }
-        return <ProjectNavLink key={item.label} item={item} />;
+        return (
+          <ProjectNavLink
+            key={item.label}
+            item={item}
+            onSubmenuOpen={item.hasSubmenu ? onAccessControlOpen : undefined}
+          />
+        );
       })}
     </>
   );
 };
 
-const PamNav = () => {
+const PamNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
   const items: NavItem[] = [
     { label: "Resources", icon: Database, pathSuffix: "resources" },
     { label: "Sessions", icon: Video, pathSuffix: "sessions" },
     { label: "Discovery", icon: Search, pathSuffix: "discovery", activeMatch: /\/discovery\// },
-    { label: "Approvals", icon: BookCheck, pathSuffix: "approvals", activeMatch: /\/approvals\// },
+    {
+      label: "Approvals",
+      icon: BookCheck,
+      pathSuffix: "approvals",
+      activeMatch: /\/approvals\//
+    },
     {
       label: "Access Control",
       icon: Shield,
       pathSuffix: "access-management",
-      activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//
+      activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
+      hasSubmenu: true
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings" }
   ];
-  return <ProjectNavList items={items} />;
+  return <ProjectNavList items={items} onAccessControlOpen={onAccessControlOpen} />;
 };
 
-const AINav = () => {
+const AINav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
   const items: NavItem[] = [
     { label: "MCP", icon: Terminal, pathSuffix: "overview" },
     {
       label: "Access Control",
       icon: Shield,
       pathSuffix: "access-management",
-      activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//
+      activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
+      hasSubmenu: true
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings" }
   ];
-  return <ProjectNavList items={items} />;
+  return <ProjectNavList items={items} onAccessControlOpen={onAccessControlOpen} />;
 };
 
-const SecretScanningNav = () => {
+const SecretScanningNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) => {
   const { currentProject } = useProject();
   const { permission } = useProjectPermission();
   const { subscription } = useSubscription();
@@ -434,15 +618,19 @@ const SecretScanningNav = () => {
       label: "Access Control",
       icon: Shield,
       pathSuffix: "access-management",
-      activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//
+      activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
+      hasSubmenu: true
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings" }
   ];
-  return <ProjectNavList items={items} />;
+  return <ProjectNavList items={items} onAccessControlOpen={onAccessControlOpen} />;
 };
 
-const PROJECT_NAV_COMPONENT: Record<ProjectType, React.ComponentType> = {
+const PROJECT_NAV_COMPONENT: Record<
+  ProjectType,
+  React.ComponentType<{ onAccessControlOpen: () => void }>
+> = {
   [ProjectType.SecretManager]: SecretManagerNav,
   [ProjectType.KMS]: KmsNav,
   [ProjectType.CertificateManager]: CertManagerNav,
@@ -456,20 +644,49 @@ const PROJECT_NAV_COMPONENT: Record<ProjectType, React.ComponentType> = {
 
 const ProjectNav = () => {
   const { currentProject } = useProject();
+  const { pathname } = useLocation();
   const NavComponent = PROJECT_NAV_COMPONENT[currentProject.type];
 
+  const isOnAccessControl =
+    pathname.includes("/access-management") ||
+    Boolean(pathname.match(/\/groups\/|\/identities\/|\/members\/|\/roles\//));
+
+  const [showAccessControl, setShowAccessControl] = useState(isOnAccessControl);
+
+  if (showAccessControl) {
+    return <ProjectAccessControlNav onBack={() => setShowAccessControl(false)} />;
+  }
+
   return (
-    <>
-      {/* <SidebarSeparator /> */}
-      <SidebarGroup>
-        {/* <SidebarGroupLabel className="bg-bunker-muted/20 flex items-center justify-center gap-2 rounded-none border-b border-border px-0 py-4 text-center text-label">
-          <ChevronLeftIcon /> Project
-        </SidebarGroupLabel> */}
-        <SidebarMenu>
-          <NavComponent />
-        </SidebarMenu>
-      </SidebarGroup>
-    </>
+    <SidebarGroup>
+      <SidebarMenu>
+        <NavComponent onAccessControlOpen={() => setShowAccessControl(true)} />
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+};
+
+// --- Org nav wrapper ---
+
+const OrgNavWrapper = () => {
+  const { currentOrg } = useOrganization();
+  const { pathname } = useLocation();
+  const orgId = currentOrg.id;
+
+  const isOnAccessControl =
+    pathname.startsWith(`/organizations/${orgId}/access-management`) ||
+    Boolean(pathname.match(/organizations\/[^/]+\/(members|identities|groups|roles)/));
+
+  const [showAccessControl, setShowAccessControl] = useState(isOnAccessControl);
+
+  if (showAccessControl) {
+    return <OrgAccessControlNav onBack={() => setShowAccessControl(false)} />;
+  }
+
+  return (
+    <SidebarGroup>
+      <OrgNav onAccessControlOpen={() => setShowAccessControl(true)} />
+    </SidebarGroup>
   );
 };
 
@@ -484,15 +701,7 @@ export const OrgSidebar = () => {
 
   return (
     <Sidebar scope={isInsideProject ? "project" : "org"} collapsible="none" side="left">
-      <SidebarContent>
-        {isInsideProject ? (
-          <ProjectNav />
-        ) : (
-          <SidebarGroup>
-            <OrgNav />
-          </SidebarGroup>
-        )}
-      </SidebarContent>
+      <SidebarContent>{isInsideProject ? <ProjectNav /> : <OrgNavWrapper />}</SidebarContent>
       <SidebarFooter />
     </Sidebar>
   );

@@ -608,36 +608,35 @@ export const Navbar = () => {
           {getPlan(subscription)}
         </div>
       )}
-      {!location.pathname.startsWith("/admin") ? (
-        user.superAdmin ? (
-          <Button variant="outline" size="sm" className="mr-2" asChild>
-            <Link to="/admin" onClick={handleNavigateToAdminConsole}>
-              <InstanceIcon />
-              <span className="hidden md:inline">Server Console</span>
-            </Link>
-          </Button>
-        ) : (
-          <OrgPermissionCan I={OrgPermissionActions.Create} a={OrgPermissionSubjects.Member}>
-            {(isAllowed) =>
-              isAllowed ? (
-                <Button variant="outline" size="sm" className="mr-2" asChild>
-                  <Link
-                    to="/organizations/$orgId/access-management"
-                    params={{ orgId: currentOrg.id }}
-                    search={{
-                      selectedTab: "members",
-                      action: "invite-members"
-                    }}
-                  >
-                    <UserPlus />
-                    <span className="hidden md:inline">Invite Users</span>
-                  </Link>
-                </Button>
-              ) : null
-            }
-          </OrgPermissionCan>
-        )
-      ) : null}
+      {!location.pathname.startsWith("/admin") && user.superAdmin && (
+        <Button variant="outline" size="sm" className="mr-2" asChild>
+          <Link to="/admin" onClick={handleNavigateToAdminConsole}>
+            <InstanceIcon />
+            <span className="hidden md:inline">Server Console</span>
+          </Link>
+        </Button>
+      )}
+      {!location.pathname.startsWith("/admin") && !user.superAdmin && (
+        <OrgPermissionCan I={OrgPermissionActions.Create} a={OrgPermissionSubjects.Member}>
+          {(isAllowed) =>
+            isAllowed ? (
+              <Button variant="outline" size="sm" className="mr-2" asChild>
+                <Link
+                  to="/organizations/$orgId/access-management"
+                  params={{ orgId: currentOrg.id }}
+                  search={{
+                    selectedTab: "members",
+                    action: "invite-members"
+                  }}
+                >
+                  <UserPlus />
+                  <span className="hidden md:inline">Invite Users</span>
+                </Link>
+              </Button>
+            ) : null
+          }
+        </OrgPermissionCan>
+      )}
       <UnstableButtonGroup className="mr-2">
         <UnstableDropdownMenu modal={false}>
           <UnstableDropdownMenuTrigger asChild>
@@ -702,75 +701,75 @@ export const Navbar = () => {
               <User />
             </UnstableIconButton>
           </UnstableDropdownMenuTrigger>
-        <UnstableDropdownMenuContent side="bottom" align="end" sideOffset={8}>
-          <div className="cursor-default px-3 py-2">
-            <div className="text-sm font-medium capitalize">
-              {user?.firstName} {user?.lastName}
+          <UnstableDropdownMenuContent side="bottom" align="end" sideOffset={8}>
+            <div className="cursor-default px-3 py-2">
+              <div className="text-sm font-medium capitalize">
+                {user?.firstName} {user?.lastName}
+              </div>
+              <div className="text-muted-foreground text-xs">{user.email}</div>
             </div>
-            <div className="text-muted-foreground text-xs">{user.email}</div>
-          </div>
-          <UnstableDropdownMenuSeparator />
-          <UnstableDropdownMenuItem asChild>
-            <Link to="/personal-settings">
-              <Settings className="size-4" />
-              Personal Settings
-            </Link>
-          </UnstableDropdownMenuItem>
-          <OrgPermissionCan I={OrgPermissionActions.Create} a={OrgPermissionSubjects.Member}>
-            {(isAllowed) =>
-              isAllowed ? (
-                <UnstableDropdownMenuItem asChild>
-                  <Link
-                    to="/organizations/$orgId/access-management"
-                    params={{ orgId: currentOrg.id }}
-                    search={{
-                      selectedTab: "members",
-                      action: "invite-members"
-                    }}
-                  >
-                    <UserPlus className="size-4" />
-                    Invite Users
-                  </Link>
-                </UnstableDropdownMenuItem>
-              ) : null
-            }
-          </OrgPermissionCan>
-          <UnstableDropdownMenuSeparator />
-          <UnstableDropdownMenuItem asChild>
-            <a
-              href="https://infisical.com/docs/documentation/getting-started/introduction"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Book className="size-4" />
-              Documentation
-              <ExternalLink className="ml-auto size-3 opacity-50" />
-            </a>
-          </UnstableDropdownMenuItem>
-          <UnstableDropdownMenuItem asChild>
-            <a href="https://infisical.com/slack" target="_blank" rel="noopener noreferrer">
-              <Slack className="size-4" />
-              Join Slack Community
-              <ExternalLink className="ml-auto size-3 opacity-50" />
-            </a>
-          </UnstableDropdownMenuItem>
-          <UnstableDropdownMenuSeparator />
-          <UnstableDropdownMenuItem onSelect={handleCopyToken}>
-            <Clipboard className="size-4" />
-            Copy Token
-            <Tooltip
-              content="This token is linked to your current login session and can only access resources within the organization you're currently logged into."
-              className="max-w-3xl"
-            >
-              <Info className="size-3 opacity-50" />
-            </Tooltip>
-          </UnstableDropdownMenuItem>
-          <UnstableDropdownMenuSeparator />
-          <UnstableDropdownMenuItem variant="danger" onSelect={logOutUser}>
-            <LogOut className="size-4" />
-            Log Out
-          </UnstableDropdownMenuItem>
-        </UnstableDropdownMenuContent>
+            <UnstableDropdownMenuSeparator />
+            <UnstableDropdownMenuItem asChild>
+              <Link to="/personal-settings">
+                <Settings className="size-4" />
+                Personal Settings
+              </Link>
+            </UnstableDropdownMenuItem>
+            <OrgPermissionCan I={OrgPermissionActions.Create} a={OrgPermissionSubjects.Member}>
+              {(isAllowed) =>
+                isAllowed ? (
+                  <UnstableDropdownMenuItem asChild>
+                    <Link
+                      to="/organizations/$orgId/access-management"
+                      params={{ orgId: currentOrg.id }}
+                      search={{
+                        selectedTab: "members",
+                        action: "invite-members"
+                      }}
+                    >
+                      <UserPlus className="size-4" />
+                      Invite Users
+                    </Link>
+                  </UnstableDropdownMenuItem>
+                ) : null
+              }
+            </OrgPermissionCan>
+            <UnstableDropdownMenuSeparator />
+            <UnstableDropdownMenuItem asChild>
+              <a
+                href="https://infisical.com/docs/documentation/getting-started/introduction"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Book className="size-4" />
+                Documentation
+                <ExternalLink className="ml-auto size-3 opacity-50" />
+              </a>
+            </UnstableDropdownMenuItem>
+            <UnstableDropdownMenuItem asChild>
+              <a href="https://infisical.com/slack" target="_blank" rel="noopener noreferrer">
+                <Slack className="size-4" />
+                Join Slack Community
+                <ExternalLink className="ml-auto size-3 opacity-50" />
+              </a>
+            </UnstableDropdownMenuItem>
+            <UnstableDropdownMenuSeparator />
+            <UnstableDropdownMenuItem onSelect={handleCopyToken}>
+              <Clipboard className="size-4" />
+              Copy Token
+              <Tooltip
+                content="This token is linked to your current login session and can only access resources within the organization you're currently logged into."
+                className="max-w-3xl"
+              >
+                <Info className="size-3 opacity-50" />
+              </Tooltip>
+            </UnstableDropdownMenuItem>
+            <UnstableDropdownMenuSeparator />
+            <UnstableDropdownMenuItem variant="danger" onSelect={logOutUser}>
+              <LogOut className="size-4" />
+              Log Out
+            </UnstableDropdownMenuItem>
+          </UnstableDropdownMenuContent>
         </UnstableDropdownMenu>
       </UnstableButtonGroup>
 

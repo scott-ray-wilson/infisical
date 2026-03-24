@@ -36,7 +36,12 @@ export const NotificationDropdown = () => {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <UnstableIconButton variant="outline" size="sm" aria-label="Notifications" className="relative">
+        <UnstableIconButton
+          variant="outline"
+          size="sm"
+          aria-label="Notifications"
+          className="relative"
+        >
           <Bell />
           {unreadCount > 0 && (
             <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-yellow-400 px-1 text-[10px] text-black">

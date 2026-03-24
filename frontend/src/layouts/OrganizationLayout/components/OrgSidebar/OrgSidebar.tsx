@@ -242,7 +242,8 @@ const OrgSubmenuView = ({ submenu, onBack }: { submenu: Submenu; onBack: () => v
                 <Link
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   to={`/organizations/$orgId/${submenu.pathSuffix}` as any}
-                  params={{ orgId }}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  params={{ orgId } as any}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   search={{ selectedTab: sub.tab } as any}
                 >
@@ -421,7 +422,8 @@ const OrgNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }
           <SidebarMenuItem key={item.label}>
             <SidebarMenuButton asChild isActive={item.isActive} size="lg" tooltip={item.label}>
               {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-              <Link to={item.to as any} params={{ orgId }}>
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              <Link to={item.to as any} params={{ orgId } as any}>
                 <item.icon className="size-4" />
                 <span>{item.label}</span>
               </Link>
@@ -764,7 +766,8 @@ const OrgNavWrapper = () => {
     navigate({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       to: `/organizations/$orgId/${submenu.pathSuffix}` as any,
-      params: { orgId },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      params: { orgId } as any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       search: { selectedTab: submenu.defaultTab } as any
     });

@@ -462,9 +462,9 @@ const sidebarMenuButtonVariants = cva(
         lg: "h-10 text-sm group-data-[collapsible=icon]:p-0!"
       },
       scope: {
-        org: "data-active:border-l-org",
-        "sub-org": "data-active:border-l-sub-org",
-        project: "data-active:border-l-project"
+        org: "data-active:border-l-org data-active:[&_svg]:text-org",
+        "sub-org": "data-active:border-l-sub-org data-active:[&_svg]:text-sub-org",
+        project: "data-active:border-l-project data-active:[&_svg]:text-project"
       }
     },
     defaultVariants: {

@@ -441,7 +441,12 @@ export const Navbar = () => {
           </Link>
         ) : (
           <>
-            <div className="mr-4 flex h-full w-64 items-center gap-1 border-r border-border pr-2 pl-4">
+            <div
+              className={twMerge(
+                "flex h-full items-center gap-1 overflow-hidden border-r border-border pr-2 pl-4 transition-[width] duration-300 ease-in-out",
+                isProjectScope ? "mr-2 w-18" : "mr-4 w-64"
+              )}
+            >
               <DropdownMenu modal={false} open={isOrgSelectOpen} onOpenChange={setIsOrgSelectOpen}>
                 <div className="group mr-1 flex min-w-0 cursor-pointer items-center gap-2 overflow-hidden text-sm text-white transition-all duration-100">
                   <button
@@ -466,9 +471,10 @@ export const Navbar = () => {
                         !isSubOrganization && !isProjectScope ? "text-org" : "text-muted"
                       )}
                     />
+
                     <span className="truncate">{rootOrg?.name}</span>
                     <Badge
-                      variant={!isSubOrganization && !isProjectScope ? "org" : "neutral"}
+                      variant={!isSubOrganization ? "org" : "neutral"}
                       className="hidden lg:inline-flex"
                     >
                       Organization
@@ -600,10 +606,14 @@ export const Navbar = () => {
                         }}
                       >
                         <SubOrgIcon className={twMerge("size-[14px] shrink-0 text-sub-org")} />
-                        <span className="truncate">{currentOrg?.name}</span>
-                        <Badge variant="sub-org" className="hidden lg:inline-flex">
-                          Sub-Organization
-                        </Badge>
+                        {!isProjectScope && (
+                          <>
+                            <span className="truncate">{currentOrg?.name}</span>
+                            <Badge variant="sub-org" className="hidden lg:inline-flex">
+                              Sub-Organization
+                            </Badge>
+                          </>
+                        )}
                       </button>
                     </div>
                     <DropdownMenuTrigger asChild>

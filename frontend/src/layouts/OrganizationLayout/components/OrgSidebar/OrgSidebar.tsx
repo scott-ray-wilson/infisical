@@ -3,6 +3,7 @@ import {
   Bell,
   BookCheck,
   Cable,
+  ChevronLeftIcon,
   CreditCard,
   Database,
   FileKey,
@@ -114,7 +115,7 @@ const ProjectNavLink = ({ item }: { item: NavItem }) => {
         </Link>
       </SidebarMenuButton>
       {Boolean(item.badgeCount) && (
-        <Badge variant="warning" className="absolute top-3.5 right-2">
+        <Badge variant="warning" className="absolute top-[10.5px] right-2">
           {item.badgeCount}
         </Badge>
       )}
@@ -461,12 +462,9 @@ const ProjectNav = () => {
     <>
       {/* <SidebarSeparator /> */}
       <SidebarGroup>
-        <SidebarGroupLabel className="flex items-center gap-2">
-          <span className="truncate">{currentProject.name}</span>
-          <Badge variant="project" className="shrink-0 text-[10px]">
-            {PROJECT_TYPE_NAME[currentProject.type]}
-          </Badge>
-        </SidebarGroupLabel>
+        {/* <SidebarGroupLabel className="bg-bunker-muted/20 flex items-center justify-center gap-2 rounded-none border-b border-border px-0 py-4 text-center text-label">
+          <ChevronLeftIcon /> Project
+        </SidebarGroupLabel> */}
         <SidebarMenu>
           <NavComponent />
         </SidebarMenu>

@@ -156,8 +156,11 @@ const ProjectSelectInner = () => {
                         {PROJECT_TYPE_NAME[workspace.type]}
                       </span>
                     </div>
-                    <Star
-                      className={`size-4 shrink-0 hover:text-mineshaft-400 ${workspace.isFavorite ? "fill-yellow-600 text-yellow-600" : "text-yellow-600"}`}
+                    <UnstableIconButton
+                      variant="ghost"
+                      size="xs"
+                      aria-label="toggle favorite"
+                      onPointerDown={(e) => e.stopPropagation()}
                       onClick={async (e) => {
                         e.stopPropagation();
                         e.preventDefault();
@@ -165,7 +168,18 @@ const ProjectSelectInner = () => {
                           workspace.isFavorite ? removeProjectFromFavorites : addProjectToFavorites
                         )(workspace.id);
                       }}
-                    />
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.stopPropagation();
+                      }}
+                    >
+                      <Star
+                        className={
+                          workspace.isFavorite
+                            ? "fill-yellow-600 text-yellow-600"
+                            : "text-yellow-600"
+                        }
+                      />
+                    </UnstableIconButton>
                   </CommandItem>
                 ))}
               </CommandGroup>

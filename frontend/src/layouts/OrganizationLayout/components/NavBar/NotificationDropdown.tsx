@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { faBell } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useRouter } from "@tanstack/react-router";
-import { Bell } from "lucide-react";
+import { Bell, BellDotIcon } from "lucide-react";
 
 import {
   ContentLoader,
@@ -42,12 +42,7 @@ export const NotificationDropdown = () => {
           aria-label="Notifications"
           className="relative"
         >
-          <Bell />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-warning/75 px-1 text-[10px] text-black">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          )}
+          {unreadCount > 0 ? <BellDotIcon className="text-warning" /> : <Bell />}
         </UnstableIconButton>
       </DropdownMenuTrigger>
       <DropdownMenuContent

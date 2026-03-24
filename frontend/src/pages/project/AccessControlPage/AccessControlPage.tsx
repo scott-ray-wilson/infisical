@@ -59,7 +59,7 @@ const Page = () => {
           </Link>
         </PageHeader>
         <Tabs orientation="vertical" value={selectedTab} onValueChange={updateSelectedTab}>
-          <TabList>
+          {/* <TabList>
             <Tab variant="project" value={ProjectAccessControlTabs.Member}>
               Users
             </Tab>
@@ -77,7 +77,7 @@ const Page = () => {
             <Tab variant="project" value={ProjectAccessControlTabs.Roles}>
               Roles
             </Tab>
-          </TabList>
+          </TabList> */}
           <TabPanel value={ProjectAccessControlTabs.Member}>
             <MembersTab />
           </TabPanel>

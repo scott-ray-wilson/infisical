@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
   BookCheck,
@@ -715,10 +716,6 @@ const ProjectNav = () => {
     isOnAccessControl ? PROJECT_ACCESS_CONTROL_SUBMENU : null
   );
 
-  if (activeSubmenu) {
-    return <ProjectSubmenuView submenu={activeSubmenu} onBack={() => setActiveSubmenu(null)} />;
-  }
-
   const handleSubmenuOpen = (submenu: Submenu) => {
     setActiveSubmenu(submenu);
     const typePath = PROJECT_TYPE_PATH[currentProject.type];
@@ -733,11 +730,33 @@ const ProjectNav = () => {
   };
 
   return (
-    <SidebarGroup>
-      <SidebarMenu>
-        <NavComponent onSubmenuOpen={handleSubmenuOpen} />
-      </SidebarMenu>
-    </SidebarGroup>
+    <AnimatePresence mode="wait" initial={false}>
+      {activeSubmenu ? (
+        <motion.div
+          key="submenu"
+          initial={{ x: 30, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: 30, opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+        >
+          <ProjectSubmenuView submenu={activeSubmenu} onBack={() => setActiveSubmenu(null)} />
+        </motion.div>
+      ) : (
+        <motion.div
+          key="main"
+          initial={{ x: -30, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: -30, opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+        >
+          <SidebarGroup>
+            <SidebarMenu>
+              <NavComponent onSubmenuOpen={handleSubmenuOpen} />
+            </SidebarMenu>
+          </SidebarGroup>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
@@ -757,10 +776,6 @@ const OrgNavWrapper = () => {
     isOnAccessControl ? ORG_ACCESS_CONTROL_SUBMENU : null
   );
 
-  if (activeSubmenu) {
-    return <OrgSubmenuView submenu={activeSubmenu} onBack={() => setActiveSubmenu(null)} />;
-  }
-
   const handleSubmenuOpen = (submenu: Submenu) => {
     setActiveSubmenu(submenu);
     navigate({
@@ -774,9 +789,31 @@ const OrgNavWrapper = () => {
   };
 
   return (
-    <SidebarGroup>
-      <OrgNav onSubmenuOpen={handleSubmenuOpen} />
-    </SidebarGroup>
+    <AnimatePresence mode="wait" initial={false}>
+      {activeSubmenu ? (
+        <motion.div
+          key="submenu"
+          initial={{ x: 30, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: 30, opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+        >
+          <OrgSubmenuView submenu={activeSubmenu} onBack={() => setActiveSubmenu(null)} />
+        </motion.div>
+      ) : (
+        <motion.div
+          key="main"
+          initial={{ x: -30, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          exit={{ x: -30, opacity: 0 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+        >
+          <SidebarGroup>
+            <OrgNav onSubmenuOpen={handleSubmenuOpen} />
+          </SidebarGroup>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
@@ -791,7 +828,9 @@ export const OrgSidebar = () => {
 
   return (
     <Sidebar scope={isInsideProject ? "project" : "org"} collapsible="none" side="left">
-      <SidebarContent>{isInsideProject ? <ProjectNav /> : <OrgNavWrapper />}</SidebarContent>
+      <SidebarContent>
+        {isInsideProject ? <ProjectNav /> : <OrgNavWrapper />}
+      </SidebarContent>
       <SidebarFooter />
     </Sidebar>
   );

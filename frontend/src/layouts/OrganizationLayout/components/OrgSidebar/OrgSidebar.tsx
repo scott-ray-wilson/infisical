@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useLocation, useNavigate, useParams } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import {
   Bell,
   BookCheck,
@@ -165,10 +165,13 @@ const ProjectAccessControlNav = ({ onBack }: { onBack: () => void }) => {
   const { currentOrg } = useOrganization();
   const { currentProject } = useProject();
   const { pathname } = useLocation();
+  const searchParams = useSearch({ strict: false }) as Record<string, string>;
 
   const typePath = PROJECT_TYPE_PATH[currentProject.type];
   const basePath = `/organizations/${currentOrg.id}/projects/${typePath}/${currentProject.id}`;
   const isSecretManager = currentProject.type === ProjectType.SecretManager;
+  const isOnPage = pathname.startsWith(`${basePath}/access-management`);
+  const currentTab = searchParams?.selectedTab;
 
   const subItems = [
     { label: "Members", icon: Users, tab: "members" },
@@ -180,30 +183,20 @@ const ProjectAccessControlNav = ({ onBack }: { onBack: () => void }) => {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel className="mb-1">
+      <SidebarGroupLabel asChild>
         <button
+          className="cursor-pointer hover:bg-foreground/[0.025]"
           type="button"
           onClick={onBack}
-          className="flex cursor-pointer items-center gap-1.5 text-xs text-sidebar-foreground/70 transition-colors hover:text-sidebar-foreground"
         >
-          <ChevronLeft className="size-3.5" />
+          <ChevronLeft />
           <span>Access Control</span>
         </button>
       </SidebarGroupLabel>
       <SidebarMenu>
         {subItems.map((sub) => {
           const isActive =
-            pathname.startsWith(`${basePath}/access-management`) &&
-            pathname.includes(`selectedTab=${sub.tab}`);
-          // Also check search params for active state
-          const searchActive =
-            pathname === `${basePath}/access-management` &&
-            typeof window !== "undefined" &&
-            window.location.search.includes(`selectedTab=${sub.tab}`);
-          const defaultActive =
-            sub.tab === "members" &&
-            pathname.startsWith(`${basePath}/access-management`) &&
-            !window.location.search.includes("selectedTab=");
+            isOnPage && (currentTab === sub.tab || (!currentTab && sub.tab === "members"));
 
           return (
             <SidebarMenuItem key={sub.label}>
@@ -211,7 +204,7 @@ const ProjectAccessControlNav = ({ onBack }: { onBack: () => void }) => {
                 size="lg"
                 scope="project"
                 asChild
-                isActive={searchActive || defaultActive || isActive}
+                isActive={isActive}
                 tooltip={sub.label}
               >
                 <Link
@@ -240,7 +233,12 @@ const ProjectAccessControlNav = ({ onBack }: { onBack: () => void }) => {
 
 const OrgAccessControlNav = ({ onBack }: { onBack: () => void }) => {
   const { currentOrg } = useOrganization();
+  const { pathname } = useLocation();
+  const searchParams = useSearch({ strict: false }) as Record<string, string>;
   const orgId = currentOrg.id;
+
+  const isOnPage = pathname.startsWith(`/organizations/${orgId}/access-management`);
+  const currentTab = searchParams?.selectedTab;
 
   const subItems = [
     { label: "Members", icon: User, tab: "members" },
@@ -263,23 +261,12 @@ const OrgAccessControlNav = ({ onBack }: { onBack: () => void }) => {
       </SidebarGroupLabel>
       <SidebarMenu>
         {subItems.map((sub) => {
-          const searchActive =
-            typeof window !== "undefined" &&
-            window.location.pathname.startsWith(`/organizations/${orgId}/access-management`) &&
-            window.location.search.includes(`selectedTab=${sub.tab}`);
-          const defaultActive =
-            sub.tab === "members" &&
-            window.location.pathname.startsWith(`/organizations/${orgId}/access-management`) &&
-            !window.location.search.includes("selectedTab=");
+          const isActive =
+            isOnPage && (currentTab === sub.tab || (!currentTab && sub.tab === "members"));
 
           return (
             <SidebarMenuItem key={sub.label}>
-              <SidebarMenuButton
-                size="lg"
-                asChild
-                isActive={searchActive || defaultActive}
-                tooltip={sub.label}
-              >
+              <SidebarMenuButton size="lg" asChild isActive={isActive} tooltip={sub.label}>
                 <Link
                   to="/organizations/$orgId/access-management"
                   params={{ orgId }}

@@ -434,9 +434,7 @@ export const Navbar = () => {
                             <Popover
                               key={org.id}
                               open={expandedOrgId === org.id}
-                              onOpenChange={(open) =>
-                                setExpandedOrgId(open ? org.id : null)
-                              }
+                              onOpenChange={(open) => setExpandedOrgId(open ? org.id : null)}
                             >
                               <CommandItem
                                 value={org.name}

@@ -345,9 +345,13 @@ const OrgNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) =>
     pathname.startsWith(`/organizations/${orgId}/access-management`) ||
     Boolean(pathname.match(/organizations\/[^/]+\/(members|identities|groups|roles)/));
 
+  // Insert Access Control after Audit Logs
+  const auditLogsIdx = items.findIndex((i) => i.label === "Audit Logs");
+  const insertIdx = auditLogsIdx >= 0 ? auditLogsIdx + 1 : items.length;
+
   return (
     <SidebarMenu>
-      {items.map((item) => (
+      {items.slice(0, insertIdx).map((item) => (
         <SidebarMenuItem key={item.label}>
           <SidebarMenuButton asChild isActive={item.isActive} size="lg" tooltip={item.label}>
             <Link to={item.to} params={{ orgId }}>
@@ -357,7 +361,6 @@ const OrgNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) =>
           </SidebarMenuButton>
         </SidebarMenuItem>
       ))}
-      {/* Access Control with chevron */}
       <SidebarMenuItem>
         <SidebarMenuButton
           size="lg"
@@ -370,6 +373,16 @@ const OrgNav = ({ onAccessControlOpen }: { onAccessControlOpen: () => void }) =>
           <ChevronRight className="ml-auto size-4 opacity-50" />
         </SidebarMenuButton>
       </SidebarMenuItem>
+      {items.slice(insertIdx).map((item) => (
+        <SidebarMenuItem key={item.label}>
+          <SidebarMenuButton asChild isActive={item.isActive} size="lg" tooltip={item.label}>
+            <Link to={item.to} params={{ orgId }}>
+              <item.icon className="size-4" />
+              <span>{item.label}</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
     </SidebarMenu>
   );
 };

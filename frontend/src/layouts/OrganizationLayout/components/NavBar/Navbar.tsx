@@ -355,7 +355,7 @@ export const Navbar = () => {
             <div
               className={twMerge(
                 "flex h-full min-w-0 items-center overflow-hidden border-border pr-2 pl-4 transition-all duration-300 ease-in-out",
-                isProjectScope ? "mr-2 w-[72px] border-r" : "mr-4 w-84 max-w-96"
+                isProjectScope ? "mr-2 w-[72px] border-r" : "mr-4 w-96 max-w-96"
               )}
             >
               <Popover open={isOrgSelectOpen} onOpenChange={setIsOrgSelectOpen}>

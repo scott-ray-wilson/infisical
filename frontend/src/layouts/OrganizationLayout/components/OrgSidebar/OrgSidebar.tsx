@@ -204,6 +204,16 @@ const getSecretSharingSubmenu = ({
   ]
 });
 
+const NETWORKING_SUBMENU: Submenu = {
+  title: "Networking",
+  pathSuffix: "networking",
+  defaultTab: "gateways",
+  items: [
+    { label: "Gateways", icon: Server, tab: "gateways" },
+    { label: "Relays", icon: RefreshCw, tab: "relays" }
+  ]
+};
+
 // --- Generic submenu view for projects ---
 
 const ProjectSubmenuView = ({ submenu, onBack }: { submenu: Submenu; onBack: () => void }) => {
@@ -419,7 +429,8 @@ const OrgNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }
       label: "Networking",
       icon: Network,
       to: "/organizations/$orgId/networking",
-      isActive: pathname.startsWith(`/organizations/${orgId}/networking`)
+      isActive: pathname.startsWith(`/organizations/${orgId}/networking`),
+      submenu: NETWORKING_SUBMENU
     },
     {
       label: "Secret Sharing",
@@ -841,6 +852,7 @@ const OrgNavWrapper = () => {
     Boolean(pathname.match(/organizations\/[^/]+\/(members|identities|groups|roles)/));
   const isOnSettings = pathname.startsWith(`/organizations/${orgId}/settings`);
   const isOnSecretSharing = pathname.startsWith(`/organizations/${orgId}/secret-sharing`);
+  const isOnNetworking = pathname.startsWith(`/organizations/${orgId}/networking`);
 
   const getInitialSubmenu = (): Submenu | null => {
     if (isOnAccessControl) return ORG_ACCESS_CONTROL_SUBMENU;
@@ -850,6 +862,7 @@ const OrgNavWrapper = () => {
         hasSubOrganization: Boolean(subscription?.subOrganization)
       });
     if (isOnSecretSharing) return getSecretSharingSubmenu({ isSubOrganization });
+    if (isOnNetworking) return NETWORKING_SUBMENU;
     return null;
   };
 

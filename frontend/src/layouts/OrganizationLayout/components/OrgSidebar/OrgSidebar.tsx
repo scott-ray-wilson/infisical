@@ -147,10 +147,10 @@ const PROJECT_ACCESS_CONTROL_SUBMENU: Submenu = {
   pathSuffix: "access-management",
   defaultTab: "members",
   items: [
-    { label: "Members", icon: Users, tab: "members" },
+    { label: "Users", icon: User, tab: "members" },
     { label: "Groups", icon: Users, tab: "groups" },
-    { label: "Machine Identities", icon: KeyRound, tab: "identities" },
-    { label: "Roles", icon: Shield, tab: "roles" }
+    { label: "Machine Identities", icon: HardDrive, tab: "identities" },
+    { label: "Roles", icon: IdCardLanyard, tab: "roles" }
   ]
 };
 

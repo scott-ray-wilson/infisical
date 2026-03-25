@@ -32,10 +32,12 @@ import {
   Users,
   Video
 } from "lucide-react";
+import { twMerge } from "tailwind-merge";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
 import {
   Badge,
+  OrgIcon,
   ProjectIcon,
   Sidebar,
   SidebarContent,
@@ -44,7 +46,8 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
-  SidebarMenuItem
+  SidebarMenuItem,
+  SubOrgIcon
 } from "@app/components/v3";
 import {
   ProjectPermissionActions,
@@ -348,7 +351,7 @@ const OrgNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }
   const items: OrgNavItem[] = [
     {
       label: "Overview",
-      icon: LayoutDashboard,
+      icon: isRootOrganization ? OrgIcon : SubOrgIcon,
       to: "/organizations/$orgId/projects",
       isActive: pathname === `/organizations/${orgId}/projects`
     },
@@ -416,7 +419,12 @@ const OrgNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }
             >
               <item.icon className="size-4" />
               <span>{item.label}</span>
-              <ChevronRight className="ml-auto size-4 opacity-50" />
+              <ChevronRight
+                className={twMerge(
+                  "ml-auto size-4 !text-foreground",
+                  !item.isActive && "opacity-50"
+                )}
+              />
             </SidebarMenuButton>
           </SidebarMenuItem>
         ) : (
@@ -825,9 +833,14 @@ export const OrgSidebar = () => {
     select: (el) => el?.projectId
   });
   const isInsideProject = Boolean(projectId);
+  const { isSubOrganization } = useOrganization();
+
+  let scope: "project" | "sub-org" | "org" = "org";
+  if (isInsideProject) scope = "project";
+  else if (isSubOrganization) scope = "sub-org";
 
   return (
-    <Sidebar scope={isInsideProject ? "project" : "org"} collapsible="none" side="left">
+    <Sidebar scope={scope} collapsible="none" side="left">
       <SidebarContent>{isInsideProject ? <ProjectNav /> : <OrgNavWrapper />}</SidebarContent>
       <SidebarFooter />
     </Sidebar>

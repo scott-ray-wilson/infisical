@@ -4,13 +4,17 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Bell,
   BookCheck,
+  Building2,
   Cable,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
+  Cog,
   CreditCard,
   Database,
   FileKey,
   FileText,
+  FolderCog,
   HardDrive,
   IdCardLanyard,
   Key,
@@ -21,12 +25,14 @@ import {
   Network,
   Plug,
   RefreshCw,
+  Route,
   Search,
   Server,
   Settings,
   Share2,
   Shield,
   ShieldCheck,
+  ShieldEllipsis,
   Terminal,
   User,
   Users,
@@ -150,6 +156,37 @@ const SECRET_MANAGER_ACCESS_CONTROL_SUBMENU: Submenu = {
     { label: "Service Tokens", icon: Key, tab: "service-tokens" }
   ]
 };
+
+const getOrgSettingsSubmenu = ({
+  isSubOrganization,
+  hasSubOrganization
+}: {
+  isSubOrganization: boolean;
+  hasSubOrganization: boolean;
+}): Submenu => ({
+  title: "Settings",
+  pathSuffix: "settings",
+  defaultTab: "tab-org-general",
+  items: [
+    { label: "General", icon: Cog, tab: "tab-org-general" },
+    ...(!isSubOrganization
+      ? [
+          { label: "SSO", icon: ShieldEllipsis, tab: "sso-settings" },
+          { label: "Provisioning", icon: Route, tab: "provisioning-settings" },
+          { label: "Security", icon: ShieldCheck, tab: "tab-org-security" }
+        ]
+      : []),
+    { label: "Encryption", icon: Lock, tab: "tab-org-encryption" },
+    { label: "Workflow Integrations", icon: Plug, tab: "workflow-integrations" },
+    { label: "Audit Log Streams", icon: FileText, tab: "tag-audit-log-streams" },
+    { label: "External Migrations", icon: Database, tab: "tab-external-migrations" },
+    { label: "Project Templates", icon: FolderCog, tab: "project-templates" },
+    { label: "Product Enforcements", icon: ClipboardList, tab: "product-enforcements" },
+    ...(!isSubOrganization && hasSubOrganization
+      ? [{ label: "Sub Organizations", icon: Building2, tab: "tab-sub-organizations" }]
+      : [])
+  ]
+});
 
 // --- Generic submenu view for projects ---
 
@@ -344,7 +381,8 @@ const ProjectNavList = ({
 // --- Org nav ---
 
 const OrgNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }) => {
-  const { currentOrg, isRootOrganization } = useOrganization();
+  const { currentOrg, isRootOrganization, isSubOrganization } = useOrganization();
+  const { subscription } = useSubscription();
   const { pathname } = useLocation();
   const orgId = currentOrg.id;
 
@@ -402,7 +440,11 @@ const OrgNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }
       label: "Settings",
       icon: Settings,
       to: "/organizations/$orgId/settings",
-      isActive: pathname.startsWith(`/organizations/${orgId}/settings`)
+      isActive: pathname.startsWith(`/organizations/${orgId}/settings`),
+      submenu: getOrgSettingsSubmenu({
+        isSubOrganization,
+        hasSubOrganization: Boolean(subscription?.subOrganization)
+      })
     }
   ];
 
@@ -771,7 +813,8 @@ const ProjectNav = () => {
 // --- Org nav wrapper ---
 
 const OrgNavWrapper = () => {
-  const { currentOrg } = useOrganization();
+  const { currentOrg, isSubOrganization } = useOrganization();
+  const { subscription } = useSubscription();
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const orgId = currentOrg.id;
@@ -779,10 +822,19 @@ const OrgNavWrapper = () => {
   const isOnAccessControl =
     pathname.startsWith(`/organizations/${orgId}/access-management`) ||
     Boolean(pathname.match(/organizations\/[^/]+\/(members|identities|groups|roles)/));
+  const isOnSettings = pathname.startsWith(`/organizations/${orgId}/settings`);
 
-  const [activeSubmenu, setActiveSubmenu] = useState<Submenu | null>(
-    isOnAccessControl ? ORG_ACCESS_CONTROL_SUBMENU : null
-  );
+  const getInitialSubmenu = (): Submenu | null => {
+    if (isOnAccessControl) return ORG_ACCESS_CONTROL_SUBMENU;
+    if (isOnSettings)
+      return getOrgSettingsSubmenu({
+        isSubOrganization,
+        hasSubOrganization: Boolean(subscription?.subOrganization)
+      });
+    return null;
+  };
+
+  const [activeSubmenu, setActiveSubmenu] = useState<Submenu | null>(getInitialSubmenu);
 
   const handleSubmenuOpen = (submenu: Submenu) => {
     setActiveSubmenu(submenu);

@@ -13,6 +13,8 @@ import {
   Cog,
   CreditCard,
   Database,
+  DoorClosedLocked,
+  DoorOpen,
   FileKey,
   FileText,
   FolderCog,
@@ -209,8 +211,8 @@ const NETWORKING_SUBMENU: Submenu = {
   pathSuffix: "networking",
   defaultTab: "gateways",
   items: [
-    { label: "Gateways", icon: Server, tab: "gateways" },
-    { label: "Relays", icon: RefreshCw, tab: "relays" }
+    { label: "Gateways", icon: DoorOpen, tab: "gateways" },
+    { label: "Relays", icon: Route, tab: "relays" }
   ]
 };
 

@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import { faExclamationTriangle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useLocation, useNavigate, useRouter } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Book,
   Check,
-  ChevronRight,
   ChevronsUpDown,
   CircleHelp,
   Clipboard,
@@ -161,7 +160,6 @@ export const Navbar = () => {
   const [requiredMfaMethod, setRequiredMfaMethod] = useState(MfaMethod.EMAIL);
   const [mfaSuccessCallback, setMfaSuccessCallback] = useState<() => void>(() => {});
   const [shouldShowMfa, toggleShowMfa] = useToggle(false);
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [isOrgSelectOpen, setIsOrgSelectOpen] = useState(false);
 
@@ -339,6 +337,7 @@ export const Navbar = () => {
       className={twMerge(
         "z-10 flex min-h-12 items-center border-b border-border bg-gradient-to-br to-transparent",
         isProjectScope && "from-project/5",
+        !isProjectScope && isSubOrganization && "from-sub-org/5",
         !isProjectScope && !isSubOrganization && "from-org/5"
       )}
     >
@@ -356,7 +355,7 @@ export const Navbar = () => {
             <div
               className={twMerge(
                 "flex h-full min-w-0 items-center overflow-hidden border-border pr-2 pl-4 transition-all duration-300 ease-in-out",
-                isProjectScope ? "mr-2 w-[72px] border-r" : "mr-4 w-64 max-w-96"
+                isProjectScope ? "mr-2 w-[72px] border-r" : "mr-4 w-84 max-w-96"
               )}
             >
               <Popover open={isOrgSelectOpen} onOpenChange={setIsOrgSelectOpen}>
@@ -365,32 +364,37 @@ export const Navbar = () => {
                   <button
                     className="flex cursor-pointer items-center gap-x-2 truncate whitespace-nowrap"
                     type="button"
-                    onClick={async () => {
-                      if (isSubOrganization) {
-                        await handleOrgSelection({
-                          organizationId: currentOrg.rootOrgId as string
-                        });
-                      } else {
-                        navigate({
-                          to: "/organizations/$orgId/projects",
-                          params: { orgId: currentOrg.id }
-                        });
-                      }
+                    onClick={() => {
+                      navigate({
+                        to: "/organizations/$orgId/projects",
+                        params: { orgId: currentOrg.id }
+                      });
                     }}
                   >
-                    <OrgIcon
-                      className={twMerge(
-                        "size-[14px] shrink-0",
-                        !isSubOrganization && !isProjectScope ? "text-org" : "text-muted"
-                      )}
-                    />
+                    {isSubOrganization ? (
+                      <SubOrgIcon
+                        className={twMerge(
+                          "size-[14px] shrink-0",
+                          !isProjectScope ? "text-sub-org" : "text-muted"
+                        )}
+                      />
+                    ) : (
+                      <OrgIcon
+                        className={twMerge(
+                          "size-[14px] shrink-0",
+                          !isProjectScope ? "text-org" : "text-muted"
+                        )}
+                      />
+                    )}
 
-                    <span className="truncate">{rootOrg?.name}</span>
+                    <span className="truncate">
+                      {isSubOrganization ? currentOrg?.name : rootOrg?.name}
+                    </span>
                     <Badge
-                      variant={!isSubOrganization ? "org" : "neutral"}
+                      variant={isSubOrganization ? "sub-org" : "org"}
                       className="hidden lg:inline-flex"
                     >
-                      Organization
+                      {isSubOrganization ? "Sub-Organization" : "Organization"}
                     </Badge>
                   </button>
                   {subscription.cardDeclined && (
@@ -515,88 +519,6 @@ export const Navbar = () => {
                 </PopoverContent>
               </Popover>
             </div>
-            {isSubOrganization && (
-              <>
-                <ChevronRight size={18} className="mt-[3px] mr-3 text-mineshaft-400/70" />
-                <div className="flex min-w-16 items-center gap-1 pr-2 pl-1">
-                  <Popover>
-                    <div className="group mr-1 flex min-w-0 cursor-pointer items-center gap-2 overflow-hidden text-sm text-white transition-all duration-100">
-                      <button
-                        className="flex cursor-pointer items-center gap-x-2 truncate whitespace-nowrap"
-                        type="button"
-                        onClick={async () => {
-                          navigate({
-                            to: "/organizations/$orgId/projects",
-                            params: { orgId: currentOrg.id }
-                          });
-                          if (isSubOrganization) {
-                            await router.invalidate({ sync: true }).catch(() => null);
-                          }
-                        }}
-                      >
-                        <SubOrgIcon className={twMerge("size-[14px] shrink-0 text-sub-org")} />
-                        {!isProjectScope && (
-                          <>
-                            <span className="truncate">{currentOrg?.name}</span>
-                            <Badge variant="sub-org" className="hidden lg:inline-flex">
-                              Sub-Organization
-                            </Badge>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                    <PopoverTrigger asChild>
-                      <UnstableIconButton variant="ghost" size="xs" aria-label="switch-sub-org">
-                        <ChevronsUpDown />
-                      </UnstableIconButton>
-                    </PopoverTrigger>
-                    <PopoverContent align="start" sideOffset={12} className="w-72 p-0">
-                      <Command>
-                        <CommandInput placeholder="Search sub-organizations..." />
-                        <CommandList>
-                          <CommandEmpty>No sub-organizations found.</CommandEmpty>
-                          <CommandGroup heading="Sub-Organizations">
-                            {subOrganizations.map((subOrg) => (
-                              <CommandItem
-                                key={subOrg.id}
-                                value={subOrg.name}
-                                onSelect={() => handleOrgSelection({ organizationId: subOrg.id })}
-                              >
-                                <Check
-                                  className={
-                                    currentOrg?.id === subOrg.id ? "opacity-100" : "opacity-0"
-                                  }
-                                />
-                                <span className="truncate">{subOrg.name}</span>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                        <OrgPermissionCan
-                          I={OrgPermissionSubOrgActions.Create}
-                          a={OrgPermissionSubjects.SubOrganization}
-                        >
-                          {(isAllowed) =>
-                            isAllowed ? (
-                              <div className="border-t border-border p-1">
-                                <button
-                                  type="button"
-                                  className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-foreground hover:bg-foreground/5"
-                                  onClick={() => setShowSubOrgForm(true)}
-                                >
-                                  <Plus className="size-4" />
-                                  <span>New Sub-Organization</span>
-                                </button>
-                              </div>
-                            ) : null
-                          }
-                        </OrgPermissionCan>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </>
-            )}
             {isProjectScope && (
               <>
                 {/* <ChevronRight size={18} className="mx-3 mt-[3px] text-mineshaft-400/70" /> */}

@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
   Bell,
   BookCheck,
-  Building2,
   Cable,
   ChevronLeft,
   ChevronRight,
@@ -32,7 +33,7 @@ import {
   Share2,
   Shield,
   ShieldCheck,
-  ShieldEllipsis,
+  ShieldUser,
   Terminal,
   User,
   Users,
@@ -171,7 +172,7 @@ const getOrgSettingsSubmenu = ({
     { label: "General", icon: Cog, tab: "tab-org-general" },
     ...(!isSubOrganization
       ? [
-          { label: "SSO", icon: ShieldEllipsis, tab: "sso-settings" },
+          { label: "SSO", icon: ShieldUser, tab: "sso-settings" },
           { label: "Provisioning", icon: Route, tab: "provisioning-settings" },
           { label: "Security", icon: ShieldCheck, tab: "tab-org-security" }
         ]
@@ -183,8 +184,23 @@ const getOrgSettingsSubmenu = ({
     { label: "Project Templates", icon: FolderCog, tab: "project-templates" },
     { label: "Product Enforcements", icon: ClipboardList, tab: "product-enforcements" },
     ...(!isSubOrganization && hasSubOrganization
-      ? [{ label: "Sub Organizations", icon: Building2, tab: "tab-sub-organizations" }]
+      ? [{ label: "Sub Organizations", icon: SubOrgIcon, tab: "tab-sub-organizations" }]
       : [])
+  ]
+});
+
+const getSecretSharingSubmenu = ({
+  isSubOrganization
+}: {
+  isSubOrganization: boolean;
+}): Submenu => ({
+  title: "Secret Sharing",
+  pathSuffix: "secret-sharing",
+  defaultTab: "share-secret",
+  items: [
+    { label: "Share Secrets", icon: ArrowUpFromLine, tab: "share-secret" },
+    { label: "Request Secrets", icon: ArrowDownToLine, tab: "request-secret" },
+    ...(!isSubOrganization ? [{ label: "Settings", icon: Settings, tab: "settings" }] : [])
   ]
 });
 
@@ -409,7 +425,8 @@ const OrgNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu) => void }
       label: "Secret Sharing",
       icon: Share2,
       to: "/organizations/$orgId/secret-sharing",
-      isActive: pathname.startsWith(`/organizations/${orgId}/secret-sharing`)
+      isActive: pathname.startsWith(`/organizations/${orgId}/secret-sharing`),
+      submenu: getSecretSharingSubmenu({ isSubOrganization })
     },
     {
       label: "Audit Logs",
@@ -823,6 +840,7 @@ const OrgNavWrapper = () => {
     pathname.startsWith(`/organizations/${orgId}/access-management`) ||
     Boolean(pathname.match(/organizations\/[^/]+\/(members|identities|groups|roles)/));
   const isOnSettings = pathname.startsWith(`/organizations/${orgId}/settings`);
+  const isOnSecretSharing = pathname.startsWith(`/organizations/${orgId}/secret-sharing`);
 
   const getInitialSubmenu = (): Submenu | null => {
     if (isOnAccessControl) return ORG_ACCESS_CONTROL_SUBMENU;
@@ -831,6 +849,7 @@ const OrgNavWrapper = () => {
         isSubOrganization,
         hasSubOrganization: Boolean(subscription?.subOrganization)
       });
+    if (isOnSecretSharing) return getSecretSharingSubmenu({ isSubOrganization });
     return null;
   };
 

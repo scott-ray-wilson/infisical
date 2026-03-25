@@ -105,13 +105,6 @@ export const OrgTabGroup = () => {
   return (
     <>
       <Tabs orientation="vertical" value={selectedTab} onValueChange={handleTabChange}>
-        <TabList>
-          {visibleTabs.map((tab) => (
-            <Tab variant={isSubOrganization ? "namespace" : "org"} value={tab.key} key={tab.key}>
-              {tab.name}
-            </Tab>
-          ))}
-        </TabList>
         {visibleTabs
           .filter((tab) => !tab.requiresFeature)
           .map(({ key, component: Component }) => (

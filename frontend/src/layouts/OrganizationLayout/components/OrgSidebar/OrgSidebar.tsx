@@ -162,6 +162,19 @@ const SECRET_MANAGER_ACCESS_CONTROL_SUBMENU: Submenu = {
   ]
 };
 
+const SM_SETTINGS_SUBMENU: Submenu = {
+  title: "Settings",
+  pathSuffix: "settings",
+  defaultTab: "tab-project-general",
+  items: [
+    { label: "General", icon: Cog, tab: "tab-project-general" },
+    { label: "Secrets Management", icon: FileKey, tab: "tab-secret-general" },
+    { label: "Encryption", icon: Lock, tab: "tab-project-encryption" },
+    { label: "Workflow Integrations", icon: Plug, tab: "tab-workflow-integrations" },
+    { label: "Webhooks", icon: Cable, tab: "tab-project-webhooks" }
+  ]
+};
+
 const INTEGRATIONS_SUBMENU: Submenu = {
   title: "Integrations",
   pathSuffix: "integrations",
@@ -581,7 +594,7 @@ const SecretManagerNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu)
       submenu: SECRET_MANAGER_ACCESS_CONTROL_SUBMENU
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
-    { label: "Settings", icon: Settings, pathSuffix: "settings" }
+    { label: "Settings", icon: Settings, pathSuffix: "settings", submenu: SM_SETTINGS_SUBMENU }
   ];
 
   return <ProjectNavList items={items} onSubmenuOpen={onSubmenuOpen} />;
@@ -812,10 +825,13 @@ const ProjectNav = () => {
     pathname.includes("/access-management") ||
     Boolean(pathname.match(/\/groups\/|\/identities\/|\/members\/|\/roles\//));
   const isOnIntegrations = pathname.includes("/integrations");
+  const isOnProjectSettings = pathname.endsWith("/settings") || pathname.includes("/settings?");
 
   const getInitialProjectSubmenu = (): Submenu | null => {
     if (isOnAccessControl) return PROJECT_ACCESS_CONTROL_SUBMENU;
     if (isOnIntegrations) return INTEGRATIONS_SUBMENU;
+    if (isOnProjectSettings && currentProject.type === ProjectType.SecretManager)
+      return SM_SETTINGS_SUBMENU;
     return null;
   };
 

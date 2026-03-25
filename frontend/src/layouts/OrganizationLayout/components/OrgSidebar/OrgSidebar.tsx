@@ -23,7 +23,6 @@ import {
   HardDrive,
   IdCardLanyard,
   Key,
-  KeyRound,
   LayoutDashboard,
   Lock,
   Monitor,
@@ -97,6 +96,7 @@ type SubmenuItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   tab: string;
+  badgeCount?: number;
 };
 
 type Submenu = {
@@ -297,6 +297,11 @@ const ProjectSubmenuView = ({ submenu, onBack }: { submenu: Submenu; onBack: () 
                   <span>{sub.label}</span>
                 </Link>
               </SidebarMenuButton>
+              {Boolean(sub.badgeCount) && (
+                <Badge variant="warning" className="absolute top-[10.5px] right-4">
+                  {sub.badgeCount}
+                </Badge>
+              )}
             </SidebarMenuItem>
           );
         })}
@@ -348,6 +353,11 @@ const OrgSubmenuView = ({ submenu, onBack }: { submenu: Submenu; onBack: () => v
                   <span>{sub.label}</span>
                 </Link>
               </SidebarMenuButton>
+              {Boolean(sub.badgeCount) && (
+                <Badge variant="warning" className="absolute top-[10.5px] right-4">
+                  {sub.badgeCount}
+                </Badge>
+              )}
             </SidebarMenuItem>
           );
         })}
@@ -386,7 +396,12 @@ const ProjectNavLink = ({
         >
           <item.icon className="size-4" />
           <span>{item.label}</span>
-          <ChevronRight className="ml-auto size-4 opacity-50" />
+          {Boolean(item.badgeCount) && (
+            <Badge variant="warning" isSquare className="ml-auto">
+              {item.badgeCount}
+            </Badge>
+          )}
+          <ChevronRight className={twMerge("size-4 opacity-50", !item.badgeCount && "ml-auto")} />
         </SidebarMenuButton>
       </SidebarMenuItem>
     );
@@ -561,6 +576,27 @@ const SecretManagerNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu)
   const pendingRequestsCount =
     (secretApprovalReqCount?.open || 0) + (accessApprovalRequestCount?.pendingCount || 0);
 
+  const approvalsSubmenu: Submenu = {
+    title: "Approvals",
+    pathSuffix: "approval",
+    defaultTab: "approval-requests",
+    items: [
+      {
+        label: "Change Requests",
+        icon: FileKey,
+        tab: "approval-requests",
+        badgeCount: secretApprovalReqCount?.open || undefined
+      },
+      {
+        label: "Access Requests",
+        icon: DoorOpen,
+        tab: "resource-requests",
+        badgeCount: accessApprovalRequestCount?.pendingCount || undefined
+      },
+      { label: "Policies", icon: Shield, tab: "policies" }
+    ]
+  };
+
   const items: NavItem[] = [
     {
       label: "Overview",
@@ -572,7 +608,8 @@ const SecretManagerNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu)
       label: "Approvals",
       icon: BookCheck,
       pathSuffix: "approval",
-      badgeCount: pendingRequestsCount || undefined
+      badgeCount: pendingRequestsCount || undefined,
+      submenu: approvalsSubmenu
     },
     {
       label: "Integrations",
@@ -826,12 +863,24 @@ const ProjectNav = () => {
     Boolean(pathname.match(/\/groups\/|\/identities\/|\/members\/|\/roles\//));
   const isOnIntegrations = pathname.includes("/integrations");
   const isOnProjectSettings = pathname.endsWith("/settings") || pathname.includes("/settings?");
+  const isOnApproval = pathname.includes("/approval");
 
   const getInitialProjectSubmenu = (): Submenu | null => {
     if (isOnAccessControl) return PROJECT_ACCESS_CONTROL_SUBMENU;
     if (isOnIntegrations) return INTEGRATIONS_SUBMENU;
     if (isOnProjectSettings && currentProject.type === ProjectType.SecretManager)
       return SM_SETTINGS_SUBMENU;
+    if (isOnApproval)
+      return {
+        title: "Approvals",
+        pathSuffix: "approval",
+        defaultTab: "approval-requests",
+        items: [
+          { label: "Change Requests", icon: FileKey, tab: "approval-requests" },
+          { label: "Access Requests", icon: DoorOpen, tab: "resource-requests" },
+          { label: "Policies", icon: Shield, tab: "policies" }
+        ]
+      };
     return null;
   };
 

@@ -3,17 +3,19 @@ import { Link, useLocation, useNavigate, useParams, useSearch } from "@tanstack/
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowDownToLine,
+  ArrowLeftRight,
   ArrowUpFromLine,
   Bell,
+  Blocks,
   BookCheck,
   Cable,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
   Cog,
+  Container,
   CreditCard,
   Database,
-  DoorClosedLocked,
   DoorOpen,
   FileKey,
   FileText,
@@ -157,6 +159,19 @@ const SECRET_MANAGER_ACCESS_CONTROL_SUBMENU: Submenu = {
   items: [
     ...PROJECT_ACCESS_CONTROL_SUBMENU.items,
     { label: "Service Tokens", icon: Key, tab: "service-tokens" }
+  ]
+};
+
+const INTEGRATIONS_SUBMENU: Submenu = {
+  title: "Integrations",
+  pathSuffix: "integrations",
+  defaultTab: "app-connections",
+  items: [
+    { label: "App Connections", icon: Cable, tab: "app-connections" },
+    { label: "Secret Syncs", icon: ArrowLeftRight, tab: "secret-syncs" },
+    { label: "Framework Integrations", icon: Blocks, tab: "framework-integrations" },
+    { label: "Infrastructure Integrations", icon: Container, tab: "infrastructure-integrations" },
+    { label: "Native Integrations", icon: Plug, tab: "native-integrations" }
   ]
 };
 
@@ -546,7 +561,12 @@ const SecretManagerNav = ({ onSubmenuOpen }: { onSubmenuOpen: (submenu: Submenu)
       pathSuffix: "approval",
       badgeCount: pendingRequestsCount || undefined
     },
-    { label: "Integrations", icon: Plug, pathSuffix: "integrations" },
+    {
+      label: "Integrations",
+      icon: Plug,
+      pathSuffix: "integrations",
+      submenu: INTEGRATIONS_SUBMENU
+    },
     {
       label: "Secret Rotations",
       icon: RefreshCw,
@@ -791,10 +811,15 @@ const ProjectNav = () => {
   const isOnAccessControl =
     pathname.includes("/access-management") ||
     Boolean(pathname.match(/\/groups\/|\/identities\/|\/members\/|\/roles\//));
+  const isOnIntegrations = pathname.includes("/integrations");
 
-  const [activeSubmenu, setActiveSubmenu] = useState<Submenu | null>(
-    isOnAccessControl ? PROJECT_ACCESS_CONTROL_SUBMENU : null
-  );
+  const getInitialProjectSubmenu = (): Submenu | null => {
+    if (isOnAccessControl) return PROJECT_ACCESS_CONTROL_SUBMENU;
+    if (isOnIntegrations) return INTEGRATIONS_SUBMENU;
+    return null;
+  };
+
+  const [activeSubmenu, setActiveSubmenu] = useState<Submenu | null>(getInitialProjectSubmenu);
 
   const handleSubmenuOpen = (submenu: Submenu) => {
     setActiveSubmenu(submenu);

@@ -1052,7 +1052,8 @@ export const registerRoutes = async (
     smtpService,
     projectMembershipDAL,
     permissionService,
-    secretV2BridgeDAL
+    secretV2BridgeDAL,
+    folderDAL
   });
 
   const orgService = orgServiceFactory({

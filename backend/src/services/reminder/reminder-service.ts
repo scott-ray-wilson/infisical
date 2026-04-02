@@ -1,5 +1,5 @@
 /* eslint-disable no-await-in-loop */
-import { ForbiddenError } from "@casl/ability";
+import { ForbiddenError, subject } from "@casl/ability";
 import { Knex } from "knex";
 
 import { ActionProjectType, TableName } from "@app/db/schemas";
@@ -11,10 +11,17 @@ import { logger } from "@app/lib/logger";
 import { ActorAuthMethod, ActorType } from "../auth/auth-type";
 import { TProjectMembershipDALFactory } from "../project-membership/project-membership-dal";
 import { TReminderRecipientDALFactory } from "../reminder-recipients/reminder-recipient-dal";
+import { TSecretFolderDALFactory } from "../secret-folder/secret-folder-dal";
 import { TSecretV2BridgeDALFactory } from "../secret-v2-bridge/secret-v2-bridge-dal";
 import { SmtpTemplates, TSmtpService } from "../smtp/smtp-service";
 import { TReminderDALFactory } from "./reminder-dal";
-import { TBatchCreateReminderDTO, TCreateReminderDTO, TReminderServiceFactory } from "./reminder-types";
+import {
+  TBatchCreateReminderDTO,
+  TCalendarReminder,
+  TCreateReminderDTO,
+  TGetCalendarRemindersDTO,
+  TReminderServiceFactory
+} from "./reminder-types";
 
 type TReminderServiceFactoryDep = {
   reminderDAL: TReminderDALFactory;
@@ -23,6 +30,7 @@ type TReminderServiceFactoryDep = {
   projectMembershipDAL: Pick<TProjectMembershipDALFactory, "findAllProjectMembers">;
   permissionService: Pick<TPermissionServiceFactory, "getProjectPermission">;
   secretV2BridgeDAL: Pick<TSecretV2BridgeDALFactory, "invalidateSecretCacheByProjectId" | "findOneWithTags">;
+  folderDAL: Pick<TSecretFolderDALFactory, "findSecretPathByFolderIds">;
 };
 
 export const reminderServiceFactory = ({
@@ -31,7 +39,8 @@ export const reminderServiceFactory = ({
   smtpService,
   projectMembershipDAL,
   permissionService,
-  secretV2BridgeDAL
+  secretV2BridgeDAL,
+  folderDAL
 }: TReminderServiceFactoryDep): TReminderServiceFactory => {
   const $addDays = (days: number, fromDate: Date = new Date()): Date => {
     const result = new Date(fromDate);
@@ -387,6 +396,63 @@ export const reminderServiceFactory = ({
     return reminderMap;
   };
 
+  const getCalendarReminders: TReminderServiceFactory["getCalendarReminders"] = async ({
+    projectId,
+    environments,
+    startDate,
+    endDate,
+    actor,
+    actorId,
+    actorOrgId,
+    actorAuthMethod
+  }: TGetCalendarRemindersDTO): Promise<TCalendarReminder[]> => {
+    const { permission } = await permissionService.getProjectPermission({
+      actor,
+      actorId,
+      projectId,
+      actorAuthMethod,
+      actorOrgId,
+      actionProjectType: ActionProjectType.SecretManager
+    });
+
+    const permissiveEnvironments = environments.filter((environment) =>
+      permission.can(
+        ProjectPermissionSecretActions.DescribeSecret,
+        subject(ProjectPermissionSub.Secrets, { environment, secretPath: "/" })
+      )
+    );
+
+    if (!permissiveEnvironments.length) return [];
+
+    const rawReminders = await reminderDAL.findByProjectAndDateRange({
+      projectId,
+      environmentSlugs: permissiveEnvironments,
+      startDate,
+      endDate
+    });
+
+    if (!rawReminders.length) return [];
+
+    const folderIds = [...new Set(rawReminders.map((r) => r.folderId))];
+    const foldersWithPath = await folderDAL.findSecretPathByFolderIds(projectId, folderIds);
+
+    const folderRecord: Record<string, string> = {};
+    foldersWithPath.forEach((folder) => {
+      if (folder) folderRecord[folder.id] = folder.path;
+    });
+
+    return rawReminders.map((r) => ({
+      id: r.id,
+      secretId: r.secretId ?? null,
+      secretKey: r.secretKey,
+      nextReminderDate: r.nextReminderDate,
+      message: r.message ?? null,
+      environment: r.envSlug,
+      secretPath: folderRecord[r.folderId] ?? "/",
+      repeatDays: r.repeatDays ?? null
+    }));
+  };
+
   return {
     createReminder,
     getReminder,
@@ -395,6 +461,7 @@ export const reminderServiceFactory = ({
     deleteReminderBySecretId,
     batchCreateReminders,
     createReminderInternal,
-    getRemindersForDashboard
+    getRemindersForDashboard,
+    getCalendarReminders
   };
 };

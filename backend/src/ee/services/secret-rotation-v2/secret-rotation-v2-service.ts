@@ -39,6 +39,7 @@ import {
   TDeleteSecretRotationV2DTO,
   TFindSecretRotationV2ByIdDTO,
   TFindSecretRotationV2ByNameDTO,
+  TGetCalendarRotationsDTO,
   TGetDashboardSecretRotationsV2,
   TGetDashboardSecretRotationV2Count,
   TListSecretRotationsV2ByProjectId,
@@ -1676,6 +1677,40 @@ export const secretRotationV2ServiceFactory = ({
     };
   };
 
+  const getCalendarRotations = async (
+    { projectId, environments, startDate, endDate }: TGetCalendarRotationsDTO,
+    actor: OrgServiceActor
+  ) => {
+    const { permission } = await permissionService.getProjectPermission({
+      actor: actor.type,
+      actorId: actor.id,
+      actorAuthMethod: actor.authMethod,
+      actorOrgId: actor.orgId,
+      actionProjectType: ActionProjectType.SecretManager,
+      projectId
+    });
+
+    const permissiveEnvironments = environments.filter((environment) =>
+      permission.can(
+        ProjectPermissionSecretRotationActions.Read,
+        subject(ProjectPermissionSub.SecretRotation, { environment, secretPath: "/" })
+      )
+    );
+
+    if (!permissiveEnvironments.length) return [];
+
+    const rotations = await secretRotationV2DAL.findCalendarRotations({
+      projectId,
+      environmentSlugs: permissiveEnvironments,
+      startDate,
+      endDate
+    });
+
+    return rotations.filter((rotation: TSecretRotationV2PermissionContext) =>
+      permission.can(ProjectPermissionSecretRotationActions.Read, getSecretRotationSubject(rotation))
+    );
+  };
+
   return {
     listSecretRotationOptions,
     listSecretRotationsByProjectId,
@@ -1689,6 +1724,7 @@ export const secretRotationV2ServiceFactory = ({
     rotateGeneratedCredentials,
     getDashboardSecretRotationCount,
     getDashboardSecretRotations,
+    getCalendarRotations,
     getQuickSearchSecretRotations,
     reconcileLocalAccountRotation
   };

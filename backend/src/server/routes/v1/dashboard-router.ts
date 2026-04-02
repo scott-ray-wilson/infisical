@@ -1777,4 +1777,112 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       return { value: secretVersion.secretValue };
     }
   });
+
+  server.route({
+    method: "GET",
+    url: "/secret-insights-calendar",
+    config: {
+      rateLimit: readLimit
+    },
+    schema: {
+      operationId: "getSecretInsightsCalendar",
+      description: "Get secret rotation and reminder events for a calendar month view",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      querystring: z.object({
+        projectId: z.string().trim(),
+        month: z.coerce.number().min(1).max(12),
+        year: z.coerce.number().min(2000).max(2100),
+        environments: z.string().trim()
+      }),
+      response: {
+        200: z.object({
+          rotations: z.array(
+            z.object({
+              id: z.string(),
+              name: z.string(),
+              type: z.string(),
+              nextRotationAt: z.date().nullable(),
+              environment: z.string(),
+              secretPath: z.string(),
+              secretKeys: z.string().array(),
+              rotationInterval: z.number(),
+              rotationStatus: z.string().nullable(),
+              isAutoRotationEnabled: z.boolean()
+            })
+          ),
+          reminders: z.array(
+            z.object({
+              id: z.string(),
+              secretId: z.string().nullable(),
+              secretKey: z.string(),
+              nextReminderDate: z.date(),
+              message: z.string().nullable().optional(),
+              environment: z.string(),
+              secretPath: z.string(),
+              repeatDays: z.number().nullable().optional()
+            })
+          )
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT]),
+    handler: async (req) => {
+      const { projectId, month, year, environments: environmentsRaw } = req.query;
+      const environments = environmentsRaw.split(",").map((e) => e.trim());
+
+      if (!projectId || environments.length === 0)
+        throw new BadRequestError({ message: "Missing project id or environment(s)" });
+
+      const { shouldUseSecretV2Bridge } = await server.services.projectBot.getBotKey(projectId);
+
+      if (!shouldUseSecretV2Bridge) throw new BadRequestError({ message: "Project version not supported" });
+
+      const startDate = new Date(Date.UTC(year, month - 1, 1));
+      const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+
+      const [rotations, reminders] = await Promise.all([
+        server.services.secretRotationV2.getCalendarRotations(
+          { projectId, environments, startDate, endDate },
+          {
+            type: req.permission.type,
+            id: req.permission.id,
+            authMethod: req.permission.authMethod,
+            orgId: req.permission.orgId,
+            rootOrgId: req.permission.rootOrgId,
+            parentOrgId: req.permission.parentOrgId
+          }
+        ),
+        server.services.reminder.getCalendarReminders({
+          projectId,
+          environments,
+          startDate,
+          endDate,
+          actor: req.permission.type,
+          actorId: req.permission.id,
+          actorAuthMethod: req.permission.authMethod,
+          actorOrgId: req.permission.orgId
+        })
+      ]);
+
+      return {
+        rotations: rotations.map((r) => ({
+          id: r.id,
+          name: r.name,
+          type: r.type,
+          nextRotationAt: r.nextRotationAt ?? null,
+          environment: r.environment.slug,
+          secretPath: r.folder.path,
+          secretKeys: r.secretKeys,
+          rotationInterval: r.rotationInterval,
+          rotationStatus: r.rotationStatus,
+          isAutoRotationEnabled: r.isAutoRotationEnabled
+        })),
+        reminders
+      };
+    }
+  });
 };

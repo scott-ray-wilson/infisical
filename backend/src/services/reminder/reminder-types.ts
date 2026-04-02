@@ -38,6 +38,28 @@ export type TBatchCreateReminderDTO = {
   projectId?: string;
 }[];
 
+export type TGetCalendarRemindersDTO = {
+  projectId: string;
+  environments: string[];
+  startDate: Date;
+  endDate: Date;
+  actor: ActorType;
+  actorId: string;
+  actorOrgId: string;
+  actorAuthMethod: ActorAuthMethod;
+};
+
+export type TCalendarReminder = {
+  id: string;
+  secretId: string | null;
+  secretKey: string;
+  nextReminderDate: Date;
+  message: string | null | undefined;
+  environment: string;
+  secretPath: string;
+  repeatDays: number | null | undefined;
+};
+
 export interface TReminderServiceFactory {
   createReminder: ({ actor, actorId, actorOrgId, actorAuthMethod, reminder }: TCreateReminderDTO) => Promise<{
     id: string;
@@ -105,4 +127,6 @@ export interface TReminderServiceFactory {
   }>;
 
   getRemindersForDashboard: (secretIds: string[]) => Promise<Record<string, TReminder & { recipients: string[] }>>;
+
+  getCalendarReminders: (dto: TGetCalendarRemindersDTO) => Promise<TCalendarReminder[]>;
 }

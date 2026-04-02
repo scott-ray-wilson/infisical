@@ -1,5 +1,6 @@
 import {
   BookCheck,
+  CalendarDays,
   DoorOpen,
   FileKey,
   FileText,
@@ -90,6 +91,11 @@ export const SecretManagerNav = ({
       icon: RefreshCw,
       pathSuffix: "secret-rotation",
       hidden: !secretRotations?.length
+    },
+    {
+      label: "Insights",
+      icon: CalendarDays,
+      pathSuffix: "insights"
     },
     {
       label: "Access Control",

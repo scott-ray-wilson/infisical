@@ -311,6 +311,13 @@ export type TQuickSearchSecretRotationsV2 = {
   filters: TQuickSearchSecretRotationsV2Filters;
 };
 
+export type TGetCalendarRotationsDTO = {
+  projectId: string;
+  environments: string[];
+  startDate: Date;
+  endDate: Date;
+};
+
 export type TSecretRotationRotateGeneratedCredentials = {
   auditLogInfo?: AuditLogInfo;
   jobId?: string;

@@ -43,7 +43,7 @@ export const InsightsPage = () => {
         title="Secret Insights"
         description="Monitor upcoming secret rotations and reminders across your project."
       />
-      <UnstableCard className="max-w-xl">
+      <UnstableCard className="w-2xl">
         <UnstableCardHeader>
           <UnstableCardTitle>Rotation & Reminder Calendar</UnstableCardTitle>
           <UnstableCardDescription>

@@ -12,7 +12,7 @@ import {
 import { TCalendarReminder, TCalendarRotation } from "@app/hooks/api/secretInsights/types";
 
 import { CalendarDayCell } from "./CalendarDayCell";
-import { CalendarEvent } from "./CalendarEventPill";
+import { CalendarEvent } from "./types";
 
 const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -41,13 +41,11 @@ const groupEventsByDate = (
 export const CalendarGrid = ({
   currentMonth,
   rotations,
-  reminders,
-  onEventClick
+  reminders
 }: {
   currentMonth: Date;
   rotations: TCalendarRotation[];
   reminders: TCalendarReminder[];
-  onEventClick: (event: CalendarEvent) => void;
 }) => {
   const days = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -80,7 +78,6 @@ export const CalendarGrid = ({
               date={day}
               isCurrentMonth={isSameMonth(day, currentMonth)}
               events={eventsByDate[dateKey] ?? []}
-              onEventClick={onEventClick}
             />
           );
         })}

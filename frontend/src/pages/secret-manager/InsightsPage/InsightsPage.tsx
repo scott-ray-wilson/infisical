@@ -1,13 +1,10 @@
 import { useState } from "react";
 import { Helmet } from "react-helmet";
 import { addMonths, format, subMonths } from "date-fns";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { PageHeader } from "@app/components/v2";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
   Skeleton,
   UnstableCard,
   UnstableCardAction,
@@ -19,13 +16,13 @@ import {
 } from "@app/components/v3";
 import { useProject } from "@app/context";
 import { useGetCalendarInsights } from "@app/hooks/api";
+import { ProjectType } from "@app/hooks/api/projects/types";
 
-import { CalendarEvent, CalendarEventDetail, CalendarGrid, CalendarLegend } from "./components";
+import { CalendarGrid } from "./components";
 
 export const InsightsPage = () => {
   const { currentProject, projectId } = useProject();
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
   const month = currentMonth.getMonth() + 1;
   const year = currentMonth.getFullYear();
@@ -41,6 +38,11 @@ export const InsightsPage = () => {
       <Helmet>
         <title>Insights</title>
       </Helmet>
+      <PageHeader
+        scope={ProjectType.SecretManager}
+        title="Insights"
+        description="Monitor upcoming secret rotations and reminders across your project."
+      />
       <UnstableCard className="max-w-3xl">
         <UnstableCardHeader>
           <UnstableCardTitle>Rotation & Reminder Calendar</UnstableCardTitle>
@@ -77,22 +79,10 @@ export const InsightsPage = () => {
               currentMonth={currentMonth}
               rotations={data?.rotations ?? []}
               reminders={data?.reminders ?? []}
-              onEventClick={setSelectedEvent}
             />
           )}
         </UnstableCardContent>
       </UnstableCard>
-
-      <Sheet open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Event Details</SheetTitle>
-          </SheetHeader>
-          <div className="mt-4">
-            {selectedEvent && <CalendarEventDetail event={selectedEvent} />}
-          </div>
-        </SheetContent>
-      </Sheet>
     </>
   );
 };

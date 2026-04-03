@@ -1,19 +1,23 @@
 import { isToday } from "date-fns";
 
-import { CalendarEvent, CalendarEventPill } from "./CalendarEventPill";
+import { CalendarEventPill } from "./CalendarEventPill";
+import { CalendarEvent } from "./types";
 
 const MAX_VISIBLE_EVENTS = 3;
+
+const getBgClass = (today: boolean, isCurrentMonth: boolean) => {
+  if (today) return isCurrentMonth ? "bg-muted/5" : "bg-card/50";
+  return isCurrentMonth ? "bg-container" : "bg-card";
+};
 
 export const CalendarDayCell = ({
   date,
   isCurrentMonth,
-  events,
-  onEventClick
+  events
 }: {
   date: Date;
   isCurrentMonth: boolean;
   events: CalendarEvent[];
-  onEventClick: (event: CalendarEvent) => void;
 }) => {
   const today = isToday(date);
   const dayNum = date.getDate();
@@ -22,15 +26,10 @@ export const CalendarDayCell = ({
 
   return (
     <div
-      className={`min-h-[80px] border border-border p-2 ${
-        today
-          ? isCurrentMonth
-            ? "bg-muted/5"
-            : "bg-card/50"
-          : isCurrentMonth
-            ? "bg-container"
-            : "bg-card"
-      }`}
+      className={`min-h-[80px] border border-border p-2 transition-colors duration-75 hover:bg-container-hover ${getBgClass(
+        today,
+        isCurrentMonth
+      )}`}
     >
       <div className="mb-1">
         {today ? (
@@ -43,11 +42,7 @@ export const CalendarDayCell = ({
       </div>
       <div className="flex flex-col gap-1">
         {visibleEvents.map((event) => (
-          <CalendarEventPill
-            key={`${event.type}-${event.data.id}`}
-            event={event}
-            onClick={onEventClick}
-          />
+          <CalendarEventPill key={`${event.type}-${event.data.id}`} event={event} />
         ))}
         {/* TODO: CHECK */}
         {overflowCount > 0 && <span className="text-xs text-gray-500">+{overflowCount} more</span>}

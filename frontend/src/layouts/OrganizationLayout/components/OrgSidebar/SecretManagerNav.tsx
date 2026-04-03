@@ -1,7 +1,6 @@
 import {
   ActivityIcon,
   BookCheck,
-  CalendarDays,
   DoorOpen,
   FileKey,
   FileText,

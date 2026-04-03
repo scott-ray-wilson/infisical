@@ -63,13 +63,10 @@ export const CalendarGrid = ({
   );
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border">
+    <div className="overflow-hidden rounded-lg border border-border bg-container">
       <div className="grid grid-cols-7">
         {DAY_NAMES.map((day) => (
-          <div
-            key={day}
-            className="border-b border-border bg-mineshaft-700 py-2 text-center text-sm font-medium text-gray-400"
-          >
+          <div key={day} className="border-b border-border py-2 text-center text-sm font-medium">
             {day}
           </div>
         ))}

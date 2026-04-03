@@ -43,7 +43,6 @@ export const InsightsPage = () => {
       <UnstableCard>
         <UnstableCardHeader>
           <UnstableCardTitle>
-            <CalendarDays className="size-5 text-muted" />
             Rotation & Expiry Calendar
             <div className="ml-4 flex items-center gap-1">
               <UnstableIconButton

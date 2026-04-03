@@ -22,13 +22,13 @@ export const CalendarDayCell = ({
 
   return (
     <div
-      className={`min-h-[130px] border border-mineshaft-600 p-2 ${
-        isCurrentMonth ? "bg-mineshaft-800" : "bg-mineshaft-900 opacity-40"
+      className={`min-h-[130px] border border-border p-2 ${
+        isCurrentMonth ? "bg-card" : "bg-background opacity-40"
       }`}
     >
       <div className="mb-1">
         {today ? (
-          <span className="inline-flex size-7 items-center justify-center rounded-full bg-primary text-sm font-medium text-black">
+          <span className="inline-flex size-7 items-center justify-center rounded-full bg-muted text-sm font-medium text-foreground">
             {dayNum}
           </span>
         ) : (

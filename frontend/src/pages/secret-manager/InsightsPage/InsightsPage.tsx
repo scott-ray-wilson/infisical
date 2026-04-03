@@ -43,48 +43,50 @@ export const InsightsPage = () => {
         title="Secret Insights"
         description="Monitor upcoming secret rotations and reminders across your project."
       />
-      <SecretAccessChart />
-      <UnstableCard className="w-2xl">
-        <UnstableCardHeader>
-          <UnstableCardTitle>Rotation & Reminder Calendar</UnstableCardTitle>
-          <UnstableCardDescription>
-            View upcoming secret rotations and reminders
-          </UnstableCardDescription>
-          <UnstableCardAction>
-            <div className="ml-4 flex items-center gap-1">
-              <UnstableIconButton
-                variant="ghost"
-                size="xs"
-                onClick={() => setCurrentMonth((prev) => subMonths(prev, 1))}
-              >
-                <ChevronLeft className="size-4" />
-              </UnstableIconButton>
-              <span className="min-w-[140px] text-center text-sm font-medium">
-                {format(currentMonth, "MMMM yyyy")}
-              </span>
-              <UnstableIconButton
-                variant="ghost"
-                size="xs"
-                onClick={() => setCurrentMonth((prev) => addMonths(prev, 1))}
-              >
-                <ChevronRight className="size-4" />
-              </UnstableIconButton>
-            </div>
-          </UnstableCardAction>
-        </UnstableCardHeader>
-        <UnstableCardContent>
-          {isPending ? (
-            <Skeleton className="h-[600px] w-full" />
-          ) : (
-            <CalendarGrid
-              currentMonth={currentMonth}
-              rotations={data?.rotations ?? []}
-              reminders={data?.reminders ?? []}
-            />
-          )}
-          <CalendarLegend />
-        </UnstableCardContent>
-      </UnstableCard>
+      <div className="flex gap-8">
+        <SecretAccessChart />
+        <UnstableCard className="w-2xl">
+          <UnstableCardHeader>
+            <UnstableCardTitle>Rotation & Reminder Calendar</UnstableCardTitle>
+            <UnstableCardDescription>
+              View upcoming secret rotations and reminders
+            </UnstableCardDescription>
+            <UnstableCardAction>
+              <div className="ml-4 flex items-center gap-1">
+                <UnstableIconButton
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => setCurrentMonth((prev) => subMonths(prev, 1))}
+                >
+                  <ChevronLeft className="size-4" />
+                </UnstableIconButton>
+                <span className="min-w-[140px] text-center text-sm font-medium">
+                  {format(currentMonth, "MMMM yyyy")}
+                </span>
+                <UnstableIconButton
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => setCurrentMonth((prev) => addMonths(prev, 1))}
+                >
+                  <ChevronRight className="size-4" />
+                </UnstableIconButton>
+              </div>
+            </UnstableCardAction>
+          </UnstableCardHeader>
+          <UnstableCardContent>
+            {isPending ? (
+              <Skeleton className="h-[600px] w-full" />
+            ) : (
+              <CalendarGrid
+                currentMonth={currentMonth}
+                rotations={data?.rotations ?? []}
+                reminders={data?.reminders ?? []}
+              />
+            )}
+            <CalendarLegend />
+          </UnstableCardContent>
+        </UnstableCard>
+      </div>
     </>
   );
 };

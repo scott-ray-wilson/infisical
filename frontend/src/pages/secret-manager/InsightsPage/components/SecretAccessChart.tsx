@@ -52,10 +52,7 @@ export const SecretAccessChart = () => {
   return (
     <UnstableCard className="w-2xl">
       <UnstableCardHeader>
-        <UnstableCardTitle>
-          <ActivityIcon className="inline size-4" />
-          Secret Access Volume
-        </UnstableCardTitle>
+        <UnstableCardTitle>Secret Access Volume</UnstableCardTitle>
         <UnstableCardDescription>Secret read requests over the past 7 days</UnstableCardDescription>
       </UnstableCardHeader>
       <UnstableCardContent>

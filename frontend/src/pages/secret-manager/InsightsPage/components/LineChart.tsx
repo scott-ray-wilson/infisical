@@ -27,8 +27,8 @@ export const LineChart = ({ data, height = 280, color = CHART_COLOR }: LineChart
       <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
         <defs>
           <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity={0.15} />
-            <stop offset="100%" stopColor={color} stopOpacity={0} />
+            <stop offset="0%" stopColor="var(--color-info)" stopOpacity={0.15} />
+            <stop offset="100%" stopColor="var(--color-info)" stopOpacity={0} />
           </linearGradient>
         </defs>
         <CartesianGrid strokeDasharray="4 4" stroke="var(--color-border)" vertical={false} />
@@ -52,17 +52,27 @@ export const LineChart = ({ data, height = 280, color = CHART_COLOR }: LineChart
             fontSize: 12
           }}
           labelStyle={{ color: "var(--color-foreground)" }}
-          itemStyle={{ color }}
+          itemStyle={{ color: "var(--color-info)" }}
           formatter={(value) => [Number(value).toLocaleString(), "Requests"]}
         />
         <Area
           type="monotone"
           dataKey="value"
-          stroke={color}
+          stroke="var(--color-info)"
           strokeWidth={2.5}
           fill="url(#areaGradient)"
-          dot={{ r: 4, fill: color, stroke: "var(--color-container)", strokeWidth: 2 }}
-          activeDot={{ r: 5, fill: color, stroke: "var(--color-container)", strokeWidth: 2 }}
+          dot={{
+            r: 4,
+            fill: "var(--color-info)",
+            stroke: "var(--color-container)",
+            strokeWidth: 2
+          }}
+          activeDot={{
+            r: 5,
+            fill: "var(--color-info)",
+            stroke: "var(--color-container)",
+            strokeWidth: 2
+          }}
         />
       </AreaChart>
     </ResponsiveContainer>

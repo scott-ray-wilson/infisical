@@ -1,4 +1,12 @@
-import { useMemo } from "react";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from "recharts";
 
 export type LineChartDataPoint = {
   label: string;
@@ -11,143 +19,52 @@ type LineChartProps = {
   color?: string;
 };
 
-const PADDING = { top: 24, right: 16, bottom: 32, left: 48 };
+const CHART_COLOR = "#c8ff00";
 
-const getNiceTicks = (maxValue: number): number[] => {
-  if (maxValue === 0) return [0];
-
-  const rough = maxValue / 4;
-  const magnitude = 10 ** Math.floor(Math.log10(rough));
-  const residual = rough / magnitude;
-
-  let step: number;
-  if (residual <= 1.5) step = magnitude;
-  else if (residual <= 3) step = 2 * magnitude;
-  else if (residual <= 7) step = 5 * magnitude;
-  else step = 10 * magnitude;
-
-  const ticks: number[] = [];
-  for (let v = 0; v <= maxValue + step * 0.1; v += step) {
-    ticks.push(v);
-  }
-  return ticks;
-};
-
-const buildSmoothPath = (points: { x: number; y: number }[]): string => {
-  if (points.length < 2) return "";
-
-  let d = `M ${points[0].x},${points[0].y}`;
-
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const p0 = points[Math.max(i - 1, 0)];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = points[Math.min(i + 2, points.length - 1)];
-
-    const tension = 0.3;
-    const cp1x = p1.x + (p2.x - p0.x) * tension;
-    const cp1y = p1.y + (p2.y - p0.y) * tension;
-    const cp2x = p2.x - (p3.x - p1.x) * tension;
-    const cp2y = p2.y - (p3.y - p1.y) * tension;
-
-    d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
-  }
-
-  return d;
-};
-
-export const LineChart = ({ data, height = 280, color = "#c8ff00" }: LineChartProps) => {
-  const { ticks, points, chartWidth, chartHeight, areaPath, linePath } = useMemo(() => {
-    const maxVal = Math.max(...data.map((d) => d.value), 1);
-    const computedTicks = getNiceTicks(maxVal);
-    const tickMax = computedTicks[computedTicks.length - 1];
-
-    // Use a fixed aspect ratio width. The SVG viewBox makes it responsive.
-    const svgWidth = 600;
-    const cw = svgWidth - PADDING.left - PADDING.right;
-    const ch = height - PADDING.top - PADDING.bottom;
-
-    const pts = data.map((d, i) => ({
-      x: PADDING.left + (data.length > 1 ? (i / (data.length - 1)) * cw : cw / 2),
-      y: PADDING.top + ch - (d.value / tickMax) * ch
-    }));
-
-    const lp = buildSmoothPath(pts);
-    const ap = lp
-      ? `${lp} L ${pts[pts.length - 1].x},${PADDING.top + ch} L ${pts[0].x},${PADDING.top + ch} Z`
-      : "";
-
-    return {
-      ticks: computedTicks,
-      points: pts,
-      chartWidth: svgWidth,
-      chartHeight: ch,
-      areaPath: ap,
-      linePath: lp
-    };
-  }, [data, height]);
-
-  const yBase = PADDING.top + chartHeight;
-
+export const LineChart = ({ data, height = 280, color = CHART_COLOR }: LineChartProps) => {
   return (
-    <svg
-      viewBox={`0 0 ${chartWidth} ${height}`}
-      className="h-auto w-full"
-      preserveAspectRatio="xMidYMid meet"
-    >
-      {/* Grid lines and Y-axis labels */}
-      {ticks.map((tick) => {
-        const tickMax = ticks[ticks.length - 1];
-        const y = PADDING.top + chartHeight - (tick / tickMax) * chartHeight;
-        return (
-          <g key={tick}>
-            <line
-              x1={PADDING.left}
-              y1={y}
-              x2={chartWidth - PADDING.right}
-              y2={y}
-              stroke="currentColor"
-              className="text-border"
-              strokeDasharray="4 4"
-              strokeWidth={0.5}
-            />
-            <text
-              x={PADDING.left - 8}
-              y={y + 4}
-              textAnchor="end"
-              className="fill-label text-[11px]"
-            >
-              {tick.toLocaleString()}
-            </text>
-          </g>
-        );
-      })}
-
-      {/* Area fill */}
-      {areaPath && <path d={areaPath} fill={color} fillOpacity={0.08} />}
-
-      {/* Line */}
-      {linePath && (
-        <path
-          d={linePath}
-          fill="none"
+    <ResponsiveContainer width="100%" height={height}>
+      <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+        <defs>
+          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.15} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="4 4" stroke="var(--color-border)" vertical={false} />
+        <XAxis
+          dataKey="label"
+          tick={{ fontSize: 11, fill: "var(--color-label)" }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <YAxis
+          tick={{ fontSize: 11, fill: "var(--color-label)" }}
+          axisLine={false}
+          tickLine={false}
+          allowDecimals={false}
+        />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: "var(--color-popover)",
+            border: "1px solid var(--color-border)",
+            borderRadius: 8,
+            fontSize: 12
+          }}
+          labelStyle={{ color: "var(--color-foreground)" }}
+          itemStyle={{ color }}
+          formatter={(value) => [Number(value).toLocaleString(), "Requests"]}
+        />
+        <Area
+          type="monotone"
+          dataKey="value"
           stroke={color}
           strokeWidth={2.5}
-          strokeLinejoin="round"
-          strokeLinecap="round"
+          fill="url(#areaGradient)"
+          dot={{ r: 4, fill: color, stroke: "var(--color-container)", strokeWidth: 2 }}
+          activeDot={{ r: 5, fill: color, stroke: "var(--color-container)", strokeWidth: 2 }}
         />
-      )}
-
-      {/* Dots and X-axis labels */}
-      {points.map((pt, i) => (
-        <g key={data[i].label}>
-          <circle cx={pt.x} cy={pt.y} r={4} fill={color} />
-          <circle cx={pt.x} cy={pt.y} r={2} fill="var(--color-container)" />
-          <text x={pt.x} y={yBase + 20} textAnchor="middle" className="fill-label text-[11px]">
-            {data[i].label}
-          </text>
-        </g>
-      ))}
-    </svg>
+      </AreaChart>
+    </ResponsiveContainer>
   );
 };

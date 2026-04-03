@@ -26,7 +26,7 @@ export const CalendarDayCell = ({
 
   return (
     <div
-      className={`min-h-[80px] border border-border p-2 transition-colors duration-75 hover:bg-container-hover ${getBgClass(
+      className={`min-h-[60px] border border-border p-2 transition-colors duration-75 hover:bg-container-hover ${getBgClass(
         today,
         isCurrentMonth
       )}`}

@@ -18,7 +18,7 @@ import { useProject } from "@app/context";
 import { useGetCalendarInsights } from "@app/hooks/api";
 import { ProjectType } from "@app/hooks/api/projects/types";
 
-import { CalendarGrid } from "./components";
+import { CalendarGrid, CalendarLegend } from "./components";
 
 export const InsightsPage = () => {
   const { currentProject, projectId } = useProject();
@@ -40,10 +40,10 @@ export const InsightsPage = () => {
       </Helmet>
       <PageHeader
         scope={ProjectType.SecretManager}
-        title="Insights"
+        title="Secret Insights"
         description="Monitor upcoming secret rotations and reminders across your project."
       />
-      <UnstableCard className="max-w-3xl">
+      <UnstableCard className="max-w-xl">
         <UnstableCardHeader>
           <UnstableCardTitle>Rotation & Reminder Calendar</UnstableCardTitle>
           <UnstableCardDescription>
@@ -81,6 +81,7 @@ export const InsightsPage = () => {
               reminders={data?.reminders ?? []}
             />
           )}
+          <CalendarLegend />
         </UnstableCardContent>
       </UnstableCard>
     </>

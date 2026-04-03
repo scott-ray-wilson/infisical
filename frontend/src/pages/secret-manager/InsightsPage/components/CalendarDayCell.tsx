@@ -33,7 +33,7 @@ export const CalendarDayCell = ({
     >
       <div className="mb-1">
         {today ? (
-          <span className="inline-flex size-7 items-center justify-center rounded-full bg-muted/25 text-sm font-medium text-foreground">
+          <span className="inline-flex size-7 items-center justify-center rounded border border-border bg-muted/35 text-sm font-medium text-foreground">
             {dayNum}
           </span>
         ) : (

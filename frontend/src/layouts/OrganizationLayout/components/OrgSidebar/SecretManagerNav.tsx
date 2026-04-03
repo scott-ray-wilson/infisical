@@ -1,4 +1,5 @@
 import {
+  ActivityIcon,
   BookCheck,
   CalendarDays,
   DoorOpen,
@@ -93,8 +94,8 @@ export const SecretManagerNav = ({
       hidden: !secretRotations?.length
     },
     {
-      label: "Insights",
-      icon: CalendarDays,
+      label: "Secret Insights",
+      icon: ActivityIcon,
       pathSuffix: "insights"
     },
     {

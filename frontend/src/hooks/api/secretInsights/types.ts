@@ -33,3 +33,23 @@ export type TGetCalendarInsightsResponse = {
   rotations: TCalendarRotation[];
   reminders: TCalendarReminder[];
 };
+
+export type TSecretAccessVolumeActor = {
+  name: string;
+  type: string;
+  count: number;
+};
+
+export type TSecretAccessVolumeDay = {
+  date: string;
+  total: number;
+  actors: TSecretAccessVolumeActor[];
+};
+
+export type TGetSecretAccessVolumeDTO = {
+  projectId: string;
+};
+
+export type TGetSecretAccessVolumeResponse = {
+  days: TSecretAccessVolumeDay[];
+};

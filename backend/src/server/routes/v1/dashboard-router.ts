@@ -1885,4 +1885,101 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       };
     }
   });
+
+  server.route({
+    method: "GET",
+    url: "/secret-access-volume",
+    config: {
+      rateLimit: readLimit
+    },
+    schema: {
+      operationId: "getSecretAccessVolume",
+      description: "Get secret access volume aggregated by day and actor for the past week",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      querystring: z.object({
+        projectId: z.string().trim()
+      }),
+      response: {
+        200: z.object({
+          days: z.array(
+            z.object({
+              date: z.string(),
+              total: z.number(),
+              actors: z.array(
+                z.object({
+                  name: z.string(),
+                  type: z.string(),
+                  count: z.number()
+                })
+              )
+            })
+          )
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT]),
+    handler: async (req) => {
+      const { projectId } = req.query;
+
+      const now = new Date();
+      const startDate = new Date(now);
+      startDate.setDate(now.getDate() - 6);
+      startDate.setHours(0, 0, 0, 0);
+
+      const auditLogs = await server.services.auditLog.listAuditLogs({
+        filter: {
+          projectId,
+          eventType: [EventType.GET_SECRETS, EventType.GET_SECRET],
+          startDate: startDate.toISOString(),
+          endDate: now.toISOString(),
+          limit: 5000
+        },
+        actorId: req.permission.id,
+        actorOrgId: req.permission.orgId,
+        actorAuthMethod: req.permission.authMethod,
+        actor: req.permission.type
+      });
+
+      // Build a map of day -> actor -> count
+      const dayMap = new Map<string, Map<string, { name: string; type: string; count: number }>>();
+
+      // Pre-populate the last 7 days
+      for (let i = 6; i >= 0; i -= 1) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const key = d.toISOString().slice(0, 10);
+        dayMap.set(key, new Map());
+      }
+
+      auditLogs.forEach((log) => {
+        const dateKey = new Date(log.createdAt).toISOString().slice(0, 10);
+        const actorMap = dayMap.get(dateKey);
+        if (!actorMap) return;
+
+        const actorMeta = log.actor.metadata as Record<string, string> | null;
+        const actorName =
+          actorMeta?.email || actorMeta?.name || actorMeta?.identityId || actorMeta?.userId || "Unknown";
+        const actorKey = `${log.actor.type}:${actorName}`;
+
+        const existing = actorMap.get(actorKey);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          actorMap.set(actorKey, { name: actorName, type: log.actor.type, count: 1 });
+        }
+      });
+
+      const days = Array.from(dayMap.entries()).map(([date, actorMap]) => {
+        const actors = Array.from(actorMap.values()).sort((a, b) => b.count - a.count);
+        const total = actors.reduce((sum, a) => sum + a.count, 0);
+        return { date, total, actors };
+      });
+
+      return { days };
+    }
+  });
 };

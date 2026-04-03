@@ -1,7 +1,11 @@
-export { useGetCalendarInsights } from "./queries";
+export { useGetCalendarInsights, useGetSecretAccessVolume } from "./queries";
 export type {
   TCalendarReminder,
   TCalendarRotation,
   TGetCalendarInsightsDTO,
-  TGetCalendarInsightsResponse
+  TGetCalendarInsightsResponse,
+  TGetSecretAccessVolumeDTO,
+  TGetSecretAccessVolumeResponse,
+  TSecretAccessVolumeActor,
+  TSecretAccessVolumeDay
 } from "./types";

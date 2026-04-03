@@ -22,10 +22,10 @@ export const CalendarDayCell = ({
 
   return (
     <div
-      className={`min-h-[130px] border border-border p-2 ${
+      className={`min-h-[80px] border border-border p-2 ${
         today
           ? isCurrentMonth
-            ? "bg-container-hover/75"
+            ? "bg-muted/5"
             : "bg-card/50"
           : isCurrentMonth
             ? "bg-container"
@@ -38,7 +38,7 @@ export const CalendarDayCell = ({
             {dayNum}
           </span>
         ) : (
-          <span className="text-sm text-gray-400">{dayNum}</span>
+          <span className="text-sm text-label">{dayNum}</span>
         )}
       </div>
       <div className="flex flex-col gap-1">
@@ -49,6 +49,7 @@ export const CalendarDayCell = ({
             onClick={onEventClick}
           />
         ))}
+        {/* TODO: CHECK */}
         {overflowCount > 0 && <span className="text-xs text-gray-500">+{overflowCount} more</span>}
       </div>
     </div>

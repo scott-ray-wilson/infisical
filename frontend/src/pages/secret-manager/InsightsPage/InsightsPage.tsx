@@ -12,6 +12,7 @@ import {
   UnstableCard,
   UnstableCardAction,
   UnstableCardContent,
+  UnstableCardDescription,
   UnstableCardHeader,
   UnstableCardTitle,
   UnstableIconButton
@@ -40,10 +41,13 @@ export const InsightsPage = () => {
       <Helmet>
         <title>Insights</title>
       </Helmet>
-      <UnstableCard>
+      <UnstableCard className="max-w-3xl">
         <UnstableCardHeader>
-          <UnstableCardTitle>
-            Rotation & Expiry Calendar
+          <UnstableCardTitle>Rotation & Reminder Calendar</UnstableCardTitle>
+          <UnstableCardDescription>
+            View upcoming secret rotations and reminders
+          </UnstableCardDescription>
+          <UnstableCardAction>
             <div className="ml-4 flex items-center gap-1">
               <UnstableIconButton
                 variant="ghost"
@@ -63,9 +67,6 @@ export const InsightsPage = () => {
                 <ChevronRight className="size-4" />
               </UnstableIconButton>
             </div>
-          </UnstableCardTitle>
-          <UnstableCardAction>
-            <CalendarLegend />
           </UnstableCardAction>
         </UnstableCardHeader>
         <UnstableCardContent>

@@ -28,7 +28,7 @@ export const CalendarEventPill = ({ event }: { event: CalendarEvent }) => {
           </button>
         </Badge>
       </PopoverTrigger>
-      <PopoverContent className="w-80" align="start">
+      <PopoverContent className="w-80 bg-card" align="start">
         <CalendarEventDetail event={event} />
       </PopoverContent>
     </Popover>

@@ -52,14 +52,14 @@ export const LineChart = ({ data, height = 280, color = CHART_COLOR }: LineChart
             fontSize: 12
           }}
           labelStyle={{ color: "var(--color-foreground)" }}
-          itemStyle={{ color: "var(--color-info)" }}
+          itemStyle={{ color: "var(--color-warning)" }}
           formatter={(value) => [Number(value).toLocaleString(), "Requests"]}
         />
         <Area
-          type="monotone"
+          type="monotoneX"
           dataKey="value"
           stroke="var(--color-info)"
-          strokeWidth={2.5}
+          strokeWidth={1.5}
           fill="url(#areaGradient)"
           dot={{
             r: 4,
@@ -68,8 +68,8 @@ export const LineChart = ({ data, height = 280, color = CHART_COLOR }: LineChart
             strokeWidth: 2
           }}
           activeDot={{
-            r: 5,
-            fill: "var(--color-info)",
+            r: 4,
+            fill: "var(--color-warning)",
             stroke: "var(--color-container)",
             strokeWidth: 2
           }}

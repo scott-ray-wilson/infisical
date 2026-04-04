@@ -10,6 +10,7 @@ import {
   UnstableCardTitle,
   UnstableSeparator
 } from "@app/components/v3";
+import { cn } from "@app/components/v3/utils";
 import { useProject } from "@app/context";
 import { useGetInsightsSummary } from "@app/hooks/api";
 
@@ -37,7 +38,12 @@ const StatCard = ({
       <UnstableCardTitle>{title}</UnstableCardTitle>
       <UnstableCardAction>
         <div
-          className={`flex size-9 items-center justify-center rounded-md border border-${iconVariant}/25 bg-${iconVariant}/10 text-${iconVariant} [&>svg]:size-5`}
+          className={cn(
+            "flex size-9 items-center justify-center rounded-md border [&>svg]:size-5",
+            iconVariant === "info" && "border-info/15 bg-info/10 text-info",
+            iconVariant === "warning" && "border-warning/15 bg-warning/10 text-warning",
+            iconVariant === "danger" && "border-danger/15 bg-danger/10 text-danger"
+          )}
         >
           {icon}
         </div>

@@ -2067,7 +2067,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       ).length;
 
       // Count stale secrets (not updated in 90+ days) via direct query
-      const staleResult = (await server.services.secretV2Bridge.getStaleSecretsCount({
+      const staleResult = (await server.services.secret.getStaleSecretsCount({
         projectId,
         environments,
         staleBeforeDate: staleThreshold,

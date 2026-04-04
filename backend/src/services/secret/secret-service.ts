@@ -1228,6 +1228,18 @@ export const secretServiceFactory = ({
     return count;
   };
 
+  const getStaleSecretsCount = async (params: {
+    projectId: string;
+    environments: string[];
+    staleBeforeDate: Date;
+    actor: string;
+    actorId: string;
+    actorAuthMethod: string;
+    actorOrgId: string;
+  }) => {
+    return secretV2BridgeService.getStaleSecretsCount(params);
+  };
+
   const getSecretsRawMultiEnv = async ({
     projectId,
     path,
@@ -3623,6 +3635,7 @@ export const secretServiceFactory = ({
     startSecretV2Migration,
     getSecretsCount,
     getSecretsCountMultiEnv,
+    getStaleSecretsCount,
     getSecretsRawMultiEnv,
     getSecretReferenceTree,
     getSecretsRawByFolderMappings,

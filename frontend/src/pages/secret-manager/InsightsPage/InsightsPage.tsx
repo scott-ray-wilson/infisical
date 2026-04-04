@@ -3,9 +3,8 @@ import { Helmet } from "react-helmet";
 import { addMonths, format, subMonths } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-import { PageHeader } from "@app/components/v2";
+import { Lottie, PageHeader } from "@app/components/v2";
 import {
-  Skeleton,
   UnstableCard,
   UnstableCardAction,
   UnstableCardContent,
@@ -74,15 +73,18 @@ export const InsightsPage = () => {
             </UnstableCardAction>
           </UnstableCardHeader>
           <UnstableCardContent>
-            {isPending ? (
-              <Skeleton className="h-[600px] w-full" />
-            ) : (
+            <div className="relative">
               <CalendarGrid
                 currentMonth={currentMonth}
                 rotations={data?.rotations ?? []}
                 reminders={data?.reminders ?? []}
               />
-            )}
+              {isPending && (
+                <div className="absolute inset-0 flex items-center justify-center bg-container/40">
+                  <Lottie icon="infisical_loading_white" isAutoPlay className="w-16" />
+                </div>
+              )}
+            </div>
             <CalendarLegend />
           </UnstableCardContent>
         </UnstableCard>

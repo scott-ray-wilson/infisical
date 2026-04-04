@@ -16,7 +16,6 @@ export type LineChartDataPoint = {
 type LineChartProps = {
   data: LineChartDataPoint[];
   height?: number;
-  color?: string;
 };
 
 export const LineChart = ({ data, height = 280 }: LineChartProps) => {
@@ -50,8 +49,8 @@ export const LineChart = ({ data, height = 280 }: LineChartProps) => {
             fontSize: 12
           }}
           labelStyle={{ color: "var(--color-foreground)" }}
-          itemStyle={{ color: "var(--color-project)" }}
-          cursor={{ stroke: "var(--color-project)", strokeWidth: 1, strokeDasharray: "4 4" }}
+          itemStyle={{ color: "var(--color-warning)" }}
+          cursor={{ stroke: "var(--color-warning)", strokeWidth: 1, strokeDasharray: "4 4" }}
           formatter={(value) => [Number(value).toLocaleString(), "Requests"]}
         />
         <Area
@@ -68,7 +67,7 @@ export const LineChart = ({ data, height = 280 }: LineChartProps) => {
           }}
           activeDot={{
             r: 4,
-            fill: "var(--color-project)",
+            fill: "var(--color-warning)",
             stroke: "var(--color-container)",
             strokeWidth: 2
           }}

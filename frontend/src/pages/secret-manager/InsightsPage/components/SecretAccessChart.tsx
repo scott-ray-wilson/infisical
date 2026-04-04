@@ -1,6 +1,5 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { format, parseISO } from "date-fns";
-import { ActivityIcon } from "lucide-react";
 
 import {
   Skeleton,
@@ -17,8 +16,12 @@ import { LineChart } from "./LineChart";
 
 export const SecretAccessChart = () => {
   const { projectId } = useProject();
+  const [today] = useState(() => format(new Date(), "yyyy-MM-dd"));
 
-  const { data, isPending } = useGetSecretAccessVolume({ projectId }, { enabled: !!projectId });
+  const { data, isPending } = useGetSecretAccessVolume(
+    { projectId, today },
+    { enabled: !!projectId }
+  );
 
   const chartData = useMemo(() => {
     if (!data?.days) return [];

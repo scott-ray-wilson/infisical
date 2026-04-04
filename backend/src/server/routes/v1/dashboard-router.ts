@@ -1901,7 +1901,8 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         }
       ],
       querystring: z.object({
-        projectId: z.string().trim()
+        projectId: z.string().trim(),
+        today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("Client local date in YYYY-MM-DD format")
       }),
       response: {
         200: z.object({
@@ -1923,19 +1924,19 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
     },
     onRequest: verifyAuth([AuthMode.JWT]),
     handler: async (req) => {
-      const { projectId } = req.query;
+      const { projectId, today } = req.query;
 
-      const now = new Date();
-      const startDate = new Date(now);
-      startDate.setDate(now.getDate() - 6);
-      startDate.setHours(0, 0, 0, 0);
+      // Use client-provided local date to anchor the 7-day window
+      const todayDate = new Date(`${today}T23:59:59.999Z`);
+      const startDate = new Date(`${today}T00:00:00.000Z`);
+      startDate.setUTCDate(startDate.getUTCDate() - 6);
 
       const auditLogs = await server.services.auditLog.listAuditLogs({
         filter: {
           projectId,
           eventType: [EventType.GET_SECRETS, EventType.GET_SECRET],
           startDate: startDate.toISOString(),
-          endDate: now.toISOString(),
+          endDate: todayDate.toISOString(),
           limit: 5000
         },
         actorId: req.permission.id,
@@ -1947,16 +1948,16 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       // Build a map of day -> actor -> count
       const dayMap = new Map<string, Map<string, { name: string; type: string; count: number }>>();
 
-      // Pre-populate the last 7 days
+      // Pre-populate the last 7 days using the client's local date
       for (let i = 6; i >= 0; i -= 1) {
-        const d = new Date(now);
-        d.setDate(now.getDate() - i);
+        const d = new Date(`${today}T00:00:00.000Z`);
+        d.setUTCDate(d.getUTCDate() - i);
         const key = d.toISOString().slice(0, 10);
         dayMap.set(key, new Map());
       }
 
       auditLogs.forEach((log) => {
-        const dateKey = new Date(log.createdAt).toISOString().slice(0, 10);
+        const dateKey = log.createdAt.toISOString().slice(0, 10);
         const actorMap = dayMap.get(dateKey);
         if (!actorMap) return;
 

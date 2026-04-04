@@ -48,6 +48,7 @@ export type TSecretAccessVolumeDay = {
 
 export type TGetSecretAccessVolumeDTO = {
   projectId: string;
+  today: string;
 };
 
 export type TGetSecretAccessVolumeResponse = {

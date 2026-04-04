@@ -1,43 +1,60 @@
-import { BellIcon, ClockIcon, RefreshCwIcon } from "lucide-react";
+import { AlertTriangleIcon, BellIcon, CheckIcon, ClockIcon, RefreshCwIcon } from "lucide-react";
 
-import { Skeleton } from "@app/components/v3";
+import {
+  Badge,
+  Skeleton,
+  UnstableCard,
+  UnstableCardAction,
+  UnstableCardContent,
+  UnstableCardHeader,
+  UnstableCardTitle,
+  UnstableSeparator
+} from "@app/components/v3";
 import { useProject } from "@app/context";
 import { useGetInsightsSummary } from "@app/hooks/api";
 
 type StatCardProps = {
   title: string;
   icon: React.ReactNode;
-  iconColorClass: string;
+  iconVariant: "warning" | "info" | "danger";
   count: number;
   subtitle: string;
   footnote: string;
-  footnoteColorClass: string;
+  footnoteVariant: "warning" | "danger" | "success";
 };
 
 const StatCard = ({
   title,
   icon,
-  iconColorClass,
+  iconVariant,
   count,
   subtitle,
   footnote,
-  footnoteColorClass
+  footnoteVariant
 }: StatCardProps) => (
-  <div className="flex flex-1 flex-col gap-3 rounded-lg border border-border bg-container p-4">
-    <div className="flex items-center justify-between">
-      <span className="text-sm font-medium">{title}</span>
-      <div className={`flex size-8 items-center justify-center rounded-md border border-border ${iconColorClass}`}>
-        {icon}
+  <UnstableCard className="flex-1">
+    <UnstableCardHeader>
+      <UnstableCardTitle>{title}</UnstableCardTitle>
+      <UnstableCardAction>
+        <div
+          className={`flex size-9 items-center justify-center rounded-md border border-${iconVariant}/25 bg-${iconVariant}/10 text-${iconVariant} [&>svg]:size-5`}
+        >
+          {icon}
+        </div>
+      </UnstableCardAction>
+    </UnstableCardHeader>
+    <UnstableCardContent className="flex flex-col gap-3">
+      <div>
+        <span className="text-2xl font-semibold">{count}</span>
+        <span className="ml-2 text-sm text-muted">{subtitle}</span>
       </div>
-    </div>
-    <div>
-      <span className="text-2xl font-semibold">{count}</span>
-      <span className="ml-2 text-sm text-label">{subtitle}</span>
-    </div>
-    <div className="border-t border-border pt-2">
-      <span className={`text-xs font-medium ${footnoteColorClass}`}>{footnote}</span>
-    </div>
-  </div>
+      <UnstableSeparator />
+      <Badge variant={footnoteVariant}>
+        {footnoteVariant === "success" ? <CheckIcon /> : <AlertTriangleIcon />}
+        {footnote}
+      </Badge>
+    </UnstableCardContent>
+  </UnstableCard>
 );
 
 export const InsightsSummaryCards = () => {
@@ -51,7 +68,7 @@ export const InsightsSummaryCards = () => {
 
   if (isPending) {
     return (
-      <div className="flex gap-4">
+      <div className="flex gap-6">
         <Skeleton className="h-[130px] flex-1" />
         <Skeleton className="h-[130px] flex-1" />
         <Skeleton className="h-[130px] flex-1" />
@@ -60,11 +77,33 @@ export const InsightsSummaryCards = () => {
   }
 
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-6">
+      <StatCard
+        title="Upcoming Rotations"
+        icon={<RefreshCwIcon />}
+        iconVariant="info"
+        count={data?.upcomingRotations ?? 0}
+        subtitle="In the next 7 days"
+        footnote={
+          data?.overdueRotations ? `${data.overdueRotations} overdue` : "No overdue rotations"
+        }
+        footnoteVariant={data?.overdueRotations ? "danger" : "success"}
+      />
+      <StatCard
+        title="Upcoming Reminders"
+        icon={<BellIcon />}
+        iconVariant="warning"
+        count={data?.upcomingReminders ?? 0}
+        subtitle="In the next 7 days"
+        footnote={
+          data?.overdueReminders ? `${data.overdueReminders} overdue` : "No overdue reminders"
+        }
+        footnoteVariant={data?.overdueReminders ? "danger" : "success"}
+      />
       <StatCard
         title="Stale Secrets"
-        icon={<ClockIcon className="size-4" />}
-        iconColorClass="text-warning"
+        icon={<ClockIcon />}
+        iconVariant="danger"
         count={data?.staleSecrets ?? 0}
         subtitle="Unused > 90 days"
         footnote={
@@ -72,33 +111,7 @@ export const InsightsSummaryCards = () => {
             ? `${data.staleSecrets} need${data.staleSecrets === 1 ? "s" : ""} review`
             : "All secrets up to date"
         }
-        footnoteColorClass={data?.staleSecrets ? "text-warning" : "text-success"}
-      />
-      <StatCard
-        title="Upcoming Rotations"
-        icon={<RefreshCwIcon className="size-4" />}
-        iconColorClass="text-info"
-        count={data?.upcomingRotations ?? 0}
-        subtitle="In the next 7 days"
-        footnote={
-          data?.overdueRotations
-            ? `${data.overdueRotations} overdue`
-            : "No overdue rotations"
-        }
-        footnoteColorClass={data?.overdueRotations ? "text-danger" : "text-success"}
-      />
-      <StatCard
-        title="Upcoming Reminders"
-        icon={<BellIcon className="size-4" />}
-        iconColorClass="text-warning"
-        count={data?.upcomingReminders ?? 0}
-        subtitle="In the next 7 days"
-        footnote={
-          data?.overdueReminders
-            ? `${data.overdueReminders} overdue`
-            : "No overdue reminders"
-        }
-        footnoteColorClass={data?.overdueReminders ? "text-danger" : "text-success"}
+        footnoteVariant={data?.staleSecrets ? "warning" : "success"}
       />
     </div>
   );

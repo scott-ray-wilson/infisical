@@ -3966,7 +3966,7 @@ export const secretV2BridgeServiceFactory = ({
     };
   };
 
-  const getStaleSecretsCount = async ({
+  const findStaleSecrets = async ({
     projectId,
     environments,
     staleBeforeDate,
@@ -3980,7 +3980,7 @@ export const secretV2BridgeServiceFactory = ({
     staleBeforeDate: Date;
     actor: string;
     actorId: string;
-    actorAuthMethod: string;
+    actorAuthMethod: string | null;
     actorOrgId: string;
   }) => {
     await permissionService.getProjectPermission({
@@ -3992,7 +3992,7 @@ export const secretV2BridgeServiceFactory = ({
       actionProjectType: ActionProjectType.SecretManager
     });
 
-    return secretDAL.countStaleByProjectAndEnvs(projectId, environments, staleBeforeDate);
+    return secretDAL.findStaleByProjectAndEnvs(projectId, environments, staleBeforeDate);
   };
 
   return {
@@ -4019,6 +4019,6 @@ export const secretV2BridgeServiceFactory = ({
     findSecretIdsByFolderIdAndKeys,
     $validateSecretReferences,
     redactSecretVersionValue,
-    getStaleSecretsCount
+    findStaleSecrets
   };
 };

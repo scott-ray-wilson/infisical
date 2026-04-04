@@ -1902,7 +1902,10 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       ],
       querystring: z.object({
         projectId: z.string().trim(),
-        today: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("Client local date in YYYY-MM-DD format")
+        today: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .describe("Client local date in YYYY-MM-DD format")
       }),
       response: {
         200: z.object({
@@ -1992,7 +1995,8 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
     },
     schema: {
       operationId: "getSecretInsightsSummary",
-      description: "Get summary stats for the insights dashboard: upcoming rotations, upcoming reminders, and stale secrets",
+      description:
+        "Get summary stats for the insights dashboard: upcoming rotations, upcoming reminders, and stale secrets",
       security: [
         {
           bearerAuth: []
@@ -2004,11 +2008,19 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       }),
       response: {
         200: z.object({
-          upcomingRotations: z.number(),
-          overdueRotations: z.number(),
-          upcomingReminders: z.number(),
-          overdueReminders: z.number(),
-          staleSecrets: z.number()
+          upcomingRotations: z.array(
+            z.object({ name: z.string(), environment: z.string(), nextRotationAt: z.date().nullable() })
+          ),
+          overdueRotations: z.array(
+            z.object({ name: z.string(), environment: z.string(), nextRotationAt: z.date().nullable() })
+          ),
+          upcomingReminders: z.array(
+            z.object({ secretKey: z.string(), environment: z.string(), nextReminderDate: z.date() })
+          ),
+          overdueReminders: z.array(
+            z.object({ secretKey: z.string(), environment: z.string(), nextReminderDate: z.date() })
+          ),
+          staleSecrets: z.array(z.object({ key: z.string(), environment: z.string(), updatedAt: z.date() }))
         })
       }
     },
@@ -2053,21 +2065,29 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         })
       ]);
 
-      const upcomingRotations = rotations.filter(
-        (r) => r.nextRotationAt && new Date(r.nextRotationAt) >= now
-      ).length;
-      const overdueRotations = rotations.filter(
-        (r) => r.nextRotationAt && new Date(r.nextRotationAt) < now
-      ).length;
-      const upcomingReminders = reminders.filter(
-        (r) => new Date(r.nextReminderDate) >= now
-      ).length;
-      const overdueReminders = reminders.filter(
-        (r) => new Date(r.nextReminderDate) < now
-      ).length;
+      const mapRotation = (r: (typeof rotations)[number]) => ({
+        name: r.name,
+        environment: r.environment.slug,
+        nextRotationAt: r.nextRotationAt ?? null
+      });
 
-      // Count stale secrets (not updated in 90+ days) via direct query
-      const staleResult = (await server.services.secret.getStaleSecretsCount({
+      const mapReminder = (r: (typeof reminders)[number]) => ({
+        secretKey: r.secretKey,
+        environment: r.environment,
+        nextReminderDate: r.nextReminderDate
+      });
+
+      const upcomingRotations = rotations
+        .filter((r) => r.nextRotationAt && new Date(r.nextRotationAt) >= now)
+        .map(mapRotation);
+      const overdueRotations = rotations
+        .filter((r) => r.nextRotationAt && new Date(r.nextRotationAt) < now)
+        .map(mapRotation);
+      const upcomingReminders = reminders.filter((r) => new Date(r.nextReminderDate) >= now).map(mapReminder);
+      const overdueReminders = reminders.filter((r) => new Date(r.nextReminderDate) < now).map(mapReminder);
+
+      // Find stale secrets (not updated in 90+ days)
+      const staleSecrets = await server.services.secret.findStaleSecrets({
         projectId,
         environments,
         staleBeforeDate: staleThreshold,
@@ -2075,14 +2095,14 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         actorId: req.permission.id,
         actorAuthMethod: req.permission.authMethod,
         actorOrgId: req.permission.orgId
-      })) as number;
+      });
 
       return {
         upcomingRotations,
         overdueRotations,
         upcomingReminders,
         overdueReminders,
-        staleSecrets: staleResult
+        staleSecrets
       };
     }
   });

@@ -92,17 +92,18 @@ export const SecretManagerNav = ({
       pathSuffix: "secret-rotation",
       hidden: !secretRotations?.length
     },
-    {
-      label: "Secret Insights",
-      icon: ActivityIcon,
-      pathSuffix: "insights"
-    },
+
     {
       label: "Access Control",
       icon: Shield,
       pathSuffix: "access-management",
       activeMatch: /\/groups\/|\/identities\/|\/members\/|\/roles\//,
       submenu: SECRET_MANAGER_ACCESS_CONTROL_SUBMENU
+    },
+    {
+      label: "Secret Insights",
+      icon: ActivityIcon,
+      pathSuffix: "insights"
     },
     { label: "Audit Logs", icon: FileText, pathSuffix: "audit-logs" },
     { label: "Settings", icon: Settings, pathSuffix: "settings", submenu: SM_SETTINGS_SUBMENU }

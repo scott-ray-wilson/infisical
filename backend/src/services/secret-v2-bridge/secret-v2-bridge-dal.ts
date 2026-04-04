@@ -1128,7 +1128,7 @@ export const secretV2BridgeDALFactory = ({ db, keyStore }: TSecretV2DalArg) => {
     }
   };
 
-  const countStaleByProjectAndEnvs = async (
+  const findStaleByProjectAndEnvs = async (
     projectId: string,
     environmentSlugs: string[],
     staleBeforeDate: Date,
@@ -1142,12 +1142,17 @@ export const secretV2BridgeDALFactory = ({ db, keyStore }: TSecretV2DalArg) => {
         .whereIn(`${TableName.Environment}.slug`, environmentSlugs)
         .whereNull(`${TableName.SecretV2}.userId`)
         .where(`${TableName.SecretV2}.updatedAt`, "<", staleBeforeDate)
-        .countDistinct(`${TableName.SecretV2}.id`);
+        .select(
+          `${TableName.SecretV2}.key`,
+          `${TableName.SecretV2}.updatedAt`,
+          `${TableName.Environment}.slug as environment`
+        )
+        .orderBy(`${TableName.SecretV2}.updatedAt`, "asc")
+        .limit(50);
 
-      // @ts-expect-error count not inferred by knex
-      return Number(result[0]?.count ?? 0);
+      return result as { key: string; updatedAt: Date; environment: string }[];
     } catch (error) {
-      throw new DatabaseError({ error, name: "countStaleByProjectAndEnvs" });
+      throw new DatabaseError({ error, name: "findStaleByProjectAndEnvs" });
     }
   };
 
@@ -1167,7 +1172,7 @@ export const secretV2BridgeDALFactory = ({ db, keyStore }: TSecretV2DalArg) => {
     findReferencedSecretReferences,
     findAllProjectSecretValues,
     countByFolderIds,
-    countStaleByProjectAndEnvs,
+    findStaleByProjectAndEnvs,
     findOne,
     find,
     invalidateSecretCacheByProjectId,

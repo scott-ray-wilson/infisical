@@ -56,12 +56,30 @@ export type TGetInsightsSummaryDTO = {
   environments: string;
 };
 
+export type TInsightRotationItem = {
+  name: string;
+  environment: string;
+  nextRotationAt: string | null;
+};
+
+export type TInsightReminderItem = {
+  secretKey: string;
+  environment: string;
+  nextReminderDate: string;
+};
+
+export type TInsightStaleSecretItem = {
+  key: string;
+  environment: string;
+  updatedAt: string;
+};
+
 export type TGetInsightsSummaryResponse = {
-  upcomingRotations: number;
-  overdueRotations: number;
-  upcomingReminders: number;
-  overdueReminders: number;
-  staleSecrets: number;
+  upcomingRotations: TInsightRotationItem[];
+  overdueRotations: TInsightRotationItem[];
+  upcomingReminders: TInsightReminderItem[];
+  overdueReminders: TInsightReminderItem[];
+  staleSecrets: TInsightStaleSecretItem[];
 };
 
 export type TGetSecretAccessVolumeResponse = {

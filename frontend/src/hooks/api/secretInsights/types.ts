@@ -51,6 +51,19 @@ export type TGetSecretAccessVolumeDTO = {
   today: string;
 };
 
+export type TGetInsightsSummaryDTO = {
+  projectId: string;
+  environments: string;
+};
+
+export type TGetInsightsSummaryResponse = {
+  upcomingRotations: number;
+  overdueRotations: number;
+  upcomingReminders: number;
+  overdueReminders: number;
+  staleSecrets: number;
+};
+
 export type TGetSecretAccessVolumeResponse = {
   days: TSecretAccessVolumeDay[];
 };

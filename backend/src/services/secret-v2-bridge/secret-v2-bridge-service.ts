@@ -43,7 +43,7 @@ import { logger } from "@app/lib/logger";
 import { alphaNumericNanoId } from "@app/lib/nanoid";
 import { recordSecretReadMetric } from "@app/lib/telemetry/metrics";
 
-import { ActorType } from "../auth/auth-type";
+import { ActorAuthMethod, ActorType } from "../auth/auth-type";
 import { TCommitResourceChangeDTO, TFolderCommitServiceFactory } from "../folder-commit/folder-commit-service";
 import { TKmsServiceFactory } from "../kms/kms-service";
 import { KmsDataKey } from "../kms/kms-types";
@@ -3966,6 +3966,35 @@ export const secretV2BridgeServiceFactory = ({
     };
   };
 
+  const getStaleSecretsCount = async ({
+    projectId,
+    environments,
+    staleBeforeDate,
+    actor,
+    actorId,
+    actorAuthMethod,
+    actorOrgId
+  }: {
+    projectId: string;
+    environments: string[];
+    staleBeforeDate: Date;
+    actor: string;
+    actorId: string;
+    actorAuthMethod: string;
+    actorOrgId: string;
+  }) => {
+    await permissionService.getProjectPermission({
+      actor: actor as ActorType,
+      actorId,
+      projectId,
+      actorAuthMethod: actorAuthMethod as ActorAuthMethod,
+      actorOrgId,
+      actionProjectType: ActionProjectType.SecretManager
+    });
+
+    return secretDAL.countStaleByProjectAndEnvs(projectId, environments, staleBeforeDate);
+  };
+
   return {
     createSecret,
     deleteSecret,
@@ -3989,6 +4018,7 @@ export const secretV2BridgeServiceFactory = ({
     getSecretVersionsByIds,
     findSecretIdsByFolderIdAndKeys,
     $validateSecretReferences,
-    redactSecretVersionValue
+    redactSecretVersionValue,
+    getStaleSecretsCount
   };
 };

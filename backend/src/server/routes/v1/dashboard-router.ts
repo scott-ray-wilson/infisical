@@ -1983,4 +1983,107 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       return { days };
     }
   });
+
+  server.route({
+    method: "GET",
+    url: "/secret-insights-summary",
+    config: {
+      rateLimit: readLimit
+    },
+    schema: {
+      operationId: "getSecretInsightsSummary",
+      description: "Get summary stats for the insights dashboard: upcoming rotations, upcoming reminders, and stale secrets",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      querystring: z.object({
+        projectId: z.string().trim(),
+        environments: z.string().trim()
+      }),
+      response: {
+        200: z.object({
+          upcomingRotations: z.number(),
+          overdueRotations: z.number(),
+          upcomingReminders: z.number(),
+          overdueReminders: z.number(),
+          staleSecrets: z.number()
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT]),
+    handler: async (req) => {
+      const { projectId, environments: environmentsRaw } = req.query;
+      const environments = environmentsRaw.split(",").map((e) => e.trim());
+
+      if (!projectId || environments.length === 0)
+        throw new BadRequestError({ message: "Missing project id or environment(s)" });
+
+      const { shouldUseSecretV2Bridge } = await server.services.projectBot.getBotKey(projectId);
+      if (!shouldUseSecretV2Bridge) throw new BadRequestError({ message: "Project version not supported" });
+
+      const now = new Date();
+      const in7Days = new Date(now);
+      in7Days.setDate(now.getDate() + 7);
+      const staleThreshold = new Date(now);
+      staleThreshold.setDate(now.getDate() - 90);
+
+      const [rotations, reminders] = await Promise.all([
+        server.services.secretRotationV2.getCalendarRotations(
+          { projectId, environments, startDate: new Date(0), endDate: in7Days },
+          {
+            type: req.permission.type,
+            id: req.permission.id,
+            authMethod: req.permission.authMethod,
+            orgId: req.permission.orgId,
+            rootOrgId: req.permission.rootOrgId,
+            parentOrgId: req.permission.parentOrgId
+          }
+        ),
+        server.services.reminder.getCalendarReminders({
+          projectId,
+          environments,
+          startDate: new Date(0),
+          endDate: in7Days,
+          actor: req.permission.type,
+          actorId: req.permission.id,
+          actorAuthMethod: req.permission.authMethod,
+          actorOrgId: req.permission.orgId
+        })
+      ]);
+
+      const upcomingRotations = rotations.filter(
+        (r) => r.nextRotationAt && new Date(r.nextRotationAt) >= now
+      ).length;
+      const overdueRotations = rotations.filter(
+        (r) => r.nextRotationAt && new Date(r.nextRotationAt) < now
+      ).length;
+      const upcomingReminders = reminders.filter(
+        (r) => new Date(r.nextReminderDate) >= now
+      ).length;
+      const overdueReminders = reminders.filter(
+        (r) => new Date(r.nextReminderDate) < now
+      ).length;
+
+      // Count stale secrets (not updated in 90+ days) via direct query
+      const staleResult = (await server.services.secretV2Bridge.getStaleSecretsCount({
+        projectId,
+        environments,
+        staleBeforeDate: staleThreshold,
+        actor: req.permission.type,
+        actorId: req.permission.id,
+        actorAuthMethod: req.permission.authMethod,
+        actorOrgId: req.permission.orgId
+      })) as number;
+
+      return {
+        upcomingRotations,
+        overdueRotations,
+        upcomingReminders,
+        overdueReminders,
+        staleSecrets: staleResult
+      };
+    }
+  });
 };

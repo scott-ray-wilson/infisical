@@ -5,6 +5,8 @@ import { apiRequest } from "@app/config/request";
 import {
   TGetCalendarInsightsDTO,
   TGetCalendarInsightsResponse,
+  TGetInsightsSummaryDTO,
+  TGetInsightsSummaryResponse,
   TGetSecretAccessVolumeDTO,
   TGetSecretAccessVolumeResponse
 } from "./types";
@@ -14,7 +16,9 @@ export const secretInsightsKeys = {
   calendarEvents: (params: TGetCalendarInsightsDTO) =>
     [...secretInsightsKeys.all(), "calendar-events", params] as const,
   accessVolume: (params: TGetSecretAccessVolumeDTO) =>
-    [...secretInsightsKeys.all(), "access-volume", params] as const
+    [...secretInsightsKeys.all(), "access-volume", params] as const,
+  summary: (params: TGetInsightsSummaryDTO) =>
+    [...secretInsightsKeys.all(), "summary", params] as const
 };
 
 export const useGetCalendarInsights = (
@@ -59,6 +63,31 @@ export const useGetSecretAccessVolume = (
     queryFn: async () => {
       const { data } = await apiRequest.get<TGetSecretAccessVolumeResponse>(
         "/api/v1/dashboard/secret-access-volume",
+        { params }
+      );
+      return data;
+    },
+    ...options
+  });
+};
+
+export const useGetInsightsSummary = (
+  params: TGetInsightsSummaryDTO,
+  options?: Omit<
+    UseQueryOptions<
+      TGetInsightsSummaryResponse,
+      unknown,
+      TGetInsightsSummaryResponse,
+      ReturnType<typeof secretInsightsKeys.summary>
+    >,
+    "queryKey" | "queryFn"
+  >
+) => {
+  return useQuery({
+    queryKey: secretInsightsKeys.summary(params),
+    queryFn: async () => {
+      const { data } = await apiRequest.get<TGetInsightsSummaryResponse>(
+        "/api/v1/dashboard/secret-insights-summary",
         { params }
       );
       return data;

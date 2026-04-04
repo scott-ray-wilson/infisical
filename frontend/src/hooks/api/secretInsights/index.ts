@@ -1,4 +1,4 @@
-export { useGetCalendarInsights, useGetSecretAccessVolume } from "./queries";
+export { useGetCalendarInsights, useGetInsightsSummary, useGetSecretAccessVolume } from "./queries";
 export type {
   TCalendarReminder,
   TCalendarRotation,

@@ -1128,6 +1128,29 @@ export const secretV2BridgeDALFactory = ({ db, keyStore }: TSecretV2DalArg) => {
     }
   };
 
+  const countStaleByProjectAndEnvs = async (
+    projectId: string,
+    environmentSlugs: string[],
+    staleBeforeDate: Date,
+    tx?: Knex
+  ) => {
+    try {
+      const result = await (tx || db.replicaNode())(TableName.SecretV2)
+        .join(TableName.SecretFolder, `${TableName.SecretV2}.folderId`, `${TableName.SecretFolder}.id`)
+        .join(TableName.Environment, `${TableName.SecretFolder}.envId`, `${TableName.Environment}.id`)
+        .where(`${TableName.Environment}.projectId`, projectId)
+        .whereIn(`${TableName.Environment}.slug`, environmentSlugs)
+        .whereNull(`${TableName.SecretV2}.userId`)
+        .where(`${TableName.SecretV2}.updatedAt`, "<", staleBeforeDate)
+        .countDistinct(`${TableName.SecretV2}.id`);
+
+      // @ts-expect-error count not inferred by knex
+      return Number(result[0]?.count ?? 0);
+    } catch (error) {
+      throw new DatabaseError({ error, name: "countStaleByProjectAndEnvs" });
+    }
+  };
+
   return {
     ...secretOrm,
     update,
@@ -1144,6 +1167,7 @@ export const secretV2BridgeDALFactory = ({ db, keyStore }: TSecretV2DalArg) => {
     findReferencedSecretReferences,
     findAllProjectSecretValues,
     countByFolderIds,
+    countStaleByProjectAndEnvs,
     findOne,
     find,
     invalidateSecretCacheByProjectId,

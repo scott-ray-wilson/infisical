@@ -27,7 +27,7 @@ export const InsightsPage = () => {
         <SecretAccessChart />
         <WorldMap />
       </div>
-      <div className="mt-6 flex gap-6">
+      <div className="mt-6 flex items-stretch gap-6">
         <CalendarCard />
         <AuthMethodChart />
       </div>

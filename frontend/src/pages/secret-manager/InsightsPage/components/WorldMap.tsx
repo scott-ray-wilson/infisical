@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { geoNaturalEarth1, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
 import type { Topology } from "topojson-specification";
@@ -117,52 +117,99 @@ const geoFeatures = (
   ) as GeoJSON.FeatureCollection
 ).features;
 
+// Inactive country base: dark but visible against the card bg
+const INACTIVE_FILL = "#242629";
+// Stroke between countries
+const BORDER_STROKE = "#3a3c40";
+// Info color for active country gradient
+const INFO_COLOR = "#63b0bd";
+
 const ResponsiveWorldMap = ({
   mapLocations,
   countryActivity,
-  getCountryFill,
+  countryMaxCount,
   getRadius
 }: {
   mapLocations: TAccessLocation[];
   countryActivity: Map<string, number>;
-  getCountryFill: (geoId: string) => string;
+  countryMaxCount: number;
   getRadius: (count: number) => number;
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState<string | null>(null);
 
-  const getHoverFill = (id: string) => {
-    if (countryActivity.has(id)) {
-      return "color-mix(in srgb, var(--color-info) 70%, var(--color-mineshaft-800))";
+  // Build gradient definitions for each active country
+  const activeCountryGradients = useMemo(() => {
+    const gradients: { id: string; topOpacity: number; bottomOpacity: number }[] = [];
+    countryActivity.forEach((count, numericCode) => {
+      const ratio = count / countryMaxCount;
+      // Top of gradient is brighter, bottom fades to the base
+      const topOpacity = 0.25 + ratio * 0.55; // 0.25 → 0.80
+      const bottomOpacity = 0.08 + ratio * 0.15; // 0.08 → 0.23
+      gradients.push({ id: numericCode, topOpacity, bottomOpacity });
+    });
+    return gradients;
+  }, [countryActivity, countryMaxCount]);
+
+  const getFill = (id: string, isHover: boolean) => {
+    const isActive = countryActivity.has(id);
+    if (isHover) {
+      return isActive ? `url(#grad-hover-${id})` : "#2f3136";
     }
-    return "var(--color-mineshaft-700)";
+    return isActive ? `url(#grad-${id})` : INACTIVE_FILL;
   };
 
   return (
     <TooltipProvider>
-      <div
-        ref={containerRef}
-        className="w-full rounded-md border border-border bg-container shadow-inner"
-      >
+      <div className="w-full overflow-hidden rounded-md">
         <svg
           viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
           className="h-auto w-full"
           preserveAspectRatio="xMidYMid meet"
         >
+          <defs>
+            {activeCountryGradients.map((g) => (
+              <linearGradient key={`grad-${g.id}`} id={`grad-${g.id}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={INFO_COLOR} stopOpacity={g.topOpacity} />
+                <stop offset="100%" stopColor={INFO_COLOR} stopOpacity={g.bottomOpacity} />
+              </linearGradient>
+            ))}
+            {activeCountryGradients.map((g) => (
+              <linearGradient
+                key={`grad-hover-${g.id}`}
+                id={`grad-hover-${g.id}`}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop
+                  offset="0%"
+                  stopColor={INFO_COLOR}
+                  stopOpacity={Math.min(g.topOpacity + 0.15, 1)}
+                />
+                <stop
+                  offset="100%"
+                  stopColor={INFO_COLOR}
+                  stopOpacity={Math.min(g.bottomOpacity + 0.1, 0.5)}
+                />
+              </linearGradient>
+            ))}
+          </defs>
           <g>
             {geoFeatures.map((geo) => {
               const id = String(geo.id ?? "");
               const d = pathGenerator(geo) ?? "";
+              const isHover = hovered === id;
               return (
                 <path
                   key={id}
                   d={d}
-                  fill={hovered === id ? getHoverFill(id) : getCountryFill(id)}
-                  stroke="var(--color-mineshaft-600)"
+                  fill={getFill(id, isHover)}
+                  stroke={BORDER_STROKE}
                   strokeWidth={0.5}
                   onMouseEnter={() => setHovered(id)}
                   onMouseLeave={() => setHovered(null)}
-                  style={{ outline: "none", transition: "fill 0.15s" }}
+                  style={{ outline: "none", transition: "fill 0.15s, opacity 0.15s" }}
                 />
               );
             })}
@@ -180,7 +227,7 @@ const ResponsiveWorldMap = ({
                       r={getRadius(loc.count)}
                       fill="color-mix(in srgb, var(--color-warning) 50%, transparent)"
                       stroke="var(--color-warning)"
-                      strokeWidth={1.5}
+                      strokeWidth={1}
                       className="cursor-pointer transition-opacity hover:opacity-80"
                     />
                   </TooltipTrigger>
@@ -245,14 +292,6 @@ export const WorldMap = () => {
     return MIN_RADIUS + ratio * (MAX_RADIUS - MIN_RADIUS);
   };
 
-  const getCountryFill = (geoId: string) => {
-    const count = countryActivity.get(geoId);
-    if (!count) return "var(--color-mineshaft-800)";
-    // Scale intensity from 15% to 60% based on relative activity
-    const intensity = Math.round(15 + (count / countryMaxCount) * 45);
-    return `color-mix(in srgb, var(--color-info) ${intensity}%, var(--color-mineshaft-800))`;
-  };
-
   const totalAccess = allLocations.reduce((sum, l) => sum + l.count, 0);
 
   return (
@@ -271,7 +310,7 @@ export const WorldMap = () => {
             <ResponsiveWorldMap
               mapLocations={mapLocations}
               countryActivity={countryActivity}
-              getCountryFill={getCountryFill}
+              countryMaxCount={countryMaxCount}
               getRadius={getRadius}
             />
             {totalAccess > 0 && (

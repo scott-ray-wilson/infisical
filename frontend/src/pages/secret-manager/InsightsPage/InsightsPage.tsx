@@ -21,7 +21,8 @@ import {
   CalendarGrid,
   CalendarLegend,
   InsightsSummaryCards,
-  SecretAccessChart
+  SecretAccessChart,
+  WorldMap
 } from "./components";
 
 export const InsightsPage = () => {
@@ -95,6 +96,7 @@ export const InsightsPage = () => {
           </UnstableCardContent>
         </UnstableCard>
       </div>
+      <WorldMap />
     </>
   );
 };

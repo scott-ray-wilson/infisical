@@ -85,3 +85,20 @@ export type TGetInsightsSummaryResponse = {
 export type TGetSecretAccessVolumeResponse = {
   days: TSecretAccessVolumeDay[];
 };
+
+export type TAccessLocation = {
+  lat: number;
+  lng: number;
+  city: string;
+  country: string;
+  count: number;
+};
+
+export type TGetSecretAccessLocationsDTO = {
+  projectId: string;
+  days?: number;
+};
+
+export type TGetSecretAccessLocationsResponse = {
+  locations: TAccessLocation[];
+};

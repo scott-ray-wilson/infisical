@@ -7,6 +7,7 @@ import { EventType, UserAgentType } from "@app/ee/services/audit-log/audit-log-t
 import { ProjectPermissionSecretActions } from "@app/ee/services/permission/project-permission";
 import { SecretRotationV2Schema } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-union-schema";
 import { DASHBOARD } from "@app/lib/api-docs";
+import { getConfig } from "@app/lib/config/env";
 import { BadRequestError, NotFoundError } from "@app/lib/errors";
 import { removeTrailingSlash } from "@app/lib/fn";
 import { OrderByDirection } from "@app/lib/types";
@@ -1984,6 +1985,143 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
       });
 
       return { days };
+    }
+  });
+
+  server.route({
+    method: "GET",
+    url: "/secret-access-locations",
+    config: {
+      rateLimit: readLimit
+    },
+    schema: {
+      operationId: "getSecretAccessLocations",
+      description: "Get geographic locations of secret access based on audit log IP addresses",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      querystring: z.object({
+        projectId: z.string().trim(),
+        days: z.coerce.number().min(1).max(90).default(30)
+      }),
+      response: {
+        200: z.object({
+          locations: z.array(
+            z.object({
+              lat: z.number(),
+              lng: z.number(),
+              city: z.string(),
+              country: z.string(),
+              count: z.number()
+            })
+          )
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT]),
+    handler: async (req) => {
+      const { projectId, days } = req.query;
+
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setUTCDate(startDate.getUTCDate() - days);
+
+      const auditLogs = await server.services.auditLog.listAuditLogs({
+        filter: {
+          projectId,
+          eventType: [EventType.GET_SECRETS, EventType.GET_SECRET],
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          limit: 10000
+        },
+        actorId: req.permission.id,
+        actorOrgId: req.permission.orgId,
+        actorAuthMethod: req.permission.authMethod,
+        actor: req.permission.type
+      });
+
+      // Count occurrences per IP
+      const ipCounts = new Map<string, number>();
+      auditLogs.forEach((log) => {
+        const ip = (log as { ipAddress?: string | null }).ipAddress;
+        if (ip) {
+          ipCounts.set(ip, (ipCounts.get(ip) || 0) + 1);
+        }
+      });
+
+      // Resolve IPs to locations and group by city+country
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const geoip = require("geoip-lite") as typeof import("geoip-lite");
+      const locationMap = new Map<string, { lat: number; lng: number; city: string; country: string; count: number }>();
+
+      const isPrivateIp = (ip: string) =>
+        ip === "127.0.0.1" ||
+        ip === "::1" ||
+        ip === "::ffff:127.0.0.1" ||
+        ip.startsWith("10.") ||
+        ip.startsWith("172.16.") ||
+        ip.startsWith("172.17.") ||
+        ip.startsWith("172.18.") ||
+        ip.startsWith("172.19.") ||
+        ip.startsWith("172.2") ||
+        ip.startsWith("172.30.") ||
+        ip.startsWith("172.31.") ||
+        ip.startsWith("192.168.");
+
+      ipCounts.forEach((count, ip) => {
+        if (isPrivateIp(ip)) {
+          // Group all private/localhost IPs under a single "Local Network" entry
+          const key = "Local Network:LOCAL";
+          const existing = locationMap.get(key);
+          if (existing) {
+            existing.count += count;
+          } else {
+            // Place at null island — frontend can handle this as a special marker
+            locationMap.set(key, { lat: 0, lng: 0, city: "Local Network", country: "LOCAL", count });
+          }
+          return;
+        }
+
+        const geo = geoip.lookup(ip);
+        if (!geo || !geo.ll) return;
+
+        const key = `${geo.city || "Unknown"}:${geo.country}`;
+        const existing = locationMap.get(key);
+        if (existing) {
+          existing.count += count;
+        } else {
+          locationMap.set(key, {
+            lat: geo.ll[0],
+            lng: geo.ll[1],
+            city: geo.city || "Unknown",
+            country: geo.country,
+            count
+          });
+        }
+      });
+
+      // Seed sample data in development so the map isn't empty with only localhost traffic
+      if (locationMap.size <= 1 && getConfig().NODE_ENV === "development") {
+        const sampleLocations = [
+          { lat: 37.77, lng: -122.42, city: "San Francisco", country: "US", count: 142 },
+          { lat: 51.51, lng: -0.13, city: "London", country: "GB", count: 87 },
+          { lat: 35.68, lng: 139.69, city: "Tokyo", country: "JP", count: 63 },
+          { lat: 48.86, lng: 2.35, city: "Paris", country: "FR", count: 41 },
+          { lat: -33.87, lng: 151.21, city: "Sydney", country: "AU", count: 29 },
+          { lat: 1.35, lng: 103.82, city: "Singapore", country: "SG", count: 55 },
+          { lat: 52.52, lng: 13.41, city: "Berlin", country: "DE", count: 34 },
+          { lat: 19.43, lng: -99.13, city: "Mexico City", country: "MX", count: 18 },
+          { lat: -23.55, lng: -46.63, city: "São Paulo", country: "BR", count: 22 },
+          { lat: 28.61, lng: 77.21, city: "New Delhi", country: "IN", count: 47 }
+        ];
+        sampleLocations.forEach((loc) => locationMap.set(`${loc.city}:${loc.country}`, loc));
+      }
+
+      return {
+        locations: Array.from(locationMap.values()).sort((a, b) => b.count - a.count)
+      };
     }
   });
 

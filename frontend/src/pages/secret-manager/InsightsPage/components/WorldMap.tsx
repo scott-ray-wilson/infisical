@@ -317,14 +317,14 @@ export const WorldMap = () => {
               <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
                 {mapLocations.map((loc) => (
                   <span key={`${loc.city}:${loc.country}`} className="text-foreground">
-                    <span className="text-label">
+                    <span className="text-muted">
                       {loc.city}, {loc.country}:
                     </span>{" "}
                     {loc.count.toLocaleString()}
                   </span>
                 ))}
                 {localCount > 0 && (
-                  <span className="text-foreground">
+                  <span className="text-label">
                     <Badge variant="neutral" className="mr-1">
                       Local Network
                     </Badge>

@@ -159,93 +159,91 @@ const ResponsiveWorldMap = ({
   };
 
   return (
-    <TooltipProvider>
-      <div className="w-full overflow-hidden rounded-md border border-border bg-bunker-800/25">
-        <svg
-          viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-          className="h-auto w-full"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <defs>
-            {activeCountryGradients.map((g) => (
-              <linearGradient key={`grad-${g.id}`} id={`grad-${g.id}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={INFO_COLOR} stopOpacity={g.topOpacity} />
-                <stop offset="100%" stopColor={INFO_COLOR} stopOpacity={g.bottomOpacity} />
-              </linearGradient>
-            ))}
-            {activeCountryGradients.map((g) => (
-              <linearGradient
-                key={`grad-hover-${g.id}`}
-                id={`grad-hover-${g.id}`}
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop
-                  offset="0%"
-                  stopColor={INFO_COLOR}
-                  stopOpacity={Math.min(g.topOpacity + 0.15, 1)}
-                />
-                <stop
-                  offset="100%"
-                  stopColor={INFO_COLOR}
-                  stopOpacity={Math.min(g.bottomOpacity + 0.1, 0.5)}
-                />
-              </linearGradient>
-            ))}
-          </defs>
-          <g>
-            {geoFeatures.map((geo) => {
-              const id = String(geo.id ?? "");
-              const d = pathGenerator(geo) ?? "";
-              const isHover = hovered === id;
-              return (
-                <path
-                  key={id}
-                  d={d}
-                  fill={getFill(id, isHover)}
-                  stroke={BORDER_STROKE}
-                  strokeWidth={0.5}
-                  onMouseEnter={() => setHovered(id)}
-                  onMouseLeave={() => setHovered(null)}
-                  style={{ outline: "none", transition: "fill 0.15s, opacity 0.15s" }}
-                />
-              );
-            })}
-          </g>
-          <g>
-            {mapLocations.map((loc) => {
-              const coords = projection([loc.lng, loc.lat]);
-              if (!coords) return null;
-              return (
-                <Tooltip key={`${loc.city}:${loc.country}`}>
-                  <TooltipTrigger asChild>
-                    <circle
-                      cx={coords[0]}
-                      cy={coords[1]}
-                      r={getRadius(loc.count)}
-                      fill="color-mix(in srgb, var(--color-warning) 50%, transparent)"
-                      stroke="var(--color-warning)"
-                      strokeWidth={1}
-                      className="cursor-pointer transition-opacity hover:opacity-80"
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="font-medium">
-                      {loc.city}, {loc.country}
-                    </p>
-                    <p className="text-xs text-muted">
-                      {loc.count.toLocaleString()} access{loc.count !== 1 ? "es" : ""}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </g>
-        </svg>
-      </div>
-    </TooltipProvider>
+    <div className="w-full overflow-hidden rounded-md border border-border bg-bunker-800/25">
+      <svg
+        viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+        className="h-auto w-full"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <defs>
+          {activeCountryGradients.map((g) => (
+            <linearGradient key={`grad-${g.id}`} id={`grad-${g.id}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={INFO_COLOR} stopOpacity={g.topOpacity} />
+              <stop offset="100%" stopColor={INFO_COLOR} stopOpacity={g.bottomOpacity} />
+            </linearGradient>
+          ))}
+          {activeCountryGradients.map((g) => (
+            <linearGradient
+              key={`grad-hover-${g.id}`}
+              id={`grad-hover-${g.id}`}
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="1"
+            >
+              <stop
+                offset="0%"
+                stopColor={INFO_COLOR}
+                stopOpacity={Math.min(g.topOpacity + 0.15, 1)}
+              />
+              <stop
+                offset="100%"
+                stopColor={INFO_COLOR}
+                stopOpacity={Math.min(g.bottomOpacity + 0.1, 0.5)}
+              />
+            </linearGradient>
+          ))}
+        </defs>
+        <g>
+          {geoFeatures.map((geo) => {
+            const id = String(geo.id ?? "");
+            const d = pathGenerator(geo) ?? "";
+            const isHover = hovered === id;
+            return (
+              <path
+                key={id}
+                d={d}
+                fill={getFill(id, isHover)}
+                stroke={BORDER_STROKE}
+                strokeWidth={0.5}
+                onMouseEnter={() => setHovered(id)}
+                onMouseLeave={() => setHovered(null)}
+                style={{ outline: "none", transition: "fill 0.15s, opacity 0.15s" }}
+              />
+            );
+          })}
+        </g>
+        <g>
+          {mapLocations.map((loc) => {
+            const coords = projection([loc.lng, loc.lat]);
+            if (!coords) return null;
+            return (
+              <Tooltip key={`${loc.city}:${loc.country}`}>
+                <TooltipTrigger asChild>
+                  <circle
+                    cx={coords[0]}
+                    cy={coords[1]}
+                    r={getRadius(loc.count)}
+                    fill="color-mix(in srgb, var(--color-warning) 50%, transparent)"
+                    stroke="var(--color-warning)"
+                    strokeWidth={1}
+                    className="cursor-pointer transition-opacity hover:opacity-80"
+                  />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-medium">
+                    {loc.city}, {loc.country}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {loc.count.toLocaleString()} access{loc.count !== 1 ? "es" : ""}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </g>
+      </svg>
+    </div>
   );
 };
 
@@ -306,7 +304,7 @@ export const WorldMap = () => {
         {isPending ? (
           <Skeleton className="h-[350px] w-full" />
         ) : (
-          <>
+          <TooltipProvider>
             <ResponsiveWorldMap
               mapLocations={mapLocations}
               countryActivity={countryActivity}
@@ -314,7 +312,7 @@ export const WorldMap = () => {
               getRadius={getRadius}
             />
             {totalAccess > 0 && (
-              <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+              <div className="mt-3 -mb-2 flex flex-wrap items-center gap-3 text-xs">
                 {mapLocations.map((loc) => (
                   <span key={`${loc.city}:${loc.country}`} className="text-foreground">
                     <span className="text-muted">
@@ -324,16 +322,24 @@ export const WorldMap = () => {
                   </span>
                 ))}
                 {localCount > 0 && (
-                  <span className="text-label">
-                    <Badge variant="neutral" className="mr-1">
-                      Local Network
-                    </Badge>
-                    {localCount.toLocaleString()}
-                  </span>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="neutral" className="ml-auto cursor-default">
+                        Local Network: {localCount.toLocaleString()}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="font-medium">Local / Private Network</p>
+                      <p className="text-xs text-muted">
+                        {localCount.toLocaleString()} access{localCount !== 1 ? "es" : ""} from
+                        localhost, Docker, or private IP ranges (127.x, 10.x, 192.168.x)
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
                 )}
               </div>
             )}
-          </>
+          </TooltipProvider>
         )}
       </UnstableCardContent>
     </UnstableCard>

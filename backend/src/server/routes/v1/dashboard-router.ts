@@ -2117,6 +2117,7 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
           { lat: 28.61, lng: 77.21, city: "New Delhi", country: "IN", count: 47 }
         ];
         sampleLocations.forEach((loc) => locationMap.set(`${loc.city}:${loc.country}`, loc));
+        locationMap.set("Local Network:LOCAL", { lat: 0, lng: 0, city: "Local Network", country: "LOCAL", count: 312 });
       }
 
       return {

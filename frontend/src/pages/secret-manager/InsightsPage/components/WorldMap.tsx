@@ -97,8 +97,8 @@ const ALPHA2_TO_NUMERIC: Record<string, string> = {
 };
 /* eslint-enable @typescript-eslint/naming-convention */
 
-const MAX_RADIUS = 14;
-const MIN_RADIUS = 4;
+const MAX_RADIUS = 10;
+const MIN_RADIUS = 3;
 
 // Natural Earth 1 projection — trimmed left (before Hawaii), padded right
 const SVG_WIDTH = 960;

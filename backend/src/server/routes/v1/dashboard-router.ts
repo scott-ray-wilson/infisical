@@ -2164,8 +2164,23 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         const actorMeta = log.actor.metadata as Record<string, unknown> | null;
         let method = "Unknown";
 
+        const authMethodLabels: Record<string, string> = {
+          email: "Email",
+          google: "Google",
+          github: "GitHub",
+          gitlab: "GitLab",
+          "okta-saml": "Okta SAML",
+          "azure-saml": "Azure SAML",
+          "jumpcloud-saml": "JumpCloud SAML",
+          "google-saml": "Google SAML",
+          "keycloak-saml": "Keycloak SAML",
+          ldap: "LDAP",
+          oidc: "OIDC"
+        };
+
         if (log.actor.type === "user") {
-          method = (actorMeta?.authMethod as string) || "Email";
+          const raw = (actorMeta?.authMethod as string) || "email";
+          method = authMethodLabels[raw] || raw;
         } else if (log.actor.type === "identity") {
           if (actorMeta?.aws) method = "AWS Auth";
           else if (actorMeta?.kubernetes) method = "Kubernetes";

@@ -32,22 +32,12 @@ const USER_AGENTS: { ua: string; type: string }[] = [
 
 const AUTH_METHODS = [
   "email",
-  "google",
-  "github",
-  "gitlab",
-  "okta-saml",
-  "azure-saml",
-  "ldap",
-  "oidc"
+  "github"
 ];
 
 const IDENTITY_CONFIGS = [
   { name: "k8s-operator", auth: { kubernetes: { namespace: "infisical", name: "operator-sa" } } },
-  { name: "ci-pipeline", auth: {} }, // Universal Auth (no specific auth field)
-  { name: "aws-lambda-prod", auth: { aws: { accountId: "123456789012", arn: "arn:aws:iam::role/lambda", userId: "AROA12345", partition: "aws", service: "sts", resourceType: "role", resourceName: "lambda-prod" } } },
-  { name: "gcp-cloud-run", auth: {} },
-  { name: "oidc-github-actions", auth: { oidc: { claims: { sub: "repo:org/repo:ref:refs/heads/main" } } } },
-  { name: "token-auth-bot", auth: {} }
+  { name: "ci-pipeline", auth: {} } // Universal Auth (no specific auth field)
 ];
 
 const SECRET_KEYS = ["DATABASE_URL", "API_KEY", "AWS_SECRET_KEY", "STRIPE_KEY", "REDIS_URL", "JWT_SECRET", "SMTP_PASSWORD", "SENTRY_DSN"];

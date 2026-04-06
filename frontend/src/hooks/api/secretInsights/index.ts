@@ -1,4 +1,5 @@
 export {
+  useGetAuthMethodDistribution,
   useGetCalendarInsights,
   useGetInsightsSummary,
   useGetSecretAccessLocations,
@@ -6,8 +7,11 @@ export {
 } from "./queries";
 export type {
   TAccessLocation,
+  TAuthMethodCount,
   TCalendarReminder,
   TCalendarRotation,
+  TGetAuthMethodDistributionDTO,
+  TGetAuthMethodDistributionResponse,
   TGetCalendarInsightsDTO,
   TGetCalendarInsightsResponse,
   TGetSecretAccessLocationsDTO,

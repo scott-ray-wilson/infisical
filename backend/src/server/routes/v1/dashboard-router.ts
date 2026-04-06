@@ -7,7 +7,6 @@ import { EventType, UserAgentType } from "@app/ee/services/audit-log/audit-log-t
 import { ProjectPermissionSecretActions } from "@app/ee/services/permission/project-permission";
 import { SecretRotationV2Schema } from "@app/ee/services/secret-rotation-v2/secret-rotation-v2-union-schema";
 import { DASHBOARD } from "@app/lib/api-docs";
-import { getConfig } from "@app/lib/config/env";
 import { BadRequestError, NotFoundError } from "@app/lib/errors";
 import { removeTrailingSlash } from "@app/lib/fn";
 import { OrderByDirection } from "@app/lib/types";
@@ -2102,27 +2101,90 @@ export const registerDashboardRouter = async (server: FastifyZodProvider) => {
         }
       });
 
-      // Seed sample data in development so the map isn't empty with only localhost traffic
-      if (locationMap.size <= 1 && getConfig().NODE_ENV === "development") {
-        const sampleLocations = [
-          { lat: 37.77, lng: -122.42, city: "San Francisco", country: "US", count: 142 },
-          { lat: 51.51, lng: -0.13, city: "London", country: "GB", count: 87 },
-          { lat: 35.68, lng: 139.69, city: "Tokyo", country: "JP", count: 63 },
-          { lat: 48.86, lng: 2.35, city: "Paris", country: "FR", count: 41 },
-          { lat: -33.87, lng: 151.21, city: "Sydney", country: "AU", count: 29 },
-          { lat: 1.35, lng: 103.82, city: "Singapore", country: "SG", count: 55 },
-          { lat: 52.52, lng: 13.41, city: "Berlin", country: "DE", count: 34 },
-          { lat: 19.43, lng: -99.13, city: "Mexico City", country: "MX", count: 18 },
-          { lat: -23.55, lng: -46.63, city: "São Paulo", country: "BR", count: 22 },
-          { lat: 28.61, lng: 77.21, city: "New Delhi", country: "IN", count: 47 }
-        ];
-        sampleLocations.forEach((loc) => locationMap.set(`${loc.city}:${loc.country}`, loc));
-        locationMap.set("Local Network:LOCAL", { lat: 0, lng: 0, city: "Local Network", country: "LOCAL", count: 312 });
-      }
-
       return {
         locations: Array.from(locationMap.values()).sort((a, b) => b.count - a.count)
       };
+    }
+  });
+
+  server.route({
+    method: "GET",
+    url: "/auth-method-distribution",
+    config: {
+      rateLimit: readLimit
+    },
+    schema: {
+      operationId: "getAuthMethodDistribution",
+      description: "Get distribution of authentication methods from secret access audit logs",
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      querystring: z.object({
+        projectId: z.string().trim(),
+        days: z.coerce.number().min(1).max(90).default(30)
+      }),
+      response: {
+        200: z.object({
+          methods: z.array(
+            z.object({
+              method: z.string(),
+              count: z.number()
+            })
+          )
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT]),
+    handler: async (req) => {
+      const { projectId, days } = req.query;
+
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setUTCDate(startDate.getUTCDate() - days);
+
+      const auditLogs = await server.services.auditLog.listAuditLogs({
+        filter: {
+          projectId,
+          eventType: [EventType.GET_SECRETS, EventType.GET_SECRET],
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          limit: 10000
+        },
+        actorId: req.permission.id,
+        actorOrgId: req.permission.orgId,
+        actorAuthMethod: req.permission.authMethod,
+        actor: req.permission.type
+      });
+
+      const methodCounts = new Map<string, number>();
+
+      auditLogs.forEach((log) => {
+        const actorMeta = log.actor.metadata as Record<string, unknown> | null;
+        let method = "Unknown";
+
+        if (log.actor.type === "user") {
+          method = (actorMeta?.authMethod as string) || "Email";
+        } else if (log.actor.type === "identity") {
+          if (actorMeta?.aws) method = "AWS Auth";
+          else if (actorMeta?.kubernetes) method = "Kubernetes";
+          else if (actorMeta?.oidc) method = "OIDC";
+          else method = "Universal Auth";
+        } else if (log.actor.type === "service") {
+          method = "Service Token";
+        } else {
+          method = log.actor.type;
+        }
+
+        methodCounts.set(method, (methodCounts.get(method) || 0) + 1);
+      });
+
+      const methods = Array.from(methodCounts.entries())
+        .map(([method, count]) => ({ method, count }))
+        .sort((a, b) => b.count - a.count);
+
+      return { methods };
     }
   });
 

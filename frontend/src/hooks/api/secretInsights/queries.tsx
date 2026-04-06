@@ -3,6 +3,8 @@ import { useQuery, UseQueryOptions } from "@tanstack/react-query";
 import { apiRequest } from "@app/config/request";
 
 import {
+  TGetAuthMethodDistributionDTO,
+  TGetAuthMethodDistributionResponse,
   TGetCalendarInsightsDTO,
   TGetCalendarInsightsResponse,
   TGetInsightsSummaryDTO,
@@ -21,6 +23,8 @@ export const secretInsightsKeys = {
     [...secretInsightsKeys.all(), "access-volume", params] as const,
   accessLocations: (params: TGetSecretAccessLocationsDTO) =>
     [...secretInsightsKeys.all(), "access-locations", params] as const,
+  authMethodDistribution: (params: TGetAuthMethodDistributionDTO) =>
+    [...secretInsightsKeys.all(), "auth-method-distribution", params] as const,
   summary: (params: TGetInsightsSummaryDTO) =>
     [...secretInsightsKeys.all(), "summary", params] as const
 };
@@ -92,6 +96,31 @@ export const useGetSecretAccessLocations = (
     queryFn: async () => {
       const { data } = await apiRequest.get<TGetSecretAccessLocationsResponse>(
         "/api/v1/dashboard/secret-access-locations",
+        { params }
+      );
+      return data;
+    },
+    ...options
+  });
+};
+
+export const useGetAuthMethodDistribution = (
+  params: TGetAuthMethodDistributionDTO,
+  options?: Omit<
+    UseQueryOptions<
+      TGetAuthMethodDistributionResponse,
+      unknown,
+      TGetAuthMethodDistributionResponse,
+      ReturnType<typeof secretInsightsKeys.authMethodDistribution>
+    >,
+    "queryKey" | "queryFn"
+  >
+) => {
+  return useQuery({
+    queryKey: secretInsightsKeys.authMethodDistribution(params),
+    queryFn: async () => {
+      const { data } = await apiRequest.get<TGetAuthMethodDistributionResponse>(
+        "/api/v1/dashboard/auth-method-distribution",
         { params }
       );
       return data;

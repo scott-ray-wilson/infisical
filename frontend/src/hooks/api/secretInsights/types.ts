@@ -102,3 +102,17 @@ export type TGetSecretAccessLocationsDTO = {
 export type TGetSecretAccessLocationsResponse = {
   locations: TAccessLocation[];
 };
+
+export type TAuthMethodCount = {
+  method: string;
+  count: number;
+};
+
+export type TGetAuthMethodDistributionDTO = {
+  projectId: string;
+  days?: number;
+};
+
+export type TGetAuthMethodDistributionResponse = {
+  methods: TAuthMethodCount[];
+};

@@ -18,6 +18,7 @@ import { useGetCalendarInsights } from "@app/hooks/api";
 import { ProjectType } from "@app/hooks/api/projects/types";
 
 import {
+  AuthMethodChart,
   CalendarGrid,
   CalendarLegend,
   InsightsSummaryCards,
@@ -97,6 +98,9 @@ export const InsightsPage = () => {
         </UnstableCard>
       </div>
       <WorldMap />
+      <div className="mt-6 flex gap-6">
+        <AuthMethodChart />
+      </div>
     </>
   );
 };

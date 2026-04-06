@@ -293,7 +293,7 @@ export const WorldMap = () => {
   const totalAccess = allLocations.reduce((sum, l) => sum + l.count, 0);
 
   return (
-    <UnstableCard className="mt-6">
+    <UnstableCard className="flex-1">
       <UnstableCardHeader>
         <UnstableCardTitle>Secret Access Locations</UnstableCardTitle>
         <UnstableCardDescription>

@@ -25,10 +25,10 @@ export const InsightsPage = () => {
       <InsightsSummaryCards />
       <div className="mt-6 flex gap-6">
         <SecretAccessChart />
-        <CalendarCard />
+        <WorldMap />
       </div>
-      <WorldMap />
       <div className="mt-6 flex gap-6">
+        <CalendarCard />
         <AuthMethodChart />
       </div>
     </>

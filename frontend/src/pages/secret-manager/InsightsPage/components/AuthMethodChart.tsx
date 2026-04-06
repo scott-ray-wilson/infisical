@@ -27,7 +27,7 @@ const COLORS = [
   "#7b8ec4", // periwinkle
   "#cb6b6b", // muted red
   "#4fc1b0", // seafoam
-  "#b8a060"  // olive gold
+  "#b8a060" // olive gold
 ];
 
 // Radial gradient IDs for each color — fades from color at outer edge to transparent at center

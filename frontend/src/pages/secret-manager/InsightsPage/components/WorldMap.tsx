@@ -160,7 +160,7 @@ const ResponsiveWorldMap = ({
 
   return (
     <TooltipProvider>
-      <div className="w-full overflow-hidden rounded-md">
+      <div className="w-full overflow-hidden rounded-md border border-border bg-bunker-800/25">
         <svg
           viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
           className="h-auto w-full"

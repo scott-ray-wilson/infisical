@@ -100,13 +100,13 @@ const ALPHA2_TO_NUMERIC: Record<string, string> = {
 const MAX_RADIUS = 14;
 const MIN_RADIUS = 4;
 
-// Natural Earth 1 projection fitted to a viewBox — fully responsive, never clips
+// Natural Earth 1 projection — trimmed left (before Hawaii), padded right
 const SVG_WIDTH = 960;
-const SVG_HEIGHT = 500;
+const SVG_HEIGHT = 460;
 
 const projection = geoNaturalEarth1()
-  .scale(155)
-  .translate([SVG_WIDTH / 2, SVG_HEIGHT / 2]);
+  .scale(170)
+  .translate([SVG_WIDTH / 2 - 25, SVG_HEIGHT / 2 + 5]);
 
 const pathGenerator = geoPath(projection);
 

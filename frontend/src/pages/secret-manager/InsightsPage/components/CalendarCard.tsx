@@ -32,7 +32,7 @@ export const CalendarCard = () => {
   );
 
   return (
-    <UnstableCard className="flex-[1.4]">
+    <UnstableCard>
       <UnstableCardHeader>
         <UnstableCardTitle>Rotation & Reminder Calendar</UnstableCardTitle>
         <UnstableCardDescription>

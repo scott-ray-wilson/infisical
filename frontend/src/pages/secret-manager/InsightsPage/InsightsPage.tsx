@@ -23,13 +23,15 @@ export const InsightsPage = () => {
         description="Monitor upcoming secret rotations and reminders across your project."
       />
       <InsightsSummaryCards />
-      <div className="mt-6 flex gap-6">
-        <SecretAccessChart />
-        <WorldMap />
-      </div>
-      <div className="mt-6 flex items-stretch gap-6">
-        <CalendarCard />
-        <AuthMethodChart />
+      <div className="flex gap-6">
+        <div className="mt-6 flex flex-[1.3] flex-col gap-6">
+          <WorldMap />
+          <CalendarCard />
+        </div>
+        <div className="mt-6 flex flex-1 flex-col gap-6">
+          <SecretAccessChart />
+          <AuthMethodChart />
+        </div>
       </div>
     </>
   );

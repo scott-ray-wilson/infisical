@@ -53,7 +53,7 @@ export const SecretAccessChart = () => {
   const totalRequests = chartData.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <UnstableCard className="w-2xl">
+    <UnstableCard>
       <UnstableCardHeader>
         <UnstableCardTitle>Secret Access Volume</UnstableCardTitle>
         <UnstableCardDescription>Secret read requests over the past 7 days</UnstableCardDescription>

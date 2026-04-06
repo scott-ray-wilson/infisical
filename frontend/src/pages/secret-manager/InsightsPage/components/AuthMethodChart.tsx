@@ -45,7 +45,7 @@ export const AuthMethodChart = () => {
   const total = useMemo(() => methods.reduce((sum, m) => sum + m.count, 0), [methods]);
 
   return (
-    <UnstableCard className="flex-1">
+    <UnstableCard>
       <UnstableCardHeader>
         <UnstableCardTitle>Authentication Methods</UnstableCardTitle>
         <UnstableCardDescription>

@@ -1,8 +1,17 @@
-import { faPlus } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ForwardIcon } from "lucide-react";
 
 import { createNotification } from "@app/components/notifications";
-import { Button, DeleteActionModal } from "@app/components/v2";
+import { DeleteActionModal } from "@app/components/v2";
+import {
+  Button,
+  Card,
+  CardAction,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  DocumentationLinkBadge
+} from "@app/components/v3";
 import { useDeleteSharedSecret } from "@app/hooks/api";
 import { usePopUp } from "@app/hooks/usePopUp";
 
@@ -32,20 +41,28 @@ export const ShareSecretTab = () => {
   };
 
   return (
-    <div className="mb-6 rounded-lg border border-mineshaft-600 bg-mineshaft-900 p-4">
-      <div className="mb-4 flex justify-between">
-        <p className="text-xl font-medium text-mineshaft-100">Shared Secrets</p>
-        <Button
-          colorSchema="primary"
-          leftIcon={<FontAwesomeIcon icon={faPlus} />}
-          onClick={() => {
-            handlePopUpOpen("createSharedSecret");
-          }}
-        >
-          Share Secret
-        </Button>
-      </div>
-      <ShareSecretsTable handlePopUpOpen={handlePopUpOpen} />
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          Shared Secrets
+          <DocumentationLinkBadge href="https://infisical.com/docs/documentation/platform/secret-sharing" />
+        </CardTitle>
+        <CardDescription>Manage and view your shared secrets</CardDescription>
+        <CardAction>
+          <Button
+            variant="org"
+            onClick={() => {
+              handlePopUpOpen("createSharedSecret");
+            }}
+          >
+            <ForwardIcon />
+            Share Secret
+          </Button>
+        </CardAction>
+      </CardHeader>
+      <CardContent>
+        <ShareSecretsTable handlePopUpOpen={handlePopUpOpen} />
+      </CardContent>
       <AddShareSecretModal popUp={popUp} handlePopUpToggle={handlePopUpToggle} />
       <DeleteActionModal
         isOpen={popUp.deleteSharedSecretConfirmation.isOpen}
@@ -57,6 +74,6 @@ export const ShareSecretTab = () => {
         onClose={() => handlePopUpClose("deleteSharedSecretConfirmation")}
         onDeleteApproved={onDeleteApproved}
       />
-    </div>
+    </Card>
   );
 };

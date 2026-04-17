@@ -24,7 +24,7 @@ export const ShareSecretPage = () => {
         <CardHeader>
           <CardTitle>Share a Secret</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-col gap-y-4">
           <ShareSecretForm isPublic />
         </CardContent>
       </Card>

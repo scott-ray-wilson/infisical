@@ -1,17 +1,19 @@
 import { useState } from "react";
-import { faKey } from "@fortawesome/free-solid-svg-icons";
+import { KeyRound } from "lucide-react";
 
 import {
-  EmptyState,
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
   Pagination,
+  Skeleton,
   Table,
-  TableContainer,
-  TableSkeleton,
-  TBody,
-  Th,
-  THead,
-  Tr
-} from "@app/components/v2";
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@app/components/v3";
 import { useGetSharedSecrets } from "@app/hooks/api/secretSharing";
 import { UsePopUpState } from "@app/hooks/usePopUp";
 
@@ -38,26 +40,38 @@ export const ShareSecretsTable = ({ handlePopUpOpen }: Props) => {
     limit: perPage
   });
   return (
-    <TableContainer>
+    <div>
       <Table>
-        <THead>
-          <Tr>
-            <Th className="w-5" />
-            <Th>Name</Th>
-            <Th>Status</Th>
-            <Th>Created At</Th>
-            <Th>Valid Until</Th>
-            <Th>Views Left</Th>
-            <Th aria-label="button" className="w-5" />
-          </Tr>
-        </THead>
-        <TBody>
-          {isPending && <TableSkeleton columns={7} innerKey="shared-secrets" />}
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-5" />
+            <TableHead className="w-1/4">Name</TableHead>
+            <TableHead>Created</TableHead>
+            <TableHead>Expires</TableHead>
+            <TableHead>Views Left</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead aria-label="button" className="w-5" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {/* eslint-disable-next-line react/no-array-index-key */}
+          {isPending &&
+            Array.from({ length: 5 }).map((_, i) => (
+              // eslint-disable-next-line react/no-array-index-key
+              <TableRow key={`skeleton-${i}`}>
+                {Array.from({ length: 7 }).map((__, j) => (
+                  // eslint-disable-next-line react/no-array-index-key
+                  <td key={`skeleton-cell-${j}`} className="px-3 py-3">
+                    <Skeleton className="h-4 w-full" />
+                  </td>
+                ))}
+              </TableRow>
+            ))}
           {!isPending &&
             data?.secrets?.map((row) => (
               <ShareSecretsRow key={row.id} row={row} handlePopUpOpen={handlePopUpOpen} />
             ))}
-        </TBody>
+        </TableBody>
       </Table>
       {!isPending &&
         data?.secrets &&
@@ -72,8 +86,15 @@ export const ShareSecretsTable = ({ handlePopUpOpen }: Props) => {
           />
         )}
       {!isPending && !data?.secrets?.length && (
-        <EmptyState title="No secrets shared yet" icon={faKey} />
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <KeyRound />
+            </EmptyMedia>
+            <EmptyTitle>No secrets shared yet</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       )}
-    </TableContainer>
+    </div>
   );
 };

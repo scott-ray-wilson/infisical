@@ -506,8 +506,8 @@ export const ShareSecretForm = ({
           <span>Shared secret link has been emailed to select users.</span>
         </div>
         <Button
-          className="mt-4 w-full"
-          variant="project"
+          className="w-full"
+          variant={isPublic ? "project" : "org"}
           size="lg"
           onClick={() => setSecretLink(null)}
         >
@@ -534,8 +534,8 @@ export const ShareSecretForm = ({
         </IconButton>
       </div>
       <Button
-        className="mt-4 w-full"
-        variant="project"
+        className="w-full"
+        variant={isPublic ? "project" : "org"}
         size="lg"
         onClick={() => setSecretLink(null)}
       >

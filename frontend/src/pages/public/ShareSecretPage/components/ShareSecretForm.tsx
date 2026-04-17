@@ -2,16 +2,23 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearch } from "@tanstack/react-router";
-import { Check, ClipboardCheck, Copy, ForwardIcon, Info, Lock, RefreshCw } from "lucide-react";
+import { Check, ClipboardCheck, Copy, ForwardIcon, Info, Lock } from "lucide-react";
+import { twMerge } from "tailwind-merge";
 import { z } from "zod";
 
 import { createNotification } from "@app/components/notifications";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
   Button,
   Field,
   FieldDescription,
   FieldError,
   FieldLabel,
+  IconButton,
+  Input,
   Select,
   SelectContent,
   SelectItem,
@@ -21,13 +28,7 @@ import {
   TextArea,
   Tooltip,
   TooltipContent,
-  TooltipTrigger,
-  UnstableAccordion,
-  UnstableAccordionContent,
-  UnstableAccordionItem,
-  UnstableAccordionTrigger,
-  UnstableIconButton,
-  UnstableInput
+  TooltipTrigger
 } from "@app/components/v3";
 import { useTimedReset } from "@app/hooks";
 import { useCreatePublicSharedSecret, useCreateSharedSecret } from "@app/hooks/api";
@@ -204,7 +205,7 @@ export const ShareSecretForm = ({
                 <FieldLabel>
                   Name <span className="text-xs text-muted italic">- Optional</span>
                 </FieldLabel>
-                <UnstableInput
+                <Input
                   {...field}
                   placeholder="API Key"
                   type="text"
@@ -227,7 +228,7 @@ export const ShareSecretForm = ({
               <TextArea
                 placeholder="Enter sensitive data to share via an encrypted link..."
                 {...field}
-                className="h-40 min-h-[70px] resize-none"
+                className={twMerge("min-h-[70px] resize-none", isPublic ? "h-40" : "h-14")}
                 disabled={value !== undefined}
                 aria-invalid={Boolean(error)}
               />
@@ -243,7 +244,7 @@ export const ShareSecretForm = ({
               <FieldLabel>
                 Password <span className="text-xs text-muted italic">- Optional</span>
               </FieldLabel>
-              <UnstableInput
+              <Input
                 {...field}
                 placeholder="Password"
                 type="password"
@@ -271,6 +272,7 @@ export const ShareSecretForm = ({
                     field.value === SecretSharingAccessType.Organization ||
                     !allowSecretSharingOutsideOrganization
                   }
+                  variant="org"
                   disabled={!allowSecretSharingOutsideOrganization}
                   onCheckedChange={(v) =>
                     onChange(
@@ -297,10 +299,10 @@ export const ShareSecretForm = ({
           />
         )}
 
-        <UnstableAccordion type="single" collapsible>
-          <UnstableAccordionItem value="advance-settings">
-            <UnstableAccordionTrigger>Advanced Settings</UnstableAccordionTrigger>
-            <UnstableAccordionContent>
+        <Accordion type="single" collapsible variant="ghost">
+          <AccordionItem value="advance-settings">
+            <AccordionTrigger>Advanced Settings</AccordionTrigger>
+            <AccordionContent className="flex flex-col gap-y-4">
               <Controller
                 control={control}
                 name="expiresIn"
@@ -324,7 +326,7 @@ export const ShareSecretForm = ({
                       </SelectContent>
                     </Select>
                     {expiresInOptions.length !== filteredExpiresInOptions.length && (
-                      <FieldDescription className="text-yellow-500">
+                      <FieldDescription className="text-warning">
                         Limited to{" "}
                         {filteredExpiresInOptions[filteredExpiresInOptions.length - 1].label} by
                         organization
@@ -334,7 +336,7 @@ export const ShareSecretForm = ({
                   </Field>
                 )}
               />
-              <div className="flex w-full items-end gap-2">
+              <div className="flex w-full items-end gap-2 overflow-visible">
                 {maxSharedSecretViewLimit === null && (
                   <Controller
                     control={control}
@@ -349,7 +351,7 @@ export const ShareSecretForm = ({
                           <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent position="popper">
+                          <SelectContent>
                             {viewLimitOptions.map(({ label, value: viewLimitValue }) => (
                               <SelectItem
                                 value={viewLimitValue.toString()}
@@ -372,7 +374,7 @@ export const ShareSecretForm = ({
                     render={({ field: { onChange, ...field }, fieldState: { error } }) => (
                       <Field className="flex-1">
                         {maxSharedSecretViewLimit && <FieldLabel>Max Views</FieldLabel>}
-                        <UnstableInput
+                        <Input
                           onChange={onChange}
                           {...field}
                           min={1}
@@ -381,7 +383,7 @@ export const ShareSecretForm = ({
                           isError={Boolean(error)}
                         />
                         {maxSharedSecretViewLimit && (
-                          <FieldDescription className="text-yellow-500">
+                          <FieldDescription className="text-warning">
                             Limited to {maxSharedSecretViewLimit} view
                             {maxSharedSecretViewLimit === 1 ? "" : "s"} by organization
                           </FieldDescription>
@@ -418,7 +420,7 @@ export const ShareSecretForm = ({
                             </TooltipContent>
                           </Tooltip>
                         </FieldLabel>
-                        <UnstableInput
+                        <Input
                           {...field}
                           placeholder="user1@example.com, user2@example.com"
                           autoComplete="off"
@@ -444,6 +446,7 @@ export const ShareSecretForm = ({
                         <Switch
                           checked={isOrgAccess ? false : (isChecked ?? false)}
                           onCheckedChange={onChange}
+                          variant="org"
                           disabled={isOrgAccess}
                           id="allow-external-emails"
                           {...field}
@@ -478,14 +481,13 @@ export const ShareSecretForm = ({
                   />
                 </>
               )}
-            </UnstableAccordionContent>
-          </UnstableAccordionItem>
-        </UnstableAccordion>
-
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
         <div className="flex w-full justify-end">
           <Button
             size="md"
-            variant="project"
+            variant={isPublic ? "project" : "org"}
             type="submit"
             isPending={isSubmitting}
             isDisabled={isSubmitting}
@@ -496,7 +498,7 @@ export const ShareSecretForm = ({
       </form>
     );
 
-  if (secretLink === "" || true)
+  if (secretLink === "")
     return (
       <>
         <div className="relative flex items-center justify-center rounded-lg border border-border bg-container p-4 pr-6 text-foreground/85">
@@ -519,7 +521,7 @@ export const ShareSecretForm = ({
     <>
       <div className="relative flex items-center justify-center rounded-lg border border-border bg-container p-4 pr-6 text-foreground/85">
         <p className="mr-4 break-all">{secretLink}</p>
-        <UnstableIconButton
+        <IconButton
           aria-label="copy icon"
           variant="ghost"
           className="absolute top-1 right-1"
@@ -529,7 +531,7 @@ export const ShareSecretForm = ({
           }}
         >
           {isCopyingSecret ? <ClipboardCheck className="size-4" /> : <Copy className="size-4" />}
-        </UnstableIconButton>
+        </IconButton>
       </div>
       <Button
         className="mt-4 w-full"

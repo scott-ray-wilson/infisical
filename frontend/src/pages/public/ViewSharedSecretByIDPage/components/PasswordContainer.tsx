@@ -1,11 +1,17 @@
 import { Controller, useForm } from "react-hook-form";
-import { faArrowRight, faSpinner } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { z } from "zod";
 
-import { Button, FormControl, IconButton, Input } from "@app/components/v2";
+import {
+  Button,
+  Field,
+  FieldError,
+  FieldLabel,
+  IconButton,
+  Input
+} from "@app/components/v3";
 
 import { BrandingTheme } from "../ViewSharedSecretByIDPage";
 
@@ -44,17 +50,17 @@ export const PasswordContainer = ({
     : undefined;
 
   const inputStyle = brandingTheme
-    ? {
+    ? ({
         backgroundColor: brandingTheme.inputBg,
         color: brandingTheme.textColor,
         "--muted-color": brandingTheme.textMutedColor,
         borderColor: brandingTheme.panelBorder
-      }
+      } as React.CSSProperties)
     : undefined;
 
   return (
     <div
-      className={`rounded-lg border p-4 ${brandingTheme ? "" : "border-mineshaft-600 bg-mineshaft-800"}`}
+      className={twMerge("rounded-lg border p-4", !brandingTheme && "border-border bg-card")}
       style={panelStyle}
     >
       <form onSubmit={handleSubmit(onFormSubmit)}>
@@ -63,57 +69,55 @@ export const PasswordContainer = ({
           name="password"
           defaultValue=""
           render={({ field, fieldState: { error } }) => (
-            <div style={brandingTheme ? { color: brandingTheme.textColor } : undefined}>
-              <FormControl
-                isError={Boolean(error) || isInvalidCredential}
-                errorText={isInvalidCredential ? "Invalid credential" : error?.message}
-                isRequired
-                label="Password"
-                labelClassName="text-[var(--muted-color)]"
+            <Field style={brandingTheme ? { color: brandingTheme.textColor } : undefined}>
+              <FieldLabel
+                className={brandingTheme ? "text-[var(--muted-color)]" : ""}
+                style={brandingTheme ? ({ "--muted-color": brandingTheme.textMutedColor } as React.CSSProperties) : undefined}
               >
-                <div className="flex items-center justify-between gap-2 rounded-md">
-                  <Input
-                    {...field}
-                    placeholder="Enter password to view secret"
-                    type="password"
-                    style={inputStyle}
-                    className={twMerge(
-                      "h-9",
-                      brandingTheme &&
-                        "border placeholder-[var(--muted-color)]/70 focus:ring-[var(--muted-color)]/50"
-                    )}
-                    containerClassName="bg-transparent border-transparent h-9"
-                  />
-                  <div className="flex">
-                    <IconButton
-                      ariaLabel="submit password"
-                      colorSchema="secondary"
-                      className="group relative size-9 hover:opacity-70"
-                      onClick={handleSubmit(onFormSubmit)}
-                      style={inputStyle}
-                    >
-                      <FontAwesomeIcon
-                        className={isSubmitting ? "fa-spin" : ""}
-                        icon={isSubmitting ? faSpinner : faArrowRight}
-                      />
-                    </IconButton>
-                  </div>
-                </div>
-              </FormControl>
-            </div>
+                Password
+              </FieldLabel>
+              <div className="flex items-center gap-2">
+                <Input
+                  {...field}
+                  placeholder="Enter password to view secret"
+                  type="password"
+                  style={inputStyle}
+                  className={twMerge(
+                    "flex-1",
+                    brandingTheme &&
+                      "border placeholder-[var(--muted-color)]/70 focus-visible:ring-[var(--muted-color)]/50"
+                  )}
+                  isError={Boolean(error) || isInvalidCredential}
+                />
+                <IconButton
+                  aria-label="submit password"
+                  variant="outline"
+                  onClick={handleSubmit(onFormSubmit)}
+                  style={inputStyle}
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <ArrowRight className="size-4" />
+                  )}
+                </IconButton>
+              </div>
+              {(error || isInvalidCredential) && (
+                <FieldError>{isInvalidCredential ? "Invalid credential" : error?.message}</FieldError>
+              )}
+            </Field>
           )}
         />
       </form>
       {!brandingTheme && (
         <Button
-          className="w-full bg-mineshaft-700 py-3 text-bunker-200"
-          colorSchema="primary"
-          variant="outline_bg"
+          className="mt-4 w-full"
+          variant="outline"
           size="sm"
           onClick={() => window.open("/share-secret", "_blank", "noopener")}
-          rightIcon={<FontAwesomeIcon icon={faArrowRight} className="pl-2" />}
         >
           Share Your Own Secret
+          <ArrowRight className="ml-2 size-3" />
         </Button>
       )}
     </div>

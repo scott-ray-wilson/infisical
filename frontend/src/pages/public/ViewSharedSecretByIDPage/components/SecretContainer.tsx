@@ -1,13 +1,6 @@
-import {
-  faArrowRight,
-  faCheck,
-  faCopy,
-  faEye,
-  faEyeSlash
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { ArrowRight, Check, Copy, Eye, EyeOff } from "lucide-react";
 
-import { Button, IconButton } from "@app/components/v2";
+import { Button, IconButton } from "@app/components/v3";
 import { useTimedReset, useToggle } from "@app/hooks";
 import { TAccessSharedSecretResponse } from "@app/hooks/api/secretSharing";
 
@@ -51,12 +44,12 @@ export const SecretContainer = ({ secret, brandingTheme }: Props) => {
 
   return (
     <div
-      className={`rounded-lg border p-4 ${brandingTheme ? "" : "border-mineshaft-600 bg-mineshaft-800"}`}
+      className={`rounded-lg border p-4 ${brandingTheme ? "" : "border-border bg-card"}`}
       style={panelStyle}
     >
       <div
         className={`flex items-center justify-between rounded-md border p-2 pl-3 text-base ${
-          brandingTheme ? "" : "border-mineshaft-600 bg-mineshaft-700/50 text-gray-400"
+          brandingTheme ? "" : "border-border bg-container text-muted"
         }`}
         style={secretDisplayStyle}
       >
@@ -65,39 +58,38 @@ export const SecretContainer = ({ secret, brandingTheme }: Props) => {
         </p>
         <div className="flex">
           <IconButton
-            ariaLabel="copy icon"
-            colorSchema="secondary"
-            className="group relative size-9 hover:opacity-70"
+            aria-label="copy icon"
+            variant="ghost"
+            className="size-9 hover:opacity-70"
             onClick={() => {
               navigator.clipboard.writeText(secret.secretValue);
               setCopyTextSecret("Copied");
             }}
             style={iconButtonStyle}
           >
-            <FontAwesomeIcon icon={isCopyingSecret ? faCheck : faCopy} />
+            {isCopyingSecret ? <Check className="size-4" /> : <Copy className="size-4" />}
           </IconButton>
           <IconButton
-            ariaLabel="toggle visibility"
-            colorSchema="secondary"
-            className="group relative ml-2 size-9 hover:opacity-70"
+            aria-label="toggle visibility"
+            variant="ghost"
+            className="ml-2 size-9 hover:opacity-70"
             onClick={() => setIsVisible.toggle()}
             style={iconButtonStyle}
           >
-            <FontAwesomeIcon icon={isVisible ? faEyeSlash : faEye} />
+            {isVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </IconButton>
         </div>
       </div>
       <SecretShareInfo secret={secret} brandingTheme={brandingTheme} />
       {!brandingTheme && (
         <Button
-          className="mt-4 w-full bg-mineshaft-700 py-3 text-bunker-200"
-          colorSchema="primary"
-          variant="outline_bg"
+          className="mt-4 w-full"
+          variant="outline"
           size="sm"
           onClick={() => window.open("/share-secret", "_blank", "noopener")}
-          rightIcon={<FontAwesomeIcon icon={faArrowRight} className="pl-2" />}
         >
           Share Your Own Secret
+          <ArrowRight className="ml-2 size-3" />
         </Button>
       )}
     </div>

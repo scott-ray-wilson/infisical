@@ -21,7 +21,7 @@ export const SecretErrorContainer = ({ error, brandingTheme }: Props) => {
     <div
       className={twMerge(
         "rounded-lg border p-6",
-        !brandingTheme && "border-mineshaft-600 bg-mineshaft-800"
+        !brandingTheme && "border-border bg-card"
       )}
       style={panelStyle}
     >

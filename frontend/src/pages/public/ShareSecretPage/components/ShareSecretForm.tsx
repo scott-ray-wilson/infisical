@@ -519,7 +519,7 @@ export const ShareSecretForm = ({
 
   return (
     <>
-      <div className="relative flex items-center justify-center rounded-lg border border-border bg-container p-4 pr-6 text-foreground/85">
+      <div className="relative flex items-center justify-center rounded-lg border border-border bg-container p-4 pr-6 text-label">
         <p className="mr-4 break-all">{secretLink}</p>
         <IconButton
           aria-label="copy icon"

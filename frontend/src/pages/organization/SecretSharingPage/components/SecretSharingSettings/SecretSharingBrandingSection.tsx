@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LockIcon, Trash2, UploadIcon } from "lucide-react";
+import { InfoIcon, LockIcon, Trash2, UploadIcon } from "lucide-react";
 import { z } from "zod";
 
 import { createNotification } from "@app/components/notifications";
@@ -23,10 +23,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  ColorPicker,
   Field,
   FieldError,
   FieldLabel,
-  Input,
   Skeleton,
   Tooltip,
   TooltipContent,
@@ -375,31 +375,20 @@ export const SecretSharingBrandingSection = () => {
                             Primary Color
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="cursor-help text-muted">?</span>
+                                <InfoIcon className="text-muted" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
                                 Background color for the page (hex format, e.g., #82cec0)
                               </TooltipContent>
                             </Tooltip>
                           </FieldLabel>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              {...field}
-                              placeholder="#0e1014"
-                              disabled={!isAllowed}
-                              className="flex-1"
-                              isError={Boolean(error)}
-                            />
-                            <div
-                              className="size-9 shrink-0 rounded border border-border"
-                              style={{
-                                backgroundColor:
-                                  field.value && hexColorRegex.test(field.value)
-                                    ? field.value
-                                    : "#0e1014"
-                              }}
-                            />
-                          </div>
+                          <ColorPicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="#0e1014"
+                            disabled={!isAllowed}
+                            isError={Boolean(error)}
+                          />
                           {error && <FieldError>{error.message}</FieldError>}
                         </Field>
                       )}
@@ -413,31 +402,20 @@ export const SecretSharingBrandingSection = () => {
                             Secondary Color
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <span className="cursor-help text-muted">?</span>
+                                <InfoIcon className="text-muted" />
                               </TooltipTrigger>
                               <TooltipContent className="max-w-xs">
                                 Panel and component background color (hex format, e.g., #14211e)
                               </TooltipContent>
                             </Tooltip>
                           </FieldLabel>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              {...field}
-                              placeholder="#1e1f22"
-                              disabled={!isAllowed}
-                              className="flex-1"
-                              isError={Boolean(error)}
-                            />
-                            <div
-                              className="size-9 shrink-0 rounded border border-border"
-                              style={{
-                                backgroundColor:
-                                  field.value && hexColorRegex.test(field.value)
-                                    ? field.value
-                                    : "#1e1f22"
-                              }}
-                            />
-                          </div>
+                          <ColorPicker
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="#1e1f22"
+                            disabled={!isAllowed}
+                            isError={Boolean(error)}
+                          />
                           {error && <FieldError>{error.message}</FieldError>}
                         </Field>
                       )}

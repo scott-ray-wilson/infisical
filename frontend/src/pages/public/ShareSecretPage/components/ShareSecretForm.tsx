@@ -523,7 +523,8 @@ export const ShareSecretForm = ({
         <p className="mr-4 break-all">{secretLink}</p>
         <IconButton
           aria-label="copy icon"
-          variant="ghost"
+          variant="ghost-muted"
+          size="sm"
           className="absolute top-1 right-1"
           onClick={() => {
             navigator.clipboard.writeText(secretLink || "");

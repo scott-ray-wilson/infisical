@@ -1,8 +1,16 @@
-import { ForwardIcon } from "lucide-react";
+import { ForwardIcon, Trash2 } from "lucide-react";
 
 import { createNotification } from "@app/components/notifications";
-import { DeleteActionModal } from "@app/components/v2";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
   Button,
   Card,
   CardAction,
@@ -64,16 +72,28 @@ export const ShareSecretTab = () => {
         <ShareSecretsTable handlePopUpOpen={handlePopUpOpen} />
       </CardContent>
       <AddShareSecretModal popUp={popUp} handlePopUpToggle={handlePopUpToggle} />
-      <DeleteActionModal
-        isOpen={popUp.deleteSharedSecretConfirmation.isOpen}
-        title={`Delete ${
-          (popUp?.deleteSharedSecretConfirmation?.data as DeleteModalData)?.name || " "
-        } shared secret?`}
-        onChange={(isOpen) => handlePopUpToggle("deleteSharedSecretConfirmation", isOpen)}
-        deleteKey={(popUp?.deleteSharedSecretConfirmation?.data as DeleteModalData)?.name}
-        onClose={() => handlePopUpClose("deleteSharedSecretConfirmation")}
-        onDeleteApproved={onDeleteApproved}
-      />
+      <AlertDialog
+        open={popUp.deleteSharedSecretConfirmation.isOpen}
+        onOpenChange={(isOpen) => handlePopUpToggle("deleteSharedSecretConfirmation", isOpen)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogMedia>
+              <Trash2 />
+            </AlertDialogMedia>
+            <AlertDialogTitle>Delete shared secret?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The shared secret link will no longer be accessible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="danger" onClick={onDeleteApproved}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };

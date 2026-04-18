@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Ellipsis, Mail, MailOpen, Trash2 } from "lucide-react";
+import { ClockAlertIcon, ClockIcon, Ellipsis, Mail, MailOpen, Trash2 } from "lucide-react";
 
 import {
   Badge,
@@ -74,7 +74,10 @@ export const ShareSecretsRow = ({
         )}
       </TableCell>
       <TableCell>
-        <Badge variant={isExpired ? "danger" : "success"}>{isExpired ? "Expired" : "Active"}</Badge>
+        <Badge variant={isExpired ? "danger" : "success"}>
+          {isExpired ? <ClockAlertIcon /> : <ClockIcon />}
+          {isExpired ? "Expired" : "Active"}
+        </Badge>
       </TableCell>
       <TableCell>
         <DropdownMenu>

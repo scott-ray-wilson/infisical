@@ -326,7 +326,7 @@ export const ShareSecretForm = ({
                       </SelectContent>
                     </Select>
                     {expiresInOptions.length !== filteredExpiresInOptions.length && (
-                      <FieldDescription className="text-warning">
+                      <FieldDescription className="text-info">
                         Limited to{" "}
                         {filteredExpiresInOptions[filteredExpiresInOptions.length - 1].label} by
                         organization
@@ -383,7 +383,7 @@ export const ShareSecretForm = ({
                           isError={Boolean(error)}
                         />
                         {maxSharedSecretViewLimit && (
-                          <FieldDescription className="text-warning">
+                          <FieldDescription className="text-info">
                             Limited to {maxSharedSecretViewLimit} view
                             {maxSharedSecretViewLimit === 1 ? "" : "s"} by organization
                           </FieldDescription>

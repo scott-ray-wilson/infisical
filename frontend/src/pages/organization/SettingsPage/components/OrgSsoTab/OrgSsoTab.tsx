@@ -1,4 +1,5 @@
-import { Info } from "lucide-react";
+import { useState } from "react";
+import { IdCardIcon, Info, Plus, UserKey, UserLockIcon } from "lucide-react";
 
 import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
 import {
@@ -11,15 +12,26 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
   Field,
   FieldContent,
-  FieldGroup,
+  FieldDescription,
+  FieldLabel,
   FieldTitle,
-  PageLoader
+  PageLoader,
+  RadioGroup,
+  RadioGroupItem
 } from "@app/components/v3";
 import {
   OrgPermissionEmailDomainActions,
@@ -73,6 +85,9 @@ export const OrgSsoTab = withPermission(
       "upgradePlan"
     ] as const);
 
+    const [isChooserOpen, setIsChooserOpen] = useState(false);
+    const [selectedProvider, setSelectedProvider] = useState<string>("");
+
     const { subscription } = useSubscription();
     const { permission } = useOrgPermission();
 
@@ -121,83 +136,76 @@ export const OrgSsoTab = withPermission(
       shouldDisplaySection(LoginMethod.OIDC) ||
       shouldDisplaySection(LoginMethod.LDAP);
 
+    const handleConnectSaml = () => {
+      if (!subscription?.samlSSO) {
+        handlePopUpOpen("upgradePlan", { featureName: "SAML SSO" });
+        return;
+      }
+      handlePopUpOpen("addSSO");
+    };
+
+    const handleConnectOidc = () => {
+      if (!subscription?.oidcSSO) {
+        handlePopUpOpen("upgradePlan", { featureName: "OIDC SSO" });
+        return;
+      }
+      handlePopUpOpen("addOIDC");
+    };
+
+    const handleConnectLdap = () => {
+      if (!subscription?.ldap) {
+        handlePopUpOpen("upgradePlan", {
+          featureName: "LDAP",
+          isEnterpriseFeature: true
+        });
+        return;
+      }
+      handlePopUpOpen("addLDAP");
+    };
+
+    const closeChooser = () => {
+      setIsChooserOpen(false);
+      setSelectedProvider("");
+    };
+
+    const handleConnectSelected = () => {
+      if (!selectedProvider) return;
+      closeChooser();
+      if (selectedProvider === "saml") handleConnectSaml();
+      else if (selectedProvider === "oidc") handleConnectOidc();
+      else if (selectedProvider === "ldap") handleConnectLdap();
+    };
+
     const createIdentityProviderView = anyProviderAvailable ? (
       <>
         <Card>
-          <CardHeader>
-            <CardTitle>Connect an Identity Provider</CardTitle>
+          <CardHeader className="border-b">
+            <CardTitle>
+              <IdCardIcon className="size-4 text-accent" />
+              Connect an Identity Provider
+            </CardTitle>
             <CardDescription>
               Connect your identity provider to simplify user management with options like SAML,
               OIDC, and LDAP.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            {showEmailDomainAlert && <EmailDomainAlert />}
-            <FieldGroup>
-              {shouldDisplaySection(LoginMethod.SAML) && (
-                <Field orientation="horizontal">
-                  <FieldContent>
-                    <FieldTitle>SAML</FieldTitle>
-                  </FieldContent>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      if (!subscription?.samlSSO) {
-                        handlePopUpOpen("upgradePlan", { featureName: "SAML SSO" });
-                        return;
-                      }
-
-                      handlePopUpOpen("addSSO");
-                    }}
-                  >
-                    Connect
-                  </Button>
-                </Field>
-              )}
-              {shouldDisplaySection(LoginMethod.OIDC) && (
-                <Field orientation="horizontal">
-                  <FieldContent>
-                    <FieldTitle>OIDC</FieldTitle>
-                  </FieldContent>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      if (!subscription?.oidcSSO) {
-                        handlePopUpOpen("upgradePlan", { featureName: "OIDC SSO" });
-                        return;
-                      }
-
-                      handlePopUpOpen("addOIDC");
-                    }}
-                  >
-                    Connect
-                  </Button>
-                </Field>
-              )}
-              {shouldDisplaySection(LoginMethod.LDAP) && (
-                <Field orientation="horizontal">
-                  <FieldContent>
-                    <FieldTitle>LDAP</FieldTitle>
-                  </FieldContent>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      if (!subscription?.ldap) {
-                        handlePopUpOpen("upgradePlan", {
-                          featureName: "LDAP",
-                          isEnterpriseFeature: true
-                        });
-                        return;
-                      }
-
-                      handlePopUpOpen("addLDAP");
-                    }}
-                  >
-                    Connect
-                  </Button>
-                </Field>
-              )}
-            </FieldGroup>
+          <CardContent>
+            <Empty className="border">
+              <EmptyHeader>
+                <EmptyTitle>No identity providers connected</EmptyTitle>
+                <EmptyDescription>
+                  {showEmailDomainAlert
+                    ? "Verify a domain first to add a connection."
+                    : "Connect SAML, OIDC, or LDAP to authenticate members."}
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <Button variant="org" onClick={() => setIsChooserOpen(true)}>
+                  <Plus />
+                  Add Provider
+                </Button>
+              </EmptyContent>
+            </Empty>
           </CardContent>
         </Card>
         <SSOModal
@@ -218,6 +226,71 @@ export const OrgSsoTab = withPermission(
           handlePopUpClose={handlePopUpClose}
           handlePopUpToggle={handlePopUpToggle}
         />
+        <Dialog
+          open={isChooserOpen}
+          onOpenChange={(open) => {
+            setIsChooserOpen(open);
+            if (!open) setSelectedProvider("");
+          }}
+        >
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Add Identity Provider</DialogTitle>
+              <DialogDescription>
+                Pick a protocol to configure. You can connect more later.
+              </DialogDescription>
+            </DialogHeader>
+            <RadioGroup value={selectedProvider} onValueChange={setSelectedProvider}>
+              {shouldDisplaySection(LoginMethod.SAML) && (
+                <FieldLabel htmlFor="provider-saml" variant="org">
+                  <Field orientation="horizontal">
+                    <FieldContent>
+                      <FieldTitle>SAML</FieldTitle>
+                      <FieldDescription>
+                        Standard enterprise SSO — Okta, Azure, Google Workspace.
+                      </FieldDescription>
+                    </FieldContent>
+                    <RadioGroupItem value="saml" id="provider-saml" />
+                  </Field>
+                </FieldLabel>
+              )}
+              {shouldDisplaySection(LoginMethod.OIDC) && (
+                <FieldLabel htmlFor="provider-oidc" variant="org">
+                  <Field orientation="horizontal">
+                    <FieldContent>
+                      <FieldTitle>OIDC</FieldTitle>
+                      <FieldDescription>
+                        OAuth-based identity layer — Auth0, Keycloak, custom IDPs.
+                      </FieldDescription>
+                    </FieldContent>
+                    <RadioGroupItem value="oidc" id="provider-oidc" />
+                  </Field>
+                </FieldLabel>
+              )}
+              {shouldDisplaySection(LoginMethod.LDAP) && (
+                <FieldLabel htmlFor="provider-ldap" variant="org">
+                  <Field orientation="horizontal">
+                    <FieldContent>
+                      <FieldTitle>LDAP</FieldTitle>
+                      <FieldDescription>
+                        Directory protocol for on-prem identity stores.
+                      </FieldDescription>
+                    </FieldContent>
+                    <RadioGroupItem value="ldap" id="provider-ldap" />
+                  </Field>
+                </FieldLabel>
+              )}
+            </RadioGroup>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="ghost">Cancel</Button>
+              </DialogClose>
+              <Button variant="org" isDisabled={!selectedProvider} onClick={handleConnectSelected}>
+                Continue
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </>
     ) : (
       <Empty>

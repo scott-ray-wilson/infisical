@@ -236,9 +236,7 @@ export const OrgSsoTab = withPermission(
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>Add Identity Provider</DialogTitle>
-              <DialogDescription>
-                Pick a protocol to configure. You can connect more later.
-              </DialogDescription>
+              <DialogDescription>Pick a protocol to configure.</DialogDescription>
             </DialogHeader>
             <RadioGroup value={selectedProvider} onValueChange={setSelectedProvider}>
               {shouldDisplaySection(LoginMethod.SAML) && (

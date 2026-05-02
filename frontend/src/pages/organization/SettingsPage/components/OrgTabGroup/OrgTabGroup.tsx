@@ -13,6 +13,7 @@ import { OrgGeneralTab } from "../OrgGeneralTab";
 import { OrgProductSettingsTab } from "../OrgProductSettingsTab";
 import { OrgProvisioningTab } from "../OrgProvisioningTab";
 import { OrgSecurityTab } from "../OrgSecurityTab";
+import { OrgSsoDashboardTab } from "../OrgSsoDashboardTab";
 import { OrgSsoTab } from "../OrgSsoTab";
 import { OrgSubOrgsTab } from "../OrgSubOrgsTab";
 import { OrgWorkflowIntegrationTab } from "../OrgWorkflowIntegrationTab";
@@ -33,6 +34,12 @@ export const OrgTabGroup = () => {
       name: "SSO",
       key: "sso-settings",
       component: OrgSsoTab,
+      isHidden: isSubOrganization
+    },
+    {
+      name: "SSO Dashboard",
+      key: "sso-dashboard",
+      component: OrgSsoDashboardTab,
       isHidden: isSubOrganization
     },
     {

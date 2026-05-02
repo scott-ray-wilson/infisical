@@ -16,6 +16,7 @@ import {
   HardDrive,
   IdCardLanyard,
   Key,
+  LayoutDashboard,
   Lock,
   MapPin,
   Plug,
@@ -125,6 +126,7 @@ export const getOrgSettingsSubmenu = ({
     ...(!isSubOrganization
       ? [
           { label: "SSO", icon: ShieldUser, tab: "sso-settings" },
+          { label: "SSO Dashboard", icon: LayoutDashboard, tab: "sso-dashboard" },
           { label: "Provisioning", icon: Route, tab: "provisioning-settings" },
           { label: "Security", icon: ShieldCheck, tab: "tab-org-security" }
         ]

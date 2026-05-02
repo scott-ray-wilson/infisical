@@ -1,9 +1,26 @@
-import { InfoIcon } from "lucide-react";
-import { twMerge } from "tailwind-merge";
+import { Info } from "lucide-react";
 
 import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
-import { Button, ContentLoader, EmptyState } from "@app/components/v2";
-import { Alert, AlertDescription, AlertTitle } from "@app/components/v3";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+  Field,
+  FieldContent,
+  FieldGroup,
+  FieldTitle,
+  PageLoader
+} from "@app/components/v3";
 import {
   OrgPermissionEmailDomainActions,
   OrgPermissionSsoActions,
@@ -31,6 +48,17 @@ import { OrgLDAPSection } from "./OrgLDAPSection";
 import { OrgOIDCSection } from "./OrgOIDCSection";
 import { OrgSSOSection } from "./OrgSSOSection";
 import { SSOModal } from "./SSOModal";
+
+const EmailDomainAlert = () => (
+  <Alert variant="info">
+    <Info />
+    <AlertTitle>Email domain verification required</AlertTitle>
+    <AlertDescription>
+      You must verify at least one email domain before configuring an identity provider. Add a
+      domain in the Email Domains section above.
+    </AlertDescription>
+  </Alert>
+);
 
 export const OrgSsoTab = withPermission(
   () => {
@@ -81,168 +109,161 @@ export const OrgSsoTab = withPermission(
     const shouldShowCreateIdentityProviderView =
       !isOidcConfigured && !isSamlConfigured && !isLdapConfigured;
 
-    const createIdentityProviderView =
+    const showEmailDomainAlert =
+      Boolean(subscription?.emailDomainVerification) && !isPending && !emailDomains?.length;
+
+    const canSeeEmailDomainAlert =
+      showEmailDomainAlert &&
+      permission.can(OrgPermissionEmailDomainActions.Read, OrgPermissionSubjects.EmailDomains);
+
+    const anyProviderAvailable =
       shouldDisplaySection(LoginMethod.SAML) ||
       shouldDisplaySection(LoginMethod.OIDC) ||
-      shouldDisplaySection(LoginMethod.LDAP) ? (
-        <>
-          <div className="mb-4 space-y-6 rounded-lg border border-mineshaft-600 bg-mineshaft-900 p-6">
-            <div>
-              <p className="text-xl font-medium text-gray-200">Connect an Identity Provider</p>
-              <p className="mt-1 mb-2 text-gray-400">
-                Connect your identity provider to simplify user management with options like SAML,
-                OIDC, and LDAP.
-              </p>
-              {subscription?.emailDomainVerification && !isPending && !emailDomains?.length && (
-                <Alert variant="info" className="mt-3 bg-info/10">
-                  <InfoIcon />
-                  <AlertTitle>Email domain verification required</AlertTitle>
-                  <AlertDescription>
-                    You must verify at least one email domain before configuring an identity
-                    provider. Add a domain in the Email Domains section above.
-                  </AlertDescription>
-                </Alert>
+      shouldDisplaySection(LoginMethod.LDAP);
+
+    const createIdentityProviderView = anyProviderAvailable ? (
+      <>
+        <Card>
+          <CardHeader>
+            <CardTitle>Connect an Identity Provider</CardTitle>
+            <CardDescription>
+              Connect your identity provider to simplify user management with options like SAML,
+              OIDC, and LDAP.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {showEmailDomainAlert && <EmailDomainAlert />}
+            <FieldGroup>
+              {shouldDisplaySection(LoginMethod.SAML) && (
+                <Field orientation="horizontal">
+                  <FieldContent>
+                    <FieldTitle>SAML</FieldTitle>
+                  </FieldContent>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (!subscription?.samlSSO) {
+                        handlePopUpOpen("upgradePlan", { featureName: "SAML SSO" });
+                        return;
+                      }
+
+                      handlePopUpOpen("addSSO");
+                    }}
+                  >
+                    Connect
+                  </Button>
+                </Field>
               )}
-            </div>
-            {shouldDisplaySection(LoginMethod.SAML) && (
-              <div
-                className={twMerge(
-                  "mt-4 flex items-center justify-between",
-                  (shouldDisplaySection(LoginMethod.OIDC) ||
-                    shouldDisplaySection(LoginMethod.LDAP)) &&
-                    "border-b border-mineshaft-500 pb-4"
-                )}
-              >
-                <p className="text-lg text-gray-200">SAML</p>
-                <Button
-                  colorSchema="secondary"
-                  onClick={() => {
-                    if (!subscription?.samlSSO) {
-                      handlePopUpOpen("upgradePlan", { featureName: "SAML SSO" });
-                      return;
-                    }
+              {shouldDisplaySection(LoginMethod.OIDC) && (
+                <Field orientation="horizontal">
+                  <FieldContent>
+                    <FieldTitle>OIDC</FieldTitle>
+                  </FieldContent>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (!subscription?.oidcSSO) {
+                        handlePopUpOpen("upgradePlan", { featureName: "OIDC SSO" });
+                        return;
+                      }
 
-                    handlePopUpOpen("addSSO");
-                  }}
-                >
-                  Connect
-                </Button>
-              </div>
-            )}
-            {shouldDisplaySection(LoginMethod.OIDC) && (
-              <div
-                className={twMerge(
-                  "mt-4 flex items-center justify-between",
-                  shouldDisplaySection(LoginMethod.LDAP) && "border-b border-mineshaft-500 pb-4"
-                )}
-              >
-                <p className="text-lg text-gray-200">OIDC</p>
-                <Button
-                  colorSchema="secondary"
-                  onClick={() => {
-                    if (!subscription?.oidcSSO) {
-                      handlePopUpOpen("upgradePlan", { featureName: "OIDC SSO" });
-                      return;
-                    }
+                      handlePopUpOpen("addOIDC");
+                    }}
+                  >
+                    Connect
+                  </Button>
+                </Field>
+              )}
+              {shouldDisplaySection(LoginMethod.LDAP) && (
+                <Field orientation="horizontal">
+                  <FieldContent>
+                    <FieldTitle>LDAP</FieldTitle>
+                  </FieldContent>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (!subscription?.ldap) {
+                        handlePopUpOpen("upgradePlan", {
+                          featureName: "LDAP",
+                          isEnterpriseFeature: true
+                        });
+                        return;
+                      }
 
-                    handlePopUpOpen("addOIDC");
-                  }}
-                >
-                  Connect
-                </Button>
-              </div>
-            )}
-            {shouldDisplaySection(LoginMethod.LDAP) && (
-              <div className="mt-4 flex items-center justify-between">
-                <p className="text-lg text-gray-200">LDAP</p>
-                <Button
-                  colorSchema="secondary"
-                  onClick={() => {
-                    if (!subscription?.ldap) {
-                      handlePopUpOpen("upgradePlan", {
-                        featureName: "LDAP",
-                        isEnterpriseFeature: true
-                      });
-                      return;
-                    }
-
-                    handlePopUpOpen("addLDAP");
-                  }}
-                >
-                  Connect
-                </Button>
-              </div>
-            )}
-          </div>
-          <SSOModal
-            hideDelete
-            popUp={popUp}
-            handlePopUpClose={handlePopUpClose}
-            handlePopUpToggle={handlePopUpToggle}
-          />
-          <OIDCModal
-            hideDelete
-            popUp={popUp}
-            handlePopUpClose={handlePopUpClose}
-            handlePopUpToggle={handlePopUpToggle}
-          />
-          <LDAPModal
-            hideDelete
-            popUp={popUp}
-            handlePopUpClose={handlePopUpClose}
-            handlePopUpToggle={handlePopUpToggle}
-          />
-        </>
-      ) : (
-        <EmptyState title="" iconSize="2x" className="pt-14 pb-10!">
-          <p className="text-center text-lg">Single Sign-On (SSO) has been disabled</p>
-          <p className="text-center">Contact your server administrator</p>
-        </EmptyState>
-      );
+                      handlePopUpOpen("addLDAP");
+                    }}
+                  >
+                    Connect
+                  </Button>
+                </Field>
+              )}
+            </FieldGroup>
+          </CardContent>
+        </Card>
+        <SSOModal
+          hideDelete
+          popUp={popUp}
+          handlePopUpClose={handlePopUpClose}
+          handlePopUpToggle={handlePopUpToggle}
+        />
+        <OIDCModal
+          hideDelete
+          popUp={popUp}
+          handlePopUpClose={handlePopUpClose}
+          handlePopUpToggle={handlePopUpToggle}
+        />
+        <LDAPModal
+          hideDelete
+          popUp={popUp}
+          handlePopUpClose={handlePopUpClose}
+          handlePopUpToggle={handlePopUpToggle}
+        />
+      </>
+    ) : (
+      <Empty>
+        <EmptyHeader>
+          <EmptyTitle>Single Sign-On (SSO) has been disabled</EmptyTitle>
+          <EmptyDescription>Contact your server administrator.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
 
     if (areConfigsLoading) {
-      return <ContentLoader />;
+      return <PageLoader />;
     }
+
+    const showEnforcement = shouldDisplaySection([
+      LoginMethod.SAML,
+      LoginMethod.GOOGLE,
+      LoginMethod.OIDC
+    ]);
 
     return (
       <>
-        <div className="space-y-4">
-          {shouldDisplaySection([LoginMethod.SAML, LoginMethod.GOOGLE, LoginMethod.OIDC]) && (
-            <OrgGeneralAuthSection
-              isSamlConfigured={isSamlConfigured}
-              isOidcConfigured={isOidcConfigured}
-              isGoogleConfigured={isGoogleConfigured}
-              isSamlActive={Boolean(samlConfig?.isActive)}
-              isOidcActive={Boolean(oidcConfig?.isActive)}
-              isLdapActive={Boolean(ldapConfig?.isActive)}
-            />
-          )}
-          <OrgEmailDomainsSection />
-          {shouldShowCreateIdentityProviderView ? (
-            createIdentityProviderView
-          ) : (
-            <div className="mb-4 space-y-6 rounded-lg border border-mineshaft-600 bg-mineshaft-900 p-6">
-              {subscription?.emailDomainVerification &&
-                permission.can(
-                  OrgPermissionEmailDomainActions.Read,
-                  OrgPermissionSubjects.EmailDomains
-                ) &&
-                !isPending &&
-                !emailDomains?.length && (
-                  <Alert variant="info" className="mt-3 bg-info/10">
-                    <InfoIcon />
-                    <AlertTitle>Email domain verification required</AlertTitle>
-                    <AlertDescription>
-                      You must verify at least one email domain before configuring an identity
-                      provider. Add a domain in the Email Domains section above.
-                    </AlertDescription>
-                  </Alert>
-                )}
-              <div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="flex flex-col gap-4 lg:col-span-2">
+            {shouldShowCreateIdentityProviderView ? (
+              createIdentityProviderView
+            ) : (
+              <>
+                {canSeeEmailDomainAlert && <EmailDomainAlert />}
                 {isSamlConfigured && shouldDisplaySection(LoginMethod.SAML) && <OrgSSOSection />}
                 {isOidcConfigured && shouldDisplaySection(LoginMethod.OIDC) && <OrgOIDCSection />}
                 {isLdapConfigured && shouldDisplaySection(LoginMethod.LDAP) && <OrgLDAPSection />}
-              </div>
+              </>
+            )}
+            <OrgEmailDomainsSection />
+          </div>
+          {showEnforcement && (
+            <div className="flex flex-col gap-4">
+              <OrgGeneralAuthSection
+                isSamlConfigured={isSamlConfigured}
+                isOidcConfigured={isOidcConfigured}
+                isGoogleConfigured={isGoogleConfigured}
+                isSamlActive={Boolean(samlConfig?.isActive)}
+                isOidcActive={Boolean(oidcConfig?.isActive)}
+                isLdapActive={Boolean(ldapConfig?.isActive)}
+              />
             </div>
           )}
         </div>

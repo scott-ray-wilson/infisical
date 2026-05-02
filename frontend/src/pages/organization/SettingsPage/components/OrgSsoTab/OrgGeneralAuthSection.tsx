@@ -302,7 +302,7 @@ export const OrgGeneralAuthSection = ({
               <FieldContent>
                 <FieldTitle>Enforce Google OAuth</FieldTitle>
                 <FieldDescription>
-                  Only allow members to sign in via Google OAuth (not Google SAML).
+                  Only allow members to sign in via Google OAuth (not SAML).
                 </FieldDescription>
               </FieldContent>
               <OrgPermissionCan I={OrgPermissionActions.Edit} a={OrgPermissionSubjects.Sso}>

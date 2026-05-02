@@ -274,7 +274,12 @@ export const OrgGeneralAuthSection = ({
           </p>
         </div>
 
-        <div className={twMerge("mt-2", !isGoogleConfigured && "hidden")}>
+        <div
+          className={twMerge(
+            "mt-2",
+            (!isGoogleConfigured || isSamlActive || isOidcActive || isLdapActive) && "hidden"
+          )}
+        >
           <div className="mb-2 flex justify-between">
             <div className="flex items-center gap-1">
               <span className="text-md text-mineshaft-100">Enforce Google OAuth</span>

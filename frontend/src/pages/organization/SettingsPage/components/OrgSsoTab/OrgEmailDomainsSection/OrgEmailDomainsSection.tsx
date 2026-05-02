@@ -60,14 +60,14 @@ export const OrgEmailDomainsSection = () => {
 
   return (
     <>
-      <Card className="mb-4">
+      <Card>
         <CardHeader>
           <CardTitle>
             <Globe className="size-4 text-accent" />
             Email Domains
             <DocumentationLinkBadge href="https://infisical.com/docs/documentation/platform/email-domain" />
           </CardTitle>
-          <CardDescription>Verified domains route to your IDP.</CardDescription>
+          <CardDescription>Verified domains for your IDP.</CardDescription>
           {hasEmailDomainVerification && (
             <CardAction>
               <OrgPermissionCan

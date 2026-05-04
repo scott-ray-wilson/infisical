@@ -2,6 +2,7 @@ import { useState } from "react";
 import { IdCardIcon, Info, Plus, UserKey, UserLockIcon } from "lucide-react";
 
 import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
+import { OrgPermissionCan } from "@app/components/permissions";
 import {
   Alert,
   AlertDescription,
@@ -31,7 +32,10 @@ import {
   FieldTitle,
   PageLoader,
   RadioGroup,
-  RadioGroupItem
+  RadioGroupItem,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
 } from "@app/components/v3";
 import {
   OrgPermissionEmailDomainActions,
@@ -82,7 +86,9 @@ export const OrgSsoTab = withPermission(
       "addLDAP",
       "addSSO",
       "addOIDC",
-      "upgradePlan"
+      "upgradePlan",
+      "addDomain",
+      "verifyDomain"
     ] as const);
 
     const [isChooserOpen, setIsChooserOpen] = useState(false);
@@ -126,6 +132,12 @@ export const OrgSsoTab = withPermission(
 
     const showEmailDomainAlert =
       Boolean(subscription?.emailDomainVerification) && !isPending && !emailDomains?.length;
+
+    const hasUnverifiedEmailDomainsOnly =
+      Boolean(subscription?.emailDomainVerification) &&
+      !isPending &&
+      Boolean(emailDomains?.length) &&
+      !emailDomains?.some((d) => d.status === "verified");
 
     const canSeeEmailDomainAlert =
       showEmailDomainAlert &&
@@ -200,10 +212,42 @@ export const OrgSsoTab = withPermission(
                 </EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
-                <Button variant="org" onClick={() => setIsChooserOpen(true)}>
-                  <Plus />
-                  Add Provider
-                </Button>
+                {showEmailDomainAlert && (
+                  <OrgPermissionCan
+                    I={OrgPermissionEmailDomainActions.Create}
+                    a={OrgPermissionSubjects.EmailDomains}
+                  >
+                    {(isAllowed) => (
+                      <Button
+                        variant="org"
+                        isDisabled={!isAllowed}
+                        onClick={() => handlePopUpOpen("addDomain")}
+                      >
+                        <Plus />
+                        Add Domain
+                      </Button>
+                    )}
+                  </OrgPermissionCan>
+                )}
+                {!showEmailDomainAlert && hasUnverifiedEmailDomainsOnly && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button variant="org" isDisabled>
+                          <Plus />
+                          Add Provider
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>Email domain verification required</TooltipContent>
+                  </Tooltip>
+                )}
+                {!showEmailDomainAlert && !hasUnverifiedEmailDomainsOnly && (
+                  <Button variant="org" onClick={() => setIsChooserOpen(true)}>
+                    <Plus />
+                    Add Provider
+                  </Button>
+                )}
               </EmptyContent>
             </Empty>
           </CardContent>
@@ -323,7 +367,12 @@ export const OrgSsoTab = withPermission(
                 {isLdapConfigured && shouldDisplaySection(LoginMethod.LDAP) && <OrgLDAPSection />}
               </>
             )}
-            <OrgEmailDomainsSection />
+            <OrgEmailDomainsSection
+              popUp={popUp}
+              handlePopUpOpen={handlePopUpOpen}
+              handlePopUpClose={handlePopUpClose}
+              handlePopUpToggle={handlePopUpToggle}
+            />
           </div>
           {showEnforcement && (
             <div className="flex flex-col gap-4">

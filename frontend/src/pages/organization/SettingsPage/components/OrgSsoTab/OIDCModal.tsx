@@ -61,8 +61,8 @@ const schema = z
     jwksUri: z.string().optional(),
     tokenEndpoint: z.string().optional(),
     userinfoEndpoint: z.string().optional(),
-    clientId: z.string().min(1),
-    clientSecret: z.string().min(1),
+    clientId: z.string().min(1, "Client ID is required"),
+    clientSecret: z.string().min(1, "Client Secret is required"),
     allowedEmailDomains: z.string().optional(),
     jwtSignatureAlgorithm: z.nativeEnum(OIDCJWTSignatureAlgorithm).optional()
   })
@@ -213,12 +213,13 @@ export const OIDCModal = ({ popUp, handlePopUpClose, handlePopUpToggle, hideDele
     handlePopUpClose("addOIDC");
 
     createNotification({
-      text: `Successfully ${!data ? "added" : "updated"} OIDC SSO configuration`,
+      text: `Successfully ${data?.isActive ? "updated" : "added"} OIDC SSO configuration`,
       type: "success"
     });
   };
 
   const isPending = createIsLoading || updateIsLoading;
+  const isExistingConfig = Boolean(data?.isActive);
 
   return (
     <>
@@ -379,7 +380,12 @@ export const OIDCModal = ({ popUp, handlePopUpClose, handlePopUpToggle, hideDele
                   name="jwtSignatureAlgorithm"
                   render={({ field: { onChange, value }, fieldState: { error } }) => (
                     <Field>
-                      <FieldLabel htmlFor="oidc-jwt-algorithm">JWT Signature Algorithm</FieldLabel>
+                      <FieldLabel
+                        htmlFor="oidc-jwt-algorithm"
+                        className="inline-flex flex-wrap items-baseline gap-1.5"
+                      >
+                        JWT Signature Algorithm
+                      </FieldLabel>
                       <Select value={value} onValueChange={onChange}>
                         <SelectTrigger
                           id="oidc-jwt-algorithm"
@@ -404,7 +410,12 @@ export const OIDCModal = ({ popUp, handlePopUpClose, handlePopUpToggle, hideDele
                   name="allowedEmailDomains"
                   render={({ field, fieldState: { error } }) => (
                     <Field>
-                      <FieldLabel htmlFor="oidc-allowed-domains">Allowed Email Domains</FieldLabel>
+                      <FieldLabel
+                        htmlFor="oidc-allowed-domains"
+                        className="inline-flex flex-wrap items-baseline gap-1.5"
+                      >
+                        Allowed Email Domains (optional)
+                      </FieldLabel>
                       <Input
                         id="oidc-allowed-domains"
                         placeholder="infisical.com, *.google.com"
@@ -470,7 +481,7 @@ export const OIDCModal = ({ popUp, handlePopUpClose, handlePopUpToggle, hideDele
             <SheetFooter className="justify-between border-t">
               <div className="flex gap-2">
                 <Button type="submit" variant="org" isPending={isPending}>
-                  {!data ? "Add" : "Update"}
+                  {isExistingConfig ? "Update Configuration" : "Configure OIDC"}
                 </Button>
                 <Button type="button" variant="ghost" onClick={() => handlePopUpClose("addOIDC")}>
                   Cancel

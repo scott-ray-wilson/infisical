@@ -28,6 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   Empty,
+  EmptyDescription,
   EmptyHeader,
   EmptyTitle,
   IconButton,
@@ -108,6 +109,7 @@ export const OrgEmailDomainsTable = ({ onVerifyDomain }: Props) => {
         <Empty className="border">
           <EmptyHeader>
             <EmptyTitle>No email domains found</EmptyTitle>
+            <EmptyDescription>Add an email domain to setup your IDP.</EmptyDescription>
           </EmptyHeader>
         </Empty>
       ) : (

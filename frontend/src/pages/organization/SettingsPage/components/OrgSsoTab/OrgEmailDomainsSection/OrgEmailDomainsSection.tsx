@@ -17,18 +17,31 @@ import {
   useOrgPermission,
   useSubscription
 } from "@app/context";
-import { usePopUp } from "@app/hooks";
 import { TEmailDomain } from "@app/hooks/api";
+import { UsePopUpState } from "@app/hooks/usePopUp";
 
 import { AddEmailDomainModal } from "./AddEmailDomainModal";
 import { EmailDomainVerificationModal } from "./EmailDomainVerificationModal";
 import { OrgEmailDomainsTable } from "./OrgEmailDomainsTable";
 
-export const OrgEmailDomainsSection = () => {
-  const { handlePopUpToggle, popUp, handlePopUpOpen, handlePopUpClose } = usePopUp([
-    "addDomain",
-    "verifyDomain"
-  ] as const);
+type EmailDomainPopUps = ["addDomain", "verifyDomain"];
+
+type Props = {
+  popUp: UsePopUpState<EmailDomainPopUps>;
+  handlePopUpOpen: (popUpName: keyof UsePopUpState<EmailDomainPopUps>, data?: unknown) => void;
+  handlePopUpClose: (popUpName: keyof UsePopUpState<EmailDomainPopUps>) => void;
+  handlePopUpToggle: (
+    popUpName: keyof UsePopUpState<EmailDomainPopUps>,
+    state?: boolean
+  ) => void;
+};
+
+export const OrgEmailDomainsSection = ({
+  popUp,
+  handlePopUpOpen,
+  handlePopUpClose,
+  handlePopUpToggle
+}: Props) => {
   const { permission } = useOrgPermission();
   const { subscription } = useSubscription();
 

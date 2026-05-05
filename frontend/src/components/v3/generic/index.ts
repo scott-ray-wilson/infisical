@@ -32,6 +32,7 @@ export * from "./Sidebar";
 export * from "./Skeleton";
 export * from "./Switch";
 export * from "./Table";
+export * from "./Tabs";
 export * from "./TextArea";
 export * from "./Toast";
 export * from "./Tooltip";

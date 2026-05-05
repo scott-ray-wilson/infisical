@@ -1,13 +1,16 @@
 // REFACTOR(akhilmhdh): This file needs to be split into multiple components too complex
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet";
 import { useTranslation } from "react-i18next";
 import { Outlet, useMatches } from "@tanstack/react-router";
 
+import { AnnouncementModal } from "@app/components/announcements/AnnouncementModal";
+import { useAnnouncementSeen } from "@app/components/announcements/useAnnouncementSeen";
 import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
 import { NewProjectModal } from "@app/components/projects";
 import { PageHeader } from "@app/components/v2";
 import { useOrganization, useSubscription } from "@app/context";
+import { useGetLatestAnnouncement } from "@app/hooks/api/announcement";
 import { usePopUp } from "@app/hooks/usePopUp";
 
 import { AllProjectView } from "./components/AllProjectView";
@@ -51,6 +54,21 @@ export const ProjectsPage = () => {
     "addNewWs",
     "upgradePlan"
   ] as const);
+
+  const { data: announcement } = useGetLatestAnnouncement(!hasChildRoute);
+  const { hasUnseen, markSeen } = useAnnouncementSeen();
+  const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
+
+  useEffect(() => {
+    if (announcement && hasUnseen(announcement.slug)) {
+      setIsAnnouncementOpen(true);
+    }
+  }, [announcement?.slug]);
+
+  const handleAnnouncementOpenChange = (open: boolean) => {
+    setIsAnnouncementOpen(open);
+    if (!open && announcement) markSeen(announcement.slug);
+  };
 
   const { subscription } = useSubscription();
   const { isSubOrganization } = useOrganization();
@@ -98,6 +116,13 @@ export const ProjectsPage = () => {
         onOpenChange={(isOpen) => handlePopUpToggle("upgradePlan", isOpen)}
         text="You have reached the maximum number of projects allowed on your current plan. Upgrade to Infisical Pro plan to add more projects."
       />
+      {announcement && (
+        <AnnouncementModal
+          announcement={announcement}
+          isOpen={isAnnouncementOpen}
+          onOpenChange={handleAnnouncementOpenChange}
+        />
+      )}
     </div>
   );
 };

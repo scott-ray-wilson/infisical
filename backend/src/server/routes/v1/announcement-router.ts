@@ -86,6 +86,8 @@ export const registerAnnouncementRouter = async (server: FastifyZodProvider) => 
 
   // Serves images baked into the image at build time (see scripts/bake-announcements.ts).
   // Filenames are content-hashed so caching is safe to be long-lived and immutable.
+  // Unauthenticated: <img> tags can't send the JWT header, and the source images came from
+  // a public Contentful CDN URL anyway — there's nothing to protect.
   server.route({
     url: "/assets/:filename",
     config: {
@@ -97,7 +99,6 @@ export const registerAnnouncementRouter = async (server: FastifyZodProvider) => 
         filename: z.string()
       })
     },
-    onRequest: verifyAuth([AuthMode.JWT]),
     handler: async (req, reply) => {
       const { filename } = req.params;
       if (!ASSET_FILENAME_RE.test(filename)) {

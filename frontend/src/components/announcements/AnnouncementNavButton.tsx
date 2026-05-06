@@ -34,16 +34,16 @@ export const AnnouncementNavButton = () => {
             className="relative"
             onClick={() => setIsOpen(true)}
           >
-            <Megaphone />
+            <Megaphone className={showUnreadDot ? "text-warning" : ""} />
             {showUnreadDot && (
               <span
                 aria-hidden="true"
-                className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-primary-400 ring-2 ring-background"
+                className="absolute -top-0.5 -right-0.5 z-10 size-2 rounded-full bg-warning ring-2 ring-background"
               />
             )}
           </IconButton>
         </TooltipTrigger>
-        <TooltipContent side="bottom">What&apos;s new</TooltipContent>
+        <TooltipContent side="bottom">What&apos;s New</TooltipContent>
       </Tooltip>
       <AnnouncementModal
         announcements={announcements}

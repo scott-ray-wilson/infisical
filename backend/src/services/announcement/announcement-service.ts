@@ -14,6 +14,9 @@ import { TAnnouncement, TContentfulEntriesResponse } from "./announcement-types"
 // const CACHE_TTL_MS = 5 * 60 * 1000;
 const CONTENT_TYPE = "featureUpdate";
 const RECENT_LIMIT = 3;
+// New users get a 7-day grace period before any announcements surface — avoids
+// hitting them with marketing modals during onboarding.
+const NEW_USER_GRACE_PERIOD_MS = 7 * 24 * 60 * 60 * 1000;
 
 // Bundled-mode: if this file exists on disk, the backend serves announcements from it
 // (and any referenced images from BUNDLED_IMAGE_DIR) instead of calling Contentful.
@@ -122,6 +125,10 @@ export const announcementServiceFactory = ({ userDAL }: TAnnouncementServiceFact
   }): Promise<{ announcements: TAnnouncement[]; lastSeenAnnouncementId: string | null }> => {
     const user = await userDAL.findById(userId);
     const lastSeenAnnouncementId = user?.lastSeenAnnouncementId ?? null;
+
+    if (user?.createdAt && Date.now() - new Date(user.createdAt).getTime() < NEW_USER_GRACE_PERIOD_MS) {
+      return { announcements: [], lastSeenAnnouncementId };
+    }
 
     try {
       const announcements = await getAnnouncements();

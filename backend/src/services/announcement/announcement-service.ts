@@ -7,7 +7,7 @@ import { TAnnouncement, TContentfulEntriesResponse } from "./announcement-types"
 // TODO: re-enable in-memory cache (5-min TTL) before merge — disabled during development
 // so Contentful changes show up immediately without a backend restart.
 // const CACHE_TTL_MS = 5 * 60 * 1000;
-const CONTENT_TYPE = "announcement";
+const CONTENT_TYPE = "featureUpdate";
 
 // type CacheEntry = {
 //   fetchedAt: number;
@@ -32,7 +32,7 @@ export const announcementServiceFactory = () => {
     const { data } = await safeRequest.get<TContentfulEntriesResponse>(url, {
       params: {
         content_type: CONTENT_TYPE,
-        order: "-fields.publishedAt",
+        order: "-fields.published",
         limit: 1,
         include: 1
       },
@@ -43,7 +43,7 @@ export const announcementServiceFactory = () => {
     });
 
     const entry = data.items[0];
-    if (!entry?.fields?.slug || !entry.fields.title || !entry.fields.description || !entry.fields.publishedAt) {
+    if (!entry?.fields?.title || !entry.fields.body || !entry.fields.published) {
       return null;
     }
 
@@ -58,13 +58,13 @@ export const announcementServiceFactory = () => {
     }
 
     return {
-      slug: entry.fields.slug,
+      id: entry.sys.id,
       title: entry.fields.title,
-      description: entry.fields.description,
+      body: entry.fields.body,
       imageUrl,
-      linkUrl: entry.fields.linkUrl ?? null,
-      linkText: entry.fields.linkText ?? null,
-      publishedAt: entry.fields.publishedAt
+      link: entry.fields.link ?? null,
+      linkLabel: entry.fields.linkLabel ?? null,
+      published: entry.fields.published
     };
   };
 

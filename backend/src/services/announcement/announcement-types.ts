@@ -1,11 +1,11 @@
 export type TAnnouncement = {
-  slug: string;
+  id: string;
   title: string;
-  description: string;
+  body: string;
   imageUrl: string | null;
-  linkUrl: string | null;
-  linkText: string | null;
-  publishedAt: string;
+  link: string | null;
+  linkLabel: string | null;
+  published: string;
 };
 
 type TContentfulAsset = {
@@ -20,13 +20,12 @@ type TContentfulAsset = {
 export type TContentfulAnnouncementEntry = {
   sys: { id: string };
   fields: {
-    slug?: string;
     title?: string;
-    description?: string;
+    body?: string;
     image?: { sys: { id: string } };
-    linkUrl?: string;
-    linkText?: string;
-    publishedAt?: string;
+    link?: string;
+    linkLabel?: string;
+    published?: string;
   };
 };
 

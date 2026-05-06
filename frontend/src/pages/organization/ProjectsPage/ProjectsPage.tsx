@@ -60,14 +60,14 @@ export const ProjectsPage = () => {
   const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
 
   useEffect(() => {
-    if (announcement && hasUnseen(announcement.slug)) {
+    if (announcement && hasUnseen(announcement.id)) {
       setIsAnnouncementOpen(true);
     }
-  }, [announcement?.slug]);
+  }, [announcement?.id]);
 
   const handleAnnouncementOpenChange = (open: boolean) => {
     setIsAnnouncementOpen(open);
-    if (!open && announcement) markSeen(announcement.slug);
+    if (!open && announcement) markSeen(announcement.id);
   };
 
   const { subscription } = useSubscription();

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 
-const STORAGE_KEY = "lastSeenAnnouncementSlug";
+const STORAGE_KEY = "lastSeenAnnouncementId";
 
-const readSeenSlug = (): string | null => {
+const readSeenId = (): string | null => {
   if (typeof window === "undefined") return null;
   try {
     return window.localStorage.getItem(STORAGE_KEY);
@@ -12,29 +12,29 @@ const readSeenSlug = (): string | null => {
 };
 
 export const useAnnouncementSeen = () => {
-  const [seenSlug, setSeenSlug] = useState<string | null>(() => readSeenSlug());
+  const [seenId, setSeenId] = useState<string | null>(() => readSeenId());
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY) setSeenSlug(e.newValue);
+      if (e.key === STORAGE_KEY) setSeenId(e.newValue);
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const markSeen = useCallback((slug: string) => {
+  const markSeen = useCallback((id: string) => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, slug);
+      window.localStorage.setItem(STORAGE_KEY, id);
     } catch {
       // localStorage may be unavailable (private mode, quota); fail open — modal will re-pop next visit.
     }
-    setSeenSlug(slug);
+    setSeenId(id);
   }, []);
 
   const hasUnseen = useCallback(
-    (slug: string | null | undefined) => Boolean(slug && slug !== seenSlug),
-    [seenSlug]
+    (id: string | null | undefined) => Boolean(id && id !== seenId),
+    [seenId]
   );
 
-  return { seenSlug, markSeen, hasUnseen };
+  return { seenId, markSeen, hasUnseen };
 };

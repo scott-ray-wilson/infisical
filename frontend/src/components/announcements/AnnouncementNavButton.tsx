@@ -14,11 +14,11 @@ export const AnnouncementNavButton = () => {
 
   if (!announcement) return null;
 
-  const showUnreadDot = hasUnseen(announcement.slug);
+  const showUnreadDot = hasUnseen(announcement.id);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (!open) markSeen(announcement.slug);
+    if (!open) markSeen(announcement.id);
   };
 
   return (

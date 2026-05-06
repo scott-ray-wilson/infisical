@@ -5,13 +5,13 @@ import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
 import { AuthMode } from "@app/services/auth/auth-type";
 
 const AnnouncementSchema = z.object({
-  slug: z.string(),
+  id: z.string(),
   title: z.string(),
-  description: z.string(),
+  body: z.string(),
   imageUrl: z.string().nullable(),
-  linkUrl: z.string().nullable(),
-  linkText: z.string().nullable(),
-  publishedAt: z.string()
+  link: z.string().nullable(),
+  linkLabel: z.string().nullable(),
+  published: z.string()
 });
 
 export const registerAnnouncementRouter = async (server: FastifyZodProvider) => {

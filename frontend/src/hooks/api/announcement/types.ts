@@ -1,9 +1,9 @@
 export type TAnnouncement = {
-  slug: string;
+  id: string;
   title: string;
-  description: string;
+  body: string;
   imageUrl: string | null;
-  linkUrl: string | null;
-  linkText: string | null;
-  publishedAt: string;
+  link: string | null;
+  linkLabel: string | null;
+  published: string;
 };

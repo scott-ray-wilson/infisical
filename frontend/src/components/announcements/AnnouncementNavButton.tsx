@@ -2,23 +2,24 @@ import { useState } from "react";
 import { Megaphone } from "lucide-react";
 
 import { IconButton, Tooltip, TooltipContent, TooltipTrigger } from "@app/components/v3";
-import { useGetLatestAnnouncement } from "@app/hooks/api/announcement";
+import { useGetRecentAnnouncements } from "@app/hooks/api/announcement";
 
 import { AnnouncementModal } from "./AnnouncementModal";
 import { useAnnouncementSeen } from "./useAnnouncementSeen";
 
 export const AnnouncementNavButton = () => {
-  const { data: announcement } = useGetLatestAnnouncement();
+  const { data: announcements } = useGetRecentAnnouncements();
   const { hasUnseen, markSeen } = useAnnouncementSeen();
   const [isOpen, setIsOpen] = useState(false);
 
-  if (!announcement) return null;
+  if (!announcements || announcements.length === 0) return null;
 
-  const showUnreadDot = hasUnseen(announcement.id);
+  const latest = announcements[0];
+  const showUnreadDot = hasUnseen(latest.id);
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (!open) markSeen(announcement.id);
+    if (!open) markSeen(latest.id);
   };
 
   return (
@@ -44,7 +45,7 @@ export const AnnouncementNavButton = () => {
         <TooltipContent side="bottom">What&apos;s new</TooltipContent>
       </Tooltip>
       <AnnouncementModal
-        announcement={announcement}
+        announcements={announcements}
         isOpen={isOpen}
         onOpenChange={handleOpenChange}
       />

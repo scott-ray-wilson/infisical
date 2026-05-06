@@ -10,7 +10,7 @@ import { UpgradePlanModal } from "@app/components/license/UpgradePlanModal";
 import { NewProjectModal } from "@app/components/projects";
 import { PageHeader } from "@app/components/v2";
 import { useOrganization, useSubscription } from "@app/context";
-import { useGetLatestAnnouncement } from "@app/hooks/api/announcement";
+import { useGetRecentAnnouncements } from "@app/hooks/api/announcement";
 import { usePopUp } from "@app/hooks/usePopUp";
 
 import { AllProjectView } from "./components/AllProjectView";
@@ -55,19 +55,20 @@ export const ProjectsPage = () => {
     "upgradePlan"
   ] as const);
 
-  const { data: announcement } = useGetLatestAnnouncement(!hasChildRoute);
+  const { data: announcements } = useGetRecentAnnouncements(!hasChildRoute);
+  const latestAnnouncement = announcements?.[0];
   const { hasUnseen, markSeen } = useAnnouncementSeen();
   const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
 
   useEffect(() => {
-    if (announcement && hasUnseen(announcement.id)) {
+    if (latestAnnouncement && hasUnseen(latestAnnouncement.id)) {
       setIsAnnouncementOpen(true);
     }
-  }, [announcement?.id]);
+  }, [latestAnnouncement?.id]);
 
   const handleAnnouncementOpenChange = (open: boolean) => {
     setIsAnnouncementOpen(open);
-    if (!open && announcement) markSeen(announcement.id);
+    if (!open && latestAnnouncement) markSeen(latestAnnouncement.id);
   };
 
   const { subscription } = useSubscription();
@@ -116,9 +117,9 @@ export const ProjectsPage = () => {
         onOpenChange={(isOpen) => handlePopUpToggle("upgradePlan", isOpen)}
         text="You have reached the maximum number of projects allowed on your current plan. Upgrade to Infisical Pro plan to add more projects."
       />
-      {announcement && (
+      {announcements && announcements.length > 0 && (
         <AnnouncementModal
-          announcement={announcement}
+          announcements={announcements}
           isOpen={isAnnouncementOpen}
           onOpenChange={handleAnnouncementOpenChange}
         />

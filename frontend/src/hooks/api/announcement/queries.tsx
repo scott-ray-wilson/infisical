@@ -6,19 +6,19 @@ import { TAnnouncement } from "./types";
 
 export const announcementKeys = {
   all: ["announcement"] as const,
-  latest: () => [...announcementKeys.all, "latest"] as const
+  recent: () => [...announcementKeys.all, "recent"] as const
 };
 
-export const useGetLatestAnnouncement = (enabled = true) => {
+export const useGetRecentAnnouncements = (enabled = true) => {
   return useQuery({
-    queryKey: announcementKeys.latest(),
+    queryKey: announcementKeys.recent(),
     queryFn: async () => {
       const {
-        data: { announcement }
-      } = await apiRequest.get<{ announcement: TAnnouncement | null }>(
-        "/api/v1/announcement/latest"
+        data: { announcements }
+      } = await apiRequest.get<{ announcements: TAnnouncement[] }>(
+        "/api/v1/announcement/recent"
       );
-      return announcement;
+      return announcements;
     },
     // TODO: restore staleTime: 5 * 60 * 1000 before merge — disabled during development
     // so Contentful changes show up on every navigation/refetch without a hard reload.

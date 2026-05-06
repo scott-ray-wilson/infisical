@@ -1,18 +1,19 @@
-import { ExternalLink } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 
 import {
   Button,
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
+  IconButton
 } from "@app/components/v3";
 import { TAnnouncement } from "@app/hooks/api/announcement";
 
 type Props = {
-  announcement: TAnnouncement;
+  announcements: TAnnouncement[];
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
 };
@@ -28,13 +29,26 @@ const formatPublished = (iso: string) => {
   return Number.isNaN(date.getTime()) ? null : dateFormatter.format(date);
 };
 
-export const AnnouncementModal = ({ announcement, isOpen, onOpenChange }: Props) => {
+export const AnnouncementModal = ({ announcements, isOpen, onOpenChange }: Props) => {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (isOpen) setIndex(0);
+  }, [isOpen]);
+
+  const announcement = announcements[index];
+  if (!announcement) return null;
+
   const ctaLabel = announcement.linkLabel || (announcement.link ? "Learn more" : null);
   const publishedLabel = formatPublished(announcement.published);
+  const total = announcements.length;
+  const hasPrev = index > 0;
+  const hasNext = index < total - 1;
+  const showPager = total > 1;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg overflow-hidden p-0">
+      <DialogContent className="max-w-xl overflow-hidden p-0">
         {announcement.imageUrl && (
           <div className="aspect-[16/9] w-full overflow-hidden bg-muted">
             <img
@@ -45,7 +59,7 @@ export const AnnouncementModal = ({ announcement, isOpen, onOpenChange }: Props)
             />
           </div>
         )}
-        <div className="flex flex-col gap-4 p-6">
+        <div className="flex flex-col gap-4 p-4">
           <DialogHeader>
             {publishedLabel && (
               <time
@@ -56,7 +70,7 @@ export const AnnouncementModal = ({ announcement, isOpen, onOpenChange }: Props)
               </time>
             )}
             <DialogTitle>{announcement.title}</DialogTitle>
-            <DialogDescription className="whitespace-pre-line">
+            <DialogDescription className="my-4 whitespace-pre-line text-foreground/75">
               {announcement.body}
             </DialogDescription>
             {announcement.link && ctaLabel && (
@@ -64,18 +78,45 @@ export const AnnouncementModal = ({ announcement, isOpen, onOpenChange }: Props)
                 href={announcement.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex w-fit items-center gap-1.5 text-sm text-white hover:underline"
+                className="inline-flex w-fit items-center gap-1.5 text-sm text-white underline"
               >
                 {ctaLabel}
                 <ExternalLink className="size-3.5" />
               </a>
             )}
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          <div className="flex items-center justify-between gap-2">
+            {showPager ? (
+              <div className="flex items-center gap-1.5 text-sm text-muted">
+                <IconButton
+                  variant="ghost"
+                  size="xs"
+                  aria-label="Previous announcement"
+                  onClick={() => setIndex((i) => Math.max(0, i - 1))}
+                  isDisabled={!hasPrev}
+                >
+                  <ChevronLeft />
+                </IconButton>
+                <span className="tabular-nums">
+                  {index + 1} / {total}
+                </span>
+                <IconButton
+                  variant="ghost"
+                  size="xs"
+                  aria-label="Next announcement"
+                  onClick={() => setIndex((i) => Math.min(total - 1, i + 1))}
+                  isDisabled={!hasNext}
+                >
+                  <ChevronRight />
+                </IconButton>
+              </div>
+            ) : (
+              <span aria-hidden="true" />
+            )}
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
               Got it
             </Button>
-          </DialogFooter>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

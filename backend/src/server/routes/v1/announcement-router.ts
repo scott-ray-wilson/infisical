@@ -16,23 +16,23 @@ const AnnouncementSchema = z.object({
 
 export const registerAnnouncementRouter = async (server: FastifyZodProvider) => {
   server.route({
-    url: "/latest",
+    url: "/recent",
     config: {
       rateLimit: readLimit
     },
     method: "GET",
     schema: {
-      operationId: "getLatestAnnouncement",
+      operationId: "listRecentAnnouncements",
       response: {
         200: z.object({
-          announcement: AnnouncementSchema.nullable()
+          announcements: AnnouncementSchema.array()
         })
       }
     },
     onRequest: verifyAuth([AuthMode.JWT]),
     handler: async () => {
-      const announcement = await server.services.announcement.getLatestAnnouncement();
-      return { announcement };
+      const announcements = await server.services.announcement.listRecentAnnouncements();
+      return { announcements };
     }
   });
 };

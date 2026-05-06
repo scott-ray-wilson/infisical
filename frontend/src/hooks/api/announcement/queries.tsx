@@ -18,9 +18,11 @@ export const useGetRecentAnnouncements = (enabled = true) => {
       );
       return data;
     },
-    // TODO: restore staleTime: 5 * 60 * 1000 before merge — disabled during development
-    // so Contentful changes show up on every navigation/refetch without a hard reload.
-    staleTime: 0,
+    // Fetch once per session: a newly published announcement won't surface mid-session;
+    // the user picks it up on the next hard reload or new tab.
+    staleTime: Infinity,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
     enabled
   });
 };

@@ -1,8 +1,13 @@
+import { createReadStream } from "node:fs";
+import { stat } from "node:fs/promises";
+import path from "node:path";
+
 import { z } from "zod";
 
-import { UnauthorizedError } from "@app/lib/errors";
+import { NotFoundError, UnauthorizedError } from "@app/lib/errors";
 import { readLimit, writeLimit } from "@app/server/config/rateLimiter";
 import { verifyAuth } from "@app/server/plugins/auth/verify-auth";
+import { BUNDLED_IMAGE_DIR } from "@app/services/announcement/announcement-service";
 import { AuthMode } from "@app/services/auth/auth-type";
 
 const AnnouncementSchema = z.object({
@@ -14,6 +19,16 @@ const AnnouncementSchema = z.object({
   linkLabel: z.string().nullable(),
   published: z.string()
 });
+
+const ASSET_FILENAME_RE = /^[a-zA-Z0-9_-]+\.[a-zA-Z0-9]+$/;
+const MIME_BY_EXT: Record<string, string> = {
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml"
+};
 
 export const registerAnnouncementRouter = async (server: FastifyZodProvider) => {
   server.route({
@@ -66,6 +81,41 @@ export const registerAnnouncementRouter = async (server: FastifyZodProvider) => 
         userId: req.auth.userId,
         announcementId: req.body.announcementId
       });
+    }
+  });
+
+  // Serves images baked into the image at build time (see scripts/bake-announcements.ts).
+  // Filenames are content-hashed so caching is safe to be long-lived and immutable.
+  server.route({
+    url: "/assets/:filename",
+    config: {
+      rateLimit: readLimit
+    },
+    method: "GET",
+    schema: {
+      params: z.object({
+        filename: z.string()
+      })
+    },
+    onRequest: verifyAuth([AuthMode.JWT]),
+    handler: async (req, reply) => {
+      const { filename } = req.params;
+      if (!ASSET_FILENAME_RE.test(filename)) {
+        throw new NotFoundError({ message: "Asset not found" });
+      }
+
+      const filePath = path.join(BUNDLED_IMAGE_DIR, filename);
+      try {
+        await stat(filePath);
+      } catch {
+        throw new NotFoundError({ message: "Asset not found" });
+      }
+
+      const ext = path.extname(filename).toLowerCase();
+      return reply
+        .type(MIME_BY_EXT[ext] ?? "application/octet-stream")
+        .header("cache-control", "public, max-age=31536000, immutable")
+        .send(createReadStream(filePath));
     }
   });
 };

@@ -1,3 +1,6 @@
+import fs from "node:fs/promises";
+import path from "node:path";
+
 import { getConfig } from "@app/lib/config/env";
 import { NotFoundError } from "@app/lib/errors";
 import { logger } from "@app/lib/logger";
@@ -12,10 +15,12 @@ import { TAnnouncement, TContentfulEntriesResponse } from "./announcement-types"
 const CONTENT_TYPE = "featureUpdate";
 const RECENT_LIMIT = 3;
 
-// type CacheEntry = {
-//   fetchedAt: number;
-//   announcements: TAnnouncement[];
-// };
+// Bundled-mode: if this file exists on disk, the backend serves announcements from it
+// (and any referenced images from BUNDLED_IMAGE_DIR) instead of calling Contentful.
+// Written by `scripts/bake-announcements.ts` during Docker build for self-hosted images.
+export const BUNDLED_DIR = path.resolve(process.cwd(), "dist", "announcement-assets");
+export const BUNDLED_JSON_PATH = path.join(BUNDLED_DIR, "announcements.json");
+export const BUNDLED_IMAGE_DIR = path.join(BUNDLED_DIR, "images");
 
 type TAnnouncementServiceFactoryDep = {
   userDAL: Pick<TUserDALFactory, "findById" | "updateById">;
@@ -26,6 +31,29 @@ export type TAnnouncementServiceFactory = ReturnType<typeof announcementServiceF
 export const announcementServiceFactory = ({ userDAL }: TAnnouncementServiceFactoryDep) => {
   // let cache: CacheEntry | null = null;
   let hasLoggedFetchError = false;
+  // null = not yet checked, [] = no bundle present, [...] = bundled announcements
+  let bundled: TAnnouncement[] | null = null;
+  let bundleChecked = false;
+
+  const loadBundled = async (): Promise<TAnnouncement[] | null> => {
+    if (bundleChecked) return bundled;
+    bundleChecked = true;
+    try {
+      const raw = await fs.readFile(BUNDLED_JSON_PATH, "utf8");
+      bundled = JSON.parse(raw) as TAnnouncement[];
+      logger.info(
+        `Loaded ${bundled.length} bundled announcement(s) from ${BUNDLED_JSON_PATH} — Contentful fetches disabled`
+      );
+      return bundled;
+    } catch (err) {
+      const { code } = err as NodeJS.ErrnoException;
+      if (code !== "ENOENT") {
+        logger.warn({ err }, `Failed to read bundled announcements at ${BUNDLED_JSON_PATH}`);
+      }
+      bundled = null;
+      return null;
+    }
+  };
 
   const fetchRecent = async (): Promise<TAnnouncement[]> => {
     const appCfg = getConfig();
@@ -77,30 +105,31 @@ export const announcementServiceFactory = ({ userDAL }: TAnnouncementServiceFact
     });
   };
 
+  const getAnnouncements = async (): Promise<TAnnouncement[]> => {
+    const appCfg = getConfig();
+    if (!appCfg.ANNOUNCEMENTS_ENABLED) return [];
+
+    const fromBundle = await loadBundled();
+    if (fromBundle) return fromBundle.slice(0, RECENT_LIMIT);
+
+    return fetchRecent();
+  };
+
   const listRecentAnnouncements = async ({
     userId
   }: {
     userId: string;
   }): Promise<{ announcements: TAnnouncement[]; lastSeenAnnouncementId: string | null }> => {
-    // TODO: restore caching block before merge (see CACHE_TTL_MS above).
-    // const now = Date.now();
-    // if (cache && now - cache.fetchedAt < CACHE_TTL_MS) {
-    //   ...
-    // }
-
     const user = await userDAL.findById(userId);
     const lastSeenAnnouncementId = user?.lastSeenAnnouncementId ?? null;
 
     try {
-      const announcements = await fetchRecent();
+      const announcements = await getAnnouncements();
       hasLoggedFetchError = false;
       return { announcements, lastSeenAnnouncementId };
     } catch (err) {
       if (!hasLoggedFetchError) {
-        logger.warn(
-          { err },
-          "Failed to fetch announcements from Contentful — feature will be hidden until next attempt"
-        );
+        logger.warn({ err }, "Failed to fetch announcements — feature will be hidden until next attempt");
         hasLoggedFetchError = true;
       }
       return { announcements: [], lastSeenAnnouncementId };

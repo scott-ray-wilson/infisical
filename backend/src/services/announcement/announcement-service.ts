@@ -8,7 +8,7 @@ import { TAnnouncement, TContentfulEntriesResponse } from "./announcement-types"
 // so Contentful changes show up immediately without a backend restart.
 // const CACHE_TTL_MS = 5 * 60 * 1000;
 const CONTENT_TYPE = "featureUpdate";
-const RECENT_LIMIT = 10;
+const RECENT_LIMIT = 3;
 
 // type CacheEntry = {
 //   fetchedAt: number;

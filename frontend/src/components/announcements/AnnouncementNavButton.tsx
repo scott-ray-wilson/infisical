@@ -8,7 +8,8 @@ import { AnnouncementModal } from "./AnnouncementModal";
 import { useAnnouncementSeen } from "./useAnnouncementSeen";
 
 export const AnnouncementNavButton = () => {
-  const { data: announcements } = useGetRecentAnnouncements();
+  const { data } = useGetRecentAnnouncements();
+  const announcements = data?.announcements;
   const { hasUnseen, markSeen } = useAnnouncementSeen();
   const [isOpen, setIsOpen] = useState(false);
 

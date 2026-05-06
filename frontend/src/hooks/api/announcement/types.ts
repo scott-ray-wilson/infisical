@@ -7,3 +7,8 @@ export type TAnnouncement = {
   linkLabel: string | null;
   published: string;
 };
+
+export type TRecentAnnouncementsResponse = {
+  announcements: TAnnouncement[];
+  lastSeenAnnouncementId: string | null;
+};

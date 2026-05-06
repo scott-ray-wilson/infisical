@@ -55,7 +55,8 @@ export const ProjectsPage = () => {
     "upgradePlan"
   ] as const);
 
-  const { data: announcements } = useGetRecentAnnouncements(!hasChildRoute);
+  const { data: announcementData } = useGetRecentAnnouncements(!hasChildRoute);
+  const announcements = announcementData?.announcements;
   const latestAnnouncement = announcements?.[0];
   const { hasUnseen, markSeen } = useAnnouncementSeen();
   const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);

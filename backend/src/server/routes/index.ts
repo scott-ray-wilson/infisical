@@ -842,7 +842,7 @@ export const registerRoutes = async (
 
   const notificationService = notificationServiceFactory({ notificationQueue, userNotificationDAL });
 
-  const announcementService = announcementServiceFactory();
+  const announcementService = announcementServiceFactory({ userDAL });
 
   const clickhouseAuditLogDAL = clickhouse
     ? clickhouseAuditLogDALFactory(clickhouse, db, envConfig.CLICKHOUSE_AUDIT_LOG_TABLE_NAME)

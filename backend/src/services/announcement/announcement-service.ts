@@ -1,6 +1,8 @@
 import { getConfig } from "@app/lib/config/env";
+import { NotFoundError } from "@app/lib/errors";
 import { logger } from "@app/lib/logger";
 import { safeRequest } from "@app/lib/validator";
+import { TUserDALFactory } from "@app/services/user/user-dal";
 
 import { TAnnouncement, TContentfulEntriesResponse } from "./announcement-types";
 
@@ -15,9 +17,13 @@ const RECENT_LIMIT = 3;
 //   announcements: TAnnouncement[];
 // };
 
+type TAnnouncementServiceFactoryDep = {
+  userDAL: Pick<TUserDALFactory, "findById" | "updateById">;
+};
+
 export type TAnnouncementServiceFactory = ReturnType<typeof announcementServiceFactory>;
 
-export const announcementServiceFactory = () => {
+export const announcementServiceFactory = ({ userDAL }: TAnnouncementServiceFactoryDep) => {
   // let cache: CacheEntry | null = null;
   let hasLoggedFetchError = false;
 
@@ -51,39 +57,44 @@ export const announcementServiceFactory = () => {
       }
     }
 
-    const announcements: TAnnouncement[] = [];
-    for (const entry of data.items) {
-      if (!entry?.fields?.title || !entry.fields.body || !entry.fields.published) continue;
+    return data.items.flatMap<TAnnouncement>((entry) => {
+      if (!entry?.fields?.title || !entry.fields.body || !entry.fields.published) return [];
 
       const imageAssetId = entry.fields.image?.sys?.id;
-      const imageUrl = imageAssetId ? assetById.get(imageAssetId) ?? null : null;
+      const imageUrl = imageAssetId ? (assetById.get(imageAssetId) ?? null) : null;
 
-      announcements.push({
-        id: entry.sys.id,
-        title: entry.fields.title,
-        body: entry.fields.body,
-        imageUrl,
-        link: entry.fields.link ?? null,
-        linkLabel: entry.fields.linkLabel ?? null,
-        published: entry.fields.published
-      });
-    }
-
-    return announcements;
+      return [
+        {
+          id: entry.sys.id,
+          title: entry.fields.title,
+          body: entry.fields.body,
+          imageUrl,
+          link: entry.fields.link ?? null,
+          linkLabel: entry.fields.linkLabel ?? null,
+          published: entry.fields.published
+        }
+      ];
+    });
   };
 
-  const listRecentAnnouncements = async (): Promise<TAnnouncement[]> => {
+  const listRecentAnnouncements = async ({
+    userId
+  }: {
+    userId: string;
+  }): Promise<{ announcements: TAnnouncement[]; lastSeenAnnouncementId: string | null }> => {
     // TODO: restore caching block before merge (see CACHE_TTL_MS above).
     // const now = Date.now();
     // if (cache && now - cache.fetchedAt < CACHE_TTL_MS) {
-    //   return cache.announcements;
+    //   ...
     // }
+
+    const user = await userDAL.findById(userId);
+    const lastSeenAnnouncementId = user?.lastSeenAnnouncementId ?? null;
 
     try {
       const announcements = await fetchRecent();
-      // cache = { fetchedAt: now, announcements };
       hasLoggedFetchError = false;
-      return announcements;
+      return { announcements, lastSeenAnnouncementId };
     } catch (err) {
       if (!hasLoggedFetchError) {
         logger.warn(
@@ -92,12 +103,18 @@ export const announcementServiceFactory = () => {
         );
         hasLoggedFetchError = true;
       }
-      // cache = { fetchedAt: now, announcements: [] };
-      return [];
+      return { announcements: [], lastSeenAnnouncementId };
     }
   };
 
+  const markAnnouncementSeen = async ({ userId, announcementId }: { userId: string; announcementId: string }) => {
+    const user = await userDAL.updateById(userId, { lastSeenAnnouncementId: announcementId });
+    if (!user) throw new NotFoundError({ message: "User not found" });
+    return { lastSeenAnnouncementId: user.lastSeenAnnouncementId ?? null };
+  };
+
   return {
-    listRecentAnnouncements
+    listRecentAnnouncements,
+    markAnnouncementSeen
   };
 };

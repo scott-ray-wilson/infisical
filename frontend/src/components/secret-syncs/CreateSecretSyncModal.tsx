@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 
 import { TSecretSyncForm } from "@app/components/secret-syncs/forms/schemas";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Sheet,
   SheetContent,
   SheetDescription,
@@ -50,61 +58,84 @@ export const CreateSecretSyncModal = ({
   initialFormData
 }: Props) => {
   const [selectedSync, setSelectedSync] = useState<SecretSync | null>(selectSync);
+  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
 
   useEffect(() => {
     setSelectedSync(selectSync);
   }, [selectSync]);
 
+  const closeSheet = () => {
+    setSelectedSync(null);
+    onOpenChange(false);
+  };
+
+  const handleSheetOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && selectedSync) {
+      // User has started filling out the form — confirm before discarding.
+      setConfirmDiscardOpen(true);
+      return;
+    }
+    if (!nextOpen) setSelectedSync(null);
+    onOpenChange(nextOpen);
+  };
+
   return (
-    <Sheet
-      open={isOpen}
-      onOpenChange={(nextOpen) => {
-        if (!nextOpen) setSelectedSync(null);
-        onOpenChange(nextOpen);
-      }}
-    >
-      <SheetContent className="flex h-full max-h-full flex-col gap-y-0 sm:max-w-[1400px]">
-        <SheetHeader className="border-b">
-          <SheetTitle>
-            {selectedSync ? (
-              <SecretSyncModalHeader isConfigured={false} destination={selectedSync} />
-            ) : (
-              "Choose a destination"
+    <>
+      <Sheet open={isOpen} onOpenChange={handleSheetOpenChange}>
+        <SheetContent className="flex h-full max-h-full flex-col gap-y-0 sm:max-w-[1400px]">
+          <SheetHeader className="border-b">
+            <SheetTitle>
+              {selectedSync ? (
+                <SecretSyncModalHeader isConfigured={false} destination={selectedSync} />
+              ) : (
+                "Choose a destination"
+              )}
+            </SheetTitle>
+            {!selectedSync && (
+              <SheetDescription>
+                Where should Infisical write these secrets? You can change this later only by
+                creating a new sync.
+              </SheetDescription>
             )}
-          </SheetTitle>
-          {!selectedSync && (
-            <SheetDescription>
-              Where should Infisical write these secrets? You can change this later only by creating
-              a new sync.
-            </SheetDescription>
+          </SheetHeader>
+          {selectedSync ? (
+            <div className="flex min-h-0 flex-1 flex-col">
+              <Content
+                onComplete={closeSheet}
+                selectedSync={selectedSync}
+                setSelectedSync={setSelectedSync}
+                initialFormData={initialFormData}
+              />
+            </div>
+          ) : (
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
+              <Content
+                onComplete={closeSheet}
+                selectedSync={selectedSync}
+                setSelectedSync={setSelectedSync}
+                initialFormData={initialFormData}
+              />
+            </div>
           )}
-        </SheetHeader>
-        {selectedSync ? (
-          <div className="flex min-h-0 flex-1 flex-col">
-            <Content
-              onComplete={() => {
-                setSelectedSync(null);
-                onOpenChange(false);
-              }}
-              selectedSync={selectedSync}
-              setSelectedSync={setSelectedSync}
-              initialFormData={initialFormData}
-            />
-          </div>
-        ) : (
-          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
-            <Content
-              onComplete={() => {
-                setSelectedSync(null);
-                onOpenChange(false);
-              }}
-              selectedSync={selectedSync}
-              setSelectedSync={setSelectedSync}
-              initialFormData={initialFormData}
-            />
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
+
+      <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard sync setup?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You'll lose what you've filled in so far. You can always start a new sync later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction variant="danger" onClick={closeSheet}>
+              Discard
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };

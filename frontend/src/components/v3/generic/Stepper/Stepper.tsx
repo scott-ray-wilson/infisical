@@ -183,6 +183,20 @@ function StepperStep({
         }
       : {};
 
+    const indicatorWrapped = isClickable ? (
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={disabled}
+        aria-label={typeof title === "string" ? `Go to step: ${title}` : `Go to step ${index + 1}`}
+        className="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+      >
+        {indicator}
+      </button>
+    ) : (
+      indicator
+    );
+
     return (
       <li
         data-slot="stepper-step"
@@ -192,7 +206,7 @@ function StepperStep({
         {...props}
       >
         <div className="flex flex-col items-center">
-          {indicator}
+          {indicatorWrapped}
           {!isLast ? (
             <span
               aria-hidden="true"

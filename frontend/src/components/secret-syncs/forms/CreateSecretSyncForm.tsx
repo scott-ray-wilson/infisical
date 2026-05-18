@@ -350,9 +350,7 @@ export const CreateSecretSyncForm = ({
         </div>
 
         <div className="flex shrink-0 items-center justify-between gap-3 border-t border-border px-6 py-4">
-          <span className="text-xs text-muted">
-            {formState.isDirty ? "Unsaved changes" : ""}
-          </span>
+          <span className="text-xs text-muted">{formState.isDirty ? "Unsaved changes" : ""}</span>
           <div className="flex items-center gap-3">
             <span className="text-xs text-muted">
               Step {displayedStepNumber} of {totalSteps}
@@ -361,11 +359,7 @@ export const CreateSecretSyncForm = ({
               <ChevronLeft />
               Back
             </Button>
-            <Button
-              variant="warning"
-              onClick={handleNext}
-              isDisabled={isCreateButtonDisabled}
-            >
+            <Button variant="project" onClick={handleNext} isDisabled={isCreateButtonDisabled}>
               {isFinalStep ? "Create Sync" : "Continue"}
               {!isFinalStep && <ChevronRight />}
             </Button>

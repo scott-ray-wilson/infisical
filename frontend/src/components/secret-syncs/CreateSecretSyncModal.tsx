@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 
 import { TSecretSyncForm } from "@app/components/secret-syncs/forms/schemas";
-import { Modal, ModalContent } from "@app/components/v2";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle
+} from "@app/components/v3";
 import { SecretSync, TSecretSync } from "@app/hooks/api/secretSyncs";
 
 import { CreateSecretSyncForm } from "./forms";
@@ -38,10 +44,10 @@ const Content = ({ onComplete, setSelectedSync, selectedSync, initialFormData }:
 };
 
 export const CreateSecretSyncModal = ({
+  isOpen,
   onOpenChange,
   selectSync = null,
-  initialFormData,
-  ...props
+  initialFormData
 }: Props) => {
   const [selectedSync, setSelectedSync] = useState<SecretSync | null>(selectSync);
 
@@ -50,35 +56,41 @@ export const CreateSecretSyncModal = ({
   }, [selectSync]);
 
   return (
-    <Modal
-      {...props}
-      onOpenChange={(isOpen) => {
-        if (!isOpen) setSelectedSync(null);
-        onOpenChange(isOpen);
+    <Sheet
+      open={isOpen}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) setSelectedSync(null);
+        onOpenChange(nextOpen);
       }}
     >
-      <ModalContent
-        title={
-          selectedSync ? (
-            <SecretSyncModalHeader isConfigured={false} destination={selectedSync} />
-          ) : (
-            "Add Sync"
-          )
-        }
-        className="max-w-2xl"
-        bodyClassName={selectedSync ? "overflow-visible" : undefined}
-        subTitle={selectedSync ? undefined : "Select a third-party service to sync secrets to."}
-      >
-        <Content
-          onComplete={() => {
-            setSelectedSync(null);
-            onOpenChange(false);
-          }}
-          selectedSync={selectedSync}
-          setSelectedSync={setSelectedSync}
-          initialFormData={initialFormData}
-        />
-      </ModalContent>
-    </Modal>
+      <SheetContent className="flex h-full max-h-full flex-col gap-y-0 sm:max-w-5xl">
+        <SheetHeader className="border-b">
+          <SheetTitle>
+            {selectedSync ? (
+              <SecretSyncModalHeader isConfigured={false} destination={selectedSync} />
+            ) : (
+              "Choose a destination"
+            )}
+          </SheetTitle>
+          {!selectedSync && (
+            <SheetDescription>
+              Where should Infisical write these secrets? You can change this later only by creating
+              a new sync.
+            </SheetDescription>
+          )}
+        </SheetHeader>
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
+          <Content
+            onComplete={() => {
+              setSelectedSync(null);
+              onOpenChange(false);
+            }}
+            selectedSync={selectedSync}
+            setSelectedSync={setSelectedSync}
+            initialFormData={initialFormData}
+          />
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };

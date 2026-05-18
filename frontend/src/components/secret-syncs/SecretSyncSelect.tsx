@@ -154,7 +154,7 @@ export const SecretSyncSelect = ({ onSelect }: Props) => {
               ))}
             </div>
           ) : (
-            <Empty>
+            <Empty className="border">
               <EmptyHeader>
                 <EmptyMedia variant="icon">
                   <Search />

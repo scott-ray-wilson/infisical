@@ -63,7 +63,7 @@ export const CreateSecretSyncModal = ({
         onOpenChange(nextOpen);
       }}
     >
-      <SheetContent className="flex h-full max-h-full flex-col gap-y-0 sm:max-w-5xl">
+      <SheetContent className="flex h-full max-h-full flex-col gap-y-0 sm:max-w-[1400px]">
         <SheetHeader className="border-b">
           <SheetTitle>
             {selectedSync ? (
@@ -79,17 +79,31 @@ export const CreateSecretSyncModal = ({
             </SheetDescription>
           )}
         </SheetHeader>
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
-          <Content
-            onComplete={() => {
-              setSelectedSync(null);
-              onOpenChange(false);
-            }}
-            selectedSync={selectedSync}
-            setSelectedSync={setSelectedSync}
-            initialFormData={initialFormData}
-          />
-        </div>
+        {selectedSync ? (
+          <div className="flex min-h-0 flex-1 flex-col">
+            <Content
+              onComplete={() => {
+                setSelectedSync(null);
+                onOpenChange(false);
+              }}
+              selectedSync={selectedSync}
+              setSelectedSync={setSelectedSync}
+              initialFormData={initialFormData}
+            />
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
+            <Content
+              onComplete={() => {
+                setSelectedSync(null);
+                onOpenChange(false);
+              }}
+              selectedSync={selectedSync}
+              setSelectedSync={setSelectedSync}
+              initialFormData={initialFormData}
+            />
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

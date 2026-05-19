@@ -237,7 +237,7 @@ export const SecretSyncOptionsFields = ({ hideInitialSync }: Props) => {
                   </FieldContent>
                   <Switch
                     id="disable-secret-deletion"
-                    variant="success"
+                    variant="project"
                     checked={value}
                     onCheckedChange={onChange}
                   />

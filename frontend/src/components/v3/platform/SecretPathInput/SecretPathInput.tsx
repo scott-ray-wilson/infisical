@@ -129,7 +129,7 @@ const SecretPathInputBase = ({
           maxHeight: "var(--radix-popover-content-available-height)"
         }}
       >
-        <div className="thin-scrollbar max-h-[25vh] overflow-y-auto">
+        <div className="max-h-[25vh] thin-scrollbar overflow-y-auto">
           {suggestions.map((suggestion, i) => (
             <button
               type="button"

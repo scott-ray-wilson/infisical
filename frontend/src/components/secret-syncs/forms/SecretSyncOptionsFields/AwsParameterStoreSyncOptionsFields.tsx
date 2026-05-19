@@ -38,7 +38,7 @@ const AwsTagsSection = () => {
   });
 
   return (
-    <div className="mt-3 mb-4 flex flex-col gap-2 rounded-md border border-border bg-card/40 p-3">
+    <div className="mt-2.5 flex flex-col gap-2">
       <div className="grid max-h-[20vh] grid-cols-12 items-end gap-2 overflow-y-auto">
         {tagFields.fields.map(({ id: tagFieldId }, i) => (
           <Fragment key={tagFieldId}>
@@ -181,7 +181,7 @@ export const AwsParameterStoreSyncOptionsFields = () => {
             </FieldContent>
             <Switch
               id="configure-resource-tags"
-              variant="success"
+              variant="project"
               checked={Array.isArray(watchedTags)}
               onCheckedChange={(isChecked) => {
                 if (isChecked) {
@@ -192,8 +192,8 @@ export const AwsParameterStoreSyncOptionsFields = () => {
               }}
             />
           </Field>
+          {Array.isArray(watchedTags) && <AwsTagsSection />}
         </FieldLabel>
-        {Array.isArray(watchedTags) && <AwsTagsSection />}
       </div>
 
       <Controller
@@ -212,7 +212,7 @@ export const AwsParameterStoreSyncOptionsFields = () => {
                 </FieldContent>
                 <Switch
                   id="sync-secret-metadata-tags"
-                  variant="success"
+                  variant="project"
                   checked={value}
                   onCheckedChange={onChange}
                 />

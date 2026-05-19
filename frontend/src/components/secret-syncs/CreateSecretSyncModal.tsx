@@ -51,18 +51,29 @@ const Content = ({ onComplete, setSelectedSync, selectedSync, initialFormData }:
   return <SecretSyncSelect onSelect={setSelectedSync} />;
 };
 
+// DEV: auto-open the sync modal with AWS Parameter Store pre-selected so the
+// form is mounted on every reload. Remove before shipping.
+const DEV_AUTO_OPEN = import.meta.env.DEV;
+
 export const CreateSecretSyncModal = ({
   isOpen,
   onOpenChange,
   selectSync = null,
   initialFormData
 }: Props) => {
-  const [selectedSync, setSelectedSync] = useState<SecretSync | null>(selectSync);
+  const [selectedSync, setSelectedSync] = useState<SecretSync | null>(
+    selectSync ?? (DEV_AUTO_OPEN ? SecretSync.AWSParameterStore : null)
+  );
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false);
 
   useEffect(() => {
-    setSelectedSync(selectSync);
+    setSelectedSync(selectSync ?? (DEV_AUTO_OPEN ? SecretSync.AWSParameterStore : null));
   }, [selectSync]);
+
+  useEffect(() => {
+    if (DEV_AUTO_OPEN && !isOpen) onOpenChange(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const closeSheet = () => {
     setSelectedSync(null);

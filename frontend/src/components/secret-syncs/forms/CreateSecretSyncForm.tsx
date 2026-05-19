@@ -3,11 +3,21 @@ import { Controller, FormProvider, useForm } from "react-hook-form";
 import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { createNotification } from "@app/components/notifications";
-import { FormControl, Switch } from "@app/components/v2";
-import { Button, Stepper, StepperList, StepperStep } from "@app/components/v3";
+import {
+  Button,
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+  FieldTitle,
+  Stepper,
+  StepperList,
+  StepperStep,
+  Switch
+} from "@app/components/v3";
 import { useOrganization, useProject } from "@app/context";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import {
@@ -326,25 +336,26 @@ export const CreateSecretSyncForm = ({
                   control={control}
                   name="isAutoSyncEnabled"
                   render={({ field: { value, onChange }, fieldState: { error } }) => (
-                    <FormControl
-                      helperText={
-                        value
-                          ? "Secrets will automatically be synced when changes occur in the source location."
-                          : "Secrets will not automatically be synced when changes occur in the source location. You can still trigger syncs manually."
-                      }
-                      isError={Boolean(error)}
-                      errorText={error?.message}
-                    >
-                      <Switch
-                        className="bg-mineshaft-400/80 shadow-inner data-[state=checked]:bg-green/80"
-                        id="auto-sync-enabled"
-                        thumbClassName="bg-mineshaft-800"
-                        onCheckedChange={onChange}
-                        isChecked={value}
-                      >
-                        <p className="w-[8.4rem]">Auto-Sync {value ? "Enabled" : "Disabled"}</p>
-                      </Switch>
-                    </FormControl>
+                    <Field>
+                      <FieldLabel htmlFor="auto-sync-enabled">
+                        <Field orientation="horizontal">
+                          <FieldContent>
+                            <FieldTitle>Auto-sync on changes</FieldTitle>
+                            <FieldDescription>
+                              When secrets in the source change, sync to {destinationName}{" "}
+                              automatically. Turn off to only sync manually.
+                            </FieldDescription>
+                          </FieldContent>
+                          <Switch
+                            id="auto-sync-enabled"
+                            variant="success"
+                            checked={value}
+                            onCheckedChange={onChange}
+                          />
+                        </Field>
+                      </FieldLabel>
+                      <FieldError errors={[error]} />
+                    </Field>
                   )}
                 />
               </>

@@ -199,10 +199,10 @@ export const CreateSecretSyncForm = ({
   };
 
   const handleStepperChange = async (stepperIndex: number) => {
-    // Provider step (index 0) behaves like clicking Back — step back one tab
-    // (which returns to provider selection if we're already on the first tab).
+    // Provider step (index 0) jumps directly back to the provider selection screen,
+    // regardless of which form tab the user is currently on.
     if (stepperIndex === 0) {
-      handlePrev();
+      onCancel();
       return;
     }
 
@@ -356,12 +356,10 @@ export const CreateSecretSyncForm = ({
               Step {displayedStepNumber} of {totalSteps}
             </span>
             <Button variant="outline" onClick={handlePrev}>
-              <ChevronLeft />
               Back
             </Button>
             <Button variant="project" onClick={handleNext} isDisabled={isCreateButtonDisabled}>
               {isFinalStep ? "Create Sync" : "Continue"}
-              {!isFinalStep && <ChevronRight />}
             </Button>
           </div>
         </div>

@@ -77,10 +77,6 @@ export const SecretSyncConnectionField = ({ onChange: callback }: Props) => {
 
   return (
     <>
-      <p className="text-sm text-bunker-300">
-        Specify the {appName} Connection to use to connect to {connectionName} and configure
-        destination parameters.
-      </p>
       <Controller
         control={control}
         name="connection"

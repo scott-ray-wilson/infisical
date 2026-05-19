@@ -77,7 +77,7 @@ const getFormTabs = (destination: SecretSync, destinationName: string): FormTab[
       name: "Initial Sync",
       key: "initialSync",
       shortDescription: "How to resolve the first run",
-      title: "Initial sync",
+      title: "Initial Sync Behavior",
       subtitle: `Choose how Infisical should reconcile existing secrets in ${destinationName} the first time this sync runs.`,
       rightLabel: "INITIAL SYNC",
       rightDescription:

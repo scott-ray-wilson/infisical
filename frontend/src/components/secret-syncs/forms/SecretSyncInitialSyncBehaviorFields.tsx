@@ -1,8 +1,11 @@
 import { useEffect } from "react";
 import { Controller, useFormContext } from "react-hook-form";
-import { TriangleAlert } from "lucide-react";
+import { ArrowLeftRight, ArrowRight, TriangleAlert } from "lucide-react";
 
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Field,
   FieldContent,
   FieldDescription,
@@ -12,6 +15,7 @@ import {
   RadioGroup,
   RadioGroupItem
 } from "@app/components/v3";
+import { cn } from "@app/components/v3/utils";
 import { SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP, SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import {
   SecretSync,
@@ -20,6 +24,136 @@ import {
 } from "@app/hooks/api/secretSyncs";
 
 import { TSecretSyncForm } from "./schemas";
+
+type GraphicVariant = "overwrite" | "prioritize-infisical" | "prioritize-destination";
+
+const getGraphicVariant = (key: string): GraphicVariant => {
+  if (key === SecretSyncInitialSyncBehavior.OverwriteDestination) return "overwrite";
+  if (key === SecretSyncInitialSyncBehavior.ImportPrioritizeSource) return "prioritize-infisical";
+  return "prioritize-destination";
+};
+
+type SecretFate = "kept" | "added" | "removed" | "updated" | "imported";
+
+type ReconciliationRow = { name: string; fate?: SecretFate };
+
+const fateLabel: Record<Exclude<SecretFate, "kept">, string> = {
+  added: "added",
+  removed: "removed",
+  updated: "updated",
+  imported: "imported"
+};
+
+const fateClass: Record<Exclude<SecretFate, "kept">, string> = {
+  added: "text-success",
+  removed: "text-danger",
+  updated: "text-warning",
+  imported: "text-info"
+};
+
+const SecretRow = ({ name, fate }: ReconciliationRow) => {
+  const isRemoved = fate === "removed";
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-2 rounded border px-2 py-1 text-[10px]",
+        isRemoved ? "border-danger/20 bg-danger/5" : "border-border bg-mineshaft-800/80"
+      )}
+    >
+      <span
+        className={cn(
+          "truncate font-mono text-foreground/80",
+          isRemoved && "text-danger/70 line-through"
+        )}
+      >
+        {name}
+      </span>
+      {fate && fate !== "kept" && (
+        <span className={cn("shrink-0 text-[9px] tracking-wider uppercase", fateClass[fate])}>
+          {fateLabel[fate]}
+        </span>
+      )}
+    </div>
+  );
+};
+
+const ReconciliationDiagram = ({
+  variant,
+  destinationName
+}: {
+  variant: GraphicVariant;
+  destinationName: string;
+}) => {
+  let infisicalRows: ReconciliationRow[];
+  let destinationRows: ReconciliationRow[];
+  let arrowIcon: React.ReactNode;
+
+  switch (variant) {
+    case "overwrite":
+      infisicalRows = [{ name: "API_KEY" }, { name: "DB_URL" }];
+      destinationRows = [
+        { name: "API_KEY", fate: "updated" },
+        { name: "DB_URL", fate: "added" },
+        { name: "LEGACY_TOKEN", fate: "removed" }
+      ];
+      arrowIcon = <ArrowRight className="size-4 text-muted" strokeWidth={2.5} />;
+      break;
+    case "prioritize-infisical":
+      infisicalRows = [
+        { name: "API_KEY" },
+        { name: "DB_URL" },
+        { name: "LEGACY_TOKEN", fate: "imported" }
+      ];
+      destinationRows = [
+        { name: "API_KEY", fate: "updated" },
+        { name: "DB_URL", fate: "added" },
+        { name: "LEGACY_TOKEN" }
+      ];
+      arrowIcon = <ArrowLeftRight className="size-4 text-muted" strokeWidth={2.5} />;
+      break;
+    case "prioritize-destination":
+    default:
+      infisicalRows = [
+        { name: "API_KEY", fate: "updated" },
+        { name: "DB_URL" },
+        { name: "LEGACY_TOKEN", fate: "imported" }
+      ];
+      destinationRows = [
+        { name: "API_KEY" },
+        { name: "DB_URL", fate: "added" },
+        { name: "LEGACY_TOKEN" }
+      ];
+      arrowIcon = <ArrowLeftRight className="size-4 text-muted" strokeWidth={2.5} />;
+      break;
+  }
+
+  return (
+    <div
+      className="mt-3 grid grid-cols-[1fr_auto_1fr] items-start gap-3 rounded-md border border-border bg-card p-3"
+      aria-hidden="true"
+    >
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <p className="text-[10px] font-medium tracking-wider text-muted uppercase">Infisical</p>
+        <div className="flex flex-col gap-1">
+          {infisicalRows.map((row) => (
+            <SecretRow key={row.name} {...row} />
+          ))}
+        </div>
+      </div>
+      <div className="my-auto flex items-center pt-5">{arrowIcon}</div>
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <p className="truncate text-[10px] font-medium tracking-wider text-muted uppercase">
+          {destinationName}
+        </p>
+        <div className="flex flex-col gap-1">
+          {destinationRows.map((row) => (
+            <SecretRow key={row.name} {...row} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const SecretSyncInitialSyncBehaviorFields = () => {
   const { control, watch, setValue } = useFormContext<TSecretSyncForm>();
@@ -62,10 +196,6 @@ export const SecretSyncInitialSyncBehaviorFields = () => {
       name="syncOptions.initialSyncBehavior"
       render={({ field: { value, onChange }, fieldState: { error } }) => (
         <Field>
-          <FieldLabel>Initial sync behavior</FieldLabel>
-          <FieldDescription>
-            Specify how Infisical should resolve the first sync to {destinationName}.
-          </FieldDescription>
           <RadioGroup
             value={value}
             onValueChange={onChange}
@@ -81,6 +211,10 @@ export const SecretSyncInitialSyncBehaviorFields = () => {
                     <FieldContent>
                       <FieldTitle>{name}</FieldTitle>
                       <FieldDescription>{description}</FieldDescription>
+                      <ReconciliationDiagram
+                        variant={getGraphicVariant(key)}
+                        destinationName={destinationName}
+                      />
                     </FieldContent>
                     <RadioGroupItem value={key} id={id} isError={Boolean(error)} />
                   </Field>
@@ -90,39 +224,42 @@ export const SecretSyncInitialSyncBehaviorFields = () => {
           </RadioGroup>
           <FieldError errors={[error]} />
           {vercelSensitive && (
-            <p className="flex items-start gap-1.5 text-xs text-warning">
-              <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
-              <span>
+            <Alert variant="warning" className="mt-3">
+              <TriangleAlert />
+              <AlertTitle>Only overwrite is supported for sensitive secrets</AlertTitle>
+              <AlertDescription>
                 When secrets are marked as sensitive, Vercel does not allow them to be read back, so
                 only Overwrite Destination Secrets is supported.
-              </span>
-            </p>
+              </AlertDescription>
+            </Alert>
           )}
           {!vercelSensitive && !syncOption?.canImportSecrets && (
-            <p className="flex items-start gap-1.5 text-xs text-warning">
-              <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
-              <span>
+            <Alert variant="warning" className="mt-3">
+              <TriangleAlert />
+              <AlertTitle>{destinationName} only supports overwriting</AlertTitle>
+              <AlertDescription>
                 {destinationName} only supports overwriting destination secrets.
                 {!disableSecretDeletion &&
                   (syncOption?.supportsKeySchema !== false ||
                     syncOption?.supportsDisableSecretDeletion !== false) &&
                   ` Secrets not present in Infisical will be removed from the destination. Consider adding a key schema or disabling secret deletion if you do not want existing secrets to be removed from ${destinationName}.`}
-              </span>
-            </p>
+              </AlertDescription>
+            </Alert>
           )}
           {!vercelSensitive &&
             syncOption?.canImportSecrets &&
             value === SecretSyncInitialSyncBehavior.OverwriteDestination &&
             !disableSecretDeletion && (
-              <p className="flex items-start gap-1.5 text-xs text-warning">
-                <TriangleAlert className="mt-0.5 size-3.5 shrink-0" />
-                <span>
+              <Alert variant="warning" className="mt-3">
+                <TriangleAlert />
+                <AlertTitle>Existing destination secrets will be deleted</AlertTitle>
+                <AlertDescription>
                   Secrets not present in Infisical will be removed from the destination. If you have
                   secrets in {destinationName} that you do not want deleted, consider importing
                   destination secrets instead. Alternatively, configure a key schema or disable
                   secret deletion in the next step.
-                </span>
-              </p>
+                </AlertDescription>
+              </Alert>
             )}
         </Field>
       )}

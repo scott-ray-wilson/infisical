@@ -51,54 +51,49 @@ const DefaultSecretSyncSourceFields = () => {
   }, [selectedEnvironment, selectedSecretPath]);
 
   return (
-    <>
-      <p className="mb-4 text-sm text-bunker-300">
-        Specify the environment and path where you would like to sync secrets from.
-      </p>
-      <FieldGroup>
-        <Controller
-          defaultValue={currentProject.environments[0]}
-          control={control}
-          name="environment"
-          render={({ field: { value, onChange }, fieldState: { error } }) => (
-            <Field>
-              <FieldLabel>Environment</FieldLabel>
-              <FieldContent>
-                <FilterableSelect
-                  value={value}
-                  onChange={onChange}
-                  options={currentProject.environments}
-                  placeholder="Select environment..."
-                  getOptionLabel={(option) => option?.name}
-                  getOptionValue={(option) => option?.id}
-                  isError={Boolean(error)}
-                />
-                <FieldError errors={[error]} />
-              </FieldContent>
-            </Field>
-          )}
-        />
-        <Controller
-          defaultValue="/"
-          control={control}
-          name="secretPath"
-          render={({ field: { value, onChange }, fieldState: { error } }) => (
-            <Field>
-              <FieldLabel>Secret Path</FieldLabel>
-              <FieldContent>
-                <SecretPathInput
-                  environment={selectedEnvironment?.slug}
-                  value={value}
-                  onChange={onChange}
-                  isError={Boolean(error)}
-                />
-                <FieldError errors={[error]} />
-              </FieldContent>
-            </Field>
-          )}
-        />
-      </FieldGroup>
-    </>
+    <FieldGroup>
+      <Controller
+        defaultValue={currentProject.environments[0]}
+        control={control}
+        name="environment"
+        render={({ field: { value, onChange }, fieldState: { error } }) => (
+          <Field>
+            <FieldLabel>Environment</FieldLabel>
+            <FieldContent>
+              <FilterableSelect
+                value={value}
+                onChange={onChange}
+                options={currentProject.environments}
+                placeholder="Select environment..."
+                getOptionLabel={(option) => option?.name}
+                getOptionValue={(option) => option?.id}
+                isError={Boolean(error)}
+              />
+              <FieldError errors={[error]} />
+            </FieldContent>
+          </Field>
+        )}
+      />
+      <Controller
+        defaultValue="/"
+        control={control}
+        name="secretPath"
+        render={({ field: { value, onChange }, fieldState: { error } }) => (
+          <Field>
+            <FieldLabel>Secret Path</FieldLabel>
+            <FieldContent>
+              <SecretPathInput
+                environment={selectedEnvironment?.slug}
+                value={value}
+                onChange={onChange}
+                isError={Boolean(error)}
+              />
+              <FieldError errors={[error]} />
+            </FieldContent>
+          </Field>
+        )}
+      />
+    </FieldGroup>
   );
 };
 

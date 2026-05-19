@@ -230,44 +230,6 @@ export const SecretSyncInitialSyncBehaviorFields = () => {
       name="syncOptions.initialSyncBehavior"
       render={({ field: { value, onChange }, fieldState: { error } }) => (
         <Field>
-          {vercelSensitive && (
-            <Alert className="mb-2" variant="warning">
-              <TriangleAlert />
-              <AlertTitle>Only overwrite is supported for sensitive secrets</AlertTitle>
-              <AlertDescription>
-                When secrets are marked as sensitive, Vercel does not allow them to be read back, so
-                only Overwrite Destination Secrets is supported.
-              </AlertDescription>
-            </Alert>
-          )}
-          {!vercelSensitive && !syncOption?.canImportSecrets && (
-            <Alert className="mb-2" variant="warning">
-              <TriangleAlert />
-              <AlertTitle>{destinationName} only supports overwriting</AlertTitle>
-              <AlertDescription>
-                {destinationName} only supports overwriting destination secrets.
-                {!disableSecretDeletion &&
-                  (syncOption?.supportsKeySchema !== false ||
-                    syncOption?.supportsDisableSecretDeletion !== false) &&
-                  ` Secrets not present in Infisical will be removed from the destination. Consider adding a key schema or disabling secret deletion if you do not want existing secrets to be removed from ${destinationName}.`}
-              </AlertDescription>
-            </Alert>
-          )}
-          {!vercelSensitive &&
-            syncOption?.canImportSecrets &&
-            value === SecretSyncInitialSyncBehavior.OverwriteDestination &&
-            !disableSecretDeletion && (
-              <Alert className="mb-2" variant="warning">
-                <TriangleAlert />
-                <AlertTitle>Existing destination secrets will be deleted</AlertTitle>
-                <AlertDescription>
-                  Secrets not present in Infisical will be removed from the destination. If you have
-                  secrets in {destinationName} that you do not want deleted, consider importing
-                  destination secrets instead. Alternatively, configure a key schema or disable
-                  secret deletion in the next step.
-                </AlertDescription>
-              </Alert>
-            )}
           <RadioGroup
             value={value}
             onValueChange={onChange}
@@ -283,10 +245,6 @@ export const SecretSyncInitialSyncBehaviorFields = () => {
                     <FieldContent>
                       <FieldTitle>{title}</FieldTitle>
                       <FieldDescription className="text-wrap!">{description}</FieldDescription>
-                      <ReconciliationDiagram
-                        variant={getGraphicVariant(key)}
-                        destinationName={destinationName}
-                      />
                     </FieldContent>
                     <RadioGroupItem value={key} id={id} isError={Boolean(error)} />
                   </Field>
@@ -294,6 +252,55 @@ export const SecretSyncInitialSyncBehaviorFields = () => {
               );
             })}
           </RadioGroup>
+          {value && (
+            <div className="mt-4">
+              <p className="mb-2 text-[11px] font-medium tracking-wider text-muted uppercase">
+                Example
+              </p>
+              <ReconciliationDiagram
+                variant={getGraphicVariant(value)}
+                destinationName={destinationName}
+              />
+            </div>
+          )}
+          {vercelSensitive && (
+            <Alert className="mt-4" variant="warning">
+              <TriangleAlert />
+              <AlertTitle>Only overwrite is supported for sensitive secrets</AlertTitle>
+              <AlertDescription>
+                When secrets are marked as sensitive, Vercel does not allow them to be read back, so
+                only Overwrite Destination Secrets is supported.
+              </AlertDescription>
+            </Alert>
+          )}
+          {!vercelSensitive && !syncOption?.canImportSecrets && (
+            <Alert className="mt-4" variant="warning">
+              <TriangleAlert />
+              <AlertTitle>{destinationName} only supports overwriting</AlertTitle>
+              <AlertDescription>
+                {destinationName} only supports overwriting destination secrets.
+                {!disableSecretDeletion &&
+                  (syncOption?.supportsKeySchema !== false ||
+                    syncOption?.supportsDisableSecretDeletion !== false) &&
+                  ` Secrets not present in Infisical will be removed from the destination. Consider adding a key schema or disabling secret deletion if you do not want existing secrets to be removed from ${destinationName}.`}
+              </AlertDescription>
+            </Alert>
+          )}
+          {!vercelSensitive &&
+            syncOption?.canImportSecrets &&
+            value === SecretSyncInitialSyncBehavior.OverwriteDestination &&
+            !disableSecretDeletion && (
+              <Alert className="mt-4" variant="warning">
+                <TriangleAlert />
+                <AlertTitle>Existing destination secrets will be deleted</AlertTitle>
+                <AlertDescription>
+                  Secrets not present in Infisical will be removed from the destination. If you have
+                  secrets in {destinationName} that you do not want deleted, consider importing
+                  destination secrets instead. Alternatively, configure a key schema or disable
+                  secret deletion in the next step.
+                </AlertDescription>
+              </Alert>
+            )}
           <FieldError errors={[error]} />
         </Field>
       )}

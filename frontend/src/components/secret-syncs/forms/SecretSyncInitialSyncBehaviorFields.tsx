@@ -16,7 +16,7 @@ import {
   RadioGroupItem
 } from "@app/components/v3";
 import { cn } from "@app/components/v3/utils";
-import { SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP, SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
+import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import {
   SecretSync,
   SecretSyncInitialSyncBehavior,
@@ -31,6 +31,34 @@ const getGraphicVariant = (key: string): GraphicVariant => {
   if (key === SecretSyncInitialSyncBehavior.OverwriteDestination) return "overwrite";
   if (key === SecretSyncInitialSyncBehavior.ImportPrioritizeSource) return "prioritize-infisical";
   return "prioritize-destination";
+};
+
+const getShortDestinationName = (name: string) => name.split(" ")[0];
+
+const getBehaviorCopy = (
+  key: SecretSyncInitialSyncBehavior,
+  destinationName: string
+): { title: string; description: string } => {
+  const shortName = getShortDestinationName(destinationName);
+  switch (key) {
+    case SecretSyncInitialSyncBehavior.OverwriteDestination:
+      return {
+        title: `Replace everything in ${destinationName}`,
+        description:
+          "Infisical becomes the source of truth. Any secrets in the destination path that aren't in Infisical will be deleted."
+      };
+    case SecretSyncInitialSyncBehavior.ImportPrioritizeSource:
+      return {
+        title: "Merge — Infisical wins on conflicts",
+        description: `Pull existing secrets from ${shortName} into Infisical. If the same key exists in both, the value from Infisical is kept and pushed to ${shortName}.`
+      };
+    case SecretSyncInitialSyncBehavior.ImportPrioritizeDestination:
+    default:
+      return {
+        title: `Merge — ${shortName} wins on conflicts`,
+        description: `Pull existing secrets from ${shortName} into Infisical. If the same key exists in both, the value from ${shortName} is kept and Infisical is updated.`
+      };
+  }
 };
 
 type SecretFate = "kept" | "added" | "removed" | "updated" | "imported";
@@ -129,7 +157,7 @@ const ReconciliationDiagram = ({
 
   return (
     <div
-      className="mt-3 grid grid-cols-[1fr_auto_1fr] items-start gap-3 rounded-md border border-border bg-card p-3"
+      className="mt-2 grid grid-cols-[1fr_auto_1fr] items-start gap-3 rounded-md border border-border bg-card p-3"
       aria-hidden="true"
     >
       <div className="flex min-w-0 flex-col gap-1.5">
@@ -154,6 +182,12 @@ const ReconciliationDiagram = ({
     </div>
   );
 };
+
+const BEHAVIOR_ORDER: SecretSyncInitialSyncBehavior[] = [
+  SecretSyncInitialSyncBehavior.OverwriteDestination,
+  SecretSyncInitialSyncBehavior.ImportPrioritizeSource,
+  SecretSyncInitialSyncBehavior.ImportPrioritizeDestination
+];
 
 export const SecretSyncInitialSyncBehaviorFields = () => {
   const { control, watch, setValue } = useFormContext<TSecretSyncForm>();
@@ -184,8 +218,8 @@ export const SecretSyncInitialSyncBehaviorFields = () => {
     }
   }, [vercelSensitive, currentInitialBehavior, setValue]);
 
-  const behaviorEntries = Object.entries(SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP).filter(
-    ([key]) => !vercelSensitive || key === SecretSyncInitialSyncBehavior.OverwriteDestination
+  const behaviorKeys = BEHAVIOR_ORDER.filter(
+    (key) => !vercelSensitive || key === SecretSyncInitialSyncBehavior.OverwriteDestination
   );
 
   const isDisabled = !syncOption?.canImportSecrets || vercelSensitive;
@@ -197,7 +231,7 @@ export const SecretSyncInitialSyncBehaviorFields = () => {
       render={({ field: { value, onChange }, fieldState: { error } }) => (
         <Field>
           {vercelSensitive && (
-            <Alert variant="warning">
+            <Alert className="mb-2" variant="warning">
               <TriangleAlert />
               <AlertTitle>Only overwrite is supported for sensitive secrets</AlertTitle>
               <AlertDescription>
@@ -207,7 +241,7 @@ export const SecretSyncInitialSyncBehaviorFields = () => {
             </Alert>
           )}
           {!vercelSensitive && !syncOption?.canImportSecrets && (
-            <Alert variant="warning">
+            <Alert className="mb-2" variant="warning">
               <TriangleAlert />
               <AlertTitle>{destinationName} only supports overwriting</AlertTitle>
               <AlertDescription>
@@ -223,7 +257,7 @@ export const SecretSyncInitialSyncBehaviorFields = () => {
             syncOption?.canImportSecrets &&
             value === SecretSyncInitialSyncBehavior.OverwriteDestination &&
             !disableSecretDeletion && (
-              <Alert variant="warning">
+              <Alert className="mb-2" variant="warning">
                 <TriangleAlert />
                 <AlertTitle>Existing destination secrets will be deleted</AlertTitle>
                 <AlertDescription>
@@ -238,17 +272,17 @@ export const SecretSyncInitialSyncBehaviorFields = () => {
             value={value}
             onValueChange={onChange}
             disabled={isDisabled}
-            className="mt-3 gap-3"
+            className="gap-3"
           >
-            {behaviorEntries.map(([key, details]) => {
-              const { name, description } = details(destinationName);
+            {behaviorKeys.map((key) => {
+              const { title, description } = getBehaviorCopy(key, destinationName);
               const id = `initial-sync-${key}`;
               return (
                 <FieldLabel key={key} htmlFor={id} variant="project">
                   <Field orientation="horizontal">
                     <FieldContent>
-                      <FieldTitle>{name}</FieldTitle>
-                      <FieldDescription>{description}</FieldDescription>
+                      <FieldTitle>{title}</FieldTitle>
+                      <FieldDescription className="text-wrap!">{description}</FieldDescription>
                       <ReconciliationDiagram
                         variant={getGraphicVariant(key)}
                         destinationName={destinationName}

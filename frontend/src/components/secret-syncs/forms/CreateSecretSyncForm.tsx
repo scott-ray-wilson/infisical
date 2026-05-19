@@ -23,6 +23,7 @@ import { SecretSyncOptionsFields } from "./SecretSyncOptionsFields/SecretSyncOpt
 import { SecretSyncFormSchema, TSecretSyncForm } from "./schemas";
 import { SecretSyncDestinationFields } from "./SecretSyncDestinationFields";
 import { SecretSyncDetailsFields } from "./SecretSyncDetailsFields";
+import { SecretSyncInitialSyncBehaviorFields } from "./SecretSyncInitialSyncBehaviorFields";
 import { SecretSyncReviewFields } from "./SecretSyncReviewFields";
 import { SecretSyncSourceFields } from "./SecretSyncSourceFields";
 
@@ -73,6 +74,17 @@ const getFormTabs = (destination: SecretSync, destinationName: string): FormTab[
       fields: ["connection", "destinationConfig"]
     },
     {
+      name: "Initial Sync",
+      key: "initialSync",
+      shortDescription: "How to resolve the first run",
+      title: "Initial sync",
+      subtitle: `Choose how Infisical should reconcile existing secrets in ${destinationName} the first time this sync runs.`,
+      rightLabel: "INITIAL SYNC",
+      rightDescription:
+        "The first run is special — Infisical can either overwrite everything in the destination or import existing secrets back into Infisical. Subsequent runs follow your sync options.",
+      fields: ["syncOptions"]
+    },
+    {
       name: "Sync Options",
       key: "options",
       shortDescription: "Behavior + advanced",
@@ -80,7 +92,7 @@ const getFormTabs = (destination: SecretSync, destinationName: string): FormTab[
       subtitle: "Control how secrets are written and whether they sync automatically.",
       rightLabel: "SYNC OPTIONS",
       rightDescription:
-        "Decide how Infisical reconciles changes on every sync — initial behavior, auto-sync, and how conflicts are handled.",
+        "Decide how Infisical reconciles changes on every run — auto-sync, key schema, and how conflicts are handled.",
       fields: ["syncOptions"]
     },
     {
@@ -306,9 +318,10 @@ export const CreateSecretSyncForm = ({
 
             {selectedTabIndex === 0 && <SecretSyncSourceFields />}
             {selectedTabIndex === 1 && <SecretSyncDestinationFields />}
-            {selectedTabIndex === 2 && (
+            {selectedTabIndex === 2 && <SecretSyncInitialSyncBehaviorFields />}
+            {selectedTabIndex === 3 && (
               <>
-                <SecretSyncOptionsFields />
+                <SecretSyncOptionsFields hideInitialSync />
                 <Controller
                   control={control}
                   name="isAutoSyncEnabled"
@@ -336,8 +349,8 @@ export const CreateSecretSyncForm = ({
                 />
               </>
             )}
-            {selectedTabIndex === 3 && <SecretSyncDetailsFields />}
-            {selectedTabIndex === 4 && <SecretSyncReviewFields />}
+            {selectedTabIndex === 4 && <SecretSyncDetailsFields />}
+            {selectedTabIndex === 5 && <SecretSyncReviewFields />}
           </div>
 
           <aside className="hidden w-80 shrink-0 flex-col border-l border-border px-6 py-6 lg:flex">

@@ -30,7 +30,7 @@ export const SecretSyncDetailsFields = () => {
               isError={Boolean(error)}
               autoFocus
             />
-            <FieldDescription>Must be slug-friendly.</FieldDescription>
+            {!error && <FieldDescription>Must be slug-friendly.</FieldDescription>}
             <FieldError errors={[error]} />
           </Field>
         )}

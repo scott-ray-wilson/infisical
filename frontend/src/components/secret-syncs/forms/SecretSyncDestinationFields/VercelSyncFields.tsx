@@ -318,7 +318,6 @@ export const VercelSyncFields = () => {
                 </FieldLabel>
                 <FieldContent>
                   <FilterableSelect
-                    menuPlacement="top"
                     noOptionsMessage={({ inputValue }) => {
                       return inputValue
                         ? "No projects found matching your search."
@@ -356,7 +355,6 @@ export const VercelSyncFields = () => {
                 <FieldLabel>Vercel Project Environment</FieldLabel>
                 <FieldContent>
                   <FilterableSelect
-                    menuPlacement="top"
                     isDisabled={!connectionId || !currentApp}
                     value={
                       value
@@ -402,7 +400,6 @@ export const VercelSyncFields = () => {
                       isLoading={isTeamsLoading && Boolean(connectionId) && Boolean(currentApp)}
                       isDisabled={!connectionId || !currentApp}
                       options={previewBranchOptions}
-                      menuPlacement="top"
                       value={previewBranchOptions.find((branch) => branch.id === value) ?? null}
                       onChange={(option) =>
                         onChange((option as SingleValue<{ id: string }>)?.id || "")

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { Controller, useFormContext, useFormState } from "react-hook-form";
 import { ArrowRight } from "lucide-react";
 
 import {
@@ -69,7 +69,18 @@ export const SecretSyncKeySchemaField = () => {
   const destinationName = SECRET_SYNC_MAP[destination].name;
   const currentValue = watch("syncOptions.keySchema");
 
-  const [openItem, setOpenItem] = useState<string>(currentValue ? ITEM_VALUE : "");
+  const { errors, submitCount } = useFormState({ control });
+  const hasSchemaError = Boolean(
+    (errors.syncOptions as { keySchema?: unknown } | undefined)?.keySchema
+  );
+
+  const [openItem, setOpenItem] = useState<string>(
+    currentValue || hasSchemaError ? ITEM_VALUE : ""
+  );
+
+  useEffect(() => {
+    if (hasSchemaError) setOpenItem(ITEM_VALUE);
+  }, [hasSchemaError, submitCount]);
 
   return (
     <Controller

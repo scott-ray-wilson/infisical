@@ -396,7 +396,7 @@ export const CreateSecretSyncForm = ({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogMedia>
-              <AlertTriangleIcon />
+              <AlertTriangleIcon className="text-warning" />
             </AlertDialogMedia>
             <AlertDialogTitle>Secret Sync Behavior</AlertDialogTitle>
             <AlertDialogDescription asChild>

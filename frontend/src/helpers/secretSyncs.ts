@@ -100,7 +100,7 @@ export const SECRET_SYNC_MAP: Record<
     name: "Hashicorp Vault",
     image: "Vault.png",
     category: "SELF-HOSTED",
-    description: "KV v2 engine on a Vault instance you manage."
+    description: "KV v1 or v2 engine on a Vault instance you manage."
   },
   [SecretSync.TeamCity]: {
     name: "TeamCity",

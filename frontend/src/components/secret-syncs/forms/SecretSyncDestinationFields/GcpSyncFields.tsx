@@ -90,7 +90,6 @@ export const GcpSyncFields = () => {
             </FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isPending && Boolean(connectionId)}
                 isDisabled={!connectionId}
                 value={projects?.find((project) => project.id === value) ?? null}
@@ -166,7 +165,6 @@ export const GcpSyncFields = () => {
               <FieldLabel>Region</FieldLabel>
               <FieldContent>
                 <FilterableSelect
-                  menuPlacement="top"
                   isLoading={areLocationsPending && Boolean(projectId)}
                   isDisabled={!projectId}
                   value={locations?.find((option) => option.locationId === value) ?? null}

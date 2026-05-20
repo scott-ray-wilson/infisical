@@ -64,7 +64,6 @@ export const HCVaultSyncFields = () => {
             </FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isMountsLoading && Boolean(connectionId)}
                 isDisabled={!connectionId}
                 onChange={(option) =>

@@ -81,7 +81,6 @@ export const OCIVaultSyncFields = () => {
             </FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isCompartmentsLoading && Boolean(connectionId)}
                 isDisabled={!connectionId}
                 value={compartments?.find((c) => c.id === value) ?? null}
@@ -120,7 +119,6 @@ export const OCIVaultSyncFields = () => {
             </FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isVaultsLoading && Boolean(connectionId)}
                 isDisabled={!connectionId || !selectedCompartment}
                 value={vaults?.find((v) => v.id === value) || null}
@@ -158,7 +156,6 @@ export const OCIVaultSyncFields = () => {
             </FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isKeysLoading && Boolean(connectionId)}
                 isDisabled={!connectionId || !selectedCompartment || !selectedVault}
                 value={keys?.find((v) => v.id === value) ?? null}

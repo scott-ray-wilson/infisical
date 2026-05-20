@@ -3,6 +3,9 @@ import { Info } from "lucide-react";
 
 import { SecretSyncConnectionField } from "@app/components/secret-syncs/forms/SecretSyncConnectionField";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Field,
   FieldContent,
   FieldError,
@@ -57,14 +60,14 @@ export const AzureKeyVaultSyncFields = () => {
           </Field>
         )}
       />
-
-      <div className="flex items-center gap-2 text-xs text-yellow-400">
-        <Info className="h-3.5 w-3.5" />
-        <p>
+      <Alert variant="info">
+        <Info />
+        <AlertTitle>Key Naming</AlertTitle>
+        <AlertDescription>
           Secret keys with underscores (_) will be converted to hyphens (-) when syncing to Azure
           Key Vault.
-        </p>
-      </div>
+        </AlertDescription>
+      </Alert>
     </FieldGroup>
   );
 };

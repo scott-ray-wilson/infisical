@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Controller, useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { Controller, useFieldArray, useFormContext, useFormState, useWatch } from "react-hook-form";
 import { SingleValue } from "react-select";
 import { CircleHelp, Plus, Trash2 } from "lucide-react";
 
@@ -117,7 +117,21 @@ export const AwsSecretsManagerSyncOptionsFields = () => {
   const hasConfiguredOption =
     Boolean(watchedKeyId) || Array.isArray(watchedTags) || metadataAsTagsActive;
 
-  const [openItem, setOpenItem] = useState<string>(hasConfiguredOption ? ITEM_VALUE : "");
+  const { errors, submitCount } = useFormState({ control });
+  const syncOptionsErrors = errors.syncOptions as Record<string, unknown> | undefined;
+  const hasAccordionError = Boolean(
+    syncOptionsErrors?.keyId ||
+      syncOptionsErrors?.tags ||
+      syncOptionsErrors?.syncSecretMetadataAsTags
+  );
+
+  const [openItem, setOpenItem] = useState<string>(
+    hasConfiguredOption || hasAccordionError ? ITEM_VALUE : ""
+  );
+
+  useEffect(() => {
+    if (hasAccordionError) setOpenItem(ITEM_VALUE);
+  }, [hasAccordionError, submitCount]);
 
   const summaryParts = [
     watchedKeyId ? "Custom KMS key" : null,

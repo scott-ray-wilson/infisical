@@ -104,7 +104,6 @@ export const HumanitecSyncFields = () => {
             </FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isOrganizationsPending && Boolean(connectionId) && Boolean(currentOrg)}
                 isDisabled={!connectionId || !currentOrg}
                 value={
@@ -193,7 +192,6 @@ export const HumanitecSyncFields = () => {
               <FieldLabel>Environment</FieldLabel>
               <FieldContent>
                 <FilterableSelect
-                  menuPlacement="top"
                   isLoading={
                     isOrganizationsPending &&
                     Boolean(connectionId) &&

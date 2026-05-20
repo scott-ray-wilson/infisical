@@ -119,7 +119,6 @@ export const ZabbixSyncFields = () => {
               <FieldLabel>Host</FieldLabel>
               <FieldContent>
                 <FilterableSelect
-                  menuPlacement="top"
                   isLoading={isHostsPending && Boolean(connectionId)}
                   isDisabled={!connectionId}
                   value={hosts.find((host) => host.hostId === value) ?? null}

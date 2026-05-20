@@ -216,7 +216,6 @@ export const TerraformCloudSyncFields = () => {
               <FieldLabel>Variable Set</FieldLabel>
               <FieldContent>
                 <FilterableSelect
-                  menuPlacement="top"
                   isLoading={isOrganizationsPending && Boolean(connectionId) && Boolean(currentOrg)}
                   isDisabled={!connectionId || !currentOrg}
                   value={variableSets.find((variableSet) => variableSet.id === value) ?? null}
@@ -251,7 +250,6 @@ export const TerraformCloudSyncFields = () => {
               <FieldLabel>Workspace</FieldLabel>
               <FieldContent>
                 <FilterableSelect
-                  menuPlacement="top"
                   isLoading={isOrganizationsPending && Boolean(connectionId) && Boolean(currentOrg)}
                   isDisabled={!connectionId || !currentOrg}
                   value={workspaces.find((workspace) => workspace.id === value) ?? null}

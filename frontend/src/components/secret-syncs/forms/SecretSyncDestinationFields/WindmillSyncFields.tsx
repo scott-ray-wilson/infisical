@@ -63,7 +63,6 @@ export const WindmillSyncFields = () => {
             </FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isWorkspacesLoading && Boolean(connectionId)}
                 isDisabled={!connectionId}
                 value={workspaces?.find((workspace) => workspace.name === value) ?? null}

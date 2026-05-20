@@ -74,7 +74,6 @@ export const LaravelForgeSyncFields = () => {
             <FieldLabel>Organization</FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isOrganizationsLoading && Boolean(connectionId)}
                 isDisabled={!connectionId}
                 value={organizations?.find((org) => org.slug === value) ?? null}
@@ -104,7 +103,6 @@ export const LaravelForgeSyncFields = () => {
             <FieldLabel>Server</FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isServersLoading && Boolean(connectionId && orgSlug)}
                 isDisabled={!connectionId || !orgSlug}
                 value={servers?.find((server) => server.id === value) ?? null}
@@ -133,7 +131,6 @@ export const LaravelForgeSyncFields = () => {
             <FieldLabel>Site</FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isSitesLoading && Boolean(connectionId && orgSlug && serverId)}
                 isDisabled={!connectionId || !orgSlug || !serverId}
                 value={sites?.find((site) => site.id === value) ?? null}

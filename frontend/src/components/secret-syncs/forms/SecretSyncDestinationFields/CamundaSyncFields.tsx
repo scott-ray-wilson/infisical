@@ -62,7 +62,6 @@ export const CamundaSyncFields = () => {
             </FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isPending && Boolean(connectionId)}
                 isDisabled={!connectionId}
                 value={clusters?.find((cluster) => cluster.uuid === value) ?? null}

@@ -57,7 +57,6 @@ export const ChefSyncFields = () => {
             <FieldLabel>Data Bag</FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isDataBagsLoading && Boolean(connectionId)}
                 isDisabled={!connectionId}
                 value={dataBags?.find((dataBag) => dataBag.name === value) ?? null}
@@ -85,7 +84,6 @@ export const ChefSyncFields = () => {
             <FieldLabel>Data Bag Item</FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isDataBagItemsLoading && Boolean(connectionId && dataBagName)}
                 isDisabled={!connectionId || !dataBagName}
                 value={dataBagItems?.find((dataBagItem) => dataBagItem.name === value) ?? null}

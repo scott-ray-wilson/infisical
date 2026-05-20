@@ -69,7 +69,6 @@ export const TeamCitySyncFields = () => {
             </FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isProjectsLoading && Boolean(connectionId)}
                 isDisabled={!connectionId}
                 value={projects?.find((proj) => proj.id === value) ?? null}
@@ -107,7 +106,6 @@ export const TeamCitySyncFields = () => {
             </FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isProjectsLoading && Boolean(connectionId)}
                 isDisabled={!connectionId || !selectedProject}
                 value={buildTypes.find((buildType) => buildType.id === value) ?? null}

@@ -1,11 +1,17 @@
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
-import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { createNotification } from "@app/components/notifications";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Button,
   Field,
   FieldContent,
@@ -271,44 +277,6 @@ export const CreateSecretSyncForm = ({
     if (canJump) setSelectedTabIndex(targetTab);
   };
 
-  if (showConfirmation) {
-    return (
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="flex-1 overflow-y-auto p-8">
-          <div className="mx-auto flex max-w-2xl flex-col rounded-xs border border-l-2 border-mineshaft-600 border-l-primary bg-mineshaft-700/80 px-4 py-3">
-            <div className="mb-1 flex items-center text-sm">
-              <FontAwesomeIcon icon={faInfoCircle} size="sm" className="mr-1.5 text-primary" />
-              Secret Sync Behavior
-            </div>
-            <p className="mt-1 text-sm text-bunker-200">
-              Secret Syncs are the source of truth for connected third-party services. Any secret,
-              including associated data, not present or imported in Infisical before syncing will be
-              overwritten, and changes made directly in the connected service outside of infisical
-              may also be overwritten by future syncs.
-            </p>
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center justify-end gap-3 border-t border-border px-6 py-4">
-          <Button
-            variant="ghost"
-            isDisabled={createSecretSync.isPending}
-            onClick={() => setShowConfirmation(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            variant="warning"
-            isPending={createSecretSync.isPending}
-            isDisabled={createSecretSync.isPending}
-            onClick={handleSubmit(onSubmit)}
-          >
-            I Understand
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const currentTab = formTabs[selectedTabIndex];
   // Stepper has Provider at index 0; form tabs start at stepper index 1.
   const stepperActiveStep = selectedTabIndex + 1;
@@ -416,6 +384,37 @@ export const CreateSecretSyncForm = ({
           </div>
         </div>
       </form>
+      <AlertDialog
+        open={showConfirmation}
+        onOpenChange={(open) => {
+          if (!createSecretSync.isPending) setShowConfirmation(open);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Secret Sync Behavior</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="flex flex-col gap-2">
+                <p>Infisical is the source of truth for synced destinations.</p>
+                <p>
+                  Secrets not in Infisical will be overwritten in the destination, and any direct
+                  edits there may be overwritten by future syncs.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel isDisabled={createSecretSync.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="project"
+              isDisabled={createSecretSync.isPending}
+              onClick={handleSubmit(onSubmit)}
+            >
+              I Understand
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </FormProvider>
   );
 };

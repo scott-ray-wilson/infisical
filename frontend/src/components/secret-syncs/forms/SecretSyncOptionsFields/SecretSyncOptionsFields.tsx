@@ -9,8 +9,7 @@ import {
   FieldContent,
   FieldDescription,
   FieldError,
-  FieldLabel,
-  FieldTitle,
+  Label,
   Switch
 } from "@app/components/v3";
 import { SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP, SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
@@ -225,24 +224,22 @@ export const SecretSyncOptionsFields = ({ hideInitialSync, children }: Props) =>
           name="syncOptions.disableSecretDeletion"
           render={({ field: { value, onChange }, fieldState: { error } }) => (
             <Field className="mb-4">
-              <FieldLabel htmlFor="disable-secret-deletion">
-                <Field orientation="horizontal">
-                  <FieldContent>
-                    <FieldTitle>Disable secret deletion</FieldTitle>
-                    <FieldDescription>
-                      When enabled, Infisical will not remove secrets from {destinationName} during
-                      a sync. Use this if you intend to manage some secrets manually outside of
-                      Infisical.
-                    </FieldDescription>
-                  </FieldContent>
-                  <Switch
-                    id="disable-secret-deletion"
-                    variant="project"
-                    checked={value}
-                    onCheckedChange={onChange}
-                  />
-                </Field>
-              </FieldLabel>
+              <Field orientation="horizontal">
+                <FieldContent>
+                  <Label htmlFor="disable-secret-deletion">Disable secret deletion</Label>
+                  <FieldDescription>
+                    When enabled, Infisical will not remove secrets from {destinationName} during a
+                    sync. Use this if you intend to manage some secrets manually outside of
+                    Infisical.
+                  </FieldDescription>
+                </FieldContent>
+                <Switch
+                  id="disable-secret-deletion"
+                  variant="project"
+                  checked={value}
+                  onCheckedChange={onChange}
+                />
+              </Field>
               <FieldError errors={[error]} />
             </Field>
           )}

@@ -1,7 +1,7 @@
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import { Controller, useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { SingleValue } from "react-select";
-import { CircleHelp, Plus, Tags, Trash2 } from "lucide-react";
+import { CircleHelp, Plus, Trash2 } from "lucide-react";
 
 import {
   Accordion,
@@ -14,13 +14,10 @@ import {
   FieldDescription,
   FieldError,
   FieldLabel,
-  FieldTitle,
   FilterableSelect,
   IconButton,
   Input,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+  Label,
   Switch,
   Tooltip,
   TooltipContent,
@@ -34,7 +31,7 @@ import { SecretSync } from "@app/hooks/api/secretSyncs";
 
 import { TSecretSyncForm } from "../schemas";
 
-const AwsTagsPopover = () => {
+const AwsTagsEditor = () => {
   const { control } = useFormContext<
     TSecretSyncForm & { destination: SecretSync.AWSParameterStore }
   >();
@@ -44,83 +41,58 @@ const AwsTagsPopover = () => {
     name: "syncOptions.tags"
   });
 
-  const tagCount = tagFields.fields.length;
+  const canRemove = tagFields.fields.length > 1;
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button variant="outline" size="xs" type="button" className="mt-2.5 w-fit">
-          <Tags className="size-3" />
-          {tagCount > 0 ? `Edit tags (${tagCount})` : "Edit tags"}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent
-        onCloseAutoFocus={(e) => e.preventDefault()}
-        className="w-[500px]"
-        align="start"
+    <div className="mt-3 flex flex-col gap-3">
+      <div className="flex flex-col gap-2">
+        {tagFields.fields.map(({ id: tagFieldId }, i) => (
+          <div key={tagFieldId} className="grid grid-cols-12 items-end gap-2">
+            <div className="col-span-5">
+              {i === 0 && <p className="mb-1 text-xs text-muted">Key</p>}
+              <Controller
+                control={control}
+                name={`syncOptions.tags.${i}.key`}
+                render={({ field, fieldState: { error } }) => (
+                  <Input {...field} isError={Boolean(error)} className="h-8" />
+                )}
+              />
+            </div>
+            <div className="col-span-6">
+              {i === 0 && <p className="mb-1 text-xs text-muted">Value (optional)</p>}
+              <Controller
+                control={control}
+                name={`syncOptions.tags.${i}.value`}
+                render={({ field, fieldState: { error } }) => (
+                  <Input {...field} isError={Boolean(error)} className="h-8" />
+                )}
+              />
+            </div>
+            <div className="col-span-1 flex justify-end">
+              <IconButton
+                variant="ghost-muted"
+                aria-label="Remove tag"
+                size="sm"
+                isDisabled={!canRemove}
+                onClick={() => tagFields.remove(i)}
+              >
+                <Trash2 />
+              </IconButton>
+            </div>
+          </div>
+        ))}
+      </div>
+      <Button
+        variant="outline"
+        size="xs"
+        type="button"
+        className="w-fit"
+        onClick={() => tagFields.append({ key: "", value: "" })}
       >
-        <div className="flex flex-col gap-3">
-          <div>
-            <p className="text-sm font-medium text-foreground">Resource tags</p>
-            <p className="mt-0.5 text-xs text-muted">
-              Static tags applied to every synced parameter.
-            </p>
-          </div>
-          <div className="thin-scrollbar flex max-h-64 flex-col gap-2 overflow-y-auto">
-            {tagCount === 0 && (
-              <p className="py-4 text-center text-xs text-muted">No tags yet. Add one below.</p>
-            )}
-            {tagFields.fields.map(({ id: tagFieldId }, i) => (
-              <Fragment key={tagFieldId}>
-                <div className="grid grid-cols-12 items-end gap-2">
-                  <div className="col-span-5">
-                    {i === 0 && <p className="mb-1 text-xs text-muted">Key</p>}
-                    <Controller
-                      control={control}
-                      name={`syncOptions.tags.${i}.key`}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input {...field} isError={Boolean(error)} className="h-8" />
-                      )}
-                    />
-                  </div>
-                  <div className="col-span-6">
-                    {i === 0 && <p className="mb-1 text-xs text-muted">Value (optional)</p>}
-                    <Controller
-                      control={control}
-                      name={`syncOptions.tags.${i}.value`}
-                      render={({ field, fieldState: { error } }) => (
-                        <Input {...field} isError={Boolean(error)} className="h-8" />
-                      )}
-                    />
-                  </div>
-                  <div className="col-span-1 flex justify-end">
-                    <IconButton
-                      variant="ghost-muted"
-                      aria-label="Remove tag"
-                      size="sm"
-                      onClick={() => tagFields.remove(i)}
-                    >
-                      <Trash2 />
-                    </IconButton>
-                  </div>
-                </div>
-              </Fragment>
-            ))}
-          </div>
-          <div>
-            <Button
-              variant="outline"
-              size="xs"
-              type="button"
-              onClick={() => tagFields.append({ key: "", value: "" })}
-            >
-              <Plus />
-              Add tag
-            </Button>
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
+        <Plus />
+        Add tag
+      </Button>
+    </div>
   );
 };
 
@@ -144,8 +116,8 @@ export const AwsParameterStoreSyncOptionsFields = () => {
 
   const summaryParts = [
     watchedKeyId ? "Custom KMS key" : null,
-    Array.isArray(watchedTags) ? "Resource tags" : null,
-    watchedSyncMetadataAsTags ? "Sync metadata as tags" : null
+    watchedSyncMetadataAsTags ? "Sync metadata as tags" : null,
+    Array.isArray(watchedTags) ? "Resource tags" : null
   ].filter(Boolean);
 
   const summary = summaryParts.length ? summaryParts.join(" · ") : "All defaults";
@@ -236,60 +208,57 @@ export const AwsParameterStoreSyncOptionsFields = () => {
             )}
           />
 
-          <div className="mb-4">
-            <FieldLabel htmlFor="configure-resource-tags">
-              <Field orientation="horizontal">
-                <FieldContent>
-                  <FieldTitle>Configure resource tags</FieldTitle>
-                  <FieldDescription>
-                    Overwrite AWS resource tags on synced parameters with static values defined
-                    below.
-                  </FieldDescription>
-                </FieldContent>
-                <Switch
-                  id="configure-resource-tags"
-                  variant="project"
-                  checked={Array.isArray(watchedTags)}
-                  onCheckedChange={(isChecked) => {
-                    if (isChecked) {
-                      setValue("syncOptions.tags", []);
-                    } else {
-                      setValue("syncOptions.tags", undefined);
-                    }
-                  }}
-                />
-              </Field>
-              {Array.isArray(watchedTags) && <AwsTagsPopover />}
-            </FieldLabel>
-          </div>
-
           <Controller
             name="syncOptions.syncSecretMetadataAsTags"
             control={control}
             render={({ field: { value, onChange }, fieldState: { error } }) => (
               <Field className="mb-4">
-                <FieldLabel htmlFor="sync-secret-metadata-tags">
-                  <Field orientation="horizontal">
-                    <FieldContent>
-                      <FieldTitle>Sync secret metadata as resource tags</FieldTitle>
-                      <FieldDescription>
-                        Metadata attached to secrets is added as resource tags on parameters synced
-                        by Infisical. Manually configured tags above take precedence when keys
-                        conflict.
-                      </FieldDescription>
-                    </FieldContent>
-                    <Switch
-                      id="sync-secret-metadata-tags"
-                      variant="project"
-                      checked={value}
-                      onCheckedChange={onChange}
-                    />
-                  </Field>
-                </FieldLabel>
+                <Field orientation="horizontal">
+                  <FieldContent>
+                    <Label htmlFor="sync-secret-metadata-tags">
+                      Sync secret metadata as resource tags
+                    </Label>
+                    <FieldDescription>
+                      Metadata attached to secrets is added as resource tags on parameters synced by
+                      Infisical. Manually configured tags take precedence when keys conflict.
+                    </FieldDescription>
+                  </FieldContent>
+                  <Switch
+                    id="sync-secret-metadata-tags"
+                    variant="project"
+                    checked={value}
+                    onCheckedChange={onChange}
+                  />
+                </Field>
                 <FieldError errors={[error]} />
               </Field>
             )}
           />
+
+          <Field className="mb-4">
+            <Field orientation="horizontal">
+              <FieldContent>
+                <Label htmlFor="configure-resource-tags">Configure resource tags</Label>
+                <FieldDescription>
+                  Static tags applied to every synced parameter. Overwrites AWS resource tags on
+                  synced parameters with the values defined below.
+                </FieldDescription>
+              </FieldContent>
+              <Switch
+                id="configure-resource-tags"
+                variant="project"
+                checked={Array.isArray(watchedTags)}
+                onCheckedChange={(isChecked) => {
+                  if (isChecked) {
+                    setValue("syncOptions.tags", [{ key: "", value: "" }]);
+                  } else {
+                    setValue("syncOptions.tags", undefined);
+                  }
+                }}
+              />
+            </Field>
+            {Array.isArray(watchedTags) && <AwsTagsEditor />}
+          </Field>
         </AccordionContent>
       </AccordionItem>
     </Accordion>

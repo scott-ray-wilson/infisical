@@ -11,8 +11,7 @@ import {
   FieldContent,
   FieldDescription,
   FieldError,
-  FieldLabel,
-  FieldTitle,
+  Label,
   Stepper,
   StepperList,
   StepperStep,
@@ -343,23 +342,21 @@ export const CreateSecretSyncForm = ({
                   name="isAutoSyncEnabled"
                   render={({ field: { value, onChange }, fieldState: { error } }) => (
                     <Field className="mb-4">
-                      <FieldLabel htmlFor="auto-sync-enabled">
-                        <Field orientation="horizontal">
-                          <FieldContent>
-                            <FieldTitle>Auto-sync on changes</FieldTitle>
-                            <FieldDescription>
-                              When secrets in the source change, sync to {destinationName}{" "}
-                              automatically. Turn off to only sync manually.
-                            </FieldDescription>
-                          </FieldContent>
-                          <Switch
-                            id="auto-sync-enabled"
-                            variant="project"
-                            checked={value}
-                            onCheckedChange={onChange}
-                          />
-                        </Field>
-                      </FieldLabel>
+                      <Field orientation="horizontal">
+                        <FieldContent>
+                          <Label htmlFor="auto-sync-enabled">Auto-sync on changes</Label>
+                          <FieldDescription>
+                            When secrets in the source change, sync to {destinationName}{" "}
+                            automatically. Turn off to only sync manually.
+                          </FieldDescription>
+                        </FieldContent>
+                        <Switch
+                          id="auto-sync-enabled"
+                          variant="project"
+                          checked={value}
+                          onCheckedChange={onChange}
+                        />
+                      </Field>
                       <FieldError errors={[error]} />
                     </Field>
                   )}

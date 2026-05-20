@@ -147,10 +147,10 @@ export const CreateSecretSyncForm = ({
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   // scoot: right now we only do this when creating a connection so we know index 1
-  // DEV: jump to Sync Options (index 3) while iterating on that tab. Remove before shipping.
+  // DEV: jump to Details (index 4) while iterating on that tab. Remove before shipping.
   const [selectedTabIndex, setSelectedTabIndex] = useState(
     // eslint-disable-next-line no-nested-ternary
-    import.meta.env.DEV ? 3 : initialFormData ? 1 : 0
+    import.meta.env.DEV ? 4 : initialFormData ? 1 : 0
   );
 
   const { syncOption } = useSecretSyncOption(destination);

@@ -5,6 +5,9 @@ import { Info, TriangleAlert } from "lucide-react";
 
 import { SecretSyncConnectionField } from "@app/components/secret-syncs/forms/SecretSyncConnectionField";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   CreatableSelect,
   Field,
   FieldContent,
@@ -215,9 +218,7 @@ export const VercelSyncFields = () => {
                 <FieldContent>
                   <FilterableSelect
                     isMulti
-                    value={teamVercelEnvironments.filter((env) =>
-                      (value || []).includes(env.slug)
-                    )}
+                    value={teamVercelEnvironments.filter((env) => (value || []).includes(env.slug))}
                     onChange={(option) =>
                       onChange(
                         (option as MultiValue<(typeof teamVercelEnvironments)[number]>).map(
@@ -445,59 +446,40 @@ export const VercelSyncFields = () => {
           const showTeamDevWarning = isTeamDevTargeted && Boolean(value);
 
           return (
-            <Field orientation="horizontal">
-              <FieldContent>
-                <Label htmlFor="vercel-sync-sensitive" className="flex items-center gap-1.5">
-                  Mark Secrets as Sensitive in Vercel
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-md">
-                      When enabled, secrets will be created in Vercel as Sensitive. Sensitive
-                      environment variables cannot be read back via the Vercel API after creation.
-                    </TooltipContent>
-                  </Tooltip>
-                </Label>
-                <FieldError errors={[error]} />
-              </FieldContent>
-              <div className="flex items-center gap-2">
-                {showTeamDevWarning && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <TriangleAlert className="text-warning" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-md">
-                      Marking secrets as sensitive in Vercel is not supported for development
-                      environments. Sensitive secrets will only be applied to your other selected
-                      environments.
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Switch
-                        id="vercel-sync-sensitive"
-                        variant="project"
-                        checked={Boolean(value) && !isProjectDevTargeted}
-                        disabled={isProjectDevTargeted}
-                        onCheckedChange={(checked) => {
-                          if (isProjectDevTargeted) return;
-                          onChange(checked);
-                        }}
-                      />
-                    </span>
-                  </TooltipTrigger>
-                  {isProjectDevTargeted && (
-                    <TooltipContent className="max-w-md">
-                      Marking secrets as sensitive in Vercel is not supported for development
-                      environments.
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </div>
-            </Field>
+            <>
+              <Field orientation="horizontal">
+                <FieldContent>
+                  <Label htmlFor="vercel-sync-sensitive">Mark Secrets as Sensitive in Vercel</Label>
+                  <FieldDescription>
+                    When enabled, secrets will be created in Vercel as Sensitive. Sensitive
+                    environment variables cannot be read back via the Vercel API after creation.
+                  </FieldDescription>
+                  <FieldError errors={[error]} />
+                </FieldContent>
+                <Switch
+                  id="vercel-sync-sensitive"
+                  variant="project"
+                  checked={Boolean(value) && !isProjectDevTargeted}
+                  disabled={isProjectDevTargeted}
+                  onCheckedChange={(checked) => {
+                    if (isProjectDevTargeted) return;
+                    onChange(checked);
+                  }}
+                />
+              </Field>
+              {(isProjectDevTargeted || showTeamDevWarning) && (
+                <Alert variant="warning">
+                  <TriangleAlert />
+                  <AlertTitle>Sensitive not supported for Development</AlertTitle>
+                  <AlertDescription>
+                    Marking secrets as sensitive in Vercel is not supported for development
+                    environments.
+                    {showTeamDevWarning &&
+                      " Sensitive secrets will only be applied to your other selected environments."}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </>
           );
         }}
       />

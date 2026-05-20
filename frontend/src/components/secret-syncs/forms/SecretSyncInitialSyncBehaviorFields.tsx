@@ -44,19 +44,18 @@ const getBehaviorCopy = (
     case SecretSyncInitialSyncBehavior.OverwriteDestination:
       return {
         title: `Replace everything in ${destinationName}`,
-        description:
-          "Infisical becomes the source of truth. Any secrets in the destination path that aren't in Infisical will be deleted."
+        description: `Infisical becomes the source of truth. On the first run, every secret in Infisical is pushed to ${destinationName}, and any secrets already in ${destinationName} that don't exist in Infisical are deleted.`
       };
     case SecretSyncInitialSyncBehavior.ImportPrioritizeSource:
       return {
-        title: "Merge — Infisical wins on conflicts",
-        description: `Pull existing secrets from ${shortName} into Infisical. If the same key exists in both, the value from Infisical is kept and pushed to ${shortName}.`
+        title: `Merge both sides — Infisical wins conflicts`,
+        description: `Combine the secrets from both sides. New secrets in ${shortName} are imported into Infisical, new secrets in Infisical are pushed to ${shortName}, and when the same key exists on both sides Infisical's value is kept and pushed.`
       };
     case SecretSyncInitialSyncBehavior.ImportPrioritizeDestination:
     default:
       return {
-        title: `Merge — ${shortName} wins on conflicts`,
-        description: `Pull existing secrets from ${shortName} into Infisical. If the same key exists in both, the value from ${shortName} is kept and Infisical is updated.`
+        title: `Merge both sides — ${shortName} wins conflicts`,
+        description: `Combine the secrets from both sides. New secrets in ${shortName} are imported into Infisical, new secrets in Infisical are pushed to ${shortName}, and when the same key exists on both sides ${shortName}'s value is kept and Infisical is updated to match.`
       };
   }
 };
@@ -247,7 +246,7 @@ const ReconciliationDiagram = ({
     <div className="mt-2 flex flex-col gap-2" aria-hidden="true">
       <ReconciliationSection
         title="Before"
-        subtitle="What exists on each side today"
+        subtitle="The secrets currently on each side, before the first sync runs"
         destinationName={destinationName}
         infisicalRows={BEFORE_INFISICAL}
         destinationRows={BEFORE_DESTINATION}
@@ -262,7 +261,7 @@ const ReconciliationDiagram = ({
       </div>
       <ReconciliationSection
         title="After"
-        subtitle="Final state once the sync completes"
+        subtitle="How each side looks once the first sync completes"
         destinationName={destinationName}
         infisicalRows={after.infisical}
         destinationRows={after.destination}

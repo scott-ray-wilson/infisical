@@ -33,7 +33,10 @@ import { SecretSyncOptionsFields } from "./SecretSyncOptionsFields/SecretSyncOpt
 import { SecretSyncFormSchema, TSecretSyncForm } from "./schemas";
 import { SecretSyncDestinationFields } from "./SecretSyncDestinationFields";
 import { SecretSyncDetailsFields } from "./SecretSyncDetailsFields";
-import { SecretSyncInitialSyncBehaviorFields } from "./SecretSyncInitialSyncBehaviorFields";
+import {
+  InitialSyncAlerts,
+  SecretSyncInitialSyncBehaviorFields
+} from "./SecretSyncInitialSyncBehaviorFields";
 import { SecretSyncReviewFields } from "./SecretSyncReviewFields";
 import { SecretSyncSourceFields } from "./SecretSyncSourceFields";
 
@@ -368,12 +371,17 @@ export const CreateSecretSyncForm = ({
             {selectedTabIndex === 5 && <SecretSyncReviewFields />}
           </div>
 
-          <aside className="hidden w-80 shrink-0 flex-col border-l border-border px-6 py-6 lg:flex">
-            <p className="text-[11px] font-medium tracking-wider text-muted uppercase">
-              Step {displayedStepNumber} · {currentTab.rightLabel}
-            </p>
-            <p className="mt-4 text-sm font-semibold text-foreground">What this step does</p>
-            <p className="mt-2 text-sm leading-relaxed text-muted">{currentTab.rightDescription}</p>
+          <aside className="hidden w-80 shrink-0 flex-col gap-4 overflow-y-auto border-l border-border px-6 py-6 lg:flex">
+            <div className="mb-auto">
+              <p className="text-[11px] font-medium tracking-wider text-muted uppercase">
+                Step {displayedStepNumber} · {currentTab.rightLabel}
+              </p>
+              <p className="mt-4 text-sm font-semibold text-foreground">What this step does</p>
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                {currentTab.rightDescription}
+              </p>
+            </div>
+            {selectedTabIndex === 2 && <InitialSyncAlerts />}
           </aside>
         </div>
 

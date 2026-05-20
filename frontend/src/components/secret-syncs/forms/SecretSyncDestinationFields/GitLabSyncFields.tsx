@@ -51,7 +51,7 @@ const SecretProtectionOption = ({
 }) => {
   return (
     <Field orientation="horizontal">
-      <FieldContent>
+      <FieldContent className={isDisabled ? "pointer-events-none opacity-50" : undefined}>
         <Label htmlFor={id}>{title}</Label>
         <FieldDescription>{description}</FieldDescription>
       </FieldContent>

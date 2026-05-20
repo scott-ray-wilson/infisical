@@ -31,10 +31,10 @@ export const SECRET_SYNC_MAP: Record<
     description: "Managed secret rotation and audit on AWS."
   },
   [SecretSync.GitHub]: {
-    name: "GitHub Actions",
+    name: "GitHub",
     image: "GitHub.png",
     category: "CI/CD",
-    description: "Repository or organization-level Actions secrets."
+    description: "Repository or organization-level secrets."
   },
   [SecretSync.GCPSecretManager]: {
     name: "GCP Secret Manager",
@@ -178,7 +178,7 @@ export const SECRET_SYNC_MAP: Record<
     name: "Supabase",
     image: "Supabase.png",
     category: "DATA",
-    description: "Project secrets for Supabase Edge Functions."
+    description: "Project secrets for Supabase."
   },
   [SecretSync.DigitalOceanAppPlatform]: {
     name: "Digital Ocean App Platform",
@@ -232,7 +232,7 @@ export const SECRET_SYNC_MAP: Record<
     name: "Azure Entra ID SCIM",
     image: "Microsoft Azure.png",
     category: "AZURE",
-    description: "Provision identities to Azure Entra ID via SCIM."
+    description: "SCIM provisioning tokens for Azure Entra ID Enterprise Applications."
   },
   [SecretSync.ExternalInfisical]: {
     name: "Infisical",
@@ -250,13 +250,13 @@ export const SECRET_SYNC_MAP: Record<
     name: "Devin",
     image: "Devin.png",
     category: "AI",
-    description: "Workspace secrets for Devin agents."
+    description: "Organization secrets for Devin agents."
   },
   [SecretSync.Ona]: {
     name: "Ona",
     image: "Ona.png",
     category: "AI",
-    description: "Workspace variables on Ona.",
+    description: "Project-level environment variables on Ona.",
     aliases: ["gitpod"]
   },
   [SecretSync.TravisCI]: {

@@ -358,11 +358,10 @@ export const SecretSyncInitialSyncBehaviorFields = () => {
     }
   }, [vercelSensitive, currentInitialBehavior, setValue]);
 
-  const behaviorKeys = BEHAVIOR_ORDER.filter(
-    (key) => !vercelSensitive || key === SecretSyncInitialSyncBehavior.OverwriteDestination
-  );
-
-  const isDisabled = !syncOption?.canImportSecrets || vercelSensitive;
+  const importAvailable = Boolean(syncOption?.canImportSecrets) && !vercelSensitive;
+  const behaviorKeys = importAvailable
+    ? BEHAVIOR_ORDER
+    : [SecretSyncInitialSyncBehavior.OverwriteDestination];
 
   return (
     <Controller
@@ -370,12 +369,7 @@ export const SecretSyncInitialSyncBehaviorFields = () => {
       name="syncOptions.initialSyncBehavior"
       render={({ field: { value, onChange }, fieldState: { error } }) => (
         <Field>
-          <RadioGroup
-            value={value}
-            onValueChange={onChange}
-            disabled={isDisabled}
-            className="gap-3"
-          >
+          <RadioGroup value={value} onValueChange={onChange} className="gap-3">
             {behaviorKeys.map((key) => {
               const { title, description } = getBehaviorCopy(key, destinationName);
               const id = `initial-sync-${key}`;

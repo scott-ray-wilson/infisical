@@ -58,7 +58,6 @@ export const AzureDevOpsSyncFields = () => {
             </FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isProjectsLoading && Boolean(connectionId)}
                 isDisabled={!connectionId}
                 value={projects?.find((v) => v.appId === value) ?? null}

@@ -1,7 +1,7 @@
 import { components, OptionProps } from "react-select";
-import { faCheckCircle } from "@fortawesome/free-regular-svg-icons";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CheckIcon } from "lucide-react";
 
 import { Tooltip } from "@app/components/v2";
 import { Badge, OrgIcon, SubOrgIcon } from "@app/components/v3";
@@ -48,9 +48,7 @@ export const AppConnectionOption = ({
                 )}
               </Tooltip>
             )}
-            {isSelected && (
-              <FontAwesomeIcon className="ml-2 text-primary" icon={faCheckCircle} size="sm" />
-            )}
+            {isSelected && <CheckIcon className="ml-2 size-4" />}
           </>
         )}
       </div>

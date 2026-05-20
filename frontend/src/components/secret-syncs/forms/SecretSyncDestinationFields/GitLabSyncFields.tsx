@@ -1,16 +1,18 @@
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { SingleValue } from "react-select";
-import { CircleHelp, Info } from "lucide-react";
+import { Info } from "lucide-react";
 
 import { SecretSyncConnectionField } from "@app/components/secret-syncs/forms/SecretSyncConnectionField";
 import {
   Field,
   FieldContent,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
   FilterableSelect,
   Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
@@ -34,35 +36,32 @@ import { TSecretSyncForm } from "../schemas";
 
 const SecretProtectionOption = ({
   title,
+  description,
   isEnabled,
   onChange,
   id,
-  isDisabled = false,
-  tooltip
+  isDisabled = false
 }: {
   title: string;
+  description: string;
   isEnabled: boolean;
   onChange: (checked: boolean) => void;
   id: string;
   isDisabled?: boolean;
-  tooltip?: string;
 }) => {
   return (
     <Field orientation="horizontal">
       <FieldContent>
-        <FieldLabel htmlFor={id}>
-          {title}
-          {tooltip && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <CircleHelp />
-              </TooltipTrigger>
-              <TooltipContent className="max-w-md">{tooltip}</TooltipContent>
-            </Tooltip>
-          )}
-        </FieldLabel>
+        <Label htmlFor={id}>{title}</Label>
+        <FieldDescription>{description}</FieldDescription>
       </FieldContent>
-      <Switch id={id} checked={isEnabled} onCheckedChange={onChange} disabled={isDisabled} />
+      <Switch
+        id={id}
+        variant="project"
+        checked={isEnabled}
+        onCheckedChange={onChange}
+        disabled={isDisabled}
+      />
     </Field>
   );
 };
@@ -120,7 +119,7 @@ export const GitLabSyncFields = () => {
                 <SelectTrigger className="w-full capitalize" isError={Boolean(error)}>
                   <SelectValue placeholder="Select a scope..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper">
                   {Object.values(GitLabSyncScope).map((projectScope) => (
                     <SelectItem className="capitalize" value={projectScope} key={projectScope}>
                       {projectScope.replace("-", " ")}
@@ -153,7 +152,6 @@ export const GitLabSyncFields = () => {
               </FieldLabel>
               <FieldContent>
                 <FilterableSelect
-                  menuPlacement="top"
                   isLoading={isGroupsLoading && Boolean(connectionId)}
                   isDisabled={!connectionId}
                   value={groups?.find((group) => group.id === value) ?? null}
@@ -196,7 +194,6 @@ export const GitLabSyncFields = () => {
               </FieldLabel>
               <FieldContent>
                 <FilterableSelect
-                  menuPlacement="top"
                   isLoading={isProjectsLoading && Boolean(connectionId)}
                   isDisabled={!connectionId}
                   value={projects?.find((project) => project.id === value) ?? null}
@@ -234,7 +231,7 @@ export const GitLabSyncFields = () => {
         )}
       />
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4">
         <Controller
           control={control}
           name="destinationConfig.shouldProtectSecrets"
@@ -242,6 +239,7 @@ export const GitLabSyncFields = () => {
             <SecretProtectionOption
               id="should-protect-secrets"
               title="Mark secrets as Protected"
+              description="When enabled, variables are only exposed to pipelines running on protected branches and protected tags in GitLab."
               isEnabled={value || false}
               onChange={onChange}
             />
@@ -255,7 +253,7 @@ export const GitLabSyncFields = () => {
             <SecretProtectionOption
               id="should-mask-secrets"
               title="Mark secrets as Masked"
-              tooltip="GitLab has limitations for masked variables: secrets must be at least 8 characters long and not match existing CI/CD variable names. Secrets not meeting these criteria won't be masked."
+              description="GitLab hides masked variables in job logs. Variables must be at least 8 characters and meet GitLab's masking requirements to be masked successfully."
               isEnabled={value || false}
               onChange={(checked) => {
                 onChange(checked);
@@ -274,7 +272,7 @@ export const GitLabSyncFields = () => {
             <SecretProtectionOption
               id="should-hide-secrets"
               title="Mark secrets as Hidden"
-              tooltip="Secrets can only be marked as hidden if they are also masked. If this is enabled, Infisical will not be able to unhide/unmask secrets from the sync destination if you disable the option later."
+              description="Hides the variable value in the GitLab UI. Requires masking to be enabled. Once enabled, Infisical can no longer unhide or unmask the variable from GitLab."
               isEnabled={value || false}
               onChange={onChange}
               isDisabled={!shouldMaskSecrets}

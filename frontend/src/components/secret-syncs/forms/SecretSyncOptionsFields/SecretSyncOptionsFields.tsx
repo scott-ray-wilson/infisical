@@ -68,8 +68,9 @@ export const SecretSyncOptionsFields = ({ hideInitialSync, children }: Props) =>
     }
   }, [vercelSensitive, currentSyncOption.initialSyncBehavior, setValue]);
 
+  const importAvailable = Boolean(syncOption?.canImportSecrets) && !vercelSensitive;
   const initialSyncBehaviorEntries = Object.entries(SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP).filter(
-    ([key]) => !vercelSensitive || key === SecretSyncInitialSyncBehavior.OverwriteDestination
+    ([key]) => importAvailable || key === SecretSyncInitialSyncBehavior.OverwriteDestination
   );
 
   let AdditionalSyncOptionsFieldsComponent: ReactNode;
@@ -133,8 +134,6 @@ export const SecretSyncOptionsFields = ({ hideInitialSync, children }: Props) =>
       throw new Error(`Unhandled Additional Sync Options Fields: ${destination}`);
   }
 
-  const initialSyncDisabled = !syncOption?.canImportSecrets || vercelSensitive;
-
   return (
     <>
       {!hideInitialSync && (
@@ -174,11 +173,7 @@ export const SecretSyncOptionsFields = ({ hideInitialSync, children }: Props) =>
                     </Tooltip>
                   )}
                 </FieldLabel>
-                <Select
-                  value={value}
-                  onValueChange={(val) => onChange(val)}
-                  disabled={initialSyncDisabled}
-                >
+                <Select value={value} onValueChange={(val) => onChange(val)}>
                   <SelectTrigger
                     id="initial-sync-behavior"
                     isError={Boolean(error)}

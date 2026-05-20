@@ -92,7 +92,7 @@ export const GitHubSyncFields = () => {
                 <SelectTrigger className="w-full capitalize" isError={Boolean(error)}>
                   <SelectValue placeholder="Select a scope..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper">
                   {Object.values(GitHubSyncScope).map((scope) => (
                     <SelectItem className="capitalize" value={scope} key={scope}>
                       {scope.replace("-", " ")}
@@ -151,7 +151,7 @@ export const GitHubSyncFields = () => {
                     <SelectTrigger className="w-full capitalize" isError={Boolean(error)}>
                       <SelectValue placeholder="Select visibility..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="popper">
                       {Object.values(GitHubSyncVisibility).map((scope) => (
                         <SelectItem className="capitalize" value={scope} key={scope}>
                           {scope.replace("-", " ")} Repositories
@@ -171,7 +171,6 @@ export const GitHubSyncFields = () => {
                   <FieldLabel>Selected Repositories</FieldLabel>
                   <FieldContent>
                     <FilterableSelect
-                      menuPlacement="top"
                       isLoading={isRepositoriesPending && Boolean(currentOrg)}
                       isDisabled={!currentOrg || !connectionId}
                       isMulti
@@ -202,7 +201,6 @@ export const GitHubSyncFields = () => {
               <FieldLabel>Repository</FieldLabel>
               <FieldContent>
                 <FilterableSelect
-                  menuPlacement="top"
                   isLoading={isRepositoriesPending && Boolean(connectionId)}
                   isDisabled={!connectionId}
                   value={repositories.find((repo) => repo.name === value) ?? null}
@@ -235,7 +233,6 @@ export const GitHubSyncFields = () => {
               <FieldLabel>Environment</FieldLabel>
               <FieldContent>
                 <FilterableSelect
-                  menuPlacement="top"
                   isLoading={isEnvironmentsPending && Boolean(connectionId) && Boolean(currentRepo)}
                   isDisabled={!connectionId || !currentRepo}
                   value={environments.find((env) => env.name === value) ?? null}

@@ -218,7 +218,6 @@ export const SecretSyncOptionsFields = ({ hideInitialSync }: Props) => {
         </>
       )}
       {syncOption?.supportsKeySchema !== false && <SecretSyncKeySchemaField />}
-      {AdditionalSyncOptionsFieldsComponent}
       {syncOption?.supportsDisableSecretDeletion !== false && (
         <Controller
           control={control}
@@ -248,6 +247,7 @@ export const SecretSyncOptionsFields = ({ hideInitialSync }: Props) => {
           )}
         />
       )}
+      {AdditionalSyncOptionsFieldsComponent}
     </>
   );
 };

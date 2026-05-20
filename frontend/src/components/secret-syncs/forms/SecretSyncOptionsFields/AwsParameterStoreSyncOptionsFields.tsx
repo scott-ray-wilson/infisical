@@ -1,9 +1,13 @@
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import { Controller, useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { SingleValue } from "react-select";
 import { CircleHelp, Plus, Trash2 } from "lucide-react";
 
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
   Button,
   Field,
   FieldContent,
@@ -89,6 +93,8 @@ const AwsTagsSection = () => {
   );
 };
 
+const ITEM_VALUE = "aws-parameter-store-advanced";
+
 export const AwsParameterStoreSyncOptionsFields = () => {
   const { control, watch, setValue } = useFormContext<
     TSecretSyncForm & { destination: SecretSync.AWSParameterStore }
@@ -97,6 +103,21 @@ export const AwsParameterStoreSyncOptionsFields = () => {
   const region = watch("destinationConfig.region");
   const connectionId = useWatch({ name: "connection.id", control });
   const watchedTags = watch("syncOptions.tags");
+  const watchedKeyId = watch("syncOptions.keyId");
+  const watchedSyncMetadataAsTags = watch("syncOptions.syncSecretMetadataAsTags");
+
+  const hasConfiguredOption =
+    Boolean(watchedKeyId) || Array.isArray(watchedTags) || Boolean(watchedSyncMetadataAsTags);
+
+  const [openItem, setOpenItem] = useState<string>(hasConfiguredOption ? ITEM_VALUE : "");
+
+  const summaryParts = [
+    watchedKeyId ? "Custom KMS key" : null,
+    Array.isArray(watchedTags) ? "Resource tags" : null,
+    watchedSyncMetadataAsTags ? "Sync metadata as tags" : null
+  ].filter(Boolean);
+
+  const summary = summaryParts.length ? summaryParts.join(" · ") : "All defaults";
 
   const { data: kmsKeys = [], isPending: isKmsKeysPending } = useListAwsConnectionKmsKeys(
     {
@@ -108,120 +129,138 @@ export const AwsParameterStoreSyncOptionsFields = () => {
   );
 
   return (
-    <>
-      <Controller
-        name="syncOptions.keyId"
-        control={control}
-        render={({ field: { value, onChange }, fieldState: { error } }) => (
-          <Field className="mb-4">
-            <FieldLabel className="flex items-center gap-1.5">
-              KMS Key
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <CircleHelp className="size-3 cursor-help text-muted" />
-                </TooltipTrigger>
-                <TooltipContent>The AWS KMS key to encrypt parameters with.</TooltipContent>
-              </Tooltip>
-            </FieldLabel>
-            <FieldContent>
-              <FilterableSelect
-                isLoading={isKmsKeysPending && Boolean(connectionId && region)}
-                isDisabled={!connectionId}
-                value={kmsKeys.find((org) => org.alias === value) ?? null}
-                onChange={(option) =>
-                  onChange((option as SingleValue<TAwsConnectionKmsKey>)?.alias ?? null)
-                }
-                isError={Boolean(error)}
-                // eslint-disable-next-line react/no-unstable-nested-components
-                noOptionsMessage={({ inputValue }) =>
-                  inputValue ? undefined : (
-                    <p>
-                      To configure a KMS key, ensure the following permissions are present on the
-                      selected IAM role:{" "}
-                      <span className="rounded-sm bg-mineshaft-600 text-mineshaft-300">
-                        &#34;kms:ListAliases&#34;
-                      </span>
-                      ,{" "}
-                      <span className="rounded-sm bg-mineshaft-600 text-mineshaft-300">
-                        &#34;kms:DescribeKey&#34;
-                      </span>
-                      ,{" "}
-                      <span className="rounded-sm bg-mineshaft-600 text-mineshaft-300">
-                        &#34;kms:Encrypt&#34;
-                      </span>
-                      ,{" "}
-                      <span className="rounded-sm bg-mineshaft-600 text-mineshaft-300">
-                        &#34;kms:Decrypt&#34;
-                      </span>
-                      .
-                    </p>
-                  )
-                }
-                options={kmsKeys}
-                placeholder="Leave blank to use default KMS key"
-                getOptionLabel={(option) =>
-                  option.alias === "alias/aws/ssm" ? `${option.alias} (Default)` : option.alias
-                }
-                getOptionValue={(option) => option.alias}
-              />
-            </FieldContent>
-            <FieldError errors={[error]} />
-          </Field>
-        )}
-      />
+    <Accordion
+      type="single"
+      collapsible
+      variant="ghost"
+      value={openItem}
+      onValueChange={setOpenItem}
+    >
+      <AccordionItem value={ITEM_VALUE}>
+        <AccordionTrigger>
+          <div className="flex w-0 flex-1 items-center justify-between gap-3">
+            <span className="text-sm font-medium text-foreground">Advanced options</span>
+            <span className="truncate text-xs text-muted">{summary}</span>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="flex flex-col">
+          <Controller
+            name="syncOptions.keyId"
+            control={control}
+            render={({ field: { value, onChange }, fieldState: { error } }) => (
+              <Field className="mb-4">
+                <FieldLabel className="flex items-center gap-1.5">
+                  KMS Key
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <CircleHelp className="size-3 cursor-help text-muted" />
+                    </TooltipTrigger>
+                    <TooltipContent>The AWS KMS key to encrypt parameters with.</TooltipContent>
+                  </Tooltip>
+                </FieldLabel>
+                <FieldContent>
+                  <FilterableSelect
+                    isLoading={isKmsKeysPending && Boolean(connectionId && region)}
+                    isDisabled={!connectionId}
+                    value={kmsKeys.find((org) => org.alias === value) ?? null}
+                    onChange={(option) =>
+                      onChange((option as SingleValue<TAwsConnectionKmsKey>)?.alias ?? null)
+                    }
+                    isError={Boolean(error)}
+                    // eslint-disable-next-line react/no-unstable-nested-components
+                    noOptionsMessage={({ inputValue }) =>
+                      inputValue ? undefined : (
+                        <p>
+                          To configure a KMS key, ensure the following permissions are present on
+                          the selected IAM role:{" "}
+                          <span className="rounded-sm bg-mineshaft-600 text-mineshaft-300">
+                            &#34;kms:ListAliases&#34;
+                          </span>
+                          ,{" "}
+                          <span className="rounded-sm bg-mineshaft-600 text-mineshaft-300">
+                            &#34;kms:DescribeKey&#34;
+                          </span>
+                          ,{" "}
+                          <span className="rounded-sm bg-mineshaft-600 text-mineshaft-300">
+                            &#34;kms:Encrypt&#34;
+                          </span>
+                          ,{" "}
+                          <span className="rounded-sm bg-mineshaft-600 text-mineshaft-300">
+                            &#34;kms:Decrypt&#34;
+                          </span>
+                          .
+                        </p>
+                      )
+                    }
+                    options={kmsKeys}
+                    placeholder="Leave blank to use default KMS key"
+                    getOptionLabel={(option) =>
+                      option.alias === "alias/aws/ssm" ? `${option.alias} (Default)` : option.alias
+                    }
+                    getOptionValue={(option) => option.alias}
+                  />
+                </FieldContent>
+                <FieldError errors={[error]} />
+              </Field>
+            )}
+          />
 
-      <div className="mb-4">
-        <FieldLabel htmlFor="configure-resource-tags">
-          <Field orientation="horizontal">
-            <FieldContent>
-              <FieldTitle>Configure resource tags</FieldTitle>
-              <FieldDescription>
-                Overwrite AWS resource tags on synced parameters with static values defined below.
-              </FieldDescription>
-            </FieldContent>
-            <Switch
-              id="configure-resource-tags"
-              variant="project"
-              checked={Array.isArray(watchedTags)}
-              onCheckedChange={(isChecked) => {
-                if (isChecked) {
-                  setValue("syncOptions.tags", []);
-                } else {
-                  setValue("syncOptions.tags", undefined);
-                }
-              }}
-            />
-          </Field>
-          {Array.isArray(watchedTags) && <AwsTagsSection />}
-        </FieldLabel>
-      </div>
-
-      <Controller
-        name="syncOptions.syncSecretMetadataAsTags"
-        control={control}
-        render={({ field: { value, onChange }, fieldState: { error } }) => (
-          <Field className="mb-4">
-            <FieldLabel htmlFor="sync-secret-metadata-tags">
+          <div className="mb-4">
+            <FieldLabel htmlFor="configure-resource-tags">
               <Field orientation="horizontal">
                 <FieldContent>
-                  <FieldTitle>Sync secret metadata as resource tags</FieldTitle>
+                  <FieldTitle>Configure resource tags</FieldTitle>
                   <FieldDescription>
-                    Metadata attached to secrets is added as resource tags on parameters synced by
-                    Infisical. Manually configured tags above take precedence when keys conflict.
+                    Overwrite AWS resource tags on synced parameters with static values defined
+                    below.
                   </FieldDescription>
                 </FieldContent>
                 <Switch
-                  id="sync-secret-metadata-tags"
+                  id="configure-resource-tags"
                   variant="project"
-                  checked={value}
-                  onCheckedChange={onChange}
+                  checked={Array.isArray(watchedTags)}
+                  onCheckedChange={(isChecked) => {
+                    if (isChecked) {
+                      setValue("syncOptions.tags", []);
+                    } else {
+                      setValue("syncOptions.tags", undefined);
+                    }
+                  }}
                 />
               </Field>
+              {Array.isArray(watchedTags) && <AwsTagsSection />}
             </FieldLabel>
-            <FieldError errors={[error]} />
-          </Field>
-        )}
-      />
-    </>
+          </div>
+
+          <Controller
+            name="syncOptions.syncSecretMetadataAsTags"
+            control={control}
+            render={({ field: { value, onChange }, fieldState: { error } }) => (
+              <Field className="mb-4">
+                <FieldLabel htmlFor="sync-secret-metadata-tags">
+                  <Field orientation="horizontal">
+                    <FieldContent>
+                      <FieldTitle>Sync secret metadata as resource tags</FieldTitle>
+                      <FieldDescription>
+                        Metadata attached to secrets is added as resource tags on parameters synced
+                        by Infisical. Manually configured tags above take precedence when keys
+                        conflict.
+                      </FieldDescription>
+                    </FieldContent>
+                    <Switch
+                      id="sync-secret-metadata-tags"
+                      variant="project"
+                      checked={value}
+                      onCheckedChange={onChange}
+                    />
+                  </Field>
+                </FieldLabel>
+                <FieldError errors={[error]} />
+              </Field>
+            )}
+          />
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 };

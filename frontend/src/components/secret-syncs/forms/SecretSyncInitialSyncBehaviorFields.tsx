@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Controller, useFormContext } from "react-hook-form";
-import { ArrowLeftRight, ArrowRight, TriangleAlert } from "lucide-react";
+import { ArrowDown, TriangleAlert } from "lucide-react";
 
 import {
   Alert,
@@ -60,32 +60,44 @@ const getBehaviorCopy = (
       };
   }
 };
-
 type SecretFate = "kept" | "added" | "removed" | "updated" | "imported";
 
 type ReconciliationRow = { name: string; fate?: SecretFate };
 
-const fateLabel: Record<Exclude<SecretFate, "kept">, string> = {
-  added: "added",
-  removed: "removed",
-  updated: "updated",
-  imported: "imported"
-};
-
-const fateClass: Record<Exclude<SecretFate, "kept">, string> = {
-  added: "text-success",
-  removed: "text-danger",
-  updated: "text-warning",
-  imported: "text-info"
+const fateConfig: Record<
+  Exclude<SecretFate, "kept">,
+  { label: string; badgeClass: string; wrapperClass: string }
+> = {
+  added: {
+    label: "added",
+    badgeClass: "text-success",
+    wrapperClass: "border-dashed border-success/50 bg-success/5"
+  },
+  updated: {
+    label: "updated",
+    badgeClass: "text-warning",
+    wrapperClass: "border-warning/40 bg-warning/5"
+  },
+  imported: {
+    label: "imported",
+    badgeClass: "text-info",
+    wrapperClass: "border-dashed border-info/50 bg-info/5"
+  },
+  removed: {
+    label: "removed",
+    badgeClass: "text-danger",
+    wrapperClass: "border-dashed border-danger/40 bg-danger/5"
+  }
 };
 
 const SecretRow = ({ name, fate }: ReconciliationRow) => {
+  const config = fate && fate !== "kept" ? fateConfig[fate] : null;
   const isRemoved = fate === "removed";
   return (
     <div
       className={cn(
         "flex items-center justify-between gap-2 rounded border px-2 py-1 text-[10px]",
-        isRemoved ? "border-danger/20 bg-danger/5" : "border-border bg-mineshaft-800/80"
+        config ? config.wrapperClass : "border-border bg-mineshaft-800/80"
       )}
     >
       <span
@@ -96,79 +108,118 @@ const SecretRow = ({ name, fate }: ReconciliationRow) => {
       >
         {name}
       </span>
-      {fate && fate !== "kept" && (
-        <span className={cn("shrink-0 text-[9px] tracking-wider uppercase", fateClass[fate])}>
-          {fateLabel[fate]}
+      {config && (
+        <span className={cn("shrink-0 text-[9px] tracking-wider uppercase", config.badgeClass)}>
+          {config.label}
         </span>
       )}
     </div>
   );
 };
 
-const ReconciliationDiagram = ({
-  variant,
-  destinationName
-}: {
-  variant: GraphicVariant;
-  destinationName: string;
-}) => {
-  let infisicalRows: ReconciliationRow[];
-  let destinationRows: ReconciliationRow[];
-  let arrowIcon: React.ReactNode;
+const ReconciliationLegend = () => (
+  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] tracking-wider text-muted uppercase">
+    <span className="flex items-center gap-1">
+      <span className="inline-block h-2 w-3 rounded-[2px] border border-border bg-mineshaft-800/80" />
+      unchanged
+    </span>
+    <span className="flex items-center gap-1">
+      <span className="inline-block h-2 w-3 rounded-[2px] border border-warning/40 bg-warning/5" />
+      value updated
+    </span>
+    <span className="flex items-center gap-1">
+      <span className="inline-block h-2 w-3 rounded-[2px] border border-dashed border-success/50 bg-success/5" />
+      added
+    </span>
+    <span className="flex items-center gap-1">
+      <span className="inline-block h-2 w-3 rounded-[2px] border border-dashed border-info/50 bg-info/5" />
+      imported
+    </span>
+    <span className="flex items-center gap-1">
+      <span className="inline-block h-2 w-3 rounded-[2px] border border-dashed border-danger/40 bg-danger/5" />
+      removed
+    </span>
+  </div>
+);
 
+const BEFORE_INFISICAL: ReconciliationRow[] = [{ name: "API_KEY" }, { name: "DB_URL" }];
+const BEFORE_DESTINATION: ReconciliationRow[] = [
+  { name: "API_KEY" },
+  { name: "LEGACY_TOKEN" }
+];
+
+const getAfterRows = (
+  variant: GraphicVariant
+): { infisical: ReconciliationRow[]; destination: ReconciliationRow[] } => {
   switch (variant) {
     case "overwrite":
-      infisicalRows = [{ name: "API_KEY" }, { name: "DB_URL" }];
-      destinationRows = [
-        { name: "API_KEY", fate: "updated" },
-        { name: "DB_URL", fate: "added" },
-        { name: "LEGACY_TOKEN", fate: "removed" }
-      ];
-      arrowIcon = <ArrowRight className="size-4 text-muted" strokeWidth={2.5} />;
-      break;
+      return {
+        infisical: [{ name: "API_KEY" }, { name: "DB_URL" }],
+        destination: [
+          { name: "API_KEY", fate: "updated" },
+          { name: "DB_URL", fate: "added" },
+          { name: "LEGACY_TOKEN", fate: "removed" }
+        ]
+      };
     case "prioritize-infisical":
-      infisicalRows = [
-        { name: "API_KEY" },
-        { name: "DB_URL" },
-        { name: "LEGACY_TOKEN", fate: "imported" }
-      ];
-      destinationRows = [
-        { name: "API_KEY", fate: "updated" },
-        { name: "DB_URL", fate: "added" },
-        { name: "LEGACY_TOKEN" }
-      ];
-      arrowIcon = <ArrowLeftRight className="size-4 text-muted" strokeWidth={2.5} />;
-      break;
+      return {
+        infisical: [
+          { name: "API_KEY" },
+          { name: "DB_URL" },
+          { name: "LEGACY_TOKEN", fate: "imported" }
+        ],
+        destination: [
+          { name: "API_KEY", fate: "updated" },
+          { name: "DB_URL", fate: "added" },
+          { name: "LEGACY_TOKEN" }
+        ]
+      };
     case "prioritize-destination":
     default:
-      infisicalRows = [
-        { name: "API_KEY", fate: "updated" },
-        { name: "DB_URL" },
-        { name: "LEGACY_TOKEN", fate: "imported" }
-      ];
-      destinationRows = [
-        { name: "API_KEY" },
-        { name: "DB_URL", fate: "added" },
-        { name: "LEGACY_TOKEN" }
-      ];
-      arrowIcon = <ArrowLeftRight className="size-4 text-muted" strokeWidth={2.5} />;
-      break;
+      return {
+        infisical: [
+          { name: "API_KEY", fate: "updated" },
+          { name: "DB_URL" },
+          { name: "LEGACY_TOKEN", fate: "imported" }
+        ],
+        destination: [
+          { name: "API_KEY" },
+          { name: "DB_URL", fate: "added" },
+          { name: "LEGACY_TOKEN" }
+        ]
+      };
   }
+};
 
-  return (
-    <div
-      className="mt-2 grid grid-cols-[1fr_auto_1fr] items-start gap-3 rounded-md border border-border bg-card p-3"
-      aria-hidden="true"
-    >
+const ReconciliationSection = ({
+  title,
+  subtitle,
+  destinationName,
+  infisicalRows,
+  destinationRows
+}: {
+  title: string;
+  subtitle: string;
+  destinationName: string;
+  infisicalRows: ReconciliationRow[];
+  destinationRows: ReconciliationRow[];
+}) => (
+  <div className="rounded-md border border-border bg-mineshaft-800/30 p-3">
+    <div className="mb-3 flex items-baseline gap-2">
+      <p className="text-xs font-semibold tracking-wider text-foreground uppercase">{title}</p>
+      <p className="text-xs text-muted">{subtitle}</p>
+    </div>
+    <div className="grid grid-cols-2 items-start gap-3">
       <div className="flex min-w-0 flex-col gap-1.5">
-        <p className="text-[10px] font-medium tracking-wider text-muted uppercase">Infisical</p>
+        <p className="truncate text-[10px] font-medium tracking-wider text-muted uppercase">
+          Infisical
+        </p>
         <div className="flex flex-col gap-1">
           {infisicalRows.map((row) => (
             <SecretRow key={row.name} {...row} />
           ))}
         </div>
       </div>
-      <div className="my-auto flex items-center pt-5">{arrowIcon}</div>
       <div className="flex min-w-0 flex-col gap-1.5">
         <p className="truncate text-[10px] font-medium tracking-wider text-muted uppercase">
           {destinationName}
@@ -178,6 +229,46 @@ const ReconciliationDiagram = ({
             <SecretRow key={row.name} {...row} />
           ))}
         </div>
+      </div>
+    </div>
+  </div>
+);
+
+const ReconciliationDiagram = ({
+  variant,
+  destinationName
+}: {
+  variant: GraphicVariant;
+  destinationName: string;
+}) => {
+  const after = getAfterRows(variant);
+
+  return (
+    <div className="mt-2 flex flex-col gap-2" aria-hidden="true">
+      <ReconciliationSection
+        title="Before"
+        subtitle="What exists on each side today"
+        destinationName={destinationName}
+        infisicalRows={BEFORE_INFISICAL}
+        destinationRows={BEFORE_DESTINATION}
+      />
+      <div className="flex items-center gap-3 px-1">
+        <div className="h-px flex-1 bg-border" />
+        <div className="flex items-center gap-1.5 text-[10px] font-medium tracking-wider text-muted uppercase">
+          <ArrowDown className="size-3" strokeWidth={2.5} />
+          First sync runs
+        </div>
+        <div className="h-px flex-1 bg-border" />
+      </div>
+      <ReconciliationSection
+        title="After"
+        subtitle="Final state once the sync completes"
+        destinationName={destinationName}
+        infisicalRows={after.infisical}
+        destinationRows={after.destination}
+      />
+      <div className="mt-1 px-1">
+        <ReconciliationLegend />
       </div>
     </div>
   );

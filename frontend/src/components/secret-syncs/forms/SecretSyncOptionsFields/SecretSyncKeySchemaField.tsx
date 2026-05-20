@@ -7,6 +7,7 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
+  Field,
   FieldDescription,
   FieldError,
   Input,
@@ -36,20 +37,17 @@ const KeySchemaPreview = ({ schema, destinationName }: PreviewProps) => {
   const transformed = applyKeySchema(schema);
 
   return (
-    <div
-      className="mt-3 grid grid-cols-[1fr_auto_1fr] items-start gap-3 rounded-md border border-border bg-card p-3"
-      aria-hidden="true"
-    >
-      <div className="flex min-w-0 flex-col gap-1.5">
+    <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-3" aria-hidden="true">
+      <div className="flex min-w-0 flex-col gap-1">
         <p className="text-[10px] font-medium tracking-wider text-muted uppercase">Infisical</p>
         <div className="flex items-center justify-between gap-2 rounded border border-border bg-mineshaft-800/80 px-2 py-1 text-[10px]">
           <span className="truncate font-mono text-foreground/80">{SAMPLE_SECRET_KEY}</span>
         </div>
       </div>
-      <div className="my-auto flex items-center pt-5">
-        <ArrowRight className="size-4 text-muted" strokeWidth={2.5} />
+      <div className="flex items-center pb-1.5">
+        <ArrowRight className="size-3 text-muted" strokeWidth={2.5} />
       </div>
-      <div className="flex min-w-0 flex-col gap-1.5">
+      <div className="flex min-w-0 flex-col gap-1">
         <p className="truncate text-[10px] font-medium tracking-wider text-muted uppercase">
           {destinationName}
         </p>
@@ -78,67 +76,64 @@ export const SecretSyncKeySchemaField = () => {
       control={control}
       name="syncOptions.keySchema"
       render={({ field: { value, onChange }, fieldState: { error } }) => (
-        <div className="mb-4 flex flex-col gap-1.5">
-          <p className="text-[11px] font-medium tracking-wider text-muted uppercase">Key Naming</p>
-          <Accordion type="single" collapsible value={openItem} onValueChange={setOpenItem}>
-            <AccordionItem value={ITEM_VALUE}>
-              <AccordionTrigger>
-                <div className="flex w-0 flex-1 items-center justify-between gap-3">
-                  <span className="text-sm font-medium text-foreground">Custom key naming</span>
-                  <span className="truncate text-xs text-muted">
-                    {value ? (
-                      <code className="rounded bg-mineshaft-800/80 px-1 py-0.5 font-mono text-[11px] text-foreground/80">
-                        {value}
-                      </code>
-                    ) : (
-                      "Using default — keys keep their Infisical names"
-                    )}
-                  </span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="flex flex-col gap-4">
+        <Accordion
+          type="single"
+          collapsible
+          value={openItem}
+          onValueChange={setOpenItem}
+          className="mt-auto bg-card"
+        >
+          <AccordionItem value={ITEM_VALUE}>
+            <AccordionTrigger className="">
+              <div className="flex w-0 flex-1 items-center justify-between gap-3">
+                <span className="text-sm font-medium text-foreground">Customize key names</span>
+                <span className="truncate text-xs text-muted">
+                  {value ? (
+                    <code className="rounded bg-mineshaft-800/80 px-1 py-0.5 font-mono text-[11px] text-foreground/80">
+                      {value}
+                    </code>
+                  ) : (
+                    "Using default — keys keep their Infisical names"
+                  )}
+                </span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Field>
+                <Label htmlFor="sync-key-schema">Key schema</Label>
                 <FieldDescription>
-                  By default, keys use the same names as your Infisical secrets — e.g.{" "}
+                  By default, keys keep their Infisical names when written to {destinationName}.
+                  Provide a template to rewrite each key — use{" "}
                   <code className="rounded bg-mineshaft-800/80 px-1 py-0.5 font-mono text-[11px] text-foreground/80">
-                    API_KEY
+                    {"{{secretKey}}"}
                   </code>{" "}
-                  stays{" "}
+                  as a placeholder, and optionally include{" "}
                   <code className="rounded bg-mineshaft-800/80 px-1 py-0.5 font-mono text-[11px] text-foreground/80">
-                    API_KEY
+                    {"{{environment}}"}
                   </code>
-                  . Provide a template to rewrite each key before it&apos;s written to{" "}
-                  {destinationName}.
+                  .{" "}
+                  <a
+                    href="https://infisical.com/docs/integrations/secret-syncs/overview#key-schemas"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Learn more
+                  </a>
+                  .
                 </FieldDescription>
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="sync-key-schema" className="text-xs text-accent">
-                    Key schema
-                  </Label>
-                  <Input
-                    id="sync-key-schema"
-                    value={value ?? ""}
-                    onChange={onChange}
-                    placeholder="INFISICAL_{{secretKey}}"
-                    isError={Boolean(error)}
-                  />
-                  <FieldDescription>
-                    Use <code className="font-mono">{"{{secretKey}}"}</code> as a placeholder.
-                    Optionally include <code className="font-mono">{"{{environment}}"}</code>.{" "}
-                    <a
-                      href="https://infisical.com/docs/integrations/secret-syncs/overview#key-schemas"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Learn more
-                    </a>
-                    .
-                  </FieldDescription>
-                  <KeySchemaPreview schema={value} destinationName={destinationName} />
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-          <FieldError errors={[error]} />
-        </div>
+                <Input
+                  id="sync-key-schema"
+                  value={value ?? ""}
+                  onChange={onChange}
+                  placeholder="INFISICAL_{{secretKey}}"
+                  isError={Boolean(error)}
+                />
+                <KeySchemaPreview schema={value} destinationName={destinationName} />
+                <FieldError errors={[error]} />
+              </Field>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       )}
     />
   );

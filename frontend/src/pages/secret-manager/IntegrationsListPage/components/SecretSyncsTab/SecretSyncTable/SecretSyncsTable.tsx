@@ -1,16 +1,12 @@
 import { useMemo, useState } from "react";
-import {
-  faArrowDown,
-  faArrowUp,
-  faCheck,
-  faCheckCircle,
-  faFilter,
-  faMagnifyingGlass,
-  faRotate,
-  faSearch,
-  faWarning
-} from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faRotate, faWarning } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  ChevronDownIcon,
+  FilterIcon,
+  RefreshCwIcon,
+  SearchIcon
+} from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 import { createNotification } from "@app/components/notifications";
@@ -21,21 +17,28 @@ import {
 } from "@app/components/secret-syncs";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-  EmptyState,
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
   IconButton,
-  Input,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
   Pagination,
+  Skeleton,
   Table,
-  TableContainer,
-  TBody,
-  Th,
-  THead,
-  Tr
-} from "@app/components/v2";
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@app/components/v3";
 import { useProject } from "@app/context";
 import { SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import {
@@ -85,6 +88,7 @@ const getSyncStatusOrderValue = (syncStatus: SecretSyncStatus | null) => {
 
 type Props = {
   secretSyncs: TSecretSync[];
+  isPending: boolean;
 };
 
 const STATUS_ICON_MAP = {
@@ -94,7 +98,7 @@ const STATUS_ICON_MAP = {
   [SecretSyncStatus.Running]: { icon: faRotate, className: "text-yellow", name: "Syncing" }
 };
 
-export const SecretSyncsTable = ({ secretSyncs }: Props) => {
+export const SecretSyncsTable = ({ secretSyncs, isPending }: Props) => {
   const { popUp, handlePopUpOpen, handlePopUpToggle } = usePopUp([
     "deleteSync",
     "importSecrets",
@@ -214,13 +218,9 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
     setOrderDirection(OrderByDirection.ASC);
   };
 
-  const getClassName = (col: SecretSyncsOrderBy) =>
-    twMerge("ml-2", orderBy === col ? "" : "opacity-30");
-
-  const getColSortIcon = (col: SecretSyncsOrderBy) =>
-    orderDirection === OrderByDirection.DESC && orderBy === col ? faArrowUp : faArrowDown;
-
-  const isTableFiltered = Boolean(filters.destinations.length);
+  const isTableFiltered = Boolean(
+    filters.destinations.length || filters.status.length || filters.environmentIds.length
+  );
 
   const handleDelete = (secretSync: TSecretSync) => handlePopUpOpen("deleteSync", secretSync);
 
@@ -263,35 +263,36 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
     });
   };
 
+  const isFiltered = Boolean(search || isTableFiltered);
+  const showEmpty = !isPending && filteredSecretSyncs.length === 0;
+  const visibleSyncs = filteredSecretSyncs.slice(offset, perPage * page);
+
   return (
     <div>
-      <div className="flex gap-2">
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          leftIcon={<FontAwesomeIcon icon={faMagnifyingGlass} />}
-          placeholder="Search secret syncs..."
-          className="flex-1"
-        />
+      <div className="mb-4 flex gap-2">
+        <InputGroup className="flex-1">
+          <InputGroupAddon>
+            <SearchIcon />
+          </InputGroupAddon>
+          <InputGroupInput
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search secret syncs..."
+          />
+        </InputGroup>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <IconButton
-              ariaLabel="Filter secret syncs"
-              variant="plain"
-              size="sm"
-              className={twMerge(
-                "flex h-10 w-11 items-center justify-center overflow-hidden border border-mineshaft-600 bg-mineshaft-800 p-0 transition-all hover:border-primary/60 hover:bg-primary/10",
-                isTableFiltered && "border-primary/50 text-primary"
-              )}
-            >
-              <FontAwesomeIcon icon={faFilter} />
+            <IconButton aria-label="Filter secret syncs" variant={isTableFiltered ? "project" : "outline"}>
+              <FilterIcon />
             </IconButton>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="max-h-[70vh] thin-scrollbar overflow-y-auto" align="end">
+          <DropdownMenuContent className="thin-scrollbar max-h-[70vh] overflow-y-auto" align="end">
             <DropdownMenuLabel>Status</DropdownMenuLabel>
             {[SecretSyncStatus.Running, SecretSyncStatus.Succeeded, SecretSyncStatus.Failed].map(
               (status) => (
-                <DropdownMenuItem
+                <DropdownMenuCheckboxItem
+                  key={status}
+                  checked={filters.status.includes(status)}
                   onClick={(e) => {
                     e.preventDefault();
                     setFilters((prev) => ({
@@ -301,22 +302,13 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
                         : [...prev.status, status]
                     }));
                   }}
-                  key={status}
-                  icon={
-                    filters.status.includes(status) && (
-                      <FontAwesomeIcon className="text-primary" icon={faCheckCircle} />
-                    )
-                  }
-                  iconPos="right"
                 >
-                  <div className="flex items-center gap-2">
-                    <FontAwesomeIcon
-                      icon={STATUS_ICON_MAP[status].icon}
-                      className={STATUS_ICON_MAP[status].className}
-                    />
-                    <span className="capitalize">{STATUS_ICON_MAP[status].name}</span>
-                  </div>
-                </DropdownMenuItem>
+                  <FontAwesomeIcon
+                    icon={STATUS_ICON_MAP[status].icon}
+                    className={STATUS_ICON_MAP[status].className}
+                  />
+                  <span className="capitalize">{STATUS_ICON_MAP[status].name}</span>
+                </DropdownMenuCheckboxItem>
               )
             )}
             <DropdownMenuLabel>Service</DropdownMenuLabel>
@@ -325,7 +317,9 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
                 const { name, image } = SECRET_SYNC_MAP[destination];
 
                 return (
-                  <DropdownMenuItem
+                  <DropdownMenuCheckboxItem
+                    key={destination}
+                    checked={filters.destinations.includes(destination)}
                     onClick={(e) => {
                       e.preventDefault();
                       setFilters((prev) => ({
@@ -335,31 +329,24 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
                           : [...prev.destinations, destination]
                       }));
                     }}
-                    key={destination}
-                    icon={
-                      filters.destinations.includes(destination) && (
-                        <FontAwesomeIcon className="text-primary" icon={faCheckCircle} />
-                      )
-                    }
-                    iconPos="right"
                   >
-                    <div className="flex items-center gap-2">
-                      <img
-                        alt={`${name} integration`}
-                        src={`/images/integrations/${image}`}
-                        className="h-4 w-4"
-                      />
-                      <span>{name}</span>
-                    </div>
-                  </DropdownMenuItem>
+                    <img
+                      alt={`${name} integration`}
+                      src={`/images/integrations/${image}`}
+                      className="h-4 w-4"
+                    />
+                    <span>{name}</span>
+                  </DropdownMenuCheckboxItem>
                 );
               })
             ) : (
-              <DropdownMenuItem isDisabled>No Secret Syncs Configured</DropdownMenuItem>
+              <DropdownMenuCheckboxItem disabled>No Secret Syncs Configured</DropdownMenuCheckboxItem>
             )}
             <DropdownMenuLabel>Environment</DropdownMenuLabel>
             {currentProject.environments.map((env) => (
-              <DropdownMenuItem
+              <DropdownMenuCheckboxItem
+                key={env.id}
+                checked={filters.environmentIds.includes(env.id)}
                 onClick={(e) => {
                   e.preventDefault();
                   setFilters((prev) => ({
@@ -369,114 +356,141 @@ export const SecretSyncsTable = ({ secretSyncs }: Props) => {
                       : [...prev.environmentIds, env.id]
                   }));
                 }}
-                key={env.id}
-                icon={
-                  filters.environmentIds.includes(env.id) && (
-                    <FontAwesomeIcon className="text-primary" icon={faCheckCircle} />
-                  )
-                }
-                iconPos="right"
               >
                 <span className="capitalize">{env.name}</span>
-              </DropdownMenuItem>
+              </DropdownMenuCheckboxItem>
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <TableContainer className="mt-4">
-        <Table>
-          <THead>
-            <Tr>
-              <Th className="w-2" />
-              <Th className="w-1/4">
-                <div className="flex items-center">
+      {showEmpty ? (
+        <Empty className="border">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              {isFiltered ? <SearchIcon /> : <RefreshCwIcon />}
+            </EmptyMedia>
+            <EmptyTitle>
+              {isFiltered ? "No syncs match search" : "This project has no syncs configured"}
+            </EmptyTitle>
+            <EmptyDescription>
+              {isFiltered
+                ? "Adjust your search or filter criteria."
+                : "Add a sync to get started."}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : (
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-2" />
+                <TableHead className="w-1/4" onClick={() => handleSort(SecretSyncsOrderBy.Name)}>
                   Name
-                  <IconButton
-                    variant="plain"
-                    className={getClassName(SecretSyncsOrderBy.Name)}
-                    ariaLabel="sort"
-                    onClick={() => handleSort(SecretSyncsOrderBy.Name)}
-                  >
-                    <FontAwesomeIcon icon={getColSortIcon(SecretSyncsOrderBy.Name)} />
-                  </IconButton>
-                </div>
-              </Th>
-              <Th className="w-1/3">
-                <div className="flex items-center">
+                  <ChevronDownIcon
+                    className={twMerge(
+                      "transition-transform",
+                      orderDirection === OrderByDirection.DESC &&
+                        orderBy === SecretSyncsOrderBy.Name &&
+                        "rotate-180",
+                      orderBy !== SecretSyncsOrderBy.Name && "opacity-30"
+                    )}
+                  />
+                </TableHead>
+                <TableHead className="w-1/3" onClick={() => handleSort(SecretSyncsOrderBy.Source)}>
                   Source
-                  <IconButton
-                    variant="plain"
-                    className={getClassName(SecretSyncsOrderBy.Source)}
-                    ariaLabel="sort"
-                    onClick={() => handleSort(SecretSyncsOrderBy.Source)}
-                  >
-                    <FontAwesomeIcon icon={getColSortIcon(SecretSyncsOrderBy.Source)} />
-                  </IconButton>
-                </div>
-              </Th>
-              <Th className="w-1/3">
-                <div className="flex items-center">
+                  <ChevronDownIcon
+                    className={twMerge(
+                      "transition-transform",
+                      orderDirection === OrderByDirection.DESC &&
+                        orderBy === SecretSyncsOrderBy.Source &&
+                        "rotate-180",
+                      orderBy !== SecretSyncsOrderBy.Source && "opacity-30"
+                    )}
+                  />
+                </TableHead>
+                <TableHead
+                  className="w-1/3"
+                  onClick={() => handleSort(SecretSyncsOrderBy.Destination)}
+                >
                   Destination
-                  <IconButton
-                    variant="plain"
-                    className={getClassName(SecretSyncsOrderBy.Destination)}
-                    ariaLabel="sort"
-                    onClick={() => handleSort(SecretSyncsOrderBy.Destination)}
-                  >
-                    <FontAwesomeIcon icon={getColSortIcon(SecretSyncsOrderBy.Destination)} />
-                  </IconButton>
-                </div>
-              </Th>
-              <Th className="min-w-42">
-                <div className="flex items-center">
+                  <ChevronDownIcon
+                    className={twMerge(
+                      "transition-transform",
+                      orderDirection === OrderByDirection.DESC &&
+                        orderBy === SecretSyncsOrderBy.Destination &&
+                        "rotate-180",
+                      orderBy !== SecretSyncsOrderBy.Destination && "opacity-30"
+                    )}
+                  />
+                </TableHead>
+                <TableHead
+                  className="min-w-42"
+                  onClick={() => handleSort(SecretSyncsOrderBy.Status)}
+                >
                   Status
-                  <IconButton
-                    variant="plain"
-                    className={getClassName(SecretSyncsOrderBy.Status)}
-                    ariaLabel="sort"
-                    onClick={() => handleSort(SecretSyncsOrderBy.Status)}
-                  >
-                    <FontAwesomeIcon icon={getColSortIcon(SecretSyncsOrderBy.Status)} />
-                  </IconButton>
-                </div>
-              </Th>
-              <Th className="w-5" />
-            </Tr>
-          </THead>
-          <TBody>
-            {filteredSecretSyncs.slice(offset, perPage * page).map((secretSync) => (
-              <SecretSyncRow
-                key={secretSync.id}
-                secretSync={secretSync}
-                onDelete={handleDelete}
-                onTriggerSyncSecrets={handleTriggerSync}
-                onTriggerImportSecrets={handleTriggerImportSecrets}
-                onTriggerRemoveSecrets={handleTriggerRemoveSecrets}
-                onToggleEnable={handleToggleEnableSync}
-              />
-            ))}
-          </TBody>
-        </Table>
-        {Boolean(filteredSecretSyncs.length) && (
-          <Pagination
-            count={filteredSecretSyncs.length}
-            page={page}
-            perPage={perPage}
-            onChangePage={setPage}
-            onChangePerPage={handlePerPageChange}
-          />
-        )}
-        {!filteredSecretSyncs?.length && (
-          <EmptyState
-            title={
-              secretSyncs.length
-                ? "No syncs match search..."
-                : "This project has no syncs configured"
-            }
-            icon={secretSyncs.length ? faSearch : faRotate}
-          />
-        )}
-      </TableContainer>
+                  <ChevronDownIcon
+                    className={twMerge(
+                      "transition-transform",
+                      orderDirection === OrderByDirection.DESC &&
+                        orderBy === SecretSyncsOrderBy.Status &&
+                        "rotate-180",
+                      orderBy !== SecretSyncsOrderBy.Status && "opacity-30"
+                    )}
+                  />
+                </TableHead>
+                <TableHead className="w-5" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isPending &&
+                Array.from({ length: 10 }).map((_, i) => (
+                  <TableRow key={`skeleton-${i + 1}`}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-7" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-4" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              {!isPending &&
+                visibleSyncs.map((secretSync) => (
+                  <SecretSyncRow
+                    key={secretSync.id}
+                    secretSync={secretSync}
+                    onDelete={handleDelete}
+                    onTriggerSyncSecrets={handleTriggerSync}
+                    onTriggerImportSecrets={handleTriggerImportSecrets}
+                    onTriggerRemoveSecrets={handleTriggerRemoveSecrets}
+                    onToggleEnable={handleToggleEnableSync}
+                  />
+                ))}
+            </TableBody>
+          </Table>
+          {Boolean(filteredSecretSyncs.length) && (
+            <Pagination
+              count={filteredSecretSyncs.length}
+              page={page}
+              perPage={perPage}
+              onChangePage={setPage}
+              onChangePerPage={handlePerPageChange}
+            />
+          )}
+        </>
+      )}
       <DeleteSecretSyncModal
         onOpenChange={(isOpen) => handlePopUpToggle("deleteSync", isOpen)}
         isOpen={popUp.deleteSync.isOpen}

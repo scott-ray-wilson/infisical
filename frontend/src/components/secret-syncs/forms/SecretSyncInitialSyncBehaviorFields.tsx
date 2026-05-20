@@ -142,10 +142,7 @@ const ReconciliationLegend = () => (
 );
 
 const BEFORE_INFISICAL: ReconciliationRow[] = [{ name: "API_KEY" }, { name: "DB_URL" }];
-const BEFORE_DESTINATION: ReconciliationRow[] = [
-  { name: "API_KEY" },
-  { name: "LEGACY_TOKEN" }
-];
+const BEFORE_DESTINATION: ReconciliationRow[] = [{ name: "API_KEY" }, { name: "LEGACY_TOKEN" }];
 
 const getAfterRows = (
   variant: GraphicVariant

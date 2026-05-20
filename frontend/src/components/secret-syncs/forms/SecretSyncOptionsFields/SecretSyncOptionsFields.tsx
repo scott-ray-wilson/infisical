@@ -1,16 +1,23 @@
 import { ReactNode, useEffect } from "react";
 import { Controller, useFormContext } from "react-hook-form";
-import { faTriangleExclamation } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { CircleHelp } from "lucide-react";
 
-import { FormControl, Select, SelectItem } from "@app/components/v2";
 import {
   Field,
   FieldContent,
   FieldDescription,
   FieldError,
+  FieldLabel,
   Label,
-  Switch
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
 } from "@app/components/v3";
 import { SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP, SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";
 import {
@@ -20,6 +27,7 @@ import {
 } from "@app/hooks/api/secretSyncs";
 
 import { TSecretSyncForm } from "../schemas";
+import { InitialSyncAlerts } from "../SecretSyncInitialSyncBehaviorFields";
 import { AwsParameterStoreSyncOptionsFields } from "./AwsParameterStoreSyncOptionsFields";
 import { AwsSecretsManagerSyncOptionsFields } from "./AwsSecretsManagerSyncOptionsFields";
 import { AzureKeyVaultSyncOptionsFields } from "./AzureKeyVaultSyncOptionsFields";
@@ -125,6 +133,8 @@ export const SecretSyncOptionsFields = ({ hideInitialSync, children }: Props) =>
       throw new Error(`Unhandled Additional Sync Options Fields: ${destination}`);
   }
 
+  const initialSyncDisabled = !syncOption?.canImportSecrets || vercelSensitive;
+
   return (
     <>
       {!hideInitialSync && (
@@ -133,88 +143,65 @@ export const SecretSyncOptionsFields = ({ hideInitialSync, children }: Props) =>
             name="syncOptions.initialSyncBehavior"
             control={control}
             render={({ field: { value, onChange }, fieldState: { error } }) => (
-              <FormControl
-                tooltipClassName="max-w-lg py-3"
-                tooltipText={
-                  syncOption?.canImportSecrets ? (
-                    <div className="flex flex-col gap-3">
-                      <p>
-                        Specify how Infisical should resolve the initial sync to {destinationName}.
-                        The following options are available:
-                      </p>
-                      <ul className="flex list-disc flex-col gap-3 pl-4">
-                        {Object.values(SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP).map((details) => {
-                          const { name, description } = details(destinationName);
-
-                          return (
-                            <li key={name}>
-                              <p className="text-mineshaft-300">
-                                <span className="font-medium text-bunker-200">{name}</span>:{" "}
-                                {description}
-                              </p>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  ) : undefined
-                }
-                errorText={error?.message}
-                isError={Boolean(error?.message)}
-                label="Initial Sync Behavior"
-              >
+              <Field className="mb-4">
+                <FieldLabel htmlFor="initial-sync-behavior" className="flex items-center gap-1.5">
+                  Initial sync behavior
+                  {syncOption?.canImportSecrets && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <CircleHelp className="size-3 cursor-help text-muted" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-lg">
+                        <div className="flex flex-col gap-3">
+                          <p>
+                            Specify how Infisical should resolve the initial sync to{" "}
+                            {destinationName}. The following options are available:
+                          </p>
+                          <ul className="flex list-disc flex-col gap-3 pl-4">
+                            {Object.values(SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP).map((details) => {
+                              const { name, description } = details(destinationName);
+                              return (
+                                <li key={name}>
+                                  <p>
+                                    <span className="font-medium">{name}</span>: {description}
+                                  </p>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </FieldLabel>
                 <Select
-                  isDisabled={!syncOption?.canImportSecrets || vercelSensitive}
                   value={value}
                   onValueChange={(val) => onChange(val)}
-                  className="w-full border border-mineshaft-500"
-                  position="popper"
-                  placeholder="Select an option..."
-                  dropdownContainerClassName="max-w-none"
+                  disabled={initialSyncDisabled}
                 >
-                  {initialSyncBehaviorEntries.map(([key, details]) => {
-                    const { name } = details(destinationName);
-
-                    return (
-                      <SelectItem value={key} key={key}>
-                        {name}
-                      </SelectItem>
-                    );
-                  })}
+                  <SelectTrigger
+                    id="initial-sync-behavior"
+                    isError={Boolean(error)}
+                    className="w-full"
+                  >
+                    <SelectValue placeholder="Select an option..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {initialSyncBehaviorEntries.map(([key, details]) => {
+                      const { name } = details(destinationName);
+                      return (
+                        <SelectItem value={key} key={key}>
+                          {name}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
                 </Select>
-              </FormControl>
+                <FieldError errors={[error]} />
+              </Field>
             )}
           />
-          {vercelSensitive && (
-            <p className="-mt-2.5 mb-2.5 text-xs text-yellow">
-              <FontAwesomeIcon className="mr-1" size="xs" icon={faTriangleExclamation} />
-              When secrets are marked as sensitive, Vercel does not allow them to be read back, so
-              only Overwrite Destination Secrets is supported.
-            </p>
-          )}
-          {!vercelSensitive && !syncOption?.canImportSecrets && (
-            <p className="-mt-2.5 mb-2.5 text-xs text-yellow">
-              <FontAwesomeIcon className="mr-1" size="xs" icon={faTriangleExclamation} />
-              {destinationName} only supports overwriting destination secrets.{" "}
-              {!currentSyncOption.disableSecretDeletion &&
-                (syncOption?.supportsKeySchema !== false ||
-                  syncOption?.supportsDisableSecretDeletion !== false) &&
-                `Secrets not present in Infisical will be removed from the destination. Consider adding a key schema or disabling secret deletion if you do not want existing secrets to be removed from ${destinationName}.`}
-            </p>
-          )}
-          {!vercelSensitive &&
-            syncOption?.canImportSecrets &&
-            currentSyncOption.initialSyncBehavior ===
-              SecretSyncInitialSyncBehavior.OverwriteDestination &&
-            !currentSyncOption.disableSecretDeletion && (
-              <p className="-mt-2.5 mb-2.5 text-xs text-yellow">
-                <FontAwesomeIcon className="mr-1" size="xs" icon={faTriangleExclamation} />
-                Secrets not present in Infisical will be removed from the destination. If you have
-                secrets in {destinationName} that you do not want deleted, consider setting initial
-                sync behavior to import destination secrets. Alternatively, configure a key schema
-                or disable secret deletion below to have Infisical ignore these secrets.
-              </p>
-            )}
+          <InitialSyncAlerts />
         </>
       )}
       {syncOption?.supportsDisableSecretDeletion !== false && (

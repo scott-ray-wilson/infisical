@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertTriangleIcon } from "lucide-react";
 
 import { createNotification } from "@app/components/notifications";
 import {
@@ -11,6 +12,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
   Button,
   Field,
@@ -393,6 +395,9 @@ export const CreateSecretSyncForm = ({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
+            <AlertDialogMedia>
+              <AlertTriangleIcon />
+            </AlertDialogMedia>
             <AlertDialogTitle>Secret Sync Behavior</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="flex flex-col gap-2">

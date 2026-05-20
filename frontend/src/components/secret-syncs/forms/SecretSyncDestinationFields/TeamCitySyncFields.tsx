@@ -6,6 +6,7 @@ import { SecretSyncConnectionField } from "@app/components/secret-syncs/forms/Se
 import {
   Field,
   FieldContent,
+  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -120,15 +121,14 @@ export const TeamCitySyncFields = () => {
                 getOptionLabel={(option) => option.name}
                 getOptionValue={(option) => option.id}
               />
+              <FieldDescription>
+                Not selecting a Build Configuration will sync your secrets to the entire project.
+              </FieldDescription>
               <FieldError errors={[error]} />
             </FieldContent>
           </Field>
         )}
       />
-
-      <span className="text-sm text-bunker-300">
-        Not selecting a Build Configuration will sync your secrets to the entire project.
-      </span>
     </FieldGroup>
   );
 };

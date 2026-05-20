@@ -58,7 +58,6 @@ export const TravisCISyncFields = () => {
             <FieldLabel>Repository</FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isRepositoriesPending && Boolean(connectionId)}
                 isDisabled={!connectionId}
                 value={repositories.find((repo) => repo.id === value) ?? null}
@@ -86,7 +85,6 @@ export const TravisCISyncFields = () => {
             <FieldLabel>Branch (Optional)</FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isClearable
                 isLoading={
                   isBranchesPending && Boolean(connectionId) && Boolean(currentRepositoryId)

@@ -90,7 +90,7 @@ export const CloudflarePagesSyncFields = () => {
                 <SelectTrigger className="w-full capitalize" isError={Boolean(error)}>
                   <SelectValue placeholder="Select an environment..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper">
                   {CLOUDFLARE_ENVIRONMENTS.map(({ name, value: envValue }) => (
                     <SelectItem className="capitalize" value={envValue} key={envValue}>
                       {name}

@@ -98,7 +98,7 @@ export const RenderSyncFields = () => {
                 <SelectTrigger className="w-full capitalize" isError={Boolean(error)}>
                   <SelectValue placeholder="Select a scope..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper">
                   {Object.values(RenderSyncScope).map((scope) => (
                     <SelectItem className="capitalize" value={scope} key={scope}>
                       {scope.replace("-", " ")}

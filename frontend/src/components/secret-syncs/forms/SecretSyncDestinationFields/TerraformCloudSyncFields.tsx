@@ -135,7 +135,7 @@ export const TerraformCloudSyncFields = () => {
                 <SelectTrigger className="w-full capitalize" isError={Boolean(error)}>
                   <SelectValue placeholder="Select category..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper">
                   {Object.entries(TerraformCloudSyncCategory).map(([envKey, envValue]) => (
                     <SelectItem className="capitalize" value={envValue} key={envValue}>
                       {envKey.replace("-", " ")}
@@ -194,7 +194,7 @@ export const TerraformCloudSyncFields = () => {
                 <SelectTrigger className="w-full capitalize" isError={Boolean(error)}>
                   <SelectValue placeholder="Select a scope..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper">
                   {Object.values(TerraformCloudSyncScope).map((scope) => (
                     <SelectItem className="capitalize" value={scope} key={scope}>
                       {scope.replace("-", " ")}

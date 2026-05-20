@@ -171,7 +171,7 @@ export const HumanitecSyncFields = () => {
                 <SelectTrigger className="w-full capitalize" isError={Boolean(error)}>
                   <SelectValue placeholder="Select a scope..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper">
                   {Object.values(HumanitecSyncScope).map((scope) => (
                     <SelectItem className="capitalize" value={scope} key={scope}>
                       {scope.replace("-", " ")}

@@ -73,7 +73,6 @@ export const NorthflankSyncFields = () => {
             </FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isProjectsLoading && Boolean(connectionId)}
                 isDisabled={!connectionId}
                 value={projects.find((p) => p.id === value) ?? null}

@@ -91,7 +91,7 @@ export const AwsSecretsManagerSyncFields = () => {
                 <SelectTrigger className="w-full capitalize" isError={Boolean(error)}>
                   <SelectValue placeholder="Select an option..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper">
                   {Object.values(AwsSecretsManagerSyncMappingBehavior).map((behavior) => (
                     <SelectItem className="capitalize" value={behavior} key={behavior}>
                       {behavior}

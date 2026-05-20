@@ -148,10 +148,10 @@ export const CreateSecretSyncForm = ({
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   // scoot: right now we only do this when creating a connection so we know index 1
-  // DEV: jump to Initial Sync (index 2) while iterating on that tab. Remove before shipping.
+  // DEV: jump to Sync Options (index 3) while iterating on that tab. Remove before shipping.
   const [selectedTabIndex, setSelectedTabIndex] = useState(
     // eslint-disable-next-line no-nested-ternary
-    import.meta.env.DEV ? 2 : initialFormData ? 1 : 0
+    import.meta.env.DEV ? 3 : initialFormData ? 1 : 0
   );
 
   const { syncOption } = useSecretSyncOption(destination);
@@ -337,13 +337,12 @@ export const CreateSecretSyncForm = ({
             {selectedTabIndex === 1 && <SecretSyncDestinationFields />}
             {selectedTabIndex === 2 && <SecretSyncInitialSyncBehaviorFields />}
             {selectedTabIndex === 3 && (
-              <>
-                <SecretSyncOptionsFields hideInitialSync />
+              <SecretSyncOptionsFields hideInitialSync>
                 <Controller
                   control={control}
                   name="isAutoSyncEnabled"
                   render={({ field: { value, onChange }, fieldState: { error } }) => (
-                    <Field>
+                    <Field className="mb-4">
                       <FieldLabel htmlFor="auto-sync-enabled">
                         <Field orientation="horizontal">
                           <FieldContent>
@@ -365,7 +364,7 @@ export const CreateSecretSyncForm = ({
                     </Field>
                   )}
                 />
-              </>
+              </SecretSyncOptionsFields>
             )}
             {selectedTabIndex === 4 && <SecretSyncDetailsFields />}
             {selectedTabIndex === 5 && <SecretSyncReviewFields />}

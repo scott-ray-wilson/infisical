@@ -43,19 +43,19 @@ const getBehaviorCopy = (
   switch (key) {
     case SecretSyncInitialSyncBehavior.OverwriteDestination:
       return {
-        title: `Replace everything in ${destinationName}`,
-        description: `Infisical becomes the source of truth. On the first run, every secret in Infisical is pushed to ${destinationName}, and any secrets already in ${destinationName} that don't exist in Infisical are deleted.`
+        title: `Overwrite ${destinationName}`,
+        description: `Push every Infisical secret to ${destinationName} and delete any secrets there that aren't in Infisical. No reconciliation.`
       };
     case SecretSyncInitialSyncBehavior.ImportPrioritizeSource:
       return {
-        title: `Merge both sides — Infisical wins conflicts`,
-        description: `Combine the secrets from both sides. New secrets in ${shortName} are imported into Infisical, new secrets in Infisical are pushed to ${shortName}, and when the same key exists on both sides Infisical's value is kept and pushed.`
+        title: `Import from ${shortName} — prioritize Infisical`,
+        description: `Reconcile both sides: import secrets only in ${shortName}, push secrets only in Infisical, and on conflicts Infisical's value wins.`
       };
     case SecretSyncInitialSyncBehavior.ImportPrioritizeDestination:
     default:
       return {
-        title: `Merge both sides — ${shortName} wins conflicts`,
-        description: `Combine the secrets from both sides. New secrets in ${shortName} are imported into Infisical, new secrets in Infisical are pushed to ${shortName}, and when the same key exists on both sides ${shortName}'s value is kept and Infisical is updated to match.`
+        title: `Import from ${shortName} — prioritize ${shortName}`,
+        description: `Reconcile both sides: import secrets only in ${shortName}, push secrets only in Infisical, and on conflicts ${shortName}'s value wins (Infisical updates to match).`
       };
   }
 };

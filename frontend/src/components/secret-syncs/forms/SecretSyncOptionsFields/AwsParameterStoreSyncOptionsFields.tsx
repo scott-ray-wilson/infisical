@@ -1,7 +1,7 @@
 import { Fragment, useState } from "react";
 import { Controller, useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { SingleValue } from "react-select";
-import { CircleHelp, Plus, Trash2 } from "lucide-react";
+import { CircleHelp, Plus, Tags, Trash2 } from "lucide-react";
 
 import {
   Accordion,
@@ -18,6 +18,9 @@ import {
   FilterableSelect,
   IconButton,
   Input,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Switch,
   Tooltip,
   TooltipContent,
@@ -31,7 +34,7 @@ import { SecretSync } from "@app/hooks/api/secretSyncs";
 
 import { TSecretSyncForm } from "../schemas";
 
-const AwsTagsSection = () => {
+const AwsTagsPopover = () => {
   const { control } = useFormContext<
     TSecretSyncForm & { destination: SecretSync.AWSParameterStore }
   >();
@@ -41,55 +44,83 @@ const AwsTagsSection = () => {
     name: "syncOptions.tags"
   });
 
+  const tagCount = tagFields.fields.length;
+
   return (
-    <div className="mt-2.5 flex flex-col gap-2">
-      <div className="grid max-h-[20vh] grid-cols-12 items-end gap-2 overflow-y-auto">
-        {tagFields.fields.map(({ id: tagFieldId }, i) => (
-          <Fragment key={tagFieldId}>
-            <div className="col-span-5">
-              {i === 0 && <p className="mb-1 text-xs text-muted">Key</p>}
-              <Controller
-                control={control}
-                name={`syncOptions.tags.${i}.key`}
-                render={({ field, fieldState: { error } }) => (
-                  <Input {...field} isError={Boolean(error)} />
-                )}
-              />
-            </div>
-            <div className="col-span-6">
-              {i === 0 && <p className="mb-1 text-xs text-muted">Value (optional)</p>}
-              <Controller
-                control={control}
-                name={`syncOptions.tags.${i}.value`}
-                render={({ field, fieldState: { error } }) => (
-                  <Input {...field} isError={Boolean(error)} />
-                )}
-              />
-            </div>
-            <div className="col-span-1 flex justify-end">
-              <IconButton
-                variant="ghost-muted"
-                aria-label="Remove tag"
-                size="sm"
-                onClick={() => tagFields.remove(i)}
-              >
-                <Trash2 />
-              </IconButton>
-            </div>
-          </Fragment>
-        ))}
-      </div>
-      <div className="flex">
-        <Button
-          variant="outline"
-          size="xs"
-          onClick={() => tagFields.append({ key: "", value: "" })}
-        >
-          <Plus />
-          Add tag
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="xs" type="button" className="mt-2.5 w-fit">
+          <Tags className="size-3" />
+          {tagCount > 0 ? `Edit tags (${tagCount})` : "Edit tags"}
         </Button>
-      </div>
-    </div>
+      </PopoverTrigger>
+      <PopoverContent
+        onCloseAutoFocus={(e) => e.preventDefault()}
+        className="w-[500px]"
+        align="start"
+      >
+        <div className="flex flex-col gap-3">
+          <div>
+            <p className="text-sm font-medium text-foreground">Resource tags</p>
+            <p className="mt-0.5 text-xs text-muted">
+              Static tags applied to every synced parameter.
+            </p>
+          </div>
+          <div className="thin-scrollbar flex max-h-64 flex-col gap-2 overflow-y-auto">
+            {tagCount === 0 && (
+              <p className="py-4 text-center text-xs text-muted">No tags yet. Add one below.</p>
+            )}
+            {tagFields.fields.map(({ id: tagFieldId }, i) => (
+              <Fragment key={tagFieldId}>
+                <div className="grid grid-cols-12 items-end gap-2">
+                  <div className="col-span-5">
+                    {i === 0 && <p className="mb-1 text-xs text-muted">Key</p>}
+                    <Controller
+                      control={control}
+                      name={`syncOptions.tags.${i}.key`}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input {...field} isError={Boolean(error)} className="h-8" />
+                      )}
+                    />
+                  </div>
+                  <div className="col-span-6">
+                    {i === 0 && <p className="mb-1 text-xs text-muted">Value (optional)</p>}
+                    <Controller
+                      control={control}
+                      name={`syncOptions.tags.${i}.value`}
+                      render={({ field, fieldState: { error } }) => (
+                        <Input {...field} isError={Boolean(error)} className="h-8" />
+                      )}
+                    />
+                  </div>
+                  <div className="col-span-1 flex justify-end">
+                    <IconButton
+                      variant="ghost-muted"
+                      aria-label="Remove tag"
+                      size="sm"
+                      onClick={() => tagFields.remove(i)}
+                    >
+                      <Trash2 />
+                    </IconButton>
+                  </div>
+                </div>
+              </Fragment>
+            ))}
+          </div>
+          <div>
+            <Button
+              variant="outline"
+              size="xs"
+              type="button"
+              onClick={() => tagFields.append({ key: "", value: "" })}
+            >
+              <Plus />
+              Add tag
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 
@@ -228,7 +259,7 @@ export const AwsParameterStoreSyncOptionsFields = () => {
                   }}
                 />
               </Field>
-              {Array.isArray(watchedTags) && <AwsTagsSection />}
+              {Array.isArray(watchedTags) && <AwsTagsPopover />}
             </FieldLabel>
           </div>
 

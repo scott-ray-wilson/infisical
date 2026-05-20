@@ -30,9 +30,10 @@ import { SecretSyncKeySchemaField } from "./SecretSyncKeySchemaField";
 
 type Props = {
   hideInitialSync?: boolean;
+  children?: ReactNode;
 };
 
-export const SecretSyncOptionsFields = ({ hideInitialSync }: Props) => {
+export const SecretSyncOptionsFields = ({ hideInitialSync, children }: Props) => {
   const { control, watch, setValue } = useFormContext<TSecretSyncForm>();
 
   const destination = watch("destination");
@@ -247,6 +248,7 @@ export const SecretSyncOptionsFields = ({ hideInitialSync }: Props) => {
           )}
         />
       )}
+      {children}
       {AdditionalSyncOptionsFieldsComponent}
     </>
   );

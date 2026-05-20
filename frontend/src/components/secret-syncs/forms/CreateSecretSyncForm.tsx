@@ -115,7 +115,7 @@ const getFormTabs = (destination: SecretSync, destinationName: string): FormTab[
       subtitle: "Give this sync a name and an optional description.",
       rightLabel: "DETAILS",
       rightDescription:
-        "A clear name helps when you have multiple syncs. The description shows up in the sync list and audit logs.",
+        "A clear name helps when you have multiple syncs. The description shows up in the sync list as a tooltip.",
       fields: ["name", "description"]
     },
     {
@@ -147,13 +147,32 @@ export const CreateSecretSyncForm = ({
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   // scoot: right now we only do this when creating a connection so we know index 1
-  // DEV: jump to Details (index 4) while iterating on that tab. Remove before shipping.
+  // DEV: jump to Review (index 5) while iterating on that tab. Remove before shipping.
   const [selectedTabIndex, setSelectedTabIndex] = useState(
     // eslint-disable-next-line no-nested-ternary
-    import.meta.env.DEV ? 4 : initialFormData ? 1 : 0
+    import.meta.env.DEV ? 5 : initialFormData ? 1 : 0
   );
 
   const { syncOption } = useSecretSyncOption(destination);
+
+  // DEV: dummy data so the Review step renders without manually walking the wizard.
+  // Tailored to AWS Parameter Store — other providers may still crash on destination-specific fields.
+  // Remove before shipping.
+  const devDummyData =
+    import.meta.env.DEV && destination === SecretSync.AWSParameterStore
+      ? ({
+          name: "dev-sync",
+          description: "Dev iteration dummy data",
+          secretPath: "/",
+          environment: { id: "dev-env-id", slug: "dev", name: "Development" },
+          connection: { id: "00000000-0000-0000-0000-000000000000", name: "Dev AWS Connection" },
+          destinationConfig: { region: "us-east-1", path: "/infisical/dev/" },
+          syncOptions: {
+            initialSyncBehavior: SecretSyncInitialSyncBehavior.OverwriteDestination,
+            disableSecretDeletion: false
+          }
+        } as Partial<TSecretSyncForm>)
+      : undefined;
 
   const formMethods = useForm<TSecretSyncForm>({
     resolver: zodResolver(SecretSyncFormSchema),
@@ -165,6 +184,7 @@ export const CreateSecretSyncForm = ({
           ? undefined
           : SecretSyncInitialSyncBehavior.OverwriteDestination
       },
+      ...devDummyData,
       ...initialFormData
     } as Partial<TSecretSyncForm>,
     reValidateMode: "onChange"

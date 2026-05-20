@@ -1,5 +1,5 @@
 import { GenericFieldLabel } from "@app/components/secret-syncs";
-import { Tooltip } from "@app/components/v2";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@app/components/v3";
 import { TOCIVaultSync } from "@app/hooks/api/secretSyncs/types/oci-vault-sync";
 
 type Props = {
@@ -13,29 +13,44 @@ export const OCIVaultSyncDestinationSection = ({ secretSync }: Props) => {
 
   return (
     <>
-      <Tooltip side="bottom" className="max-w-sm break-words select-text" content={compartmentOcid}>
-        <div>
-          <GenericFieldLabel label="Compartment OCID">
-            {compartmentOcid.substring(0, 21)}...
-            {compartmentOcid.substring(compartmentOcid.length - 6)}
-          </GenericFieldLabel>
-        </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div>
+            <GenericFieldLabel label="Compartment OCID">
+              {compartmentOcid.substring(0, 21)}...
+              {compartmentOcid.substring(compartmentOcid.length - 6)}
+            </GenericFieldLabel>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-sm break-words select-text">
+          {compartmentOcid}
+        </TooltipContent>
       </Tooltip>
-      <Tooltip side="bottom" className="max-w-sm break-words select-text" content={compartmentOcid}>
-        <div>
-          <GenericFieldLabel label="Vault OCID">
-            {vaultOcid.substring(0, 15)}...
-            {vaultOcid.substring(vaultOcid.length - 6)}
-          </GenericFieldLabel>
-        </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div>
+            <GenericFieldLabel label="Vault OCID">
+              {vaultOcid.substring(0, 15)}...
+              {vaultOcid.substring(vaultOcid.length - 6)}
+            </GenericFieldLabel>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-sm break-words select-text">
+          {compartmentOcid}
+        </TooltipContent>
       </Tooltip>
-      <Tooltip side="bottom" className="max-w-sm break-words select-text" content={compartmentOcid}>
-        <div>
-          <GenericFieldLabel label="Key OCID">
-            {keyOcid.substring(0, 13)}...
-            {keyOcid.substring(keyOcid.length - 6)}
-          </GenericFieldLabel>
-        </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div>
+            <GenericFieldLabel label="Key OCID">
+              {keyOcid.substring(0, 13)}...
+              {keyOcid.substring(keyOcid.length - 6)}
+            </GenericFieldLabel>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" className="max-w-sm break-words select-text">
+          {compartmentOcid}
+        </TooltipContent>
       </Tooltip>
     </>
   );

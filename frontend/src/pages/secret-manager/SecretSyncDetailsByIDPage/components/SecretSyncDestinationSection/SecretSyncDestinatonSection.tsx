@@ -1,10 +1,16 @@
 import { ReactNode } from "react";
-import { faEdit } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { PencilIcon } from "lucide-react";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
 import { GenericFieldLabel } from "@app/components/secret-syncs";
-import { IconButton } from "@app/components/v2";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  IconButton
+} from "@app/components/v3";
 import { ProjectPermissionSecretSyncActions } from "@app/context/ProjectPermissionContext/types";
 import { APP_CONNECTION_MAP } from "@app/helpers/appConnections";
 import { SecretSync, TSecretSync } from "@app/hooks/api/secretSyncs";
@@ -202,27 +208,31 @@ export const SecretSyncDestinationSection = ({ secretSync, onEditDestination }: 
   const permissionSubject = getSecretSyncPermissionSubject(secretSync);
 
   return (
-    <div className="flex w-full flex-col gap-3 rounded-lg border border-mineshaft-600 bg-mineshaft-900 px-4 py-3">
-      <div className="flex items-center justify-between border-b border-mineshaft-400 pb-2">
-        <h3 className="font-medium text-mineshaft-100">Destination Configuration</h3>
-        <ProjectPermissionCan I={ProjectPermissionSecretSyncActions.Edit} a={permissionSubject}>
-          {(isAllowed) => (
-            <IconButton
-              variant="plain"
-              colorSchema="secondary"
-              isDisabled={!isAllowed}
-              ariaLabel="Edit sync destination"
-              onClick={onEditDestination}
-            >
-              <FontAwesomeIcon icon={faEdit} />
-            </IconButton>
-          )}
-        </ProjectPermissionCan>
-      </div>
-      <div className="flex w-full flex-wrap gap-8">
-        <GenericFieldLabel label={`${app} Connection`}>{connection.name}</GenericFieldLabel>
-        {DestinationComponents}
-      </div>
-    </div>
+    <Card>
+      <CardHeader className="border-b">
+        <CardTitle>Destination Configuration</CardTitle>
+        <CardAction>
+          <ProjectPermissionCan I={ProjectPermissionSecretSyncActions.Edit} a={permissionSubject}>
+            {(isAllowed) => (
+              <IconButton
+                variant="ghost-muted"
+                size="xs"
+                isDisabled={!isAllowed}
+                aria-label="Edit sync destination"
+                onClick={onEditDestination}
+              >
+                <PencilIcon />
+              </IconButton>
+            )}
+          </ProjectPermissionCan>
+        </CardAction>
+      </CardHeader>
+      <CardContent>
+        <div className="flex w-full flex-wrap gap-8">
+          <GenericFieldLabel label={`${app} Connection`}>{connection.name}</GenericFieldLabel>
+          {DestinationComponents}
+        </div>
+      </CardContent>
+    </Card>
   );
 };

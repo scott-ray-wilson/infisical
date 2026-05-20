@@ -1,12 +1,7 @@
 import { useMemo, useState } from "react";
 import { faCheck, faRotate, faWarning } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  ChevronDownIcon,
-  FilterIcon,
-  RefreshCwIcon,
-  SearchIcon
-} from "lucide-react";
+import { ChevronDownIcon, FilterIcon, RefreshCwIcon, SearchIcon } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 import { createNotification } from "@app/components/notifications";
@@ -282,11 +277,14 @@ export const SecretSyncsTable = ({ secretSyncs, isPending }: Props) => {
         </InputGroup>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <IconButton aria-label="Filter secret syncs" variant={isTableFiltered ? "project" : "outline"}>
+            <IconButton
+              aria-label="Filter secret syncs"
+              variant={isTableFiltered ? "project" : "outline"}
+            >
               <FilterIcon />
             </IconButton>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="thin-scrollbar max-h-[70vh] overflow-y-auto" align="end">
+          <DropdownMenuContent className="max-h-[70vh] thin-scrollbar overflow-y-auto" align="end">
             <DropdownMenuLabel>Status</DropdownMenuLabel>
             {[SecretSyncStatus.Running, SecretSyncStatus.Succeeded, SecretSyncStatus.Failed].map(
               (status) => (
@@ -340,7 +338,9 @@ export const SecretSyncsTable = ({ secretSyncs, isPending }: Props) => {
                 );
               })
             ) : (
-              <DropdownMenuCheckboxItem disabled>No Secret Syncs Configured</DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem disabled>
+                No Secret Syncs Configured
+              </DropdownMenuCheckboxItem>
             )}
             <DropdownMenuLabel>Environment</DropdownMenuLabel>
             {currentProject.environments.map((env) => (
@@ -373,9 +373,7 @@ export const SecretSyncsTable = ({ secretSyncs, isPending }: Props) => {
               {isFiltered ? "No syncs match search" : "This project has no syncs configured"}
             </EmptyTitle>
             <EmptyDescription>
-              {isFiltered
-                ? "Adjust your search or filter criteria."
-                : "Add a sync to get started."}
+              {isFiltered ? "Adjust your search or filter criteria." : "Add a sync to get started."}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>

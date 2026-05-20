@@ -1,10 +1,18 @@
-import { faEye } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { EyeIcon } from "lucide-react";
 
 import { GenericFieldLabel } from "@app/components/secret-syncs";
-import { Table, TBody, Td, Th, THead, Tooltip, Tr } from "@app/components/v2";
-import { Badge } from "@app/components/v3";
+import {
+  Badge,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@app/components/v3";
 import { TAwsSecretsManagerSync } from "@app/hooks/api/secretSyncs/types/aws-secrets-manager-sync";
 
 type Props = {
@@ -21,33 +29,33 @@ export const AwsSecretsManagerSyncOptionsSection = ({ secretSync }: Props) => {
       {keyId && <GenericFieldLabel label="KMS Key">{keyId}</GenericFieldLabel>}
       {tags && tags.length > 0 && (
         <GenericFieldLabel label="Tags">
-          <Tooltip
-            side="right"
-            className="max-w-xl p-1"
-            content={
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-block w-min">
+                <Badge variant="neutral">
+                  <EyeIcon />
+                  {tags.length} Tag{tags.length > 1 ? "s" : ""}
+                </Badge>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="max-w-xl bg-background p-1">
               <Table>
-                <THead>
-                  <Th className="p-2 whitespace-nowrap">Key</Th>
-                  <Th className="p-2">Value</Th>
-                </THead>
-                <TBody>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="p-2 whitespace-nowrap">Key</TableHead>
+                    <TableHead className="p-2">Value</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {tags.map((tag) => (
-                    <Tr key={tag.key}>
-                      <Td className="p-2">{tag.key}</Td>
-                      <Td className="p-2">{tag.value}</Td>
-                    </Tr>
+                    <TableRow key={tag.key}>
+                      <TableCell className="p-2">{tag.key}</TableCell>
+                      <TableCell className="p-2">{tag.value}</TableCell>
+                    </TableRow>
                   ))}
-                </TBody>
+                </TableBody>
               </Table>
-            }
-          >
-            <div className="w-min">
-              <Badge variant="neutral">
-                <EyeIcon />
-                <FontAwesomeIcon icon={faEye} />
-                {tags.length} Tag{tags.length > 1 ? "s" : ""}
-              </Badge>
-            </div>
+            </TooltipContent>
           </Tooltip>
         </GenericFieldLabel>
       )}

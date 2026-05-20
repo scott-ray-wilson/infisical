@@ -1,19 +1,18 @@
 import { useCallback } from "react";
-import {
-  faCheck,
-  faCopy,
-  faDownload,
-  faEllipsisV,
-  faEraser,
-  faInfoCircle,
-  faRotate,
-  faToggleOff,
-  faToggleOn,
-  faTrash
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useNavigate } from "@tanstack/react-router";
-import { BanIcon, RefreshCwIcon } from "lucide-react";
+import {
+  BanIcon,
+  CheckIcon,
+  CopyIcon,
+  DownloadIcon,
+  EllipsisVerticalIcon,
+  EraserIcon,
+  InfoIcon,
+  RefreshCwIcon,
+  ToggleLeftIcon,
+  ToggleRightIcon,
+  Trash2Icon
+} from "lucide-react";
 
 import { createNotification } from "@app/components/notifications";
 import { ProjectPermissionCan } from "@app/components/permissions";
@@ -25,15 +24,18 @@ import {
   SecretSyncRemoveStatusBadge
 } from "@app/components/secret-syncs";
 import {
+  Badge,
   Button,
+  ButtonGroup,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   IconButton,
-  Tooltip
-} from "@app/components/v2";
-import { Badge } from "@app/components/v3";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@app/components/v3";
 import { ROUTE_PATHS } from "@app/const/routes";
 import { useOrganization } from "@app/context";
 import { ProjectPermissionSecretSyncActions } from "@app/context/ProjectPermissionContext/types";
@@ -129,51 +131,47 @@ export const SecretSyncActionTriggers = ({ secretSync }: Props) => {
             Auto-Sync Enabled
           </Badge>
         ) : (
-          <Tooltip
-            className="text-xs"
-            content="Auto-Sync is disabled. Changes to the source location will not be automatically synced to the destination."
-          >
-            <Badge variant="neutral">
-              <BanIcon />
-              Auto-Sync Disabled
-            </Badge>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-block">
+                <Badge variant="neutral">
+                  <BanIcon />
+                  Auto-Sync Disabled
+                </Badge>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              Auto-Sync is disabled. Changes to the source location will not be automatically synced
+              to the destination.
+            </TooltipContent>
           </Tooltip>
         )}
-        <div>
+        <ButtonGroup>
           <ProjectPermissionCan
             I={ProjectPermissionSecretSyncActions.SyncSecrets}
             a={permissionSubject}
           >
             {(isAllowed: boolean) => (
-              <Button
-                variant="outline_bg"
-                leftIcon={<FontAwesomeIcon icon={faRotate} />}
-                onClick={handleTriggerSync}
-                className="h-9 rounded-r-none bg-mineshaft-500"
-                isDisabled={!isAllowed}
-              >
+              <Button variant="outline" onClick={handleTriggerSync} isDisabled={!isAllowed}>
+                <RefreshCwIcon />
                 Trigger Sync
               </Button>
             )}
           </ProjectPermissionCan>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <IconButton
-                ariaLabel="add-folder-or-import"
-                variant="outline_bg"
-                className="h-9 w-10 rounded-l-none border-l-2 border-mineshaft border-l-mineshaft-700 bg-mineshaft-500"
-              >
-                <FontAwesomeIcon icon={faEllipsisV} />
+              <IconButton variant="outline" aria-label="More sync actions">
+                <EllipsisVerticalIcon />
               </IconButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
-                icon={<FontAwesomeIcon icon={isIdCopied ? faCheck : faCopy} />}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleCopyId();
                 }}
               >
+                {isIdCopied ? <CheckIcon /> : <CopyIcon />}
                 Copy Sync ID
               </DropdownMenuItem>
               {syncOption?.canImportSecrets && (
@@ -183,23 +181,20 @@ export const SecretSyncActionTriggers = ({ secretSync }: Props) => {
                 >
                   {(isAllowed: boolean) => (
                     <DropdownMenuItem
-                      icon={<FontAwesomeIcon icon={faDownload} />}
                       onClick={() => handlePopUpOpen("importSecrets")}
                       isDisabled={!isAllowed}
                     >
-                      <Tooltip
-                        position="left"
-                        sideOffset={42}
-                        content={`Import secrets from this ${destinationName} destination into Infisical.`}
-                      >
-                        <div className="flex h-full w-full items-center justify-between gap-1">
-                          <span>Import Secrets</span>
-                          <FontAwesomeIcon
-                            className="text-bunker-300"
-                            size="sm"
-                            icon={faInfoCircle}
-                          />
-                        </div>
+                      <DownloadIcon />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex h-full w-full items-center justify-between gap-1">
+                            <span>Import Secrets</span>
+                            <InfoIcon className="text-muted" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" sideOffset={42}>
+                          Import secrets from this {destinationName} destination into Infisical.
+                        </TooltipContent>
                       </Tooltip>
                     </DropdownMenuItem>
                   )}
@@ -212,23 +207,21 @@ export const SecretSyncActionTriggers = ({ secretSync }: Props) => {
                 >
                   {(isAllowed: boolean) => (
                     <DropdownMenuItem
-                      icon={<FontAwesomeIcon icon={faEraser} />}
                       onClick={() => handlePopUpOpen("removeSecrets")}
                       isDisabled={!isAllowed}
                     >
-                      <Tooltip
-                        position="left"
-                        sideOffset={42}
-                        content={`Remove secrets synced by Infisical from this ${destinationName} destination.`}
-                      >
-                        <div className="flex h-full w-full items-center justify-between gap-1">
-                          <span>Remove Secrets</span>
-                          <FontAwesomeIcon
-                            className="text-bunker-300"
-                            size="sm"
-                            icon={faInfoCircle}
-                          />
-                        </div>
+                      <EraserIcon />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="flex h-full w-full items-center justify-between gap-1">
+                            <span>Remove Secrets</span>
+                            <InfoIcon className="text-muted" />
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="left" sideOffset={42}>
+                          Remove secrets synced by Infisical from this {destinationName}{" "}
+                          destination.
+                        </TooltipContent>
                       </Tooltip>
                     </DropdownMenuItem>
                   )}
@@ -239,15 +232,8 @@ export const SecretSyncActionTriggers = ({ secretSync }: Props) => {
                 a={permissionSubject}
               >
                 {(isAllowed: boolean) => (
-                  <DropdownMenuItem
-                    isDisabled={!isAllowed}
-                    icon={
-                      <FontAwesomeIcon
-                        icon={secretSync.isAutoSyncEnabled ? faToggleOff : faToggleOn}
-                      />
-                    }
-                    onClick={handleToggleEnableSync}
-                  >
+                  <DropdownMenuItem isDisabled={!isAllowed} onClick={handleToggleEnableSync}>
+                    {secretSync.isAutoSyncEnabled ? <ToggleLeftIcon /> : <ToggleRightIcon />}
                     {secretSync.isAutoSyncEnabled ? "Disable" : "Enable"} Auto-Sync
                   </DropdownMenuItem>
                 )}
@@ -259,16 +245,17 @@ export const SecretSyncActionTriggers = ({ secretSync }: Props) => {
                 {(isAllowed: boolean) => (
                   <DropdownMenuItem
                     isDisabled={!isAllowed}
-                    icon={<FontAwesomeIcon icon={faTrash} />}
                     onClick={() => handlePopUpOpen("deleteSync")}
+                    variant="danger"
                   >
+                    <Trash2Icon />
                     Delete Sync
                   </DropdownMenuItem>
                 )}
               </ProjectPermissionCan>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
+        </ButtonGroup>
       </div>
       <SecretSyncImportSecretsModal
         onOpenChange={(isOpen) => handlePopUpToggle("importSecrets", isOpen)}

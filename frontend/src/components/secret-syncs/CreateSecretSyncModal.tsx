@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AlertTriangleIcon } from "lucide-react";
 
 import { TSecretSyncForm } from "@app/components/secret-syncs/forms/schemas";
 import {
@@ -9,6 +10,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
   Sheet,
   SheetContent,
@@ -136,13 +138,16 @@ export const CreateSecretSyncModal = ({
       <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Discard sync setup?</AlertDialogTitle>
+            <AlertDialogMedia>
+              <AlertTriangleIcon />
+            </AlertDialogMedia>
+            <AlertDialogTitle>Discard Sync Setup?</AlertDialogTitle>
             <AlertDialogDescription>
-              You'll lose what you've filled in so far. You can always start a new sync later.
+              Your progress configuring this sync will be lost.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogCancel>Keep Editing</AlertDialogCancel>
             <AlertDialogAction variant="danger" onClick={closeSheet}>
               Discard
             </AlertDialogAction>

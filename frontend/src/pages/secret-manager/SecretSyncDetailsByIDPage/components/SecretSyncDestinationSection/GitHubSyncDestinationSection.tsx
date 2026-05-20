@@ -1,10 +1,9 @@
 import { ReactNode } from "react";
-import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { InfoIcon } from "lucide-react";
 
 import { GenericFieldLabel } from "@app/components/secret-syncs";
 import { GitHubSyncSelectedRepositoriesTooltipContent } from "@app/components/secret-syncs/github";
-import { Tooltip } from "@app/components/v2";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@app/components/v3";
 import {
   GitHubSyncScope,
   GitHubSyncVisibility,
@@ -30,11 +29,13 @@ export const GitHubSyncDestinationSection = ({ secretSync }: Props) => {
           {destinationConfig.visibility === GitHubSyncVisibility.Selected && (
             <GenericFieldLabel label="Selected Repositories">
               {destinationConfig.selectedRepositoryIds?.length ?? 0} Repositories
-              <Tooltip
-                side="bottom"
-                content={<GitHubSyncSelectedRepositoriesTooltipContent secretSync={secretSync} />}
-              >
-                <FontAwesomeIcon size="xs" className="ml-1 text-bunker-300" icon={faInfoCircle} />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <InfoIcon className="ml-1 inline size-3 text-bunker-300" />
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <GitHubSyncSelectedRepositoriesTooltipContent secretSync={secretSync} />
+                </TooltipContent>
               </Tooltip>
             </GenericFieldLabel>
           )}

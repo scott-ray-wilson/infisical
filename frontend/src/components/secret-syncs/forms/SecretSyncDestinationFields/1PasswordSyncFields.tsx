@@ -64,7 +64,6 @@ export const OnePassSyncFields = () => {
             </FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isVaultsLoading && Boolean(connectionId)}
                 isDisabled={!connectionId}
                 value={vaults?.find((v) => v.id === value) || null}

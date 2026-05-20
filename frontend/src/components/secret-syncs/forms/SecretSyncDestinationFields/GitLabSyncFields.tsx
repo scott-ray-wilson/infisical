@@ -62,12 +62,7 @@ const SecretProtectionOption = ({
           )}
         </FieldLabel>
       </FieldContent>
-      <Switch
-        id={id}
-        checked={isEnabled}
-        onCheckedChange={onChange}
-        disabled={isDisabled}
-      />
+      <Switch id={id} checked={isEnabled} onCheckedChange={onChange} disabled={isDisabled} />
     </Field>
   );
 };

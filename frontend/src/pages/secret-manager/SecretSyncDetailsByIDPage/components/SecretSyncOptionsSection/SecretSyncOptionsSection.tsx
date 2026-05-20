@@ -1,11 +1,17 @@
 import { ReactNode } from "react";
-import { faEdit } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { PencilIcon } from "lucide-react";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
 import { GenericFieldLabel } from "@app/components/secret-syncs";
-import { IconButton } from "@app/components/v2";
-import { Badge } from "@app/components/v3";
+import {
+  Badge,
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  IconButton
+} from "@app/components/v3";
 import { ProjectPermissionSecretSyncActions } from "@app/context/ProjectPermissionContext/types";
 import { SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP } from "@app/helpers/secretSyncs";
 import { SecretSync, TSecretSync } from "@app/hooks/api/secretSyncs";
@@ -102,41 +108,41 @@ export const SecretSyncOptionsSection = ({ secretSync, onEditOptions }: Props) =
   const permissionSubject = getSecretSyncPermissionSubject(secretSync);
 
   return (
-    <div>
-      <div className="flex w-full flex-col gap-3 rounded-lg border border-mineshaft-600 bg-mineshaft-900 px-4 py-3">
-        <div className="flex items-center justify-between border-b border-mineshaft-400 pb-2">
-          <h3 className="font-medium text-mineshaft-100">Sync Options</h3>
-          {allowEdits && (
+    <Card>
+      <CardHeader className="border-b">
+        <CardTitle>Sync Options</CardTitle>
+        {allowEdits && (
+          <CardAction>
             <ProjectPermissionCan I={ProjectPermissionSecretSyncActions.Edit} a={permissionSubject}>
               {(isAllowed) => (
                 <IconButton
-                  variant="plain"
-                  colorSchema="secondary"
+                  variant="ghost-muted"
+                  size="xs"
                   isDisabled={!isAllowed}
-                  ariaLabel="Edit sync options"
+                  aria-label="Edit sync options"
                   onClick={onEditOptions}
                 >
-                  <FontAwesomeIcon icon={faEdit} />
+                  <PencilIcon />
                 </IconButton>
               )}
             </ProjectPermissionCan>
+          </CardAction>
+        )}
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          <GenericFieldLabel label="Initial Sync Behavior">
+            {SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP[initialSyncBehavior](destination).name}
+          </GenericFieldLabel>
+          <GenericFieldLabel label="Key Schema">{keySchema}</GenericFieldLabel>
+          {AdditionalSyncOptionsComponent}
+          {disableSecretDeletion && (
+            <GenericFieldLabel label="Secret Deletion">
+              <Badge variant="neutral">Disabled</Badge>
+            </GenericFieldLabel>
           )}
         </div>
-        <div>
-          <div className="space-y-3">
-            <GenericFieldLabel label="Initial Sync Behavior">
-              {SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP[initialSyncBehavior](destination).name}
-            </GenericFieldLabel>
-            <GenericFieldLabel label="Key Schema">{keySchema}</GenericFieldLabel>
-            {AdditionalSyncOptionsComponent}
-            {disableSecretDeletion && (
-              <GenericFieldLabel label="Secret Deletion">
-                <Badge variant="neutral">Disabled</Badge>
-              </GenericFieldLabel>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };

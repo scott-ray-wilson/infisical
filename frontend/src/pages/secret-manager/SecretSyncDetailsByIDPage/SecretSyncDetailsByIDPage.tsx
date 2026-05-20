@@ -1,12 +1,14 @@
 import { Helmet } from "react-helmet";
-import { faBan, faChevronLeft } from "@fortawesome/free-solid-svg-icons";
+import { faChevronLeft } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
+import { BanIcon } from "lucide-react";
 
 import { ProjectPermissionCan } from "@app/components/permissions";
 import { EditSecretSyncModal } from "@app/components/secret-syncs";
 import { SecretSyncEditFields } from "@app/components/secret-syncs/types";
-import { Button, ContentLoader, EmptyState } from "@app/components/v2";
+import { ContentLoader } from "@app/components/v2";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@app/components/v3";
 import { ROUTE_PATHS } from "@app/const/routes";
 import { ProjectPermissionSub } from "@app/context";
 import { ProjectPermissionSecretSyncActions } from "@app/context/ProjectPermissionContext/types";
@@ -25,7 +27,6 @@ import {
 } from "./components";
 
 const PageContent = () => {
-  const navigate = useNavigate();
   const { destination, syncId, projectId, orgId } = useParams({
     from: ROUTE_PATHS.SecretManager.SecretSyncDetailsByIDPage.id,
     select: (params) => ({
@@ -51,11 +52,16 @@ const PageContent = () => {
   if (!secretSync) {
     return (
       <div className="flex h-full w-full items-center justify-center px-20">
-        <EmptyState
-          className="max-w-2xl rounded-md text-center"
-          icon={faBan}
-          title={`Could not find ${SECRET_SYNC_MAP[destination].name ?? "Secret"} Sync with ID ${syncId}`}
-        />
+        <Empty className="max-w-2xl">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <BanIcon />
+            </EmptyMedia>
+            <EmptyTitle>
+              Could not find {SECRET_SYNC_MAP[destination].name ?? "Secret"} Sync with ID {syncId}
+            </EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       </div>
     );
   }
@@ -74,25 +80,15 @@ const PageContent = () => {
     <>
       <div className="container mx-auto flex flex-col justify-between bg-bunker-800 font-inter text-white">
         <div className="mx-auto mb-6 w-full max-w-8xl">
-          <Button
-            variant="link"
-            type="submit"
-            leftIcon={<FontAwesomeIcon icon={faChevronLeft} />}
-            onClick={() => {
-              navigate({
-                to: ROUTE_PATHS.SecretManager.IntegrationsListPage.path,
-                params: {
-                  orgId,
-                  projectId
-                },
-                search: {
-                  selectedTab: IntegrationsListPageTabs.SecretSyncs
-                }
-              });
-            }}
+          <Link
+            to={ROUTE_PATHS.SecretManager.IntegrationsListPage.path}
+            params={{ orgId, projectId }}
+            search={{ selectedTab: IntegrationsListPageTabs.SecretSyncs }}
+            className="mb-4 flex w-fit items-center gap-x-1 text-sm text-mineshaft-400 transition duration-100 hover:text-mineshaft-400/80"
           >
+            <FontAwesomeIcon icon={faChevronLeft} />
             Secret Syncs
-          </Button>
+          </Link>
           <div className="mb-6 flex w-full items-center gap-3">
             <img
               alt={`${destinationDetails.name} sync`}

@@ -190,7 +190,7 @@ export const CreateSecretSyncForm = ({
       isAutoSyncEnabled: true,
       syncOptions: {
         initialSyncBehavior: syncOption?.canImportSecrets
-          ? undefined
+          ? SecretSyncInitialSyncBehavior.ImportPrioritizeSource
           : SecretSyncInitialSyncBehavior.OverwriteDestination
       },
       // ...devDummyData,

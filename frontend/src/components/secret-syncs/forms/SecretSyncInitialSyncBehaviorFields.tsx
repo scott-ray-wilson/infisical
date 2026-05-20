@@ -70,7 +70,7 @@ const fateConfig: Record<
   added: {
     label: "added",
     badgeClass: "text-success",
-    wrapperClass: "border-dashed border-success/50 bg-success/5"
+    wrapperClass: "border-success/50 bg-success/5"
   },
   updated: {
     label: "updated",
@@ -80,12 +80,12 @@ const fateConfig: Record<
   imported: {
     label: "imported",
     badgeClass: "text-info",
-    wrapperClass: "border-dashed border-info/50 bg-info/5"
+    wrapperClass: "border-info/50 bg-info/5"
   },
   removed: {
     label: "removed",
     badgeClass: "text-danger",
-    wrapperClass: "border-dashed border-danger/40 bg-danger/5"
+    wrapperClass: "border-danger/40 bg-danger/5"
   }
 };
 
@@ -127,15 +127,15 @@ const ReconciliationLegend = () => (
       value updated
     </span>
     <span className="flex items-center gap-1">
-      <span className="inline-block h-2 w-3 rounded-[2px] border border-dashed border-success/50 bg-success/5" />
+      <span className="inline-block h-2 w-3 rounded-[2px] border border-success/50 bg-success/5" />
       added
     </span>
     <span className="flex items-center gap-1">
-      <span className="inline-block h-2 w-3 rounded-[2px] border border-dashed border-info/50 bg-info/5" />
+      <span className="inline-block h-2 w-3 rounded-[2px] border border-info/50 bg-info/5" />
       imported
     </span>
     <span className="flex items-center gap-1">
-      <span className="inline-block h-2 w-3 rounded-[2px] border border-dashed border-danger/40 bg-danger/5" />
+      <span className="inline-block h-2 w-3 rounded-[2px] border border-danger/40 bg-danger/5" />
       removed
     </span>
   </div>

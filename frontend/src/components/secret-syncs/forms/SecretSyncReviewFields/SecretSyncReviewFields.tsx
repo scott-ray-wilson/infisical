@@ -12,8 +12,7 @@ import {
   DetailGroup,
   DetailGroupHeader,
   DetailLabel,
-  DetailValue,
-  Separator
+  DetailValue
 } from "@app/components/v3";
 import { useOrganization, useProject } from "@app/context";
 import { SECRET_SYNC_INITIAL_SYNC_BEHAVIOR_MAP, SECRET_SYNC_MAP } from "@app/helpers/secretSyncs";

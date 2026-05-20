@@ -42,7 +42,6 @@ export const FlyioSyncFields = () => {
             <FieldLabel>App</FieldLabel>
             <FieldContent>
               <FilterableSelect
-                menuPlacement="top"
                 isLoading={isAppsLoading && Boolean(connectionId)}
                 isDisabled={!connectionId}
                 value={apps?.find((v) => v.id === value) ?? null}

@@ -51,15 +51,18 @@ export const AzureEntraIdScimSyncSourceFields = () => {
   }, [existingSecretId, currentSecretKey, secrets, setValue]);
 
   useEffect(() => {
-    const hasAccessToSource =
-      selectedEnvironment &&
-      permission.can(
-        ProjectPermissionSecretSyncActions.Create,
-        subject(ProjectPermissionSub.SecretSyncs, {
-          environment: selectedEnvironment.slug,
-          secretPath: selectedSecretPath
-        })
-      );
+    if (!selectedEnvironment) {
+      clearErrors("secretPath");
+      return;
+    }
+
+    const hasAccessToSource = permission.can(
+      ProjectPermissionSecretSyncActions.Create,
+      subject(ProjectPermissionSub.SecretSyncs, {
+        environment: selectedEnvironment.slug,
+        secretPath: selectedSecretPath
+      })
+    );
 
     if (!hasAccessToSource) {
       setError("secretPath", {

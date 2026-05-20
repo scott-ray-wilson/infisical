@@ -76,7 +76,7 @@ const getFormTabs = (destination: SecretSync, destinationName: string): FormTab[
       name: "Source",
       key: "source",
       shortDescription: "Pick env and path",
-      title: "Source secrets",
+      title: "Source Secrets",
       subtitle: "Pick the Infisical environment and path to read from.",
       rightLabel: "SOURCE",
       rightDescription:
@@ -108,7 +108,7 @@ const getFormTabs = (destination: SecretSync, destinationName: string): FormTab[
       name: "Sync Options",
       key: "options",
       shortDescription: "Behavior + advanced",
-      title: "Sync behavior",
+      title: "Sync Options",
       subtitle: "Control how secrets are written and whether they sync automatically.",
       rightLabel: "SYNC OPTIONS",
       rightDescription:
@@ -119,7 +119,7 @@ const getFormTabs = (destination: SecretSync, destinationName: string): FormTab[
       name: "Details",
       key: "details",
       shortDescription: "Name + description",
-      title: "Name your sync",
+      title: "Sync Details",
       subtitle: "Give this sync a name and an optional description.",
       rightLabel: "DETAILS",
       rightDescription:
@@ -130,7 +130,7 @@ const getFormTabs = (destination: SecretSync, destinationName: string): FormTab[
       name: "Review",
       key: "review",
       shortDescription: "Confirm",
-      title: "Review and create",
+      title: "Review and Create",
       subtitle: "Double-check everything before creating the sync.",
       rightLabel: "REVIEW",
       rightDescription:
@@ -317,7 +317,7 @@ export const CreateSecretSyncForm = ({
             </Stepper>
           </aside>
 
-          <div className="flex min-w-0 flex-1 flex-col overflow-y-auto px-8 py-6">
+          <div className="flex min-w-0 flex-1 flex-col gap-y-2 overflow-y-auto px-8 py-6">
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-foreground">{currentTab.title}</h2>
               <p className="mt-1 text-sm text-muted">{currentTab.subtitle}</p>

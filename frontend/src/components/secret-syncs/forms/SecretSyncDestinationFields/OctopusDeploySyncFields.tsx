@@ -86,12 +86,11 @@ export const OctopusDeploySyncFields = () => {
         }}
       />
 
-      <Tabs defaultValue="general" className="mt-4">
-        <TabsList>
+      <Tabs defaultValue="general">
+        <TabsList className="mb-2">
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="advanced">Advanced</TabsTrigger>
         </TabsList>
-
         <TabsContent value="general">
           <FieldGroup>
             <Controller
@@ -112,7 +111,6 @@ export const OctopusDeploySyncFields = () => {
                   </FieldLabel>
                   <FieldContent>
                     <FilterableSelect
-                      menuPlacement="top"
                       isLoading={isSpacesLoading && Boolean(connectionId)}
                       isDisabled={!connectionId}
                       value={spaces?.find((space) => space.id === value) ?? null}
@@ -188,7 +186,6 @@ export const OctopusDeploySyncFields = () => {
                     </FieldLabel>
                     <FieldContent>
                       <FilterableSelect
-                        menuPlacement="top"
                         isLoading={isProjectsLoading && Boolean(connectionId && spaceId)}
                         isDisabled={Boolean(!connectionId || !spaceId)}
                         value={projects?.find((project) => project.id === value) ?? null}
@@ -218,245 +215,230 @@ export const OctopusDeploySyncFields = () => {
 
         <TabsContent value="advanced" className="grow">
           {scope === OctopusDeploySyncScope.Project && projectId ? (
-            <div className="max-h-96 overflow-y-auto">
-              <FieldGroup>
-                {/* Environments */}
-                <Controller
-                  name="destinationConfig.scopeValues.environments"
-                  control={control}
-                  render={({ field: { value, onChange }, fieldState: { error } }) => (
-                    <Field>
-                      <FieldLabel>Environments</FieldLabel>
-                      <FieldContent>
-                        <FilterableSelect
-                          isMulti
-                          menuPlacement="bottom"
-                          menuPosition="absolute"
-                          isLoading={isScopeValuesLoading}
-                          value={
-                            scopeValuesData?.environments?.filter((opt) =>
-                              (value || []).includes(opt.id)
-                            ) || []
-                          }
-                          onChange={(options) => {
-                            const selectedIds = (options as MultiValue<TScopeValueOption>).map(
-                              (opt) => opt.id
-                            );
-                            onChange(selectedIds);
-                          }}
-                          options={scopeValuesData?.environments || []}
-                          placeholder={
-                            scopeValuesData?.environments?.length
-                              ? "Select environments..."
-                              : "No environments found..."
-                          }
-                          getOptionLabel={(option) => option.name}
-                          getOptionValue={(option) => option.id}
-                        />
-                        <FieldError errors={[error]} />
-                      </FieldContent>
-                    </Field>
-                  )}
-                />
+            <FieldGroup>
+              {/* Environments */}
+              <Controller
+                name="destinationConfig.scopeValues.environments"
+                control={control}
+                render={({ field: { value, onChange }, fieldState: { error } }) => (
+                  <Field>
+                    <FieldLabel>Environments</FieldLabel>
+                    <FieldContent>
+                      <FilterableSelect
+                        isMulti
+                        isLoading={isScopeValuesLoading}
+                        value={
+                          scopeValuesData?.environments?.filter((opt) =>
+                            (value || []).includes(opt.id)
+                          ) || []
+                        }
+                        onChange={(options) => {
+                          const selectedIds = (options as MultiValue<TScopeValueOption>).map(
+                            (opt) => opt.id
+                          );
+                          onChange(selectedIds);
+                        }}
+                        options={scopeValuesData?.environments || []}
+                        placeholder={
+                          scopeValuesData?.environments?.length
+                            ? "Select environments..."
+                            : "No environments found..."
+                        }
+                        getOptionLabel={(option) => option.name}
+                        getOptionValue={(option) => option.id}
+                      />
+                      <FieldError errors={[error]} />
+                    </FieldContent>
+                  </Field>
+                )}
+              />
 
-                {/* Target Tags */}
-                <Controller
-                  name="destinationConfig.scopeValues.roles"
-                  control={control}
-                  render={({ field: { value, onChange }, fieldState: { error } }) => (
-                    <Field>
-                      <FieldLabel>Target Tags</FieldLabel>
-                      <FieldContent>
-                        <FilterableSelect
-                          isMulti
-                          menuPlacement="bottom"
-                          menuPosition="absolute"
-                          isLoading={isScopeValuesLoading}
-                          value={
-                            scopeValuesData?.roles?.filter((opt) =>
-                              (value || []).includes(opt.id)
-                            ) || []
-                          }
-                          onChange={(options) => {
-                            const selectedIds = (options as MultiValue<TScopeValueOption>).map(
-                              (opt) => opt.id
-                            );
-                            onChange(selectedIds);
-                          }}
-                          options={scopeValuesData?.roles || []}
-                          placeholder={
-                            scopeValuesData?.roles?.length
-                              ? "Select target tags..."
-                              : "No target tags found..."
-                          }
-                          getOptionLabel={(option) => option.name}
-                          getOptionValue={(option) => option.id}
-                        />
-                        <FieldError errors={[error]} />
-                      </FieldContent>
-                    </Field>
-                  )}
-                />
+              {/* Target Tags */}
+              <Controller
+                name="destinationConfig.scopeValues.roles"
+                control={control}
+                render={({ field: { value, onChange }, fieldState: { error } }) => (
+                  <Field>
+                    <FieldLabel>Target Tags</FieldLabel>
+                    <FieldContent>
+                      <FilterableSelect
+                        isMulti
+                        isLoading={isScopeValuesLoading}
+                        value={
+                          scopeValuesData?.roles?.filter((opt) => (value || []).includes(opt.id)) ||
+                          []
+                        }
+                        onChange={(options) => {
+                          const selectedIds = (options as MultiValue<TScopeValueOption>).map(
+                            (opt) => opt.id
+                          );
+                          onChange(selectedIds);
+                        }}
+                        options={scopeValuesData?.roles || []}
+                        placeholder={
+                          scopeValuesData?.roles?.length
+                            ? "Select target tags..."
+                            : "No target tags found..."
+                        }
+                        getOptionLabel={(option) => option.name}
+                        getOptionValue={(option) => option.id}
+                      />
+                      <FieldError errors={[error]} />
+                    </FieldContent>
+                  </Field>
+                )}
+              />
 
-                {/* Targets */}
-                <Controller
-                  name="destinationConfig.scopeValues.machines"
-                  control={control}
-                  render={({ field: { value, onChange }, fieldState: { error } }) => (
-                    <Field>
-                      <FieldLabel>Targets</FieldLabel>
-                      <FieldContent>
-                        <FilterableSelect
-                          isMulti
-                          menuPlacement="top"
-                          menuPosition="absolute"
-                          isLoading={isScopeValuesLoading}
-                          value={
-                            scopeValuesData?.machines?.filter((opt) =>
-                              (value || []).includes(opt.id)
-                            ) || []
-                          }
-                          onChange={(options) => {
-                            const selectedIds = (options as MultiValue<TScopeValueOption>).map(
-                              (opt) => opt.id
-                            );
-                            onChange(selectedIds);
-                          }}
-                          options={scopeValuesData?.machines || []}
-                          placeholder={
-                            scopeValuesData?.machines?.length
-                              ? "Select targets..."
-                              : "No targets found..."
-                          }
-                          getOptionLabel={(option) => option.name}
-                          getOptionValue={(option) => option.id}
-                        />
-                        <FieldError errors={[error]} />
-                      </FieldContent>
-                    </Field>
-                  )}
-                />
+              {/* Targets */}
+              <Controller
+                name="destinationConfig.scopeValues.machines"
+                control={control}
+                render={({ field: { value, onChange }, fieldState: { error } }) => (
+                  <Field>
+                    <FieldLabel>Targets</FieldLabel>
+                    <FieldContent>
+                      <FilterableSelect
+                        isMulti
+                        isLoading={isScopeValuesLoading}
+                        value={
+                          scopeValuesData?.machines?.filter((opt) =>
+                            (value || []).includes(opt.id)
+                          ) || []
+                        }
+                        onChange={(options) => {
+                          const selectedIds = (options as MultiValue<TScopeValueOption>).map(
+                            (opt) => opt.id
+                          );
+                          onChange(selectedIds);
+                        }}
+                        options={scopeValuesData?.machines || []}
+                        placeholder={
+                          scopeValuesData?.machines?.length
+                            ? "Select targets..."
+                            : "No targets found..."
+                        }
+                        getOptionLabel={(option) => option.name}
+                        getOptionValue={(option) => option.id}
+                      />
+                      <FieldError errors={[error]} />
+                    </FieldContent>
+                  </Field>
+                )}
+              />
 
-                {/* Processes */}
-                <Controller
-                  name="destinationConfig.scopeValues.processes"
-                  control={control}
-                  render={({ field: { value, onChange }, fieldState: { error } }) => (
-                    <Field>
-                      <FieldLabel>Processes</FieldLabel>
-                      <FieldContent>
-                        <FilterableSelect
-                          isMulti
-                          menuPlacement="top"
-                          menuPosition="absolute"
-                          isLoading={isScopeValuesLoading}
-                          value={
-                            scopeValuesData?.processes?.filter((opt) =>
-                              (value || []).includes(opt.id)
-                            ) || []
-                          }
-                          onChange={(options) => {
-                            const selectedIds = (options as MultiValue<TScopeValueOption>).map(
-                              (opt) => opt.id
-                            );
-                            onChange(selectedIds);
-                          }}
-                          options={scopeValuesData?.processes || []}
-                          placeholder={
-                            scopeValuesData?.processes?.length
-                              ? "Select processes..."
-                              : "No processes found..."
-                          }
-                          getOptionLabel={(option) => option.name}
-                          getOptionValue={(option) => option.id}
-                        />
-                        <FieldError errors={[error]} />
-                      </FieldContent>
-                    </Field>
-                  )}
-                />
+              {/* Processes */}
+              <Controller
+                name="destinationConfig.scopeValues.processes"
+                control={control}
+                render={({ field: { value, onChange }, fieldState: { error } }) => (
+                  <Field>
+                    <FieldLabel>Processes</FieldLabel>
+                    <FieldContent>
+                      <FilterableSelect
+                        isMulti
+                        isLoading={isScopeValuesLoading}
+                        value={
+                          scopeValuesData?.processes?.filter((opt) =>
+                            (value || []).includes(opt.id)
+                          ) || []
+                        }
+                        onChange={(options) => {
+                          const selectedIds = (options as MultiValue<TScopeValueOption>).map(
+                            (opt) => opt.id
+                          );
+                          onChange(selectedIds);
+                        }}
+                        options={scopeValuesData?.processes || []}
+                        placeholder={
+                          scopeValuesData?.processes?.length
+                            ? "Select processes..."
+                            : "No processes found..."
+                        }
+                        getOptionLabel={(option) => option.name}
+                        getOptionValue={(option) => option.id}
+                      />
+                      <FieldError errors={[error]} />
+                    </FieldContent>
+                  </Field>
+                )}
+              />
 
-                {/* Deployment Steps */}
-                <Controller
-                  name="destinationConfig.scopeValues.actions"
-                  control={control}
-                  render={({ field: { value, onChange }, fieldState: { error } }) => (
-                    <Field>
-                      <FieldLabel>Deployment Steps</FieldLabel>
-                      <FieldContent>
-                        <FilterableSelect
-                          isMulti
-                          menuPlacement="top"
-                          menuPosition="absolute"
-                          isLoading={isScopeValuesLoading}
-                          value={
-                            scopeValuesData?.actions?.filter((opt) =>
-                              (value || []).includes(opt.id)
-                            ) || []
-                          }
-                          onChange={(options) => {
-                            const selectedIds = (options as MultiValue<TScopeValueOption>).map(
-                              (opt) => opt.id
-                            );
-                            onChange(selectedIds);
-                          }}
-                          options={scopeValuesData?.actions || []}
-                          placeholder={
-                            scopeValuesData?.actions?.length
-                              ? "Select deployment steps..."
-                              : "No deployment steps found..."
-                          }
-                          getOptionLabel={(option) => option.name}
-                          getOptionValue={(option) => option.id}
-                        />
-                        <FieldError errors={[error]} />
-                      </FieldContent>
-                    </Field>
-                  )}
-                />
+              {/* Deployment Steps */}
+              <Controller
+                name="destinationConfig.scopeValues.actions"
+                control={control}
+                render={({ field: { value, onChange }, fieldState: { error } }) => (
+                  <Field>
+                    <FieldLabel>Deployment Steps</FieldLabel>
+                    <FieldContent>
+                      <FilterableSelect
+                        isMulti
+                        isLoading={isScopeValuesLoading}
+                        value={
+                          scopeValuesData?.actions?.filter((opt) =>
+                            (value || []).includes(opt.id)
+                          ) || []
+                        }
+                        onChange={(options) => {
+                          const selectedIds = (options as MultiValue<TScopeValueOption>).map(
+                            (opt) => opt.id
+                          );
+                          onChange(selectedIds);
+                        }}
+                        options={scopeValuesData?.actions || []}
+                        placeholder={
+                          scopeValuesData?.actions?.length
+                            ? "Select deployment steps..."
+                            : "No deployment steps found..."
+                        }
+                        getOptionLabel={(option) => option.name}
+                        getOptionValue={(option) => option.id}
+                      />
+                      <FieldError errors={[error]} />
+                    </FieldContent>
+                  </Field>
+                )}
+              />
 
-                {/* Channels */}
-                <Controller
-                  name="destinationConfig.scopeValues.channels"
-                  control={control}
-                  render={({ field: { value, onChange }, fieldState: { error } }) => (
-                    <Field>
-                      <FieldLabel>Channels</FieldLabel>
-                      <FieldContent>
-                        <FilterableSelect
-                          isMulti
-                          menuPlacement="top"
-                          menuPosition="absolute"
-                          isLoading={isScopeValuesLoading}
-                          value={
-                            scopeValuesData?.channels?.filter((opt) =>
-                              (value || []).includes(opt.id)
-                            ) || []
-                          }
-                          onChange={(options) => {
-                            const selectedIds = (options as MultiValue<TScopeValueOption>).map(
-                              (opt) => opt.id
-                            );
-                            onChange(selectedIds);
-                          }}
-                          options={scopeValuesData?.channels || []}
-                          placeholder={
-                            scopeValuesData?.channels?.length
-                              ? "Select channels..."
-                              : "No channels found..."
-                          }
-                          getOptionLabel={(option) => option.name}
-                          getOptionValue={(option) => option.id}
-                        />
-                        <FieldError errors={[error]} />
-                      </FieldContent>
-                    </Field>
-                  )}
-                />
-              </FieldGroup>
-            </div>
+              {/* Channels */}
+              <Controller
+                name="destinationConfig.scopeValues.channels"
+                control={control}
+                render={({ field: { value, onChange }, fieldState: { error } }) => (
+                  <Field>
+                    <FieldLabel>Channels</FieldLabel>
+                    <FieldContent>
+                      <FilterableSelect
+                        isMulti
+                        isLoading={isScopeValuesLoading}
+                        value={
+                          scopeValuesData?.channels?.filter((opt) =>
+                            (value || []).includes(opt.id)
+                          ) || []
+                        }
+                        onChange={(options) => {
+                          const selectedIds = (options as MultiValue<TScopeValueOption>).map(
+                            (opt) => opt.id
+                          );
+                          onChange(selectedIds);
+                        }}
+                        options={scopeValuesData?.channels || []}
+                        placeholder={
+                          scopeValuesData?.channels?.length
+                            ? "Select channels..."
+                            : "No channels found..."
+                        }
+                        getOptionLabel={(option) => option.name}
+                        getOptionValue={(option) => option.id}
+                      />
+                      <FieldError errors={[error]} />
+                    </FieldContent>
+                  </Field>
+                )}
+              />
+            </FieldGroup>
           ) : (
-            <div className="py-8 text-center text-mineshaft-400">
+            <div className="py-8 text-center text-muted">
               Please select a project in the Config tab to configure scope values.
             </div>
           )}

@@ -118,7 +118,7 @@ export const SecretSyncRow = ({
         })
       }
       className={twMerge(
-        "group h-10",
+        "group h-12",
         syncStatus === SecretSyncStatus.Failed && "bg-red/5 hover:bg-red/10"
       )}
     >

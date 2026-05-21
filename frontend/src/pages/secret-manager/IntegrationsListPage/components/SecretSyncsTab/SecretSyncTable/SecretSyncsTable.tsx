@@ -1,7 +1,12 @@
 import { useMemo, useState } from "react";
-import { faCheck, faRotate, faWarning } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ChevronDownIcon, FilterIcon, RefreshCwIcon, SearchIcon } from "lucide-react";
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  FilterIcon,
+  RefreshCwIcon,
+  SearchIcon,
+  TriangleAlertIcon
+} from "lucide-react";
 import { twMerge } from "tailwind-merge";
 
 import { createNotification } from "@app/components/notifications";
@@ -87,10 +92,14 @@ type Props = {
 };
 
 const STATUS_ICON_MAP = {
-  [SecretSyncStatus.Succeeded]: { icon: faCheck, className: "text-green", name: "Synced" },
-  [SecretSyncStatus.Failed]: { icon: faWarning, className: "text-red", name: "Not Synced" },
-  [SecretSyncStatus.Pending]: { icon: faRotate, className: "text-yellow", name: "Syncing" },
-  [SecretSyncStatus.Running]: { icon: faRotate, className: "text-yellow", name: "Syncing" }
+  [SecretSyncStatus.Succeeded]: { Icon: CheckIcon, className: "text-success", name: "Synced" },
+  [SecretSyncStatus.Failed]: {
+    Icon: TriangleAlertIcon,
+    className: "text-danger",
+    name: "Not Synced"
+  },
+  [SecretSyncStatus.Pending]: { Icon: RefreshCwIcon, className: "text-info", name: "Syncing" },
+  [SecretSyncStatus.Running]: { Icon: RefreshCwIcon, className: "text-info", name: "Syncing" }
 };
 
 export const SecretSyncsTable = ({ secretSyncs, isPending }: Props) => {
@@ -287,61 +296,62 @@ export const SecretSyncsTable = ({ secretSyncs, isPending }: Props) => {
           <DropdownMenuContent className="max-h-[70vh] thin-scrollbar overflow-y-auto" align="end">
             <DropdownMenuLabel>Status</DropdownMenuLabel>
             {[SecretSyncStatus.Running, SecretSyncStatus.Succeeded, SecretSyncStatus.Failed].map(
-              (status) => (
-                <DropdownMenuCheckboxItem
-                  key={status}
-                  checked={filters.status.includes(status)}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setFilters((prev) => ({
-                      ...prev,
-                      status: prev.status.includes(status)
-                        ? prev.status.filter((s) => s !== status)
-                        : [...prev.status, status]
-                    }));
-                  }}
-                >
-                  <FontAwesomeIcon
-                    icon={STATUS_ICON_MAP[status].icon}
-                    className={STATUS_ICON_MAP[status].className}
-                  />
-                  <span className="capitalize">{STATUS_ICON_MAP[status].name}</span>
-                </DropdownMenuCheckboxItem>
-              )
-            )}
-            <DropdownMenuLabel>Service</DropdownMenuLabel>
-            {secretSyncs.length ? (
-              [...new Set(secretSyncs.map(({ destination }) => destination))].map((destination) => {
-                const { name, image } = SECRET_SYNC_MAP[destination];
-
+              (status) => {
+                const { Icon, className, name } = STATUS_ICON_MAP[status];
                 return (
                   <DropdownMenuCheckboxItem
-                    key={destination}
-                    checked={filters.destinations.includes(destination)}
+                    key={status}
+                    checked={filters.status.includes(status)}
                     onClick={(e) => {
                       e.preventDefault();
                       setFilters((prev) => ({
                         ...prev,
-                        destinations: prev.destinations.includes(destination)
-                          ? prev.destinations.filter((a) => a !== destination)
-                          : [...prev.destinations, destination]
+                        status: prev.status.includes(status)
+                          ? prev.status.filter((s) => s !== status)
+                          : [...prev.status, status]
                       }));
                     }}
                   >
-                    <img
-                      alt={`${name} integration`}
-                      src={`/images/integrations/${image}`}
-                      className="h-4 w-4"
-                    />
-                    <span>{name}</span>
+                    <Icon className={className} />
+                    <span className="capitalize">{name}</span>
                   </DropdownMenuCheckboxItem>
                 );
-              })
-            ) : (
-              <DropdownMenuCheckboxItem disabled>
-                No Secret Syncs Configured
-              </DropdownMenuCheckboxItem>
+              }
             )}
+
+            {secretSyncs.length ? (
+              <>
+                <DropdownMenuLabel>Service</DropdownMenuLabel>
+                {[...new Set(secretSyncs.map(({ destination }) => destination))].map(
+                  (destination) => {
+                    const { name, image } = SECRET_SYNC_MAP[destination];
+
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={destination}
+                        checked={filters.destinations.includes(destination)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setFilters((prev) => ({
+                            ...prev,
+                            destinations: prev.destinations.includes(destination)
+                              ? prev.destinations.filter((a) => a !== destination)
+                              : [...prev.destinations, destination]
+                          }));
+                        }}
+                      >
+                        <img
+                          alt={`${name} integration`}
+                          src={`/images/integrations/${image}`}
+                          className="h-4 w-4"
+                        />
+                        <span>{name}</span>
+                      </DropdownMenuCheckboxItem>
+                    );
+                  }
+                )}
+              </>
+            ) : null}
             <DropdownMenuLabel>Environment</DropdownMenuLabel>
             {currentProject.environments.map((env) => (
               <DropdownMenuCheckboxItem

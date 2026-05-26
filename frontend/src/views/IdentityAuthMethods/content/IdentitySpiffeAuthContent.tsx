@@ -5,26 +5,21 @@ import { EmptyState, Spinner, Tooltip } from "@app/components/v2";
 import { Badge } from "@app/components/v3";
 import { useGetIdentitySpiffeAuth } from "@app/hooks/api";
 import { SpiffeTrustBundleProfile } from "@app/hooks/api/identities/enums";
-import { ViewIdentityContentWrapper } from "@app/pages/organization/IdentityDetailsByIDPage/components/ViewIdentityAuth/ViewIdentityContentWrapper";
 
-import { IdentityAuthFieldDisplay } from "./IdentityAuthFieldDisplay";
-import { ViewAuthMethodProps } from "./types";
+import { IdentityAuthFieldDisplay } from "../helpers";
+import { ViewAuthMethodProps } from "../types";
 
 const PROFILE_DISPLAY_MAP: Record<string, string> = {
   [SpiffeTrustBundleProfile.STATIC]: "Static",
   [SpiffeTrustBundleProfile.HTTPS_WEB_BUNDLE]: "HTTPS Web Bundle"
 };
 
-export const ViewIdentitySpiffeAuthContent = ({
-  identityId,
-  onEdit,
-  onDelete
-}: ViewAuthMethodProps) => {
+export const IdentitySpiffeAuthContent = ({ identityId }: ViewAuthMethodProps) => {
   const { data, isPending } = useGetIdentitySpiffeAuth(identityId);
 
   if (isPending) {
     return (
-      <div className="flex w-full items-center justify-center">
+      <div className="flex w-full items-center justify-center py-6">
         <Spinner className="text-mineshaft-400" />
       </div>
     );
@@ -39,7 +34,7 @@ export const ViewIdentitySpiffeAuthContent = ({
   const { trustBundleDistribution: dist } = data;
 
   return (
-    <ViewIdentityContentWrapper onEdit={onEdit} onDelete={onDelete} identityId={identityId}>
+    <>
       <IdentityAuthFieldDisplay className="col-span-2" label="Trust Domain">
         {data.trustDomain}
       </IdentityAuthFieldDisplay>
@@ -120,6 +115,6 @@ export const ViewIdentitySpiffeAuthContent = ({
       <IdentityAuthFieldDisplay label="Access Token Trusted IPs">
         {data.accessTokenTrustedIps.map((ip) => ip.ipAddress).join(", ")}
       </IdentityAuthFieldDisplay>
-    </ViewIdentityContentWrapper>
+    </>
   );
 };

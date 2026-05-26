@@ -3,26 +3,17 @@ import { EyeIcon } from "lucide-react";
 
 import { EmptyState, Spinner, Tooltip } from "@app/components/v2";
 import { Badge } from "@app/components/v3";
-import { useClearIdentityLdapAuthLockouts, useGetIdentityLdapAuth } from "@app/hooks/api";
-import { ViewIdentityContentWrapper } from "@app/pages/organization/IdentityDetailsByIDPage/components/ViewIdentityAuth/ViewIdentityContentWrapper";
+import { useGetIdentityLdapAuth } from "@app/hooks/api";
 
-import { IdentityAuthFieldDisplay } from "./IdentityAuthFieldDisplay";
-import { LockoutFields } from "./IdentityAuthLockoutFields";
-import { ViewAuthMethodProps } from "./types";
+import { IdentityAuthFieldDisplay, IdentityAuthLockoutFields } from "../helpers";
+import { ViewAuthMethodProps } from "../types";
 
-export const ViewIdentityLdapAuthContent = ({
-  identityId,
-  onDelete,
-  onEdit,
-  lockedOut,
-  onResetAllLockouts
-}: ViewAuthMethodProps) => {
+export const IdentityLdapAuthContent = ({ identityId }: ViewAuthMethodProps) => {
   const { data, isPending } = useGetIdentityLdapAuth(identityId);
-  const clearLockoutsResult = useClearIdentityLdapAuthLockouts();
 
   if (isPending) {
     return (
-      <div className="flex w-full items-center justify-center">
+      <div className="flex w-full items-center justify-center py-6">
         <Spinner className="text-mineshaft-400" />
       </div>
     );
@@ -35,7 +26,7 @@ export const ViewIdentityLdapAuthContent = ({
   }
 
   return (
-    <ViewIdentityContentWrapper onEdit={onEdit} onDelete={onDelete} identityId={identityId}>
+    <>
       <IdentityAuthFieldDisplay label="Access Token TTL (seconds)">
         {data.accessTokenTTL}
       </IdentityAuthFieldDisplay>
@@ -87,15 +78,7 @@ export const ViewIdentityLdapAuthContent = ({
       <IdentityAuthFieldDisplay label="Lockout">
         {data.lockoutEnabled ? "Enabled" : "Disabled"}
       </IdentityAuthFieldDisplay>
-      {data.lockoutEnabled && (
-        <LockoutFields
-          identityId={identityId}
-          lockedOut={lockedOut}
-          clearLockoutsResult={clearLockoutsResult}
-          data={data}
-          onResetAllLockouts={onResetAllLockouts}
-        />
-      )}
-    </ViewIdentityContentWrapper>
+      {data.lockoutEnabled && <IdentityAuthLockoutFields data={data} />}
+    </>
   );
 };

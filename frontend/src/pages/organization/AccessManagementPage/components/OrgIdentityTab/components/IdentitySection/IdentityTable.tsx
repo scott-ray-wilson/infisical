@@ -6,6 +6,7 @@ import {
   FilterIcon,
   InfoIcon,
   MoreHorizontalIcon,
+  PlusIcon,
   SearchIcon,
   TrashIcon
 } from "lucide-react";
@@ -70,7 +71,9 @@ import {
 } from "@app/hooks/api";
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { OrgIdentityOrderBy } from "@app/hooks/api/organization/types";
-import { UsePopUpState } from "@app/hooks/usePopUp";
+import { usePopUp, UsePopUpState } from "@app/hooks/usePopUp";
+import { IdentityAuthMethodModal } from "@app/pages/organization/AccessManagementPage/components/OrgIdentityTab/components/IdentitySection/IdentityAuthMethodModal";
+import { IdentityAuthMethodsCell } from "@app/views/IdentityAuthMethods";
 
 type Props = {
   handlePopUpOpen: (
@@ -124,7 +127,13 @@ export const IdentityTable = ({ handlePopUpOpen }: Props) => {
 
   const { mutateAsync: updateMutateAsync } = useUpdateOrgIdentity();
 
-  const { data, isPending } = useSearchOrgIdentityMemberships({
+  const {
+    popUp: authMethodPopUp,
+    handlePopUpOpen: handleAuthMethodPopUpOpen,
+    handlePopUpToggle: handleAuthMethodPopUpToggle
+  } = usePopUp(["identityAuthMethod", "upgradePlan"] as const);
+
+  const { data, isPending, refetch } = useSearchOrgIdentityMemberships({
     offset,
     limit,
     orderDirection,
@@ -258,7 +267,7 @@ export const IdentityTable = ({ handlePopUpOpen }: Props) => {
             <TableHeader>
               <TableRow>
                 <TableHead
-                  className="w-1/2 cursor-pointer"
+                  className="w-1/3 cursor-pointer"
                   onClick={() => handleSort(OrgIdentityOrderBy.Name)}
                 >
                   Name
@@ -272,6 +281,7 @@ export const IdentityTable = ({ handlePopUpOpen }: Props) => {
                     )}
                   />
                 </TableHead>
+                <TableHead>Auth Methods</TableHead>
                 <TableHead
                   className="cursor-pointer"
                   onClick={() => handleSort(OrgIdentityOrderBy.Role)}
@@ -301,6 +311,9 @@ export const IdentityTable = ({ handlePopUpOpen }: Props) => {
                     <TableCell>
                       <Skeleton className="h-4 w-full" />
                     </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
                     {isSubOrganization && (
                       <TableCell>
                         <Skeleton className="h-4 w-full" />
@@ -314,7 +327,7 @@ export const IdentityTable = ({ handlePopUpOpen }: Props) => {
               {!isPending &&
                 data?.identities?.map(
                   ({
-                    identity: { id, name, orgId },
+                    identity: { id, name, orgId, authMethods, activeLockoutAuthMethods },
                     role,
                     customRole,
                     lastLoginAuthMethod,
@@ -351,6 +364,15 @@ export const IdentityTable = ({ handlePopUpOpen }: Props) => {
                               </TooltipContent>
                             </Tooltip>
                           )}
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <IdentityAuthMethodsCell
+                            identityId={id}
+                            identityName={name}
+                            authMethods={authMethods}
+                            activeLockoutAuthMethods={activeLockoutAuthMethods}
+                            onMutated={refetch}
+                          />
                         </TableCell>
                         <TableCell>
                           <OrgPermissionCan
@@ -439,6 +461,27 @@ export const IdentityTable = ({ handlePopUpOpen }: Props) => {
                                 )}
                               </OrgPermissionCan>
                               <OrgPermissionCan
+                                I={OrgPermissionIdentityActions.Edit}
+                                a={OrgPermissionSubjects.Identity}
+                              >
+                                {(isAllowed) => (
+                                  <DropdownMenuItem
+                                    isDisabled={!isAllowed}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAuthMethodPopUpOpen("identityAuthMethod", {
+                                        identityId: id,
+                                        name,
+                                        allAuthMethods: authMethods
+                                      });
+                                    }}
+                                  >
+                                    <PlusIcon />
+                                    Add Auth Method
+                                  </DropdownMenuItem>
+                                )}
+                              </OrgPermissionCan>
+                              <OrgPermissionCan
                                 I={OrgPermissionIdentityActions.Delete}
                                 a={OrgPermissionSubjects.Identity}
                               >
@@ -481,6 +524,11 @@ export const IdentityTable = ({ handlePopUpOpen }: Props) => {
           )}
         </>
       )}
+      <IdentityAuthMethodModal
+        popUp={authMethodPopUp}
+        handlePopUpOpen={handleAuthMethodPopUpOpen}
+        handlePopUpToggle={handleAuthMethodPopUpToggle}
+      />
     </>
   );
 };

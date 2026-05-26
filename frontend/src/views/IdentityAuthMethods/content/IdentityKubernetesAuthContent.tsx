@@ -7,15 +7,10 @@ import { EmptyState, Spinner, Tooltip } from "@app/components/v2";
 import { Badge } from "@app/components/v3";
 import { gatewaysQueryKeys, useGetIdentityKubernetesAuth } from "@app/hooks/api";
 
-import { IdentityAuthFieldDisplay } from "./IdentityAuthFieldDisplay";
-import { ViewAuthMethodProps } from "./types";
-import { ViewIdentityContentWrapper } from "./ViewIdentityContentWrapper";
+import { IdentityAuthFieldDisplay } from "../helpers";
+import { ViewAuthMethodProps } from "../types";
 
-export const ViewIdentityKubernetesAuthContent = ({
-  identityId,
-  onEdit,
-  onDelete
-}: ViewAuthMethodProps) => {
+export const IdentityKubernetesAuthContent = ({ identityId }: ViewAuthMethodProps) => {
   const { data: gateways } = useQuery(gatewaysQueryKeys.list());
 
   const { data, isPending } = useGetIdentityKubernetesAuth(identityId);
@@ -26,7 +21,7 @@ export const ViewIdentityKubernetesAuthContent = ({
 
   if (isPending) {
     return (
-      <div className="flex w-full items-center justify-center">
+      <div className="flex w-full items-center justify-center py-6">
         <Spinner className="text-mineshaft-400" />
       </div>
     );
@@ -42,7 +37,7 @@ export const ViewIdentityKubernetesAuthContent = ({
   }
 
   return (
-    <ViewIdentityContentWrapper onEdit={onEdit} onDelete={onDelete} identityId={identityId}>
+    <>
       <IdentityAuthFieldDisplay label="Access Token TTL (seconds)">
         {data.accessTokenTTL}
       </IdentityAuthFieldDisplay>
@@ -111,6 +106,6 @@ export const ViewIdentityKubernetesAuthContent = ({
           </Tooltip>
         )}
       </IdentityAuthFieldDisplay>
-    </ViewIdentityContentWrapper>
+    </>
   );
 };

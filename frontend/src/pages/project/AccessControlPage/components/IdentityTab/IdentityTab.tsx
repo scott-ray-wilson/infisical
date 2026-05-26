@@ -85,7 +85,9 @@ import {
 import { OrderByDirection } from "@app/hooks/api/generic/types";
 import { ProjectIdentityOrderBy, ProjectType } from "@app/hooks/api/projects/types";
 import { usePopUp } from "@app/hooks/usePopUp";
+import { IdentityAuthMethodModal } from "@app/pages/organization/AccessManagementPage/components/OrgIdentityTab/components/IdentitySection/IdentityAuthMethodModal";
 import { ProjectIdentityModal } from "@app/pages/project/AccessControlPage/components/IdentityTab/components/ProjectIdentityModal";
+import { IdentityAuthMethodsCell } from "@app/views/IdentityAuthMethods";
 
 import { ProjectLinkIdentityModal } from "./components/ProjectLinkIdentityModal";
 
@@ -148,7 +150,7 @@ export const IdentityTab = withProjectPermission(
       []
     );
 
-    const { data, isPending, isFetching } = useListProjectIdentityMemberships(
+    const { data, isPending, isFetching, refetch } = useListProjectIdentityMemberships(
       {
         projectId,
         projectType: currentProject?.type,
@@ -177,7 +179,8 @@ export const IdentityTab = withProjectPermission(
       "createIdentity",
       "deleteIdentity",
       "upgradePlan",
-      "addOptions"
+      "addOptions",
+      "identityAuthMethod"
     ] as const);
 
     const onRemoveIdentitySubmit = async (identityId: string, isProjectIdentity: boolean) => {
@@ -321,7 +324,7 @@ export const IdentityTab = withProjectPermission(
                     <TableHeader>
                       <TableRow>
                         <TableHead
-                          className="w-1/3"
+                          className="w-1/4"
                           onClick={() => handleSort(ProjectIdentityOrderBy.Name)}
                         >
                           Name
@@ -335,7 +338,8 @@ export const IdentityTab = withProjectPermission(
                             )}
                           />
                         </TableHead>
-                        <TableHead className="w-1/3">
+                        <TableHead>Auth Methods</TableHead>
+                        <TableHead className="w-1/4">
                           {isCertManager ? "Role" : `${productLabel} Role`}
                         </TableHead>
                         <TableHead>Managed by</TableHead>
@@ -348,6 +352,9 @@ export const IdentityTab = withProjectPermission(
                       {isPending &&
                         Array.from({ length: 10 }).map((_, i) => (
                           <TableRow key={`skeleton-${i + 1}`}>
+                            <TableCell>
+                              <Skeleton className="h-4 w-full" />
+                            </TableCell>
                             <TableCell>
                               <Skeleton className="h-4 w-full" />
                             </TableCell>
@@ -371,7 +378,9 @@ export const IdentityTab = withProjectPermission(
                               id,
                               name,
                               projectId: identityProjectId,
-                              orgId: identityOrgId
+                              orgId: identityOrgId,
+                              authMethods,
+                              activeLockoutAuthMethods
                             },
                             roles
                           } = identityMember;
@@ -405,6 +414,15 @@ export const IdentityTab = withProjectPermission(
                               }
                             >
                               <TableCell isTruncatable>{name}</TableCell>
+                              <TableCell onClick={(e) => e.stopPropagation()}>
+                                <IdentityAuthMethodsCell
+                                  identityId={id}
+                                  identityName={name}
+                                  authMethods={authMethods}
+                                  activeLockoutAuthMethods={activeLockoutAuthMethods}
+                                  onMutated={refetch}
+                                />
+                              </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-1.5">
                                   {roles
@@ -558,6 +576,30 @@ export const IdentityTab = withProjectPermission(
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent sideOffset={2} align="end">
                                     <ProjectPermissionCan
+                                      I={ProjectPermissionActions.Edit}
+                                      a={subject(ProjectPermissionSub.Identity, {
+                                        identityId: id
+                                      })}
+                                    >
+                                      {(isAllowed) => (
+                                        <DropdownMenuItem
+                                          isDisabled={!isAllowed}
+                                          onClick={(evt) => {
+                                            evt.stopPropagation();
+                                            evt.preventDefault();
+                                            handlePopUpOpen("identityAuthMethod", {
+                                              identityId: id,
+                                              name,
+                                              allAuthMethods: authMethods
+                                            });
+                                          }}
+                                        >
+                                          <PlusIcon />
+                                          Add Auth Method
+                                        </DropdownMenuItem>
+                                      )}
+                                    </ProjectPermissionCan>
+                                    <ProjectPermissionCan
                                       I={ProjectPermissionActions.Delete}
                                       a={subject(ProjectPermissionSub.Identity, {
                                         identityId: id
@@ -599,7 +641,7 @@ export const IdentityTab = withProjectPermission(
                         Array.from(Array(noAccessIdentityCount)).map((_e, i) => (
                           <TableRow key={`hid-identity-${i + 1}`}>
                             <TableCell>No Access</TableCell>
-                            <TableCell colSpan={3}>
+                            <TableCell colSpan={4}>
                               <Blur
                                 className="w-min"
                                 tooltipText="You do not have permission to view this machine identity."
@@ -723,6 +765,11 @@ export const IdentityTab = withProjectPermission(
               popUp?.deleteIdentity?.data?.isProjectIdentity
             )
           }
+        />
+        <IdentityAuthMethodModal
+          popUp={popUp}
+          handlePopUpOpen={handlePopUpOpen}
+          handlePopUpToggle={handlePopUpToggle}
         />
       </>
     );

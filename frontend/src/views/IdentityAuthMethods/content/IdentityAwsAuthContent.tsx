@@ -3,20 +3,15 @@ import { faBan } from "@fortawesome/free-solid-svg-icons";
 import { EmptyState, Spinner } from "@app/components/v2";
 import { useGetIdentityAwsAuth } from "@app/hooks/api";
 
-import { IdentityAuthFieldDisplay } from "./IdentityAuthFieldDisplay";
-import { ViewAuthMethodProps } from "./types";
-import { ViewIdentityContentWrapper } from "./ViewIdentityContentWrapper";
+import { IdentityAuthFieldDisplay } from "../helpers";
+import { ViewAuthMethodProps } from "../types";
 
-export const ViewIdentityAwsAuthContent = ({
-  identityId,
-  onEdit,
-  onDelete
-}: ViewAuthMethodProps) => {
+export const IdentityAwsAuthContent = ({ identityId }: ViewAuthMethodProps) => {
   const { data, isPending } = useGetIdentityAwsAuth(identityId);
 
   if (isPending) {
     return (
-      <div className="flex w-full items-center justify-center">
+      <div className="flex w-full items-center justify-center py-6">
         <Spinner className="text-mineshaft-400" />
       </div>
     );
@@ -29,7 +24,7 @@ export const ViewIdentityAwsAuthContent = ({
   }
 
   return (
-    <ViewIdentityContentWrapper onEdit={onEdit} onDelete={onDelete} identityId={identityId}>
+    <>
       <IdentityAuthFieldDisplay label="Access Token TTL (seconds)">
         {data.accessTokenTTL}
       </IdentityAuthFieldDisplay>
@@ -57,6 +52,6 @@ export const ViewIdentityAwsAuthContent = ({
       <IdentityAuthFieldDisplay className="col-span-2" label="STS Endpoint">
         {data.stsEndpoint}
       </IdentityAuthFieldDisplay>
-    </ViewIdentityContentWrapper>
+    </>
   );
 };

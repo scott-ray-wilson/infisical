@@ -5,20 +5,15 @@ import { EmptyState, Spinner, Tooltip } from "@app/components/v2";
 import { Badge } from "@app/components/v3";
 import { useGetIdentityTlsCertAuth } from "@app/hooks/api";
 
-import { IdentityAuthFieldDisplay } from "./IdentityAuthFieldDisplay";
-import { ViewAuthMethodProps } from "./types";
-import { ViewIdentityContentWrapper } from "./ViewIdentityContentWrapper";
+import { IdentityAuthFieldDisplay } from "../helpers";
+import { ViewAuthMethodProps } from "../types";
 
-export const ViewIdentityTlsCertAuthContent = ({
-  identityId,
-  onEdit,
-  onDelete
-}: ViewAuthMethodProps) => {
+export const IdentityTlsCertAuthContent = ({ identityId }: ViewAuthMethodProps) => {
   const { data, isPending } = useGetIdentityTlsCertAuth(identityId);
 
   if (isPending) {
     return (
-      <div className="flex w-full items-center justify-center">
+      <div className="flex w-full items-center justify-center py-6">
         <Spinner className="text-mineshaft-400" />
       </div>
     );
@@ -34,7 +29,7 @@ export const ViewIdentityTlsCertAuthContent = ({
   }
 
   return (
-    <ViewIdentityContentWrapper onEdit={onEdit} onDelete={onDelete} identityId={identityId}>
+    <>
       <IdentityAuthFieldDisplay label="Access Token TTL (seconds)">
         {data.accessTokenTTL}
       </IdentityAuthFieldDisplay>
@@ -67,6 +62,6 @@ export const ViewIdentityTlsCertAuthContent = ({
           .map((cn) => cn.trim())
           .join(", ")}
       </IdentityAuthFieldDisplay>
-    </ViewIdentityContentWrapper>
+    </>
   );
 };

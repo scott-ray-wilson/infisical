@@ -4,28 +4,21 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { EmptyState, IconButton, Spinner, Tooltip } from "@app/components/v2";
 import { useTimedReset } from "@app/hooks";
 import {
-  useClearIdentityUniversalAuthLockouts,
   useGetIdentityUniversalAuth,
   useGetIdentityUniversalAuthClientSecrets
 } from "@app/hooks/api";
 
-import { IdentityAuthFieldDisplay } from "./IdentityAuthFieldDisplay";
-import { LockoutFields } from "./IdentityAuthLockoutFields";
-import { IdentityUniversalAuthClientSecretsTable } from "./IdentityUniversalAuthClientSecretsTable";
-import { ViewAuthMethodProps } from "./types";
-import { ViewIdentityContentWrapper } from "./ViewIdentityContentWrapper";
+import {
+  IdentityAuthFieldDisplay,
+  IdentityAuthLockoutFields,
+  IdentityUniversalAuthClientSecretsTable
+} from "../helpers";
+import { ViewAuthMethodProps } from "../types";
 
-export const ViewIdentityUniversalAuthContent = ({
-  identityId,
-  onDelete,
-  onEdit,
-  lockedOut,
-  onResetAllLockouts
-}: ViewAuthMethodProps) => {
+export const IdentityUniversalAuthContent = ({ identityId }: ViewAuthMethodProps) => {
   const { data, isPending } = useGetIdentityUniversalAuth(identityId);
   const { data: clientSecrets = [], isPending: clientSecretsPending } =
     useGetIdentityUniversalAuthClientSecrets(identityId);
-  const clearLockoutsResult = useClearIdentityUniversalAuthLockouts();
 
   const [copyTextClientId, isCopyingClientId, setCopyTextClientId] = useTimedReset<string>({
     initialState: "Copy Client ID to clipboard"
@@ -33,7 +26,7 @@ export const ViewIdentityUniversalAuthContent = ({
 
   if (isPending || clientSecretsPending) {
     return (
-      <div className="flex w-full items-center justify-center">
+      <div className="flex w-full items-center justify-center py-6">
         <Spinner className="text-mineshaft-400" />
       </div>
     );
@@ -49,7 +42,7 @@ export const ViewIdentityUniversalAuthContent = ({
   }
 
   return (
-    <ViewIdentityContentWrapper onEdit={onEdit} onDelete={onDelete} identityId={identityId}>
+    <>
       {Number(data.accessTokenPeriod) > 0 ? (
         <IdentityAuthFieldDisplay label="Access Token Period (seconds)">
           {data.accessTokenPeriod}
@@ -76,15 +69,7 @@ export const ViewIdentityUniversalAuthContent = ({
       <IdentityAuthFieldDisplay label="Lockout">
         {data.lockoutEnabled ? "Enabled" : "Disabled"}
       </IdentityAuthFieldDisplay>
-      {data.lockoutEnabled && (
-        <LockoutFields
-          identityId={identityId}
-          lockedOut={lockedOut}
-          clearLockoutsResult={clearLockoutsResult}
-          data={data}
-          onResetAllLockouts={onResetAllLockouts}
-        />
-      )}
+      {data.lockoutEnabled && <IdentityAuthLockoutFields data={data} />}
       <div className="col-span-2 my-3">
         <div className="mb-3 border-b border-mineshaft-500 pb-2">
           <span className="text-bunker-300">Client ID</span>
@@ -109,6 +94,6 @@ export const ViewIdentityUniversalAuthContent = ({
         clientSecrets={clientSecrets}
         identityId={identityId}
       />
-    </ViewIdentityContentWrapper>
+    </>
   );
 };

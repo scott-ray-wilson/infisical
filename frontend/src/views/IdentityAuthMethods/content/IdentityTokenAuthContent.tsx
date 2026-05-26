@@ -3,23 +3,16 @@ import { faBan } from "@fortawesome/free-solid-svg-icons";
 import { EmptyState, Spinner } from "@app/components/v2";
 import { useGetIdentityTokenAuth, useGetIdentityTokensTokenAuth } from "@app/hooks/api";
 
-import { IdentityAuthFieldDisplay } from "./IdentityAuthFieldDisplay";
-import { IdentityTokenAuthTokensTable } from "./IdentityTokenAuthTokensTable";
-import { ViewAuthMethodProps } from "./types";
-import { ViewIdentityContentWrapper } from "./ViewIdentityContentWrapper";
+import { IdentityAuthFieldDisplay, IdentityTokenAuthTokensTable } from "../helpers";
+import { ViewAuthMethodProps } from "../types";
 
-export const ViewIdentityTokenAuthContent = ({
-  identityId,
-  onDelete,
-  onEdit
-}: ViewAuthMethodProps) => {
+export const IdentityTokenAuthContent = ({ identityId }: ViewAuthMethodProps) => {
   const { data, isPending } = useGetIdentityTokenAuth(identityId);
-  const { data: tokens = [], isPending: clientSecretsPending } =
-    useGetIdentityTokensTokenAuth(identityId);
+  const { data: tokens = [], isPending: tokensPending } = useGetIdentityTokensTokenAuth(identityId);
 
-  if (isPending || clientSecretsPending) {
+  if (isPending || tokensPending) {
     return (
-      <div className="flex w-full items-center justify-center">
+      <div className="flex w-full items-center justify-center py-6">
         <Spinner className="text-mineshaft-400" />
       </div>
     );
@@ -32,7 +25,7 @@ export const ViewIdentityTokenAuthContent = ({
   }
 
   return (
-    <ViewIdentityContentWrapper onEdit={onEdit} onDelete={onDelete} identityId={identityId}>
+    <>
       <IdentityAuthFieldDisplay label="Access Token TTL (seconds)">
         {data.accessTokenTTL}
       </IdentityAuthFieldDisplay>
@@ -46,6 +39,6 @@ export const ViewIdentityTokenAuthContent = ({
         {data.accessTokenTrustedIps.map((ip) => ip.ipAddress).join(", ")}
       </IdentityAuthFieldDisplay>
       <IdentityTokenAuthTokensTable tokens={tokens} identityId={identityId} />
-    </ViewIdentityContentWrapper>
+    </>
   );
 };

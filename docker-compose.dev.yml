@@ -122,6 +122,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
       - "pf.local:host-gateway" # PingFederate dev container — resolves the same on host and inside compose
+      - "keycloak.local:host-gateway" # Keycloak dev container, resolves the same on host and inside compose (see sso.md)
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/api/status"]
       interval: 30s
@@ -227,6 +228,8 @@ services:
 
   openldap:
     # note: more advanced configuration is available
+    # Starts empty (base dc=acme,dc=com + admin only). Seed test users/groups with
+    # `make seed-dev-ldap` once it is up. See sso.md.
     image: osixia/openldap:1.5.0
     restart: always
     environment:
@@ -255,15 +258,43 @@ services:
     profiles: [ldap]
 
   keycloak:
+    # Admin console: http://localhost:8088 (admin / admin).
+    # On boot it imports the pre-seeded `infisical` realm (client `infisical-dev`,
+    # users jdoe/asmith) from the mounted realm file. The container has no volume,
+    # so the realm is re-imported fresh on every start. See sso.md.
     image: quay.io/keycloak/keycloak:26.1.0
     restart: always
     environment:
       - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
       - KC_BOOTSTRAP_ADMIN_USERNAME=admin
-    command: start-dev
+    command: start-dev --import-realm
     ports:
       - 8088:8080
-    profiles: [sso]
+    volumes:
+      - ./docker/keycloak/realm-infisical.json:/opt/keycloak/data/import/realm-infisical.json:ro
+    profiles: [oidc]
+
+  keycloak-config:
+    # Dev-only one-shot: Keycloak's built-in `master` realm (the admin console) defaults to
+    # sslRequired=external, which blocks http://localhost:8088 on Docker Desktop because the
+    # container sees published-port traffic as a non-local client IP ("HTTPS required" page).
+    # The realm import can't fix this (master already exists, so the bootstrap import skips it),
+    # so we flip it with kcadm once Keycloak is up. The imported `infisical` realm is already
+    # sslRequired=none, so the OIDC login flow itself is unaffected. See sso.md.
+    image: quay.io/keycloak/keycloak:26.1.0
+    depends_on:
+      - keycloak
+    restart: "no"
+    entrypoint: ["bash", "-c"]
+    command:
+      - |
+        until /opt/keycloak/bin/kcadm.sh config credentials \
+          --server http://keycloak:8080 --realm master --user admin --password admin >/dev/null 2>&1; do
+          echo "waiting for keycloak..."; sleep 3;
+        done
+        /opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE \
+          && echo "master realm sslRequired=NONE (dev only)"
+    profiles: [oidc]
 
   pingfederate:
     # Requires free Ping Identity DevOps credentials — register at

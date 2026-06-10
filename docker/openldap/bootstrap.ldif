@@ -1,0 +1,50 @@
+# Seed data for the local OpenLDAP dev container (osixia/openldap).
+# Base DN dc=acme,dc=com and cn=admin,dc=acme,dc=com are created automatically
+# by the image from LDAP_DOMAIN/LDAP_ADMIN_PASSWORD. Do not redefine them here.
+#
+# Apply with `make seed-dev-ldap` after the container is up (it pipes this file to
+# ldapadd -c, so it is safe to re-run). See sso.md.
+#
+# Test users (uid / password): jdoe / Passw0rd!, asmith / Passw0rd!
+
+dn: ou=people,dc=acme,dc=com
+objectClass: organizationalUnit
+ou: people
+
+dn: ou=groups,dc=acme,dc=com
+objectClass: organizationalUnit
+ou: groups
+
+dn: uid=jdoe,ou=people,dc=acme,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: jdoe
+cn: John Doe
+sn: Doe
+givenName: John
+mail: jdoe@infisical.com
+uidNumber: 10000
+gidNumber: 10000
+homeDirectory: /home/jdoe
+userPassword: Passw0rd!
+
+dn: uid=asmith,ou=people,dc=acme,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: asmith
+cn: Alice Smith
+sn: Smith
+givenName: Alice
+mail: asmith@infisical.com
+uidNumber: 10001
+gidNumber: 10001
+homeDirectory: /home/asmith
+userPassword: Passw0rd!
+
+dn: cn=infisical-users,ou=groups,dc=acme,dc=com
+objectClass: groupOfNames
+cn: infisical-users
+member: uid=jdoe,ou=people,dc=acme,dc=com
+member: uid=asmith,ou=people,dc=acme,dc=com

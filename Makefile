@@ -7,9 +7,6 @@ push:
 up-dev:
 	docker compose -f docker-compose.dev.yml up --build
 
-up-dev-ldap:
-	docker compose -f docker-compose.dev.yml --profile ldap up --build
-
 up-dev-metrics:
 	docker compose -f docker-compose.dev.yml --profile metrics up --build
 
@@ -31,8 +28,11 @@ reviewable-api:
 
 reviewable: reviewable-ui reviewable-api
 
-up-dev-sso:
-	docker compose -f docker-compose.dev.yml --profile sso up --build
+up-dev-oidc:
+	docker compose -f docker-compose.dev.yml --profile oidc up --build
+
+up-dev-ldap:
+	docker compose -f docker-compose.dev.yml --profile ldap up --build
 
 up-dev-pingfed:
 	docker compose -f docker-compose.dev.yml --profile pingfed up --build
@@ -53,6 +53,17 @@ seed-dev-ad:
 	  samba-tool group add infisical-users; \
 	  samba-tool group addmembers infisical-users jdoe,asmith \
 	'
+
+seed-dev-ldap:
+	@docker compose -f docker-compose.dev.yml exec -T openldap \
+	  ldapadd -c -x -D "cn=admin,dc=acme,dc=com" -w admin < docker/openldap/bootstrap.ldif; \
+	  status=$$?; \
+	  if [ $$status -eq 68 ]; then echo "LDAP entries already exist, nothing to do."; exit 0; fi; \
+	  exit $$status
+
+seed-dev-oidc:
+	# Keycloak imports the seeded realm on boot; restart re-imports it fresh (the container has no volume).
+	docker compose -f docker-compose.dev.yml restart keycloak
 
 
 # Golang commands

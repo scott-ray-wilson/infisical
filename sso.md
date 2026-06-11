@@ -137,6 +137,30 @@ use depends on where the backend runs:
 
 ### Configure in Infisical
 
+The fast path is to let the seed script do it. With the stack up, run:
+
+```bash
+make seed-dev-sso
+```
+
+This bootstraps everything the Infisical side needs: an `oidc@infisical.com` admin (password
+`password123!`), a **verified** `infisical.com` email domain (required for every SSO login), and
+an **active** OIDC config pointing at the discovery URL above (client `infisical-dev`). With no
+arguments it bootstraps a dedicated `oidc` org (slug `oidc`), creating it if missing; pass
+`ORG_ID=<uuid>` to configure an existing org instead. SSO is still EE-gated, so make sure you have
+unlocked the EE features first.
+
+Then test the login two ways:
+
+- **SSO:** open a fresh browser session at http://localhost:8080, choose **Continue with SSO**, and
+  authenticate as `jdoe@infisical.com` / `Passw0rd!`. You can also start the flow directly at
+  `http://localhost:8080/api/v1/sso/oidc/login?orgSlug=oidc`.
+- **Password:** sign in as the seeded admin `oidc@infisical.com` / `password123!` to manage the
+  `oidc` org directly.
+
+<details>
+<summary>Or configure it by hand in the UI</summary>
+
 1. Log in to http://localhost:8080 as the seeded admin and open the organization's
    **Single Sign-On (SSO)** settings.
 2. Connect **OIDC**, choose configuration type **Discovery URL**, and fill in:
@@ -145,11 +169,10 @@ use depends on where the backend runs:
    - **Client ID:** `infisical-dev`.
    - **Client Secret:** `infisical-dev-client-secret`.
    - Leave **Allowed Email Domains** empty to accept any seeded user while testing.
-3. Save, then enable OIDC.
-4. Test the login: open a fresh browser session at http://localhost:8080, choose
-   **Continue with SSO**, and authenticate as `jdoe@infisical.com` / `Passw0rd!`. You can
-   also kick off the flow directly at
-   `http://localhost:8080/api/v1/sso/oidc/login?orgSlug=infisical`.
+3. Verify the org's `infisical.com` domain under the org domain settings, otherwise the login is
+   rejected. `make seed-dev-sso` does this for you.
+4. Save, then enable OIDC.
+</details>
 
 ---
 
@@ -189,7 +212,9 @@ binds to the server directly. Just point `LDAP URL` at wherever the backend can 
 
 1. In the org **Single Sign-On (SSO)** settings, connect **LDAP** and enter the values above.
 2. Use **Test Connection** to confirm the bind works before saving.
-3. Enable LDAP, then log in as `jdoe` / `Passw0rd!`.
+3. Enable LDAP, then log in as `jdoe` / `Passw0rd!`. The seeded users' emails are `@infisical.com`,
+   so verify that domain for the org you enabled LDAP on, otherwise the login is rejected:
+   `make seed-dev-sso ORG_ID=<that org>` (bare `make seed-dev-sso` targets the dedicated `oidc` org).
 4. (Optional) Map `cn=infisical-users` to an Infisical group under the LDAP config's group
    mappings to test group sync.
 
@@ -298,5 +323,5 @@ A `200` with a `nextUrl` means the bind succeeded.
 | Keycloak admin console (`localhost:8088`) shows "HTTPS required" | The built-in `master` realm defaults to `sslRequired=external`, which Docker Desktop's non-local client IP trips over plain HTTP. The one-shot `keycloak-config` sidecar flips it to `NONE` on every `up`; refresh once it logs `master realm sslRequired=NONE`. (The `infisical` realm is already `none`, so the login flow is unaffected.) |
 | Keycloak realm/users missing after a restart | The container is ephemeral; rerun `make seed-dev-oidc`, or `make down` and `make up-dev-oidc`. |
 | LDAP users missing | Run `make seed-dev-ldap` after the container is up (OpenLDAP starts empty). |
-| Login rejected for a user's email domain | Leave **Allowed Email Domains** empty while testing, or verify the org domain. See [Email Domain Verification](docs/documentation/platform/email-domain). |
+| Login rejected: email domain not in the org's accepted domains | The org has no verified domain matching the user's email. `make seed-dev-sso` verifies `infisical.com` for the `oidc` org it bootstraps; use `make seed-dev-sso ORG_ID=<org>` to verify it for another org. See [Email Domain Verification](docs/documentation/platform/email-domain). |
 | Locked out after enforcing SSO | Recover via http://localhost:8080/login/admin. |

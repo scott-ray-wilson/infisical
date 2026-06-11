@@ -65,6 +65,12 @@ seed-dev-oidc:
 	# Keycloak imports the seeded realm on boot; restart re-imports it fresh (the container has no volume).
 	docker compose -f docker-compose.dev.yml restart keycloak
 
+seed-dev-sso:
+	# Sets up the Infisical side for SSO testing: an oidc@infisical.com admin, a verified domain,
+	# and an active OIDC config. With ORG_ID=<uuid> it configures that existing org; otherwise it
+	# bootstraps the standard dev org. Needs the stack up (`make up-dev-oidc`).
+	docker compose -f docker-compose.dev.yml exec -T backend npx tsx ./src/db/seed-oidc.ts $(ORG_ID)
+
 
 # Golang commands
 go-generate:

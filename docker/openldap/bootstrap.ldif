@@ -5,7 +5,9 @@
 # Apply with `make seed-dev-ldap` after the container is up (it pipes this file to
 # ldapadd -c, so it is safe to re-run). See sso.md.
 #
-# Test users (uid / password): jdoe / password123!, asmith / password123!
+# Test users (uid / password): john / password123!, alice / password123!, admin / password123!
+# Emails are @ldap.com so they don't collide with the OIDC users (@oidc.com). Sign in by uid
+# (e.g. `john`) or by email (e.g. `admin@ldap.com`).
 
 dn: ou=people,dc=acme,dc=com
 objectClass: organizationalUnit
@@ -15,36 +17,51 @@ dn: ou=groups,dc=acme,dc=com
 objectClass: organizationalUnit
 ou: groups
 
-dn: uid=jdoe,ou=people,dc=acme,dc=com
+dn: uid=john,ou=people,dc=acme,dc=com
 objectClass: inetOrgPerson
 objectClass: posixAccount
 objectClass: shadowAccount
-uid: jdoe
+uid: john
 cn: John Doe
 sn: Doe
 givenName: John
-mail: jdoe@infisical.com
+mail: john@ldap.com
 uidNumber: 10000
 gidNumber: 10000
-homeDirectory: /home/jdoe
+homeDirectory: /home/john
 userPassword: password123!
 
-dn: uid=asmith,ou=people,dc=acme,dc=com
+dn: uid=alice,ou=people,dc=acme,dc=com
 objectClass: inetOrgPerson
 objectClass: posixAccount
 objectClass: shadowAccount
-uid: asmith
+uid: alice
 cn: Alice Smith
 sn: Smith
 givenName: Alice
-mail: asmith@infisical.com
+mail: alice@ldap.com
 uidNumber: 10001
 gidNumber: 10001
-homeDirectory: /home/asmith
+homeDirectory: /home/alice
+userPassword: password123!
+
+dn: uid=admin,ou=people,dc=acme,dc=com
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: admin
+cn: LDAP Admin
+sn: Admin
+givenName: LDAP
+mail: admin@ldap.com
+uidNumber: 10002
+gidNumber: 10002
+homeDirectory: /home/admin
 userPassword: password123!
 
 dn: cn=infisical-users,ou=groups,dc=acme,dc=com
 objectClass: groupOfNames
 cn: infisical-users
-member: uid=jdoe,ou=people,dc=acme,dc=com
-member: uid=asmith,ou=people,dc=acme,dc=com
+member: uid=john,ou=people,dc=acme,dc=com
+member: uid=alice,ou=people,dc=acme,dc=com
+member: uid=admin,ou=people,dc=acme,dc=com

@@ -13,8 +13,8 @@ For the **end-user / production** setup of each provider, see the product docs i
 
 | Provider | Bring up | Seed | Provider URL | Seeded users (password `password123!`) |
 | --- | --- | --- | --- | --- |
-| Keycloak (OIDC) | `make up-dev-oidc` | realm auto-imports on boot; configure Infisical with `make seed-dev-oidc` | http://localhost:8088 (admin / admin) | jdoe@infisical.com, asmith@infisical.com, oidc@infisical.com |
-| OpenLDAP (LDAP) | `make up-dev-ldap` | `make seed-dev-ldap` | http://localhost:6433 (phpLDAPadmin) | jdoe, asmith |
+| Keycloak (OIDC) | `make up-dev-oidc` | realm auto-imports on boot; configure Infisical with `make seed-dev-oidc` | http://localhost:8088 (admin / admin) | john@oidc.com, alice@oidc.com, admin@oidc.com |
+| OpenLDAP (LDAP) | `make up-dev-ldap` | `make seed-dev-ldap` | http://localhost:6433 (phpLDAPadmin) | john, alice, admin |
 | Samba (Active Directory) | `make up-dev-ad` | `make seed-dev-ad` | ldap://localhost:1389 | jdoe, asmith |
 | PingFederate (SAML/OIDC/SCIM) | `make up-dev-pingfed` | n/a (manual) | https://localhost:9999 (administrator / 2FederateM0re) | n/a |
 
@@ -105,7 +105,7 @@ A one-shot `keycloak-config` sidecar runs alongside it and sets the built-in `ma
 | Client secret | `infisical-dev-client-secret` |
 | JWT signature algorithm | `RS256` |
 | Redirect URI (registered) | `http://localhost:8080/api/v1/sso/oidc/callback` |
-| Seeded users | `jdoe@infisical.com`, `asmith@infisical.com`, `oidc@infisical.com` (password `password123!`) |
+| Seeded users | `john@oidc.com`, `alice@oidc.com`, `admin@oidc.com` (password `password123!`) |
 
 ### Discovery URL (how the networking works)
 
@@ -141,8 +141,8 @@ The fast path is to let the seed script do it. With the stack up, run:
 make seed-dev-oidc
 ```
 
-This bootstraps everything the Infisical side needs: an `oidc@infisical.com` admin (password
-`password123!`), a **verified** `infisical.com` email domain (required for every SSO login), and
+This bootstraps everything the Infisical side needs: an `admin@oidc.com` admin (password
+`password123!`), a **verified** `oidc.com` email domain (required for every SSO login), and
 an **active** OIDC config pointing at the discovery URL above (client `infisical-dev`). With no
 arguments it bootstraps a dedicated `oidc` org (slug `oidc`), creating it if missing; pass
 `ORG_ID=<uuid>` to configure an existing org instead. SSO is still EE-gated, so make sure you have
@@ -151,11 +151,11 @@ unlocked the EE features first.
 Then test the login two ways:
 
 - **SSO:** open a fresh browser session at http://localhost:8080, choose **Continue with SSO**, and
-  authenticate as any seeded Keycloak user (`jdoe@infisical.com`, `asmith@infisical.com`, or
-  `oidc@infisical.com`), all `password123!`. Signing in as `oidc@infisical.com` links to the seeded
+  authenticate as any seeded Keycloak user (`john@oidc.com`, `alice@oidc.com`, or
+  `admin@oidc.com`), all `password123!`. Signing in as `admin@oidc.com` links to the seeded
   Infisical admin. You can also start the flow directly at
   `http://localhost:8080/api/v1/sso/oidc/login?orgSlug=oidc`.
-- **Password:** sign in as the seeded admin `oidc@infisical.com` / `password123!` to manage the
+- **Password:** sign in as the seeded admin `admin@oidc.com` / `password123!` to manage the
   `oidc` org directly.
 
 <details>
@@ -169,7 +169,7 @@ Then test the login two ways:
    - **Client ID:** `infisical-dev`.
    - **Client Secret:** `infisical-dev-client-secret`.
    - Leave **Allowed Email Domains** empty to accept any seeded user while testing.
-3. Verify the org's `infisical.com` domain under the org domain settings, otherwise the login is
+3. Verify the org's `oidc.com` domain under the org domain settings, otherwise the login is
    rejected. `make seed-dev-oidc` does this for you.
 4. Save, then enable OIDC.
 </details>
@@ -183,12 +183,32 @@ make up-dev-ldap
 make seed-dev-ldap   # adds OUs, users, and a group
 ```
 
-OpenLDAP starts with only the base DN and admin entry. `make seed-dev-ldap` applies
-[`docker/openldap/bootstrap.ldif`](docker/openldap/bootstrap.ldif) (users, group, OUs) over the
-wire with `ldapadd -c`, so it is safe to re-run. Run it after the container is up.
+`make seed-dev-ldap` does two things: it applies
+[`docker/openldap/bootstrap.ldif`](docker/openldap/bootstrap.ldif) (OUs, users, group) to OpenLDAP
+with `ldapadd -c`, and it configures the Infisical side, bootstrapping a dedicated `ldap` org with
+an `admin@ldap.com` admin (password `password123!`), a verified `ldap.com` domain, and an
+**active** LDAP config pointing at OpenLDAP. With no arguments it targets/creates the `ldap` org;
+pass `ORG_ID=<uuid>` to configure an existing org instead. SSO is EE-gated, so unlock the EE
+features first.
+
+> `ldapadd` only adds entries, it does not update existing ones. If you change a seeded user's
+> password in `bootstrap.ldif` after the directory was already seeded, recreate the OpenLDAP volume
+> to pick it up: `docker compose -f docker-compose.dev.yml rm -fsv openldap`, then re-run
+> `make seed-dev-ldap`.
 
 Browse the directory at http://localhost:6433 (phpLDAPadmin) with login
 `cn=admin,dc=acme,dc=com` / `admin`.
+
+### Sign in
+
+Sign in via LDAP into the `ldap` org as any seeded directory user, all `password123!`, by uid or
+email:
+
+- `admin@ldap.com` (uid `admin`), which is also the seeded Infisical admin, so it links to that account
+- `john` or `john@ldap.com` (John Doe)
+- `alice` or `alice@ldap.com` (Alice Smith)
+
+The seed's search filter matches uid or mail, so either form works.
 
 ### Default values
 
@@ -198,25 +218,27 @@ Browse the directory at http://localhost:6433 (phpLDAPadmin) with login
 | Bind DN | `cn=admin,dc=acme,dc=com` | same |
 | Bind password | `admin` | same |
 | User search base | `ou=people,dc=acme,dc=com` | same |
-| User search filter | `(uid={{username}})` | same |
-| Unique user attribute | `uid` (or default `uidNumber`) | same |
+| User search filter | `(\|(uid={{username}})(mail={{username}}))` | same |
+| Unique user attribute | `uid` | same |
 | Group search base | `ou=groups,dc=acme,dc=com` | same |
 | CA certificate | leave empty (`ldap://` has no TLS) | same |
-| Seeded users | `jdoe`, `asmith` (password `password123!`) | same |
+| Seeded users | `john`, `alice`, `admin` (password `password123!`) | same |
 | Seeded group | `infisical-users` | same |
 
 Unlike OIDC, LDAP has no browser redirect, so there is no issuer/hostname problem: the backend
 binds to the server directly. Just point `LDAP URL` at wherever the backend can reach OpenLDAP.
 
-### Configure in Infisical
+<details>
+<summary>Or configure it by hand in the UI</summary>
 
 1. In the org **Single Sign-On (SSO)** settings, connect **LDAP** and enter the values above.
 2. Use **Test Connection** to confirm the bind works before saving.
-3. Enable LDAP, then log in as `jdoe` / `password123!`. The seeded users' emails are `@infisical.com`,
-   so verify that domain for the org you enabled LDAP on, otherwise the login is rejected:
-   `make seed-dev-oidc ORG_ID=<that org>` (bare `make seed-dev-oidc` targets the dedicated `oidc` org).
-4. (Optional) Map `cn=infisical-users` to an Infisical group under the LDAP config's group
+3. Verify the org's `ldap.com` domain, otherwise the login is rejected (`make seed-dev-ldap`
+   does this for you).
+4. Enable LDAP, then log in as `john` / `password123!`.
+5. (Optional) Map `cn=infisical-users` to an Infisical group under the LDAP config's group
    mappings to test group sync.
+</details>
 
 ---
 
@@ -303,9 +325,9 @@ curl -X POST http://localhost:8080/api/v1/sso/ldap/config \
 **Test an LDAP bind** (the `ldapauth` strategy reads `username`/`password` from the body):
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/sso/ldap/login \
+curl -X POST http://localhost:8080/api/v1/ldap/login \
   -H "Content-Type: application/json" \
-  -d '{ "organizationSlug": "infisical", "username": "jdoe", "password": "password123!" }'
+  -d '{ "organizationSlug": "ldap", "username": "john", "password": "password123!" }'
 ```
 
 A `200` with a `nextUrl` means the bind succeeded.
@@ -323,5 +345,5 @@ A `200` with a `nextUrl` means the bind succeeded.
 | Keycloak admin console (`localhost:8088`) shows "HTTPS required" | The built-in `master` realm defaults to `sslRequired=external`, which Docker Desktop's non-local client IP trips over plain HTTP. The one-shot `keycloak-config` sidecar flips it to `NONE` on every `up`; refresh once it logs `master realm sslRequired=NONE`. (The `infisical` realm is already `none`, so the login flow is unaffected.) |
 | Keycloak realm/users missing after a restart | The container is ephemeral; recreate it with `docker compose -f docker-compose.dev.yml --profile oidc up -d --force-recreate keycloak keycloak-config`, or `make down` then `make up-dev-oidc`. |
 | LDAP users missing | Run `make seed-dev-ldap` after the container is up (OpenLDAP starts empty). |
-| Login rejected: email domain not in the org's accepted domains | The org has no verified domain matching the user's email. `make seed-dev-oidc` verifies `infisical.com` for the `oidc` org it bootstraps; use `make seed-dev-oidc ORG_ID=<org>` to verify it for another org. See [Email Domain Verification](docs/documentation/platform/email-domain). |
+| Login rejected: email domain not in the org's accepted domains | The org has no verified domain matching the user's email. `make seed-dev-oidc` verifies `oidc.com` (the `oidc` org) and `make seed-dev-ldap` verifies `ldap.com` (the `ldap` org); pass `ORG_ID=<org>` to verify a domain for another org. See [Email Domain Verification](docs/documentation/platform/email-domain). |
 | Locked out after enforcing SSO | Recover via http://localhost:8080/login/admin. |

@@ -55,11 +55,16 @@ seed-dev-ad:
 	'
 
 seed-dev-ldap:
+	# Seeds OpenLDAP entries (idempotent) and the Infisical side for LDAP SSO testing: an
+	# ldap@infisical.com admin, a verified domain, and an active LDAP config. With ORG_ID=<uuid>
+	# it configures that org; otherwise it bootstraps a dedicated `ldap` org. Needs the stack up
+	# (`make up-dev-ldap`).
 	@docker compose -f docker-compose.dev.yml exec -T openldap \
 	  ldapadd -c -x -D "cn=admin,dc=acme,dc=com" -w admin < docker/openldap/bootstrap.ldif; \
 	  status=$$?; \
-	  if [ $$status -eq 68 ]; then echo "LDAP entries already exist, nothing to do."; exit 0; fi; \
-	  exit $$status
+	  if [ $$status -ne 0 ] && [ $$status -ne 68 ]; then exit $$status; fi; \
+	  if [ $$status -eq 68 ]; then echo "LDAP entries already exist, continuing."; fi
+	docker compose -f docker-compose.dev.yml exec -T backend npx tsx ./src/db/seed-ldap.ts $(ORG_ID)
 
 seed-dev-oidc:
 	# Sets up the Infisical side for OIDC SSO testing: an oidc@infisical.com admin, a verified

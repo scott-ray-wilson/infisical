@@ -26,8 +26,8 @@
   ],
   "users": [
     {
-      "username": "jdoe",
-      "email": "jdoe@infisical.com",
+      "username": "john",
+      "email": "john@oidc.com",
       "firstName": "John",
       "lastName": "Doe",
       "enabled": true,
@@ -41,8 +41,8 @@
       ]
     },
     {
-      "username": "asmith",
-      "email": "asmith@infisical.com",
+      "username": "alice",
+      "email": "alice@oidc.com",
       "firstName": "Alice",
       "lastName": "Smith",
       "enabled": true,
@@ -56,8 +56,8 @@
       ]
     },
     {
-      "username": "oidc",
-      "email": "oidc@infisical.com",
+      "username": "admin",
+      "email": "admin@oidc.com",
       "firstName": "OIDC",
       "lastName": "Admin",
       "enabled": true,

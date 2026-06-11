@@ -122,7 +122,6 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
       - "pf.local:host-gateway" # PingFederate dev container — resolves the same on host and inside compose
-      - "keycloak.local:host-gateway" # Keycloak dev container, resolves the same on host and inside compose (see sso.md)
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/api/status"]
       interval: 30s
@@ -267,6 +266,13 @@ services:
     environment:
       - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
       - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      # Pin the browser-facing (frontend) URL so the OIDC issuer and authorization endpoint are
+      # always http://localhost:8088, while backchannel calls (discovery/token/jwks) use whatever
+      # URL the caller connected with. The backend therefore reaches Keycloak over the internal
+      # compose network (keycloak:8080) yet the browser is sent to localhost:8088, so no
+      # keycloak.local /etc/hosts entry is needed. See sso.md.
+      - KC_HOSTNAME=http://localhost:8088
+      - KC_HOSTNAME_BACKCHANNEL_DYNAMIC=true
     command: start-dev --import-realm
     ports:
       - 8088:8080

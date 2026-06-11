@@ -5,7 +5,7 @@
 # Apply with `make seed-dev-ldap` after the container is up (it pipes this file to
 # ldapadd -c, so it is safe to re-run). See sso.md.
 #
-# Test users (uid / password): jdoe / Passw0rd!, asmith / Passw0rd!
+# Test users (uid / password): jdoe / password123!, asmith / password123!
 
 dn: ou=people,dc=acme,dc=com
 objectClass: organizationalUnit
@@ -27,7 +27,7 @@ mail: jdoe@infisical.com
 uidNumber: 10000
 gidNumber: 10000
 homeDirectory: /home/jdoe
-userPassword: Passw0rd!
+userPassword: password123!
 
 dn: uid=asmith,ou=people,dc=acme,dc=com
 objectClass: inetOrgPerson
@@ -41,7 +41,7 @@ mail: asmith@infisical.com
 uidNumber: 10001
 gidNumber: 10001
 homeDirectory: /home/asmith
-userPassword: Passw0rd!
+userPassword: password123!
 
 dn: cn=infisical-users,ou=groups,dc=acme,dc=com
 objectClass: groupOfNames

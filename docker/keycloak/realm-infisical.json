@@ -35,7 +35,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "Passw0rd!",
+          "value": "password123!",
           "temporary": false
         }
       ]
@@ -50,7 +50,22 @@
       "credentials": [
         {
           "type": "password",
-          "value": "Passw0rd!",
+          "value": "password123!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "oidc",
+      "email": "oidc@infisical.com",
+      "firstName": "OIDC",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password123!",
           "temporary": false
         }
       ]

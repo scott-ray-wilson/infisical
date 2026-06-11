@@ -46,8 +46,8 @@ seed-dev-ad:
 	  samba-tool user delete jdoe 2>/dev/null || true; \
 	  samba-tool user delete asmith 2>/dev/null || true; \
 	  samba-tool group delete infisical-users 2>/dev/null || true; \
-	  samba-tool user create jdoe "Passw0rd!" --given-name=John --surname=Doe --mail-address=jdoe@infisical.com; \
-	  samba-tool user create asmith "Passw0rd!" --given-name=Alice --surname=Smith --mail-address=asmith@infisical.com; \
+	  samba-tool user create jdoe "password123!" --given-name=John --surname=Doe --mail-address=jdoe@infisical.com; \
+	  samba-tool user create asmith "password123!" --given-name=Alice --surname=Smith --mail-address=asmith@infisical.com; \
 	  samba-tool user rename jdoe --upn=jdoe@infisical.com; \
 	  samba-tool user rename asmith --upn=asmith@infisical.com; \
 	  samba-tool group add infisical-users; \
@@ -62,13 +62,9 @@ seed-dev-ldap:
 	  exit $$status
 
 seed-dev-oidc:
-	# Keycloak imports the seeded realm on boot; restart re-imports it fresh (the container has no volume).
-	docker compose -f docker-compose.dev.yml restart keycloak
-
-seed-dev-sso:
-	# Sets up the Infisical side for SSO testing: an oidc@infisical.com admin, a verified domain,
-	# and an active OIDC config. With ORG_ID=<uuid> it configures that existing org; otherwise it
-	# bootstraps the standard dev org. Needs the stack up (`make up-dev-oidc`).
+	# Sets up the Infisical side for OIDC SSO testing: an oidc@infisical.com admin, a verified
+	# domain, and an active OIDC config. With ORG_ID=<uuid> it configures that existing org;
+	# otherwise it bootstraps a dedicated `oidc` org. Needs the stack up (`make up-dev-oidc`).
 	docker compose -f docker-compose.dev.yml exec -T backend npx tsx ./src/db/seed-oidc.ts $(ORG_ID)
 
 

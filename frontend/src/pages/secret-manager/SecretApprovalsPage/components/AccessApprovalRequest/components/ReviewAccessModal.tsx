@@ -1,34 +1,54 @@
 import { ReactNode, useCallback, useMemo, useState } from "react";
-import {
-  faBan,
-  faCheck,
-  faEdit,
-  faHourglass,
-  faTriangleExclamation,
-  faUser,
-  faUserSlash
-} from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { format } from "date-fns";
-import { BanIcon, CheckIcon, HourglassIcon } from "lucide-react";
+import {
+  BanIcon,
+  CheckIcon,
+  HourglassIcon,
+  InfoIcon,
+  SquarePenIcon,
+  TriangleAlertIcon,
+  UserIcon,
+  UserXIcon
+} from "lucide-react";
 import ms from "ms";
 import picomatch from "picomatch";
 import { twMerge } from "tailwind-merge";
 
 import { createNotification } from "@app/components/notifications";
 import {
+  Alert,
+  AlertDescription,
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertTitle,
+  Badge,
   Button,
   Checkbox,
-  DeleteActionModal,
-  FormControl,
-  GenericFieldLabel,
+  Detail,
+  DetailLabel,
+  DetailValue,
+  Field,
+  FieldLabel,
   IconButton,
   Input,
-  Modal,
-  ModalContent,
-  Tooltip
-} from "@app/components/v2";
-import { Badge } from "@app/components/v3";
+  Label,
+  ProjectIcon,
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  TextArea,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
+} from "@app/components/v3";
 import {
   ProjectPermissionActions,
   ProjectPermissionMemberActions,
@@ -62,13 +82,13 @@ const getReviewedStatusSymbol = (status?: ApprovalStatus, isOrgMembershipActive?
   if (status === ApprovalStatus.APPROVED)
     return (
       <Badge variant="success">
-        <FontAwesomeIcon icon={faCheck} size="xs" />
+        <CheckIcon />
       </Badge>
     );
   if (status === ApprovalStatus.REJECTED)
     return (
       <Badge variant="danger">
-        <FontAwesomeIcon icon={faBan} size="xs" />
+        <BanIcon />
       </Badge>
     );
 
@@ -78,13 +98,13 @@ const getReviewedStatusSymbol = (status?: ApprovalStatus, isOrgMembershipActive?
       // TODO(daniel): Fix nested tooltips in the future.
 
       <Badge variant="neutral">
-        <FontAwesomeIcon size="xs" icon={faUserSlash} />
+        <UserXIcon />
       </Badge>
     );
   }
   return (
     <Badge variant="warning">
-      <FontAwesomeIcon icon={faHourglass} size="xs" />
+      <HourglassIcon />
     </Badge>
   );
 };
@@ -117,6 +137,7 @@ export const ReviewAccessRequestModal = ({
   const [bypassApproval, setBypassApproval] = useState(false);
 
   const [bypassReason, setBypassReason] = useState("");
+  const [revokeConfirmText, setRevokeConfirmText] = useState("");
   const { currentProject } = useProject();
   const { data: groupMemberships = [] } = useListWorkspaceGroups(currentProject?.id || "");
   const { user } = useUser();
@@ -155,7 +176,9 @@ export const ReviewAccessRequestModal = ({
   }, [permission, assignPrivilegesConditions, request.user?.email, request.isApprover]);
 
   const accessDetails = {
-    env: request.environmentName,
+    env:
+      currentProject?.environments.find((env) => env.slug === request.environmentName)?.name ??
+      request.environmentName,
     // secret path will be inside $glob operator
     secretPath: request.policy.secretPath,
     read: request.permissions?.some(({ action }) => action.includes(ProjectPermissionActions.Read)),
@@ -172,6 +195,13 @@ export const ReviewAccessRequestModal = ({
       temporaryRange: request.temporaryRange
     }
   };
+
+  // Collapse the details grid to a single column when the environment name or secret
+  // path is long enough that two side-by-side columns would feel cramped.
+  const DETAILS_COLLAPSE_THRESHOLD = 30;
+  const shouldCollapseDetails =
+    (accessDetails.env?.length ?? 0) > DETAILS_COLLAPSE_THRESHOLD ||
+    (accessDetails.secretPath?.length ?? 0) > DETAILS_COLLAPSE_THRESHOLD;
 
   const requestedAccess = useMemo(() => {
     const access: string[] = [];
@@ -344,388 +374,491 @@ export const ReviewAccessRequestModal = ({
     return "You are not the reviewer in this step.";
   };
 
+  const completedMessageVariant = hasRejected || hasRevoked || hasExpired ? "danger" : "info";
+
   // users can always reject (cancel) their own request
   const isRejectionDisabled = request.isRequestedByCurrentUser
     ? false
     : !(request.isApprover && request.isSelfApproveAllowed) && !bypassApproval;
 
   return (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-      <ModalContent
-        className="max-w-4xl"
-        title="Review Request"
-        subTitle="Review the request and approve or deny access."
-      >
-        <div className="mb-4 rounded-r border-l-2 border-l-primary bg-mineshaft-300/5 px-4 py-2.5 text-sm">
-          {request.user &&
-          (request.user.firstName || request.user.lastName) &&
-          request.user.email ? (
-            <span className="inline font-medium">
-              {request.user?.firstName} {request.user?.lastName} ({request.user?.email})
-            </span>
-          ) : (
-            <span>A user</span>
-          )}{" "}
-          is requesting access to the following resource:
-        </div>
-        <div className="">
-          <div className="mt-4 mb-2 text-mineshaft-200">
-            <div className="flex flex-wrap gap-x-8 gap-y-4">
-              <GenericFieldLabel label="Environment">{accessDetails.env}</GenericFieldLabel>
-              <GenericFieldLabel truncate label="Secret Path">
-                {accessDetails.secretPath}
-              </GenericFieldLabel>
-              <GenericFieldLabel label="Access Duration">
-                <div className="flex h-min gap-1">
-                  {getAccessLabel()}
-                  {request.isApprover && request.status === ApprovalStatus.PENDING && (
-                    <>
-                      <EditAccessRequestModal
-                        isOpen={popUp.editRequest.isOpen}
-                        onOpenChange={(open) => handlePopUpToggle("editRequest", open)}
-                        accessRequest={request}
-                        onComplete={onUpdate}
-                        projectSlug={projectSlug}
-                      />
-                      <Tooltip content="Edit Access Duration">
-                        <IconButton
-                          onClick={() => handlePopUpOpen("editRequest")}
-                          variant="plain"
-                          size="xs"
-                          tabIndex={-1}
-                          ariaLabel="Edit access duration"
-                        >
-                          <FontAwesomeIcon icon={faEdit} />
-                        </IconButton>
-                      </Tooltip>
-                    </>
+    <>
+      <Sheet open={isOpen} onOpenChange={onOpenChange}>
+        <SheetContent className="flex h-full flex-col gap-y-0 overflow-hidden sm:max-w-2xl">
+          <SheetHeader className="border-b">
+            <SheetTitle>Review Request</SheetTitle>
+            <SheetDescription>Review the request and approve or deny access.</SheetDescription>
+          </SheetHeader>
+          <div className="flex min-h-0 thin-scrollbar flex-1 flex-col overflow-y-auto p-4">
+            <Alert variant="project" className="mb-4">
+              <ProjectIcon />
+              <AlertDescription>
+                <p>
+                  {request.user &&
+                  (request.user.firstName || request.user.lastName) &&
+                  request.user.email ? (
+                    <span className="font-medium text-foreground">
+                      {request.user?.firstName} {request.user?.lastName} ({request.user?.email})
+                    </span>
+                  ) : (
+                    <span>A user</span>
+                  )}{" "}
+                  is requesting access to the following resource:
+                </p>
+              </AlertDescription>
+            </Alert>
+            <div className="">
+              <div className="mt-4 mb-2 text-mineshaft-200">
+                <div
+                  className={twMerge(
+                    "grid gap-x-8 gap-y-4",
+                    shouldCollapseDetails ? "grid-cols-1" : "grid-cols-2"
+                  )}
+                >
+                  <Detail>
+                    <DetailLabel>Environment</DetailLabel>
+                    <DetailValue>{accessDetails.env}</DetailValue>
+                  </Detail>
+                  <Detail>
+                    <DetailLabel>Secret Path</DetailLabel>
+                    <DetailValue className={shouldCollapseDetails ? undefined : "truncate"}>
+                      {accessDetails.secretPath}
+                    </DetailValue>
+                  </Detail>
+                  <Detail>
+                    <DetailLabel>Access Duration</DetailLabel>
+                    <DetailValue>
+                      <div className="flex items-center gap-1">
+                        {getAccessLabel()}
+                        {request.isApprover && request.status === ApprovalStatus.PENDING && (
+                          <>
+                            <EditAccessRequestModal
+                              isOpen={popUp.editRequest.isOpen}
+                              onOpenChange={(open) => handlePopUpToggle("editRequest", open)}
+                              accessRequest={request}
+                              onComplete={onUpdate}
+                              projectSlug={projectSlug}
+                            />
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <IconButton
+                                  onClick={() => handlePopUpOpen("editRequest")}
+                                  variant="ghost"
+                                  size="xs"
+                                  tabIndex={-1}
+                                  aria-label="Edit access duration"
+                                  className="-my-1"
+                                >
+                                  <SquarePenIcon />
+                                </IconButton>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit Access Duration</TooltipContent>
+                            </Tooltip>
+                          </>
+                        )}
+                      </div>
+                    </DetailValue>
+                  </Detail>
+                  <Detail>
+                    <DetailLabel>Permission</DetailLabel>
+                    <DetailValue>{requestedAccess}</DetailValue>
+                  </Detail>
+                  {request.note && (
+                    <Detail className="col-span-full">
+                      <DetailLabel>Note</DetailLabel>
+                      <DetailValue>{request.note}</DetailValue>
+                    </Detail>
+                  )}
+                  {request.expiresAt &&
+                    request.status === ApprovalStatus.PENDING &&
+                    new Date(request.expiresAt) > new Date() && (
+                      <Detail>
+                        <DetailLabel>Request Expires</DetailLabel>
+                        <DetailValue>
+                          <span>
+                            In{" "}
+                            {ms(new Date(request.expiresAt).getTime() - Date.now(), {
+                              long: true
+                            })}
+                          </span>
+                        </DetailValue>
+                      </Detail>
+                    )}
+                  {hasExpired && request.expiresAt && (
+                    <Detail>
+                      <DetailLabel>Expired At</DetailLabel>
+                      <DetailValue>
+                        <span className="text-danger">
+                          {format(new Date(request.expiresAt), "MMM d, yyyy h:mm aa")}
+                        </span>
+                      </DetailValue>
+                    </Detail>
+                  )}
+                  {hasRejected && (
+                    <Detail>
+                      <DetailLabel>Rejected At</DetailLabel>
+                      <DetailValue>
+                        <span className="text-danger">
+                          {format(new Date(request.updatedAt), "MMM d, yyyy h:mm aa")}
+                        </span>
+                      </DetailValue>
+                    </Detail>
+                  )}
+                  {(hasApproved || hasRevoked) && (request.approvedAt || hasApproved) && (
+                    <Detail>
+                      <DetailLabel>Approved At</DetailLabel>
+                      <DetailValue>
+                        <span className="text-success">
+                          {format(
+                            new Date(request.approvedAt || request.updatedAt),
+                            "MMM d, yyyy h:mm aa"
+                          )}
+                        </span>
+                      </DetailValue>
+                    </Detail>
+                  )}
+                  {hasRevoked && request.revokedAt && (
+                    <Detail>
+                      <DetailLabel>Revoked At</DetailLabel>
+                      <DetailValue>
+                        <span className="text-danger">
+                          {format(new Date(request.revokedAt), "MMM d, yyyy h:mm aa")}
+                        </span>
+                      </DetailValue>
+                    </Detail>
                   )}
                 </div>
-              </GenericFieldLabel>
-              <GenericFieldLabel label="Permission">{requestedAccess}</GenericFieldLabel>
-              {request.note && (
-                <GenericFieldLabel className="col-span-full" label="Note">
-                  {request.note}
-                </GenericFieldLabel>
-              )}
-              {request.expiresAt &&
-                request.status === ApprovalStatus.PENDING &&
-                new Date(request.expiresAt) > new Date() && (
-                  <GenericFieldLabel label="Request Expires">
-                    <span>
-                      In{" "}
-                      {ms(new Date(request.expiresAt).getTime() - Date.now(), {
-                        long: true
-                      })}
-                    </span>
-                  </GenericFieldLabel>
-                )}
-              {hasExpired && request.expiresAt && (
-                <GenericFieldLabel label="Expired At">
-                  <span className="text-red-400">
-                    {format(new Date(request.expiresAt), "MMM d, yyyy h:mm aa")}
-                  </span>
-                </GenericFieldLabel>
-              )}
-              {hasRejected && (
-                <GenericFieldLabel label="Rejected At">
-                  <span className="text-red-400">
-                    {format(new Date(request.updatedAt), "MMM d, yyyy h:mm aa")}
-                  </span>
-                </GenericFieldLabel>
-              )}
-              {(hasApproved || hasRevoked) && (request.approvedAt || hasApproved) && (
-                <GenericFieldLabel label="Approved At">
-                  <span className="text-green-400">
-                    {format(
-                      new Date(request.approvedAt || request.updatedAt),
-                      "MMM d, yyyy h:mm aa"
-                    )}
-                  </span>
-                </GenericFieldLabel>
-              )}
-              {hasRevoked && request.revokedAt && (
-                <GenericFieldLabel label="Revoked At">
-                  <span className="text-red-400">
-                    {format(new Date(request.revokedAt), "MMM d, yyyy h:mm aa")}
-                  </span>
-                </GenericFieldLabel>
-              )}
-            </div>
-          </div>
+              </div>
 
-          <div className="mt-4 flex items-center justify-between border-b-2 border-mineshaft-500 py-2">
-            <span>Approvers</span>
-            {approverSequence.isMyReviewInThisSequence &&
-              request.status === ApprovalStatus.PENDING &&
-              !hasExpired && <Badge variant="warning">Awaiting Your Review</Badge>}
-          </div>
-          <div className="max-h-[40vh] thin-scrollbar overflow-y-auto rounded-sm py-2">
-            {approverSequence?.approvers &&
-              approverSequence.approvers.map((approver, index) => {
-                const isInactive =
-                  approverSequence?.currentSequence <
-                  (approver.sequence ?? approverSequence.approvers!.length);
+              <div className="mt-4 flex items-center justify-between border-b-2 border-mineshaft-500 py-2">
+                <span>Approvers</span>
+                {approverSequence.isMyReviewInThisSequence &&
+                  request.status === ApprovalStatus.PENDING &&
+                  !hasExpired && <Badge variant="warning">Awaiting Your Review</Badge>}
+              </div>
+              <div className="rounded-sm py-2">
+                {approverSequence?.approvers &&
+                  approverSequence.approvers.map((approver, index) => {
+                    const isInactive =
+                      approverSequence?.currentSequence <
+                      (approver.sequence ?? approverSequence.approvers!.length);
 
-                const isPending = approverSequence?.currentSequence === approver.sequence;
+                    const isPending = approverSequence?.currentSequence === approver.sequence;
 
-                let StepComponent: ReactNode;
-                let BadgeComponent: ReactNode = null;
-                if (approver.hasRejected) {
-                  StepComponent = (
-                    <Badge isSquare variant="danger">
-                      <BanIcon />
-                    </Badge>
-                  );
-                  BadgeComponent = <Badge variant="danger">Rejected</Badge>;
-                } else if (approver.hasApproved) {
-                  StepComponent = (
-                    <Badge isSquare variant="success">
-                      <CheckIcon />
-                    </Badge>
-                  );
-                  BadgeComponent = <Badge variant="success">Approved</Badge>;
-                } else if (isPending && !hasExpired) {
-                  StepComponent = (
-                    <Badge isSquare variant="warning">
-                      <HourglassIcon />
-                    </Badge>
-                  );
-                  BadgeComponent = <Badge variant="warning">Pending</Badge>;
-                } else {
-                  StepComponent = (
-                    <Badge isSquare variant="neutral">
-                      <span>{index + 1}</span>
-                    </Badge>
-                  );
-                }
+                    let StepComponent: ReactNode;
+                    let BadgeComponent: ReactNode = null;
+                    if (approver.hasRejected) {
+                      StepComponent = (
+                        <Badge isSquare variant="danger">
+                          <BanIcon />
+                        </Badge>
+                      );
+                      BadgeComponent = <Badge variant="danger">Rejected</Badge>;
+                    } else if (approver.hasApproved) {
+                      StepComponent = (
+                        <Badge isSquare variant="success">
+                          <CheckIcon />
+                        </Badge>
+                      );
+                      BadgeComponent = <Badge variant="success">Approved</Badge>;
+                    } else if (isPending && !hasExpired) {
+                      StepComponent = (
+                        <Badge isSquare variant="warning">
+                          <HourglassIcon />
+                        </Badge>
+                      );
+                      BadgeComponent = <Badge variant="warning">Pending</Badge>;
+                    } else {
+                      StepComponent = (
+                        <Badge isSquare variant="neutral">
+                          <span>{index + 1}</span>
+                        </Badge>
+                      );
+                    }
 
-                return (
-                  <div
-                    key={`approval-list-${index + 1}`}
-                    className={twMerge("flex", isInactive && "opacity-50")}
-                  >
-                    {approverSequence.approvers!.length > 1 && (
-                      <div className="flex w-12 flex-col items-center gap-2 pr-4">
-                        <div
-                          className={twMerge(
-                            "grow border-mineshaft-600",
-                            index !== 0 && "border-r"
-                          )}
-                        />
-                        {StepComponent}
-                        <div
-                          className={twMerge(
-                            "grow border-mineshaft-600",
-                            index < approverSequence.approvers!.length - 1 && "border-r"
-                          )}
-                        />
-                      </div>
-                    )}
-                    <div className="grid flex-1 grid-cols-5 border-b border-mineshaft-600 p-4">
-                      <GenericFieldLabel className="col-span-2" icon={faUser} label="Users">
-                        {Boolean(approver.user.length) && (
-                          <div className="flex flex-row flex-wrap gap-2">
-                            {approver?.user?.map((el, idx) => {
-                              const member = approverSequence?.membersGroupById?.[el.id]?.[0];
-
-                              if (!member) {
-                                const policyApprover = request.policy.approvers.find(
-                                  (a) => a.userId === el.id
-                                );
-                                return (
-                                  <div className="flex items-center" key={el.id}>
-                                    <span className="flex items-center gap-2 opacity-40">
-                                      {policyApprover?.email || policyApprover?.username || el.id}
-                                      <span className="text-xs">
-                                        <Tooltip content="This user has been removed from the project.">
-                                          <Badge variant="neutral">
-                                            <BanIcon />
-                                            Removed
-                                          </Badge>
-                                        </Tooltip>
-                                      </span>
-                                    </span>
-                                    {idx < approver.user.length - 1 && ","}
-                                  </div>
-                                );
-                              }
-
-                              return member.user.isOrgMembershipActive ? (
-                                <div className="flex items-center" key={member.user.id}>
-                                  <span>{member.user.username}</span>
-                                  {idx < approver.user.length - 1 && ","}
-                                </div>
-                              ) : (
-                                <div className="flex items-center" key={member.user.id}>
-                                  <span className="flex items-center gap-2 opacity-40">
-                                    {member.user.username}
-                                    <span className="text-xs">
-                                      <Tooltip content="This user has been deactivated and no longer has an active organization membership.">
-                                        <Badge variant="neutral">
-                                          <BanIcon />
-                                          Inactive
-                                        </Badge>
-                                      </Tooltip>
-                                    </span>
-                                  </span>
-                                  {idx < approver.user.length - 1 && ","}
-                                </div>
-                              );
-                            })}
+                    return (
+                      <div
+                        key={`approval-list-${index + 1}`}
+                        className={twMerge("flex", isInactive && "opacity-50")}
+                      >
+                        {approverSequence.approvers!.length > 1 && (
+                          <div className="flex w-12 flex-col items-center gap-2 pr-4">
+                            <div
+                              className={twMerge(
+                                "grow border-mineshaft-600",
+                                index !== 0 && "border-r"
+                              )}
+                            />
+                            {StepComponent}
+                            <div
+                              className={twMerge(
+                                "grow border-mineshaft-600",
+                                index < approverSequence.approvers!.length - 1 && "border-r"
+                              )}
+                            />
                           </div>
                         )}
-                      </GenericFieldLabel>
-                      <GenericFieldLabel className="col-span-2" label="Groups">
-                        {approver?.group
-                          ?.map(
-                            (el) =>
-                              approverSequence?.projectGroupsGroupById?.[el.id]?.[0]?.group?.name
-                          )
-                          .join(", ")}
-                      </GenericFieldLabel>
-                      <GenericFieldLabel label="Approvals Required">
-                        <div className="flex items-center">
-                          <span className="mr-2">{approver.approvals}</span>
-                          {BadgeComponent && (
-                            <Tooltip
-                              className="max-w-lg"
-                              content={
-                                <div>
-                                  <div className="mb-1 text-sm text-bunker-300">Reviewers</div>
-                                  <div className="flex max-h-64 thin-scrollbar flex-col divide-y divide-mineshaft-500 overflow-y-auto rounded-sm">
-                                    {approver.reviewers.map((el, idx) => (
-                                      <div
-                                        key={`reviewer-${idx + 1}`}
-                                        className="flex items-center gap-2 px-2 py-2 text-sm"
-                                      >
-                                        <div
-                                          className={twMerge(
-                                            "flex-1",
-                                            !el.isOrgMembershipActive && "opacity-40"
-                                          )}
-                                        >
-                                          {el.username}
+                        <div className="grid flex-1 grid-cols-5 border-b border-mineshaft-600 p-4">
+                          <Detail className="col-span-2">
+                            <DetailLabel>
+                              <UserIcon className="size-3" />
+                              Users
+                            </DetailLabel>
+                            <DetailValue>
+                              {Boolean(approver.user.length) && (
+                                <div className="flex flex-row flex-wrap gap-2">
+                                  {approver?.user?.map((el, idx) => {
+                                    const member = approverSequence?.membersGroupById?.[el.id]?.[0];
+
+                                    if (!member) {
+                                      const policyApprover = request.policy.approvers.find(
+                                        (a) => a.userId === el.id
+                                      );
+                                      return (
+                                        <div className="flex items-center" key={el.id}>
+                                          <span className="flex items-center gap-2 opacity-40">
+                                            {policyApprover?.email ||
+                                              policyApprover?.username ||
+                                              el.id}
+                                            <span className="text-xs">
+                                              <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                  <Badge variant="neutral">
+                                                    <BanIcon />
+                                                    Removed
+                                                  </Badge>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                  This user has been removed from the project.
+                                                </TooltipContent>
+                                              </Tooltip>
+                                            </span>
+                                          </span>
+                                          {idx < approver.user.length - 1 && ","}
                                         </div>
-                                        {getReviewedStatusSymbol(
-                                          el?.status as ApprovalStatus,
-                                          el.isOrgMembershipActive
-                                        )}
+                                      );
+                                    }
+
+                                    return member.user.isOrgMembershipActive ? (
+                                      <div className="flex items-center" key={member.user.id}>
+                                        <span>{member.user.username}</span>
+                                        {idx < approver.user.length - 1 && ","}
                                       </div>
-                                    ))}
-                                  </div>
+                                    ) : (
+                                      <div className="flex items-center" key={member.user.id}>
+                                        <span className="flex items-center gap-2 opacity-40">
+                                          {member.user.username}
+                                          <span className="text-xs">
+                                            <Tooltip>
+                                              <TooltipTrigger asChild>
+                                                <Badge variant="neutral">
+                                                  <BanIcon />
+                                                  Inactive
+                                                </Badge>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                This user has been deactivated and no longer has an
+                                                active organization membership.
+                                              </TooltipContent>
+                                            </Tooltip>
+                                          </span>
+                                        </span>
+                                        {idx < approver.user.length - 1 && ","}
+                                      </div>
+                                    );
+                                  })}
                                 </div>
-                              }
-                            >
-                              <div>{BadgeComponent}</div>
-                            </Tooltip>
-                          )}
+                              )}
+                            </DetailValue>
+                          </Detail>
+                          <Detail className="col-span-2">
+                            <DetailLabel>Groups</DetailLabel>
+                            <DetailValue>
+                              {approver?.group
+                                ?.map(
+                                  (el) =>
+                                    approverSequence?.projectGroupsGroupById?.[el.id]?.[0]?.group
+                                      ?.name
+                                )
+                                .join(", ")}
+                            </DetailValue>
+                          </Detail>
+                          <Detail>
+                            <DetailLabel>Approvals Required</DetailLabel>
+                            <DetailValue>
+                              <div className="flex items-center">
+                                <span className="mr-2">{approver.approvals}</span>
+                                {BadgeComponent && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <div>{BadgeComponent}</div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-lg">
+                                      <div>
+                                        <div className="mb-1 text-sm text-bunker-300">
+                                          Reviewers
+                                        </div>
+                                        <div className="flex max-h-64 thin-scrollbar flex-col divide-y divide-mineshaft-500 overflow-y-auto rounded-sm">
+                                          {approver.reviewers.map((el, idx) => (
+                                            <div
+                                              key={`reviewer-${idx + 1}`}
+                                              className="flex items-center gap-2 px-2 py-2 text-sm"
+                                            >
+                                              <div
+                                                className={twMerge(
+                                                  "flex-1",
+                                                  !el.isOrgMembershipActive && "opacity-40"
+                                                )}
+                                              >
+                                                {el.username}
+                                              </div>
+                                              {getReviewedStatusSymbol(
+                                                el?.status as ApprovalStatus,
+                                                el.isOrgMembershipActive
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </div>
+                            </DetailValue>
+                          </Detail>
                         </div>
-                      </GenericFieldLabel>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-          {shouldBlockRequestActions ? (
-            <div
-              className={twMerge(
-                "mt-2 rounded-r border-l-2 border-l-red-500 bg-mineshaft-300/5 px-4 py-2.5 text-sm",
-                isReviewedByMe && "border-l-green-400",
-                !approverSequence.isMyReviewInThisSequence && "border-l-primary-400",
-                hasRejected && "border-l-red-500",
-                hasRevoked && "border-l-red-500",
-                hasExpired && "border-l-red-500"
-              )}
-            >
-              {renderCompletedMessages()}
+                      </div>
+                    );
+                  })}
+              </div>
             </div>
-          ) : (
-            <>
-              {isSoftEnforcement && request.isRequestedByCurrentUser && canBypass && (
-                <div className="mt-2 flex flex-col space-y-2">
-                  <Checkbox
-                    onCheckedChange={(checked) => setBypassApproval(checked === true)}
-                    isChecked={bypassApproval}
-                    id="byPassApproval"
-                    className={twMerge("mr-2", bypassApproval ? "border-red/50! bg-red/30!" : "")}
-                  >
-                    <span className="text-xs text-red">
-                      Approve without waiting for requirements to be met (bypass policy protection)
-                    </span>
-                  </Checkbox>
-                  {bypassApproval && (
-                    <FormControl
-                      label="Reason for bypass"
-                      className="mt-2"
-                      isRequired
-                      tooltipText="Enter a reason for bypassing the policy"
-                    >
-                      <Input
-                        value={bypassReason}
-                        onChange={(e) => setBypassReason(e.currentTarget.value)}
-                        placeholder="Enter reason for bypass (min 10 chars)"
-                        leftIcon={<FontAwesomeIcon icon={faTriangleExclamation} />}
+          </div>
+          <SheetFooter className="flex-col border-t">
+            {shouldBlockRequestActions ? (
+              <Alert variant={completedMessageVariant}>
+                {completedMessageVariant === "danger" ? <TriangleAlertIcon /> : <InfoIcon />}
+                <AlertTitle>{renderCompletedMessages()}</AlertTitle>
+              </Alert>
+            ) : (
+              <>
+                {isSoftEnforcement && request.isRequestedByCurrentUser && canBypass && (
+                  <div className="mb-2 flex flex-col space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        onCheckedChange={(checked) => setBypassApproval(checked === true)}
+                        isChecked={bypassApproval}
+                        id="byPassApproval"
+                        variant="warning"
                       />
-                    </FormControl>
-                  )}
+                      <Label htmlFor="byPassApproval" className="text-xs font-normal text-warning">
+                        Approve without waiting for requirements to be met (bypass policy
+                        protection)
+                      </Label>
+                    </div>
+                    {bypassApproval && (
+                      <Field className="mt-2">
+                        <FieldLabel htmlFor="bypassReason">
+                          Reason for bypass
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <TriangleAlertIcon className="text-warning" />
+                            </TooltipTrigger>
+                            <TooltipContent>Enter a reason for bypassing the policy</TooltipContent>
+                          </Tooltip>
+                        </FieldLabel>
+                        <TextArea
+                          id="bypassReason"
+                          value={bypassReason}
+                          onChange={(e) => setBypassReason(e.currentTarget.value)}
+                          placeholder="Enter reason for bypass (min 10 chars)"
+                        />
+                      </Field>
+                    )}
+                  </div>
+                )}
+                <div className="space-x-2">
+                  <Button
+                    isPending={isLoading === "approved"}
+                    isDisabled={
+                      Boolean(isLoading) ||
+                      (!(
+                        request.isApprover &&
+                        (!request.isRequestedByCurrentUser || request.isSelfApproveAllowed)
+                      ) &&
+                        !bypassApproval)
+                    }
+                    onClick={() => handleReview("approved")}
+                    size="sm"
+                    variant={!request.isApprover && isSoftEnforcement ? "danger" : "project"}
+                  >
+                    Approve Request
+                  </Button>
+                  <Button
+                    isPending={isLoading === "rejected"}
+                    isDisabled={!!isLoading || isRejectionDisabled}
+                    onClick={() => handleReview("rejected")}
+                    size="sm"
+                    variant="danger"
+                  >
+                    Reject Request
+                  </Button>
                 </div>
-              )}
-              <div className="space-x-2">
+              </>
+            )}
+            {hasApproved && canRevokeAccess && (
+              <div>
                 <Button
-                  isLoading={isLoading === "approved"}
-                  isDisabled={
-                    Boolean(isLoading) ||
-                    (!(
-                      request.isApprover &&
-                      (!request.isRequestedByCurrentUser || request.isSelfApproveAllowed)
-                    ) &&
-                      !bypassApproval)
-                  }
-                  onClick={() => handleReview("approved")}
-                  className="mt-4"
+                  isDisabled={Boolean(isLoading)}
+                  onClick={() => handlePopUpOpen("revokeConfirm")}
                   size="sm"
-                  variant="outline_bg"
-                  colorSchema={!request.isApprover && isSoftEnforcement ? "danger" : "primary"}
+                  variant="danger"
                 >
-                  Approve Request
-                </Button>
-                <Button
-                  isLoading={isLoading === "rejected"}
-                  isDisabled={!!isLoading || isRejectionDisabled}
-                  onClick={() => handleReview("rejected")}
-                  className="mt-4 border-transparent bg-transparent text-mineshaft-200 hover:border-red hover:bg-red/20 hover:text-mineshaft-200"
-                  size="sm"
-                >
-                  Reject Request
+                  Revoke Access
                 </Button>
               </div>
-            </>
-          )}
-          {hasApproved && canRevokeAccess && (
-            <div className="mt-4">
-              <Button
-                isDisabled={Boolean(isLoading)}
-                onClick={() => handlePopUpOpen("revokeConfirm")}
-                size="sm"
-                colorSchema="danger"
-                variant="outline_bg"
-              >
-                Revoke Access
-              </Button>
-            </div>
-          )}
-        </div>
-      </ModalContent>
-      <DeleteActionModal
-        isOpen={popUp.revokeConfirm.isOpen}
-        onChange={(isOpenState) => handlePopUpToggle("revokeConfirm", isOpenState)}
-        title="Revoke access?"
-        subTitle="This will immediately remove the privilege granted by this access request. This action cannot be undone."
-        deleteKey="confirm"
-        buttonText="Revoke Access"
-        onDeleteApproved={handleRevoke}
-      />
-    </Modal>
+            )}
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+      <AlertDialog
+        open={popUp.revokeConfirm.isOpen}
+        onOpenChange={(open) => {
+          handlePopUpToggle("revokeConfirm", open);
+          if (!open) setRevokeConfirmText("");
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke access?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will immediately remove the privilege granted by this access request. This action
+              cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="revoke-confirm">
+              Type <span className="font-semibold text-foreground">confirm</span> to revoke
+            </Label>
+            <Input
+              id="revoke-confirm"
+              value={revokeConfirmText}
+              onChange={(e) => setRevokeConfirmText(e.target.value)}
+              placeholder="confirm"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRevokeConfirmText("")}>Cancel</AlertDialogCancel>
+            <Button
+              variant="danger"
+              isPending={isLoading === "revoked"}
+              isDisabled={revokeConfirmText !== "confirm" || isLoading === "revoked"}
+              onClick={handleRevoke}
+            >
+              Revoke Access
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };

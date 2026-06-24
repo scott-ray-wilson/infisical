@@ -295,7 +295,7 @@ export const SecretApprovalRequestChanges = ({
     : [];
 
   const reviewControls = canReview ? (
-    <div className="flex flex-col gap-3">
+    <div className="-mx-4 mt-auto flex shrink-0 flex-col gap-3 border-t border-border px-4 pt-4">
       <span className="text-sm font-medium text-foreground">Your review</span>
       <Field>
         <FieldLabel htmlFor="review-comment">Comment (optional)</FieldLabel>
@@ -419,8 +419,8 @@ export const SecretApprovalRequestChanges = ({
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 overflow-hidden">
-            <div className="flex thin-scrollbar w-96 shrink-0 flex-col gap-6 overflow-y-auto border-r border-border p-4">
-              <DetailGroup>
+            <div className="flex w-96 shrink-0 flex-col gap-6 overflow-hidden border-r border-border p-4">
+              <DetailGroup className="shrink-0">
                 <Detail>
                   <DetailLabel>Environment</DetailLabel>
                   <DetailValue>{environmentName}</DetailValue>
@@ -436,9 +436,9 @@ export const SecretApprovalRequestChanges = ({
               </DetailGroup>
 
               {reviewerRows.length > 0 && (
-                <div className="flex flex-col gap-2">
-                  <span className="text-sm font-medium text-foreground">Reviewers</span>
-                  <ItemGroup className="gap-0 rounded-lg border border-border bg-container">
+                <div className="flex min-h-0 flex-col gap-2">
+                  <span className="shrink-0 text-sm font-medium text-foreground">Reviewers</span>
+                  <ItemGroup className="min-h-0 thin-scrollbar gap-0 overflow-y-auto rounded-lg border border-border bg-container">
                     {reviewerRows.map((row, index) => {
                       const reviewer = reviewedUsers?.[row.userId];
                       const displayName =

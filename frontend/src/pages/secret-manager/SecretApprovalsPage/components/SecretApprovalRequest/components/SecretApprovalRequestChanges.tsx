@@ -5,7 +5,6 @@ import {
   BanIcon,
   CheckIcon,
   ChevronDownIcon,
-  ClipboardCheckIcon,
   GitMergeIcon,
   GitPullRequestIcon,
   HourglassIcon,
@@ -22,24 +21,27 @@ import {
   AlertDescription,
   Badge,
   Button,
+  ButtonGroup,
   Detail,
   DetailGroup,
   DetailLabel,
   DetailValue,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Empty,
   EmptyDescription,
   EmptyHeader,
   EmptyTitle,
   Field,
   FieldLabel,
+  IconButton,
   Item,
   ItemActions,
   ItemContent,
   ItemGroup,
   ItemSeparator,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
   Sheet,
   SheetContent,
   SheetDescription,
@@ -80,7 +82,7 @@ export const generateCommitText = (commits: { op: CommitType }[] = [], isReplica
     text.push(
       <span key="created-commit">
         {score[CommitType.CREATE]} Secret{score[CommitType.CREATE] !== 1 && "s"}
-        <span className="text-green-600"> Created</span>
+        <span className="text-success"> Created</span>
       </span>
     );
   if (score[CommitType.UPDATE])
@@ -88,7 +90,7 @@ export const generateCommitText = (commits: { op: CommitType }[] = [], isReplica
       <span key="updated-commit">
         {Boolean(text.length) && ", "}
         {score[CommitType.UPDATE]} Secret{score[CommitType.UPDATE] !== 1 && "s"}
-        <span className="text-yellow-600"> Updated</span>
+        <span className="text-warning"> Updated</span>
       </span>
     );
   if (score[CommitType.DELETE])
@@ -96,7 +98,7 @@ export const generateCommitText = (commits: { op: CommitType }[] = [], isReplica
       <span key="deleted-commit">
         {Boolean(text.length) && " and "}
         {score[CommitType.DELETE]} Secret{score[CommitType.DELETE] !== 1 && "s"}
-        <span className="text-red-600"> Deleted</span>
+        <span className="text-danger"> Deleted</span>
       </span>
     );
   return text;
@@ -140,7 +142,6 @@ export const SecretApprovalRequestChanges = ({
   const { currentProject, projectId } = useProject();
   const [comment, setComment] = useState("");
   const [willMerge, setWillMerge] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(false);
 
   const { data: secretApprovalRequestDetails, isPending: isLoading } =
     useGetSecretApprovalRequestDetails({
@@ -185,7 +186,6 @@ export const SecretApprovalRequestChanges = ({
       text: `Successfully ${status} the request`
     });
     setComment("");
-    setReviewOpen(false);
   };
 
   const handleApproveAndMerge = async () => {
@@ -294,117 +294,112 @@ export const SecretApprovalRequestChanges = ({
       ]
     : [];
 
+  const reviewControls = canReview ? (
+    <div className="flex flex-col gap-3">
+      <span className="text-sm font-medium text-foreground">Your review</span>
+      <Field>
+        <FieldLabel htmlFor="review-comment">Comment (optional)</FieldLabel>
+        <TextArea
+          id="review-comment"
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Leave a comment..."
+          rows={3}
+        />
+      </Field>
+      <div className="flex gap-2">
+        <ButtonGroup>
+          <Button
+            variant="project"
+            size="sm"
+            isPending={isApproving && !willMerge}
+            isDisabled={actionInFlight}
+            onClick={() => handleReview(ApprovalStatus.APPROVED)}
+          >
+            <CheckIcon />
+            Approve
+          </Button>
+          {isMergableUponApprove && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  variant="project"
+                  size="sm"
+                  aria-label="More approval options"
+                  isDisabled={actionInFlight}
+                >
+                  <ChevronDownIcon />
+                </IconButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleApproveAndMerge}>
+                  <GitMergeIcon />
+                  Approve & Merge
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </ButtonGroup>
+        <Button
+          variant="danger"
+          size="sm"
+          isPending={isRejecting}
+          isDisabled={actionInFlight}
+          onClick={() => handleReview(ApprovalStatus.REJECTED)}
+        >
+          <BanIcon />
+          Reject
+        </Button>
+      </div>
+    </div>
+  ) : null;
+
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="flex h-full w-4/5 flex-col gap-0 overflow-hidden sm:max-w-none">
         <SheetHeader className="border-b">
-          <div className="flex items-start justify-between gap-4 pr-8">
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <SheetTitle className="flex items-center gap-2">
-                {secretApprovalRequestDetails ? (
-                  <>
-                    <span>
-                      {generateCommitText(
-                        secretApprovalRequestDetails.commits,
-                        secretApprovalRequestDetails.isReplicated
-                      )}
-                    </span>
-                    {hasMerged ? (
-                      <Badge variant="success">
-                        <GitMergeIcon />
-                        Merged
-                      </Badge>
-                    ) : secretApprovalRequestDetails.status === "close" ? (
-                      <Badge variant="danger">
-                        <XIcon />
-                        Closed
-                      </Badge>
-                    ) : (
-                      <Badge variant="info">
-                        <GitPullRequestIcon />
-                        Open
-                      </Badge>
-                    )}
-                  </>
+          <SheetTitle className="flex items-center gap-2 pr-8">
+            {secretApprovalRequestDetails ? (
+              <>
+                {hasMerged ? (
+                  <Badge variant="success">
+                    <GitMergeIcon />
+                    Merged
+                  </Badge>
+                ) : secretApprovalRequestDetails.status === "close" ? (
+                  <Badge variant="danger">
+                    <XIcon />
+                    Closed
+                  </Badge>
                 ) : (
-                  "Change Request"
+                  <Badge variant="info">
+                    <GitPullRequestIcon />
+                    Open
+                  </Badge>
                 )}
-              </SheetTitle>
-              {secretApprovalRequestDetails && (
-                <SheetDescription>
-                  Opened by{" "}
-                  {committerUser ? (
-                    <>
-                      {committerUser.firstName} ({committerUser.email})
-                    </>
-                  ) : (
-                    "Deleted User"
+                <span>
+                  {generateCommitText(
+                    secretApprovalRequestDetails.commits,
+                    secretApprovalRequestDetails.isReplicated
                   )}
-                </SheetDescription>
-              )}
-            </div>
-            {canReview && (
-              <Popover open={reviewOpen} onOpenChange={setReviewOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="project" size="sm" className="shrink-0">
-                    <ClipboardCheckIcon />
-                    Review
-                    <ChevronDownIcon />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="flex w-96 flex-col gap-3">
-                  <span className="text-sm font-medium text-foreground">Finish your review</span>
-                  <Field>
-                    <FieldLabel htmlFor="review-comment">Comment (optional)</FieldLabel>
-                    <TextArea
-                      id="review-comment"
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      placeholder="Leave a comment..."
-                      rows={3}
-                    />
-                  </Field>
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      variant="project"
-                      size="sm"
-                      isFullWidth
-                      isPending={isApproving && !willMerge}
-                      isDisabled={actionInFlight}
-                      onClick={() => handleReview(ApprovalStatus.APPROVED)}
-                    >
-                      <CheckIcon />
-                      Approve
-                    </Button>
-                    {isMergableUponApprove && (
-                      <Button
-                        variant="project"
-                        size="sm"
-                        isFullWidth
-                        isPending={willMerge}
-                        isDisabled={actionInFlight}
-                        onClick={handleApproveAndMerge}
-                      >
-                        <GitMergeIcon />
-                        Approve & Merge
-                      </Button>
-                    )}
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      isFullWidth
-                      isPending={isRejecting}
-                      isDisabled={actionInFlight}
-                      onClick={() => handleReview(ApprovalStatus.REJECTED)}
-                    >
-                      <BanIcon />
-                      Reject
-                    </Button>
-                  </div>
-                </PopoverContent>
-              </Popover>
+                </span>
+              </>
+            ) : (
+              "Change Request"
             )}
-          </div>
+          </SheetTitle>
+          {secretApprovalRequestDetails && (
+            <SheetDescription>
+              Opened by{" "}
+              {committerUser ? (
+                <>
+                  {committerUser.firstName} ({committerUser.email})
+                </>
+              ) : (
+                "Deleted User"
+              )}
+            </SheetDescription>
+          )}
         </SheetHeader>
 
         {isLoading ? (
@@ -506,6 +501,7 @@ export const SecretApprovalRequestChanges = ({
                   </ItemGroup>
                 </div>
               )}
+              {reviewControls}
             </div>
 
             <div className="flex min-h-0 thin-scrollbar flex-1 flex-col gap-4 overflow-y-auto p-4">

@@ -2,16 +2,25 @@ import { ForbiddenError } from "@casl/ability";
 import { Knex } from "knex";
 
 import { AccessScope, OrganizationActionScope } from "@app/db/schemas";
+import { TLicenseServiceFactory } from "@app/ee/services/license/license-service";
 import { OrgPermissionActions, OrgPermissionSubjects } from "@app/ee/services/permission/org-permission";
 import { TPermissionServiceFactory } from "@app/ee/services/permission/permission-service-types";
+import { PgSqlLock } from "@app/keystore/keystore";
 import { getConfig } from "@app/lib/config/env";
 import { crypto } from "@app/lib/crypto";
-import { BadRequestError, ForbiddenRequestError, NotFoundError } from "@app/lib/errors";
+import { BadRequestError, ForbiddenRequestError, InternalServerError, NotFoundError } from "@app/lib/errors";
 import { logger } from "@app/lib/logger";
 import { sanitizeEmail, validateEmail } from "@app/lib/validator";
 import { TAuthTokenServiceFactory } from "@app/services/auth-token/auth-token-service";
 import { TokenType } from "@app/services/auth-token/auth-token-types";
+import { TLicenseClientFactory } from "@app/services/license-client/license-client";
 import { TOrgDALFactory } from "@app/services/org/org-dal";
+import {
+  fnDeleteOrphanedRootOrgs,
+  fnHardDeleteOrganization,
+  getOrgIdsWithLivePaidSubscription,
+  hasLivePaidSubscription
+} from "@app/services/org/org-fns";
 import { SmtpTemplates, TSmtpService } from "@app/services/smtp/smtp-service";
 
 import { ActorType, AuthMethod, AuthModeSignUpTokenPayload, AuthTokenType } from "../auth/auth-type";
@@ -19,7 +28,15 @@ import { TGroupProjectDALFactory } from "../group-project/group-project-dal";
 import { TMembershipUserDALFactory } from "../membership-user/membership-user-dal";
 import { TUserAliasDALFactory } from "../user-alias/user-alias-dal";
 import { TUserDALFactory } from "./user-dal";
-import { TListUserGroupsDTO, TUpdateUserEmailDTO, TUpdateUserMfaDTO, TVerifyCurrentEmailOTPDTO } from "./user-types";
+import { buildLastAdminBlockedMessage, classifyOrgDeletionImpact } from "./user-fns";
+import {
+  AccountDeletionOrgImpactType,
+  TAccountDeletionOrgImpact,
+  TListUserGroupsDTO,
+  TUpdateUserEmailDTO,
+  TUpdateUserMfaDTO,
+  TVerifyCurrentEmailOTPDTO
+} from "./user-types";
 
 type TUserServiceFactoryDep = {
   userDAL: Pick<
@@ -38,12 +55,24 @@ type TUserServiceFactoryDep = {
     | "findAllMyAccounts"
   >;
   groupProjectDAL: Pick<TGroupProjectDALFactory, "findByUserId">;
-  orgDAL: Pick<TOrgDALFactory, "findById" | "find" | "findEffectiveOrgMembership" | "findEffectiveOrgMemberships">;
+  orgDAL: Pick<
+    TOrgDALFactory,
+    | "findById"
+    | "find"
+    | "findEffectiveOrgMembership"
+    | "findEffectiveOrgMemberships"
+    | "getUserOrgDeletionImpact"
+    | "findRootOrgIdsForUsers"
+    | "findRootOrgsWithNoAttachedUsers"
+    | "deleteById"
+  >;
   membershipUserDAL: Pick<TMembershipUserDALFactory, "find" | "insertMany" | "findOne" | "updateById">;
   tokenService: Pick<TAuthTokenServiceFactory, "createTokenForUser" | "validateTokenForUser" | "revokeAllMySessions">;
   smtpService: Pick<TSmtpService, "sendMail">;
   permissionService: TPermissionServiceFactory;
   userAliasDAL: Pick<TUserAliasDALFactory, "findOne" | "find" | "updateById" | "delete">;
+  licenseService: Pick<TLicenseServiceFactory, "removeOrgCustomer" | "updateSubscriptionOrgMemberCount">;
+  licenseClient: Pick<TLicenseClientFactory, "getSubscription" | "cancelSubscription">;
 };
 
 export type TUserServiceFactory = ReturnType<typeof userServiceFactory>;
@@ -56,7 +85,9 @@ export const userServiceFactory = ({
   tokenService,
   smtpService,
   permissionService,
-  userAliasDAL
+  userAliasDAL,
+  licenseService,
+  licenseClient
 }: TUserServiceFactoryDep) => {
   const sendEmailVerificationCode = async (token: string) => {
     const config = getConfig();
@@ -370,12 +401,37 @@ export const userServiceFactory = ({
     const users = await userDAL.find({ email });
     const duplicatedAccounts = users?.filter((el) => el.id !== userId);
     const myAccount = users?.find((el) => el.id === userId);
-    if (duplicatedAccounts.length && myAccount) {
-      await userDAL.transaction(async (tx) => {
-        await userDAL.delete({ $in: { id: duplicatedAccounts?.map((el) => el.id) } }, tx);
-        await userDAL.updateById(userId, { username: (myAccount.email || myAccount.username).toLowerCase() }, tx);
+    if (!duplicatedAccounts.length || !myAccount) return;
+
+    const duplicateUserIds = duplicatedAccounts.map((el) => el.id);
+
+    // Orgs that end up with nobody attached once the duplicates are gone get deleted too:
+    // they are unreachable afterwards (this is how auto-created "Personal Org"s used to pile
+    // up as orphans). Subscription state comes over HTTP, so it is resolved before the
+    // transaction; orgs with a live paid subscription (or an unverifiable one) are kept and
+    // logged instead of silently cancelling something the person may still want.
+    const affectedRootOrgIds = await orgDAL.findRootOrgIdsForUsers(duplicateUserIds);
+    const protectedOrgIds = await getOrgIdsWithLivePaidSubscription(affectedRootOrgIds, licenseClient);
+
+    await userDAL.transaction(async (tx) => {
+      // Same lock the last-admin guards take, so concurrent membership changes in these orgs
+      // serialize against this sweep.
+      for await (const orgId of [...affectedRootOrgIds].sort()) {
+        await tx.raw("SELECT pg_advisory_xact_lock(?)", [PgSqlLock.LastAdminGuard("org", orgId)]);
+      }
+
+      await userDAL.delete({ $in: { id: duplicateUserIds } }, tx);
+      await userDAL.updateById(userId, { username: (myAccount.email || myAccount.username).toLowerCase() }, tx);
+
+      await fnDeleteOrphanedRootOrgs({
+        candidateRootOrgIds: affectedRootOrgIds,
+        protectedOrgIds,
+        logContext: "removeMyDuplicateAccounts",
+        orgDAL,
+        licenseService,
+        tx
       });
-    }
+    });
   };
 
   const getMe = async (userId: string) => {
@@ -387,6 +443,41 @@ export const userServiceFactory = ({
       hashedPassword: null,
       encryptionVersion: 2
     };
+  };
+
+  /**
+   * Classifies, per org tree the user belongs to, what deleting their account would do.
+   * Fails closed when a subscription state cannot be verified: the caller (endpoint or
+   * deleteUser) must not proceed on unknown billing state.
+   */
+  const getAccountDeletionImpact = async (userId: string): Promise<TAccountDeletionOrgImpact[]> => {
+    const impactRows = await orgDAL.getUserOrgDeletionImpact(userId);
+
+    const result: TAccountDeletionOrgImpact[] = [];
+    for await (const row of impactRows) {
+      const type = classifyOrgDeletionImpact(row);
+      let subscriptionToCancel = false;
+      if (type === AccountDeletionOrgImpactType.OrgDeleted) {
+        try {
+          subscriptionToCancel = await hasLivePaidSubscription(row.orgId, licenseClient);
+        } catch (error) {
+          logger.error(error, `getAccountDeletionImpact: failed to fetch subscription state [orgId=${row.orgId}]`);
+          throw new InternalServerError({
+            message: `Could not verify the subscription state of organization "${row.orgName}". Please try again later.`
+          });
+        }
+      }
+      result.push({
+        orgId: row.orgId,
+        orgName: row.orgName,
+        type,
+        otherMemberCount: row.otherMemberCount,
+        identityCount: row.identityCount,
+        subOrgCount: row.subOrgCount,
+        subscriptionToCancel
+      });
+    }
+    return result;
   };
 
   const deleteUser = async (userId: string) => {
@@ -408,7 +499,69 @@ export const userServiceFactory = ({
       }
     }
 
-    const user = await userDAL.deleteById(userId);
+    // First pass outside the transaction (subscription lookups are HTTP and must not run while
+    // holding locks); the structural classification is re-derived under locks below.
+    const impact = await getAccountDeletionImpact(userId);
+    const blockedOrgs = impact.filter((el) => el.type === AccountDeletionOrgImpactType.BlockedLastAdmin);
+    if (blockedOrgs.length) {
+      throw new BadRequestError({ message: buildLastAdminBlockedMessage(blockedOrgs.map((el) => el.orgName)) });
+    }
+
+    const user = await userDAL.transaction(async (tx) => {
+      // Same advisory lock the remove-member / change-role guards take, so the classification
+      // cannot go stale against concurrent membership changes in these orgs. Sorted to keep the
+      // lock order deterministic across concurrent deletions sharing orgs.
+      const knownOrgIds = impact.map((el) => el.orgId).sort();
+      for await (const orgId of knownOrgIds) {
+        await tx.raw("SELECT pg_advisory_xact_lock(?)", [PgSqlLock.LastAdminGuard("org", orgId)]);
+      }
+
+      const lockedImpactRows = await orgDAL.getUserOrgDeletionImpact(userId, tx);
+      const lockedBlocked = lockedImpactRows.filter(
+        (row) => classifyOrgDeletionImpact(row) === AccountDeletionOrgImpactType.BlockedLastAdmin
+      );
+      if (lockedBlocked.length) {
+        throw new BadRequestError({ message: buildLastAdminBlockedMessage(lockedBlocked.map((el) => el.orgName)) });
+      }
+
+      const orgsToDelete = lockedImpactRows.filter(
+        (row) => classifyOrgDeletionImpact(row) === AccountDeletionOrgImpactType.OrgDeleted
+      );
+      for await (const org of orgsToDelete) {
+        // Cancel any live v2 subscription at period end (no further charges; reversible on the
+        // license server until the period lapses). Attempted for every org being deleted so a
+        // classification change since the pre-check can't slip a live subscription through.
+        // Benign failures: 4xx = nothing to cancel; "not configured" = v1/self-hosted instance
+        // (v1 teardown happens via removeOrgCustomer inside fnHardDeleteOrganization).
+        try {
+          await licenseClient.cancelSubscription(org.orgId);
+          logger.info(`deleteUser: cancelled subscription of org deleted with account [orgId=${org.orgId}]`);
+        } catch (error) {
+          const isBenign =
+            error instanceof BadRequestError ||
+            (error instanceof Error && error.message.includes("license client backend is not configured"));
+          if (!isBenign) throw error;
+        }
+
+        await fnHardDeleteOrganization(org.orgId, { orgDAL, licenseService }, tx);
+        logger.info(`deleteUser: deleted org orphaned by account deletion [orgId=${org.orgId}] [userId=${userId}]`);
+      }
+
+      return userDAL.deleteById(userId, tx);
+    });
+
+    // Seat counts of surviving orgs are license-server state; sync is best-effort and must not
+    // undo an already-committed account deletion.
+    const survivingOrgIds = impact
+      .filter((el) => el.type === AccountDeletionOrgImpactType.MembershipRemoved)
+      .map((el) => el.orgId);
+    for await (const orgId of survivingOrgIds) {
+      try {
+        await licenseService.updateSubscriptionOrgMemberCount(orgId);
+      } catch (error) {
+        logger.error(error, `deleteUser: failed to sync org member count after deletion [orgId=${orgId}]`);
+      }
+    }
 
     try {
       if (user?.email) {
@@ -548,6 +701,7 @@ export const userServiceFactory = ({
     requestEmailChangeOTP,
     verifyCurrentEmailOTP,
     updateUserEmail,
+    getAccountDeletionImpact,
     deleteUser,
     getMe,
     createUserAction,

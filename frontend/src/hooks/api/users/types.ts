@@ -209,3 +209,23 @@ export type TokenVersion = {
   createdAt: string;
   updatedAt: string;
 };
+
+export enum AccountDeletionOrgImpactType {
+  /** The user's membership goes away; the org keeps other members and at least one admin. */
+  MembershipRemoved = "membership-removed",
+  /** Nobody else is attached to the org; it is deleted together with the account. */
+  OrgDeleted = "org-deleted",
+  /** Other members remain but the user is the last admin; deletion is blocked. */
+  BlockedLastAdmin = "blocked-last-admin"
+}
+
+export type TAccountDeletionOrgImpact = {
+  orgId: string;
+  orgName: string;
+  type: AccountDeletionOrgImpactType;
+  otherMemberCount: number;
+  identityCount: number;
+  subOrgCount: number;
+  /** Only ever true for org-deleted entries: a live paid subscription will be cancelled. */
+  subscriptionToCancel: boolean;
+};

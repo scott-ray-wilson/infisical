@@ -344,6 +344,37 @@ export const registerUserRouter = async (server: FastifyZodProvider) => {
   });
 
   server.route({
+    method: "GET",
+    url: "/me/deletion-impact",
+    config: {
+      rateLimit: readLimit
+    },
+    schema: {
+      operationId: "getMyAccountDeletionImpact",
+      response: {
+        200: z.object({
+          organizations: z
+            .object({
+              orgId: z.string(),
+              orgName: z.string(),
+              type: z.enum(["membership-removed", "org-deleted", "blocked-last-admin"]),
+              otherMemberCount: z.number(),
+              identityCount: z.number(),
+              subOrgCount: z.number(),
+              subscriptionToCancel: z.boolean()
+            })
+            .array()
+        })
+      }
+    },
+    onRequest: verifyAuth([AuthMode.JWT]),
+    handler: async (req) => {
+      const organizations = await server.services.user.getAccountDeletionImpact(req.permission.id);
+      return { organizations };
+    }
+  });
+
+  server.route({
     method: "DELETE",
     url: "/me",
     config: {

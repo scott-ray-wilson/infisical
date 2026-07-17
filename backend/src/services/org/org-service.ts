@@ -69,7 +69,7 @@ import { SmtpTemplates, TSmtpService } from "../smtp/smtp-service";
 import { TUserDALFactory } from "../user/user-dal";
 import { TIncidentContactsDALFactory } from "./incident-contacts-dal";
 import { TOrgDALFactory } from "./org-dal";
-import { deleteOrgMembershipsFn } from "./org-fns";
+import { deleteOrgMembershipsFn, fnHardDeleteOrganization } from "./org-fns";
 import {
   TDeleteOrgMembershipDTO,
   TDeleteOrgMembershipsDTO,
@@ -794,11 +794,7 @@ export const orgServiceFactory = ({
         });
       }
 
-      const deletedOrg = await orgDAL.deleteById(orgId, tx);
-
-      if (deletedOrg.customerId) {
-        await licenseService.removeOrgCustomer(deletedOrg.customerId);
-      }
+      const deletedOrg = await fnHardDeleteOrganization(orgId, { orgDAL, licenseService }, tx);
 
       // Generate new tokens without the organization ID present
       const user = await userDAL.findById(userId, tx);

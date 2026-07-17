@@ -42,11 +42,13 @@ import { KMS_ROOT_CONFIG_UUID } from "../kms/kms-fns";
 import { TKmsRootConfigDALFactory } from "../kms/kms-root-config-dal";
 import { TKmsServiceFactory } from "../kms/kms-service";
 import { RootKeyEncryptionStrategy } from "../kms/kms-types";
+import { TLicenseClientFactory } from "../license-client/license-client";
 import { TMembershipRoleDALFactory } from "../membership/membership-role-dal";
 import { TMembershipIdentityDALFactory } from "../membership-identity/membership-identity-dal";
 import { TMembershipUserDALFactory } from "../membership-user/membership-user-dal";
 import { TMicrosoftTeamsServiceFactory } from "../microsoft-teams/microsoft-teams-service";
 import { TOrgDALFactory } from "../org/org-dal";
+import { fnDeleteOrphanedRootOrgs, fnHardDeleteOrganization, getOrgIdsWithLivePaidSubscription } from "../org/org-fns";
 import { TOrgServiceFactory } from "../org/org-service";
 import { TUserDALFactory } from "../user/user-dal";
 import { TUserAliasDALFactory } from "../user-alias/user-alias-dal";
@@ -87,7 +89,11 @@ type TSuperAdminServiceFactoryDep = {
   kmsRootConfigDAL: TKmsRootConfigDALFactory;
   orgService: Pick<TOrgServiceFactory, "createOrganization">;
   keyStore: Pick<TKeyStoreFactory, "getItem" | "setItemWithExpiry" | "deleteItem" | "deleteItems">;
-  licenseService: Pick<TLicenseServiceFactory, "onPremFeatures" | "updateSubscriptionOrgMemberCount">;
+  licenseService: Pick<
+    TLicenseServiceFactory,
+    "onPremFeatures" | "updateSubscriptionOrgMemberCount" | "removeOrgCustomer"
+  >;
+  licenseClient: Pick<TLicenseClientFactory, "getSubscription">;
   microsoftTeamsService: Pick<TMicrosoftTeamsServiceFactory, "initializeTeamsBot">;
   invalidateCacheQueue: TInvalidateCacheQueueFactory;
   smtpService: Pick<TSmtpService, "sendMail">;
@@ -145,6 +151,7 @@ export const superAdminServiceFactory = ({
   kmsRootConfigDAL,
   kmsService,
   licenseService,
+  licenseClient,
   identityAccessTokenDAL,
   identityTokenAuthDAL,
   microsoftTeamsService,
@@ -691,6 +698,36 @@ export const superAdminServiceFactory = ({
     });
   };
 
+  // Orgs that end up with nobody attached once the users are gone get deleted too: nobody can
+  // ever reach them again (typically auto-created personal orgs of purged accounts). Orgs with a
+  // live paid subscription (or an unverifiable one) are kept and logged for manual review; an
+  // admin purge must not silently cancel billing.
+  const deleteUsersWithOrphanedOrgCleanup = async (userIds: string[], logContext: string) => {
+    const affectedRootOrgIds = await orgDAL.findRootOrgIdsForUsers(userIds);
+    const protectedOrgIds = await getOrgIdsWithLivePaidSubscription(affectedRootOrgIds, licenseClient);
+
+    return userDAL.transaction(async (tx) => {
+      // Same lock the last-admin guards take, so concurrent membership changes in these orgs
+      // serialize against this sweep.
+      for await (const orgId of [...affectedRootOrgIds].sort()) {
+        await tx.raw("SELECT pg_advisory_xact_lock(?)", [PgSqlLock.LastAdminGuard("org", orgId)]);
+      }
+
+      const users = await userDAL.delete({ $in: { id: userIds } }, tx);
+
+      await fnDeleteOrphanedRootOrgs({
+        candidateRootOrgIds: affectedRootOrgIds,
+        protectedOrgIds,
+        logContext,
+        orgDAL,
+        licenseService,
+        tx
+      });
+
+      return users;
+    });
+  };
+
   const deleteUser = async (userId: string) => {
     const superAdmins = await userDAL.find({
       superAdmin: true
@@ -702,7 +739,7 @@ export const superAdminServiceFactory = ({
       });
     }
 
-    const user = await userDAL.deleteById(userId);
+    const [user] = await deleteUsersWithOrphanedOrgCleanup([userId], "superAdmin.deleteUser");
     return user;
   };
 
@@ -717,11 +754,7 @@ export const superAdminServiceFactory = ({
       });
     }
 
-    const users = await userDAL.delete({
-      $in: {
-        id: userIds
-      }
-    });
+    const users = await deleteUsersWithOrphanedOrgCleanup(userIds, "superAdmin.deleteUsers");
     return users;
   };
 
@@ -940,7 +973,11 @@ export const superAdminServiceFactory = ({
   };
 
   const deleteOrganization = async (organizationId: string) => {
-    const organization = await orgDAL.deleteById(organizationId);
+    // Tears down the license-server v1 customer too; previously this was a bare row delete that
+    // leaked the billing customer (the org-service delete path has always cleaned it up).
+    const organization = await orgDAL.transaction(async (tx) =>
+      fnHardDeleteOrganization(organizationId, { orgDAL, licenseService }, tx)
+    );
     return organization;
   };
 

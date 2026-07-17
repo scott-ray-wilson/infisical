@@ -18,6 +18,7 @@ import {
   DeleteOrgMembershipDTO,
   OrgUser,
   RenameUserDTO,
+  TAccountDeletionOrgImpact,
   TokenVersion,
   TWorkspaceUser,
   UpdateOrgMembershipDTO,
@@ -66,6 +67,21 @@ export const useGetMyDuplicateAccount = () =>
       duplicateAccounts: users.filter((el) => !el.isMyAccount),
       myAccount: users?.find((el) => el.isMyAccount)
     })
+  });
+
+export const useGetMyDeletionImpact = ({ enabled }: { enabled: boolean }) =>
+  useQuery({
+    queryKey: userKeys.myDeletionImpact,
+    // Deletion impact must reflect the current state whenever the confirmation dialog opens.
+    staleTime: 0,
+    gcTime: 0,
+    enabled,
+    queryFn: async () => {
+      const { data } = await apiRequest.get<{ organizations: TAccountDeletionOrgImpact[] }>(
+        "/api/v2/users/me/deletion-impact"
+      );
+      return data.organizations;
+    }
   });
 
 export const useDeleteMe = () => {

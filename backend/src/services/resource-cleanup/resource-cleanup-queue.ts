@@ -14,6 +14,7 @@ import { TCertificateRequestDALFactory } from "../certificate-request/certificat
 import { TIdentityAccessTokenDALFactory } from "../identity-access-token/identity-access-token-dal";
 import { TIdentityAccessTokenRevocationDALFactory } from "../identity-access-token/identity-access-token-revocation-dal";
 import { TIdentityUaClientSecretDALFactory } from "../identity-ua/identity-ua-client-secret-dal";
+import { TOrgDALFactory } from "../org/org-dal";
 import { TOrgServiceFactory } from "../org/org-service";
 import { TSecretVersionDALFactory } from "../secret/secret-version-dal";
 import { TSecretFolderVersionDALFactory } from "../secret-folder/secret-folder-version-dal";
@@ -34,6 +35,7 @@ type TDailyResourceCleanUpQueueServiceFactoryDep = {
   secretSharingDAL: Pick<TSecretSharingDALFactory, "pruneExpiredSharedSecrets" | "pruneExpiredSecretRequests">;
   serviceTokenService: Pick<TServiceTokenServiceFactory, "notifyExpiringTokens">;
   cronJob: TCronJobFactory;
+  orgDAL: Pick<TOrgDALFactory, "countOrphanedRootOrgs">;
   orgService: TOrgServiceFactory;
   userNotificationDAL: Pick<TUserNotificationDALFactory, "pruneNotifications">;
   keyValueStoreDAL: Pick<TKeyValueStoreDALFactory, "pruneExpiredKeys">;
@@ -60,6 +62,7 @@ export const dailyResourceCleanUpQueueServiceFactory = ({
   identityUniversalAuthClientSecretDAL,
   serviceTokenService,
   scimService,
+  orgDAL,
   orgService,
   userNotificationDAL,
   keyValueStoreDAL,
@@ -98,6 +101,14 @@ export const dailyResourceCleanUpQueueServiceFactory = ({
         await keyValueStoreDAL.pruneExpiredKeys();
         await scepTransactionDAL.pruneExpiredTransactions();
         await identityAccessTokenRevocationDAL.removeExpiredRevocations();
+
+        // Observability only. Account deletion flows now clean these up as they happen, so a
+        // growing count means some path is orphaning orgs again; the backlog itself is drained
+        // by scripts/cleanup-orphaned-orgs.ts.
+        const orphanedOrgCount = await orgDAL.countOrphanedRootOrgs();
+        if (orphanedOrgCount > 0) {
+          logger.warn(`Found root organizations without any attached user [count=${orphanedOrgCount}]`);
+        }
       }
     });
 

@@ -1167,7 +1167,9 @@ export const registerRoutes = async (
     groupProjectDAL,
     smtpService,
     userAliasDAL,
-    membershipUserDAL
+    membershipUserDAL,
+    licenseService,
+    licenseClient
   });
 
   const totpService = totpServiceFactory({
@@ -1358,6 +1360,7 @@ export const registerRoutes = async (
     keyStore,
     orgDAL,
     licenseService,
+    licenseClient,
     kmsService,
     microsoftTeamsService,
     invalidateCacheQueue,
@@ -2744,6 +2747,7 @@ export const registerRoutes = async (
     secretVersionV2DAL: secretVersionV2BridgeDAL,
     identityUniversalAuthClientSecretDAL: identityUaClientSecretDAL,
     serviceTokenService,
+    orgDAL,
     orgService,
     userNotificationDAL,
     keyValueStoreDAL,

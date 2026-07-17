@@ -33,6 +33,16 @@ import { OrgAuthMethod, TOrgWithSubOrgs } from "./org-types";
 
 export type TOrgDALFactory = ReturnType<typeof orgDALFactory>;
 
+export type TUserOrgDeletionImpact = {
+  orgId: string;
+  orgName: string;
+  otherMemberCount: number;
+  otherAdminCount: number;
+  userIsActiveAdmin: boolean;
+  identityCount: number;
+  subOrgCount: number;
+};
+
 export const orgDALFactory = (db: TDbClient) => {
   const orgOrm = ormify(db, TableName.Organization);
 
@@ -991,6 +1001,228 @@ export const orgDALFactory = (db: TDbClient) => {
     }
   };
 
+  // "Attached user" below means any non-ghost user linked to an org tree (root org plus its
+  // sub-orgs) either by a direct org-scope membership row of ANY status, or through a group that
+  // holds an org-scope membership. Membership status is deliberately ignored: a pending invite or
+  // a deactivated membership still marks the org as belonging to somebody.
+  const applyNoAttachedUsersFilter = (query: Knex.QueryBuilder) => {
+    void query
+      .whereNull(`${TableName.Organization}.rootOrgId`)
+      .whereNotExists((qb) => {
+        void qb
+          .select(db.raw("1"))
+          .from(`${TableName.Membership} as user_membership`)
+          .join(`${TableName.Organization} as member_org`, "member_org.id", "user_membership.scopeOrgId")
+          .join(`${TableName.Users} as member_user`, "member_user.id", "user_membership.actorUserId")
+          .where("user_membership.scope", AccessScope.Organization)
+          .where("member_user.isGhost", false)
+          // Root orgs have rootOrgId NULL, so this matches the root itself and every sub-org.
+          // Kept as an OR (instead of COALESCE) so both branches stay index-friendly.
+          .whereRaw(
+            `("member_org"."rootOrgId" = "${TableName.Organization}"."id" OR "member_org"."id" = "${TableName.Organization}"."id")`
+          );
+      })
+      .whereNotExists((qb) => {
+        void qb
+          .select(db.raw("1"))
+          .from(`${TableName.Membership} as group_membership`)
+          .join(`${TableName.Organization} as group_org`, "group_org.id", "group_membership.scopeOrgId")
+          .join(
+            `${TableName.UserGroupMembership} as group_user_membership`,
+            "group_user_membership.groupId",
+            "group_membership.actorGroupId"
+          )
+          .join(`${TableName.Users} as group_user`, "group_user.id", "group_user_membership.userId")
+          .where("group_membership.scope", AccessScope.Organization)
+          .where("group_user.isGhost", false)
+          .whereRaw(
+            `("group_org"."rootOrgId" = "${TableName.Organization}"."id" OR "group_org"."id" = "${TableName.Organization}"."id")`
+          );
+      });
+  };
+
+  /**
+   * Aggregates, per organization tree (root org + its sub-orgs) the user belongs to, what deleting
+   * the user's account would leave behind. Member counts are tree-wide and conservative (any other
+   * attached user counts, see applyNoAttachedUsersFilter), while admin retention mirrors
+   * membership-user-dal countActiveAdmins: active, permanent, direct admin memberships on the root
+   * org. Pass a tx when the result gates a delete; replica lag cannot be tolerated there.
+   */
+  const getUserOrgDeletionImpact = async (userId: string, tx?: Knex): Promise<TUserOrgDeletionImpact[]> => {
+    try {
+      const conn = tx || db.replicaNode();
+
+      const memberOrgs = (await conn(TableName.Membership)
+        .join(TableName.Organization, `${TableName.Organization}.id`, `${TableName.Membership}.scopeOrgId`)
+        .where(`${TableName.Membership}.scope`, AccessScope.Organization)
+        .where(`${TableName.Membership}.actorUserId`, userId)
+        .select(
+          db.ref("id").withSchema(TableName.Organization).as("orgId"),
+          db.ref("rootOrgId").withSchema(TableName.Organization).as("rootOrgId")
+        )) as { orgId: string; rootOrgId: string | null }[];
+
+      const rootOrgIds = unique(memberOrgs.map((el) => el.rootOrgId ?? el.orgId));
+      if (!rootOrgIds.length) return [];
+
+      const rootOrgs = (await conn(TableName.Organization)
+        .whereIn(`${TableName.Organization}.id`, rootOrgIds)
+        .select(
+          db.ref("id").withSchema(TableName.Organization).as("orgId"),
+          db.ref("name").withSchema(TableName.Organization).as("orgName")
+        )) as { orgId: string; orgName: string }[];
+
+      const treeRootId = `COALESCE("${TableName.Organization}"."rootOrgId", "${TableName.Organization}"."id")`;
+      const applyTreeFilter = (qb: Knex.QueryBuilder) => {
+        void qb
+          .whereIn(`${TableName.Organization}.id`, rootOrgIds)
+          .orWhereIn(`${TableName.Organization}.rootOrgId`, rootOrgIds);
+      };
+
+      const otherDirectMembers = (await conn(TableName.Membership)
+        .join(TableName.Organization, `${TableName.Organization}.id`, `${TableName.Membership}.scopeOrgId`)
+        .join(TableName.Users, `${TableName.Users}.id`, `${TableName.Membership}.actorUserId`)
+        .where(`${TableName.Membership}.scope`, AccessScope.Organization)
+        .where(applyTreeFilter)
+        .where(`${TableName.Users}.isGhost`, false)
+        .whereNot(`${TableName.Membership}.actorUserId`, userId)
+        .groupBy(db.raw(treeRootId))
+        .select(db.raw(`${treeRootId} as "rootId"`))
+        .countDistinct(`${TableName.Membership}.actorUserId as count`)) as unknown as {
+        rootId: string;
+        count: string;
+      }[];
+
+      const otherGroupMembers = (await conn(TableName.Membership)
+        .join(TableName.Organization, `${TableName.Organization}.id`, `${TableName.Membership}.scopeOrgId`)
+        .join(
+          TableName.UserGroupMembership,
+          `${TableName.UserGroupMembership}.groupId`,
+          `${TableName.Membership}.actorGroupId`
+        )
+        .join(TableName.Users, `${TableName.Users}.id`, `${TableName.UserGroupMembership}.userId`)
+        .where(`${TableName.Membership}.scope`, AccessScope.Organization)
+        .where(applyTreeFilter)
+        .where(`${TableName.Users}.isGhost`, false)
+        .whereNot(`${TableName.UserGroupMembership}.userId`, userId)
+        .groupBy(db.raw(treeRootId))
+        .select(db.raw(`${treeRootId} as "rootId"`))
+        .countDistinct(`${TableName.UserGroupMembership}.userId as count`)) as unknown as {
+        rootId: string;
+        count: string;
+      }[];
+
+      const otherRootAdmins = (await conn(TableName.Membership)
+        .join(TableName.MembershipRole, `${TableName.Membership}.id`, `${TableName.MembershipRole}.membershipId`)
+        .where(`${TableName.Membership}.scope`, AccessScope.Organization)
+        .whereIn(`${TableName.Membership}.scopeOrgId`, rootOrgIds)
+        .whereNotNull(`${TableName.Membership}.actorUserId`)
+        .whereNot(`${TableName.Membership}.actorUserId`, userId)
+        .where(`${TableName.Membership}.isActive`, true)
+        .where(`${TableName.MembershipRole}.role`, OrgMembershipRole.Admin)
+        .where(`${TableName.MembershipRole}.isTemporary`, false)
+        .groupBy(`${TableName.Membership}.scopeOrgId`)
+        .select(db.ref("scopeOrgId").withSchema(TableName.Membership))
+        .countDistinct(`${TableName.Membership}.id as count`)) as unknown as {
+        scopeOrgId: string;
+        count: string;
+      }[];
+
+      const myAdminMemberships = (await conn(TableName.Membership)
+        .join(TableName.MembershipRole, `${TableName.Membership}.id`, `${TableName.MembershipRole}.membershipId`)
+        .where(`${TableName.Membership}.scope`, AccessScope.Organization)
+        .whereIn(`${TableName.Membership}.scopeOrgId`, rootOrgIds)
+        .where(`${TableName.Membership}.actorUserId`, userId)
+        .where(`${TableName.Membership}.isActive`, true)
+        .where(`${TableName.MembershipRole}.role`, OrgMembershipRole.Admin)
+        .where(`${TableName.MembershipRole}.isTemporary`, false)
+        .select(db.ref("scopeOrgId").withSchema(TableName.Membership))) as { scopeOrgId: string }[];
+
+      const identityMembers = (await conn(TableName.Membership)
+        .join(TableName.Organization, `${TableName.Organization}.id`, `${TableName.Membership}.scopeOrgId`)
+        .where(`${TableName.Membership}.scope`, AccessScope.Organization)
+        .where(applyTreeFilter)
+        .whereNotNull(`${TableName.Membership}.actorIdentityId`)
+        .groupBy(db.raw(treeRootId))
+        .select(db.raw(`${treeRootId} as "rootId"`))
+        .countDistinct(`${TableName.Membership}.actorIdentityId as count`)) as unknown as {
+        rootId: string;
+        count: string;
+      }[];
+
+      const subOrgs = (await conn(TableName.Organization)
+        .whereIn(`${TableName.Organization}.rootOrgId`, rootOrgIds)
+        .groupBy(`${TableName.Organization}.rootOrgId`)
+        .select(db.ref("rootOrgId").withSchema(TableName.Organization))
+        .count(`${TableName.Organization}.id as count`)) as unknown as { rootOrgId: string; count: string }[];
+
+      const directByRoot = Object.fromEntries(otherDirectMembers.map((el) => [el.rootId, Number(el.count)]));
+      const groupByRoot = Object.fromEntries(otherGroupMembers.map((el) => [el.rootId, Number(el.count)]));
+      const adminsByRoot = Object.fromEntries(otherRootAdmins.map((el) => [el.scopeOrgId, Number(el.count)]));
+      const identitiesByRoot = Object.fromEntries(identityMembers.map((el) => [el.rootId, Number(el.count)]));
+      const subOrgsByRoot = Object.fromEntries(subOrgs.map((el) => [el.rootOrgId, Number(el.count)]));
+      const myAdminRootIds = new Set(myAdminMemberships.map((el) => el.scopeOrgId));
+
+      return rootOrgs.map((org) => ({
+        orgId: org.orgId,
+        orgName: org.orgName,
+        // A user counted by both branches (direct + group) is counted twice; only the zero /
+        // non-zero distinction gates behavior, the number itself is informational.
+        otherMemberCount: (directByRoot[org.orgId] ?? 0) + (groupByRoot[org.orgId] ?? 0),
+        otherAdminCount: adminsByRoot[org.orgId] ?? 0,
+        userIsActiveAdmin: myAdminRootIds.has(org.orgId),
+        identityCount: identitiesByRoot[org.orgId] ?? 0,
+        subOrgCount: subOrgsByRoot[org.orgId] ?? 0
+      }));
+    } catch (error) {
+      throw new DatabaseError({ error, name: "GetUserOrgDeletionImpact" });
+    }
+  };
+
+  const findRootOrgIdsForUsers = async (userIds: string[], tx?: Knex): Promise<string[]> => {
+    if (!userIds.length) return [];
+    try {
+      // Primary read: the result feeds deletion decisions.
+      const conn = tx || db;
+      const rows = (await conn(TableName.Membership)
+        .join(TableName.Organization, `${TableName.Organization}.id`, `${TableName.Membership}.scopeOrgId`)
+        .where(`${TableName.Membership}.scope`, AccessScope.Organization)
+        .whereIn(`${TableName.Membership}.actorUserId`, userIds)
+        .distinct(
+          db.raw(`COALESCE("${TableName.Organization}"."rootOrgId", "${TableName.Organization}"."id") as "rootId"`)
+        )) as unknown as { rootId: string }[];
+      return rows.map((el) => el.rootId);
+    } catch (error) {
+      throw new DatabaseError({ error, name: "FindRootOrgIdsForUsers" });
+    }
+  };
+
+  const findRootOrgsWithNoAttachedUsers = async (rootOrgIds: string[], tx?: Knex): Promise<TOrganizations[]> => {
+    if (!rootOrgIds.length) return [];
+    try {
+      // Primary read: this gates org deletion, replica lag cannot be tolerated.
+      const conn = tx || db;
+      const query = conn(TableName.Organization)
+        .whereIn(`${TableName.Organization}.id`, rootOrgIds)
+        .select(selectAllTableCols(TableName.Organization));
+      applyNoAttachedUsersFilter(query);
+      const docs = await query;
+      return docs;
+    } catch (error) {
+      throw new DatabaseError({ error, name: "FindRootOrgsWithNoAttachedUsers" });
+    }
+  };
+
+  const countOrphanedRootOrgs = async (): Promise<number> => {
+    try {
+      const query = db.replicaNode()(TableName.Organization).count(`${TableName.Organization}.id as count`).first();
+      applyNoAttachedUsersFilter(query);
+      const res = (await query) as { count?: string } | undefined;
+      return Number(res?.count ?? 0);
+    } catch (error) {
+      throw new DatabaseError({ error, name: "CountOrphanedRootOrgs" });
+    }
+  };
+
   return withTransaction(db, {
     ...orgOrm,
     findOrgByProjectId,
@@ -1010,6 +1242,10 @@ export const orgDALFactory = (db: TDbClient) => {
     findMembership,
     findEffectiveOrgMembership,
     findEffectiveOrgMemberships,
+    getUserOrgDeletionImpact,
+    findRootOrgIdsForUsers,
+    findRootOrgsWithNoAttachedUsers,
+    countOrphanedRootOrgs,
     findMembershipWithScimFilter,
     createMembership,
     bulkCreateMemberships,

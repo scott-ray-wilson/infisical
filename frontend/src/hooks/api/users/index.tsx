@@ -12,6 +12,7 @@ export {
   useAddUsersToOrg,
   useDeleteMe,
   useDeleteOrgMembership,
+  useGetMyDeletionImpact,
   useGetMyDuplicateAccount,
   useGetMyIp,
   useGetMyOrganizationProjects,

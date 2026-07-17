@@ -108,7 +108,9 @@ const subscriptionItemSchema = z
   .object({
     productId: z.string(),
     plan: z.string(),
-    quantities: z.record(z.string(), z.number()),
+    // Removed from the license server's item payload (superseded by dimensions); default so a
+    // current-server response still parses instead of silently nulling the whole subscription.
+    quantities: z.record(z.string(), z.number()).default({}),
     limits: z.record(z.string(), z.number()),
     amount: z.number().optional(),
     dimensions: z.array(subscriptionItemDimensionSchema).default([])
